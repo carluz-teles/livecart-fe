@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Bell, Puzzle } from "lucide-react"
+import { User, Building2, Users, Puzzle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -24,12 +24,6 @@ const settingsNav = [
     href: "/settings/users",
     icon: Users,
     description: "Gerencie os membros da sua equipe",
-  },
-  {
-    title: "Notificações",
-    href: "/settings/notifications",
-    icon: Bell,
-    description: "Configure suas preferências de notificação",
   },
   {
     title: "Integrações",
