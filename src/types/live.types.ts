@@ -1,17 +1,20 @@
+import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
+
 export type LiveStatus = "scheduled" | "live" | "ended" | "cancelled"
+export type LivePlatform = "instagram" | "tiktok" | "youtube" | "facebook"
 
 export interface LiveSession {
   id: string
   title: string
   status: LiveStatus
-  scheduledAt: string
-  startedAt: string | null
-  endedAt: string | null
-  viewerCount: number
-  orderCount: number
-  totalRevenue: number
-  createdAt: string
-  updatedAt: string
+  platform: LivePlatform
+  platform_live_id: string
+  started_at: string | null
+  ended_at: string | null
+  total_comments: number
+  total_orders: number
+  created_at: string
+  updated_at: string
 }
 
 export interface LiveComment {
@@ -28,12 +31,31 @@ export interface LiveComment {
 
 export interface CreateLiveSessionPayload {
   title: string
-  scheduledAt: string
+  platform: LivePlatform
+  platform_live_id: string
 }
 
 export interface LiveStats {
-  totalOrders: number
-  totalViewers: number
-  detectedThisMinute: number
-  totalRevenue: number
+  total_lives: number
+  active_lives: number
+  total_orders: number
 }
+
+// Filters for live listing
+export interface LiveFilters {
+  status?: LiveStatus[]
+  platform?: LivePlatform[]
+  dateFrom?: string
+  dateTo?: string
+}
+
+// Query params for listing lives
+export interface LiveListParams {
+  search?: string
+  pagination?: Pagination
+  sorting?: Sorting
+  filters?: LiveFilters
+}
+
+// Response type for live listing
+export type LiveListResponse = PaginatedResponse<LiveSession>

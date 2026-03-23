@@ -527,6 +527,134 @@ import { useProducts } from '../../../hooks/product/useProducts'
 
 ---
 
+## Formulários
+
+### Stack de formulários
+
+- **Validação**: Zod para schemas + React Hook Form para gerenciamento
+- **Componentes**: shadcn/ui Form components
+
+### Indicação de campos obrigatórios
+
+**Regra global**: Campos obrigatórios são indicados com asterisco (*) vermelho após o label.
+
+```tsx
+<FormLabel>
+  Nome da Loja <span className="text-destructive">*</span>
+</FormLabel>
+```
+
+### Apresentação de formulários
+
+#### Formulários simples (até 6 campos)
+
+Aparecem em **Sidebar/Sheet** que desliza da **direita para a esquerda** com animação.
+Usado para: criar/editar itens de tabela, ações rápidas.
+
+```tsx
+// Exemplo: Adicionar produto, criar live, editar pedido
+<Sheet>
+  <SheetTrigger asChild>
+    <Button>Novo Produto</Button>
+  </SheetTrigger>
+  <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+    <SheetHeader>
+      <SheetTitle>Novo Produto</SheetTitle>
+      <SheetDescription>Preencha os dados do produto</SheetDescription>
+    </SheetHeader>
+    <ProductForm onSuccess={() => setOpen(false)} />
+  </SheetContent>
+</Sheet>
+```
+
+#### Formulários complexos (7+ campos ou multi-step)
+
+Usam **página dedicada** com wizard/stepper para dividir em etapas.
+Usado para: onboarding, configurações avançadas, integrações.
+
+```tsx
+// Exemplo: /settings/integrations/new
+<div className="max-w-2xl mx-auto">
+  <Stepper currentStep={step} steps={['Selecionar', 'Configurar', 'Confirmar']} />
+  {step === 1 && <SelectIntegrationStep onNext={...} />}
+  {step === 2 && <ConfigureIntegrationStep onNext={...} onBack={...} />}
+  {step === 3 && <ConfirmIntegrationStep onSubmit={...} onBack={...} />}
+</div>
+```
+
+### Estrutura de formulário com React Hook Form + Zod
+
+```tsx
+// schemas/product.schema.ts
+import { z } from 'zod'
+
+export const productSchema = z.object({
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  keyword: z.string().min(1, 'Keyword é obrigatória'),
+  price: z.number().positive('Preço deve ser positivo'),
+  description: z.string().optional(),
+})
+
+export type ProductFormData = z.infer<typeof productSchema>
+```
+
+```tsx
+// components/product/ProductForm.tsx
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { productSchema, type ProductFormData } from '@/schemas/product.schema'
+
+export function ProductForm({ onSuccess }: { onSuccess: () => void }) {
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      keyword: '',
+      price: 0,
+      description: '',
+    },
+  })
+
+  const onSubmit = async (data: ProductFormData) => {
+    // ...
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome <span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {/* ... outros campos */}
+      </form>
+    </Form>
+  )
+}
+```
+
+### Outras convenções
+
+- Labels sempre acima do campo, nunca ao lado
+- Placeholder complementa o label, nunca substitui
+- Mensagens de erro abaixo do campo em `text-sm text-destructive`
+- Botão submit à direita, cancelar/voltar à esquerda
+- Campos desabilitados: `opacity-50 cursor-not-allowed`
+- Loading no submit: desabilitar form + spinner no botão
+
+---
+
 ## Variáveis de ambiente
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=

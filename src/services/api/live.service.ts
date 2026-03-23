@@ -1,45 +1,39 @@
 import { apiClient } from "./client"
+import { buildQueryString } from "@/lib/query"
 import type {
   LiveSession,
-  LiveComment,
   LiveStats,
   CreateLiveSessionPayload,
-  PaginatedResponse,
+  LiveListParams,
+  LiveListResponse,
 } from "@/types"
 
-export interface ListLivesParams {
-  page?: number
-  status?: string
-}
-
 export const liveService = {
-  list: (params?: ListLivesParams) => {
-    const searchParams = new URLSearchParams()
-    if (params?.page) searchParams.set("page", String(params.page))
-    if (params?.status) searchParams.set("status", params.status)
-
-    const query = searchParams.toString()
-    return apiClient.get<PaginatedResponse<LiveSession>>(`/lives${query ? `?${query}` : ""}`)
+  list: (storeId: string, params?: LiveListParams, token?: string | null) => {
+    const query = buildQueryString({
+      search: params?.search,
+      pagination: params?.pagination,
+      sorting: params?.sorting,
+      filters: params?.filters,
+    })
+    return apiClient.get<LiveListResponse>(`/stores/${storeId}/lives${query}`, token)
   },
 
-  getById: (id: string) => apiClient.get<LiveSession>(`/lives/${id}`),
+  getById: (storeId: string, id: string, token?: string | null) =>
+    apiClient.get<LiveSession>(`/stores/${storeId}/lives/${id}`, token),
 
-  create: (payload: CreateLiveSessionPayload) =>
-    apiClient.post<LiveSession>("/lives", payload),
+  create: (storeId: string, payload: CreateLiveSessionPayload, token?: string | null) =>
+    apiClient.post<LiveSession>(`/stores/${storeId}/lives`, payload, token),
 
-  start: (id: string) => apiClient.post<LiveSession>(`/lives/${id}/start`, {}),
+  update: (storeId: string, id: string, payload: CreateLiveSessionPayload, token?: string | null) =>
+    apiClient.put<LiveSession>(`/stores/${storeId}/lives/${id}`, payload, token),
 
-  end: (id: string) => apiClient.post<LiveSession>(`/lives/${id}/end`, {}),
+  start: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<LiveSession>(`/stores/${storeId}/lives/${id}/start`, {}, token),
 
-  getStats: (id: string) => apiClient.get<LiveStats>(`/lives/${id}/stats`),
+  end: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<LiveSession>(`/stores/${storeId}/lives/${id}/end`, {}, token),
 
-  getComments: (id: string, params?: { page?: number }) => {
-    const searchParams = new URLSearchParams()
-    if (params?.page) searchParams.set("page", String(params.page))
-
-    const query = searchParams.toString()
-    return apiClient.get<PaginatedResponse<LiveComment>>(
-      `/lives/${id}/comments${query ? `?${query}` : ""}`
-    )
-  },
+  getStats: (storeId: string, token?: string | null) =>
+    apiClient.get<LiveStats>(`/stores/${storeId}/lives/stats`, token),
 }

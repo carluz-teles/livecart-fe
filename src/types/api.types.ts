@@ -8,9 +8,37 @@ export interface ApiError {
   fields?: Record<string, string>
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
+// Query value objects - matching backend lib/query package
+export interface Pagination {
   page: number
+  limit: number
+}
+
+export interface PaginationResponse {
+  page: number
+  limit: number
+  total: number
   totalPages: number
+}
+
+export interface Sorting {
+  sortBy: string
+  sortOrder: "asc" | "desc"
+}
+
+// Paginated response structure - matches backend pattern
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: PaginationResponse
+}
+
+// Default values for query params
+export const DEFAULT_PAGINATION: Pagination = {
+  page: 1,
+  limit: 20,
+}
+
+export const DEFAULT_SORTING: Sorting = {
+  sortBy: "created_at",
+  sortOrder: "desc",
 }

@@ -1,33 +1,37 @@
 import { apiClient } from "./client"
-import type { Product, CreateProductPayload, PaginatedResponse } from "@/types"
-
-export interface ListProductsParams {
-  page?: number
-  search?: string
-  active?: boolean
-}
+import { buildQueryString } from "@/lib/query"
+import type {
+  Product,
+  CreateProductPayload,
+  UpdateProductPayload,
+  ProductListParams,
+  ProductListResponse,
+  ProductStats,
+} from "@/types"
 
 export const productService = {
-  list: (params?: ListProductsParams) => {
-    const searchParams = new URLSearchParams()
-    if (params?.page) searchParams.set("page", String(params.page))
-    if (params?.search) searchParams.set("search", params.search)
-    if (params?.active !== undefined) searchParams.set("active", String(params.active))
-
-    const query = searchParams.toString()
-    return apiClient.get<PaginatedResponse<Product>>(`/products${query ? `?${query}` : ""}`)
+  list: (storeId: string, params?: ProductListParams, token?: string | null) => {
+    const query = buildQueryString({
+      search: params?.search,
+      pagination: params?.pagination,
+      sorting: params?.sorting,
+      filters: params?.filters,
+    })
+    return apiClient.get<ProductListResponse>(`/stores/${storeId}/products${query}`, token)
   },
 
-  getById: (id: string) => apiClient.get<Product>(`/products/${id}`),
+  getById: (storeId: string, id: string, token?: string | null) =>
+    apiClient.get<Product>(`/stores/${storeId}/products/${id}`, token),
 
-  create: (payload: CreateProductPayload) =>
-    apiClient.post<Product>("/products", payload),
+  create: (storeId: string, payload: CreateProductPayload, token?: string | null) =>
+    apiClient.post<Product>(`/stores/${storeId}/products`, payload, token),
 
-  update: (id: string, payload: Partial<CreateProductPayload>) =>
-    apiClient.put<Product>(`/products/${id}`, payload),
+  update: (storeId: string, id: string, payload: UpdateProductPayload, token?: string | null) =>
+    apiClient.put<Product>(`/stores/${storeId}/products/${id}`, payload, token),
 
-  delete: (id: string) => apiClient.delete<void>(`/products/${id}`),
+  delete: (storeId: string, id: string, token?: string | null) =>
+    apiClient.delete<void>(`/stores/${storeId}/products/${id}`, token),
 
-  toggleActive: (id: string, active: boolean) =>
-    apiClient.patch<Product>(`/products/${id}`, { active }),
+  getStats: (storeId: string, token?: string | null) =>
+    apiClient.get<ProductStats>(`/stores/${storeId}/products/stats`, token),
 }

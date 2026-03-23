@@ -8,87 +8,140 @@ import {
   Package,
   ShoppingCart,
   Settings,
-  LogOut,
+  MessageSquare,
+  HelpCircle,
+  Building2,
+  Users,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUser } from "@/hooks/useUser"
+import { Skeleton } from "@/components/ui/skeleton"
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Lives", href: "/lives", icon: Radio },
-  { name: "Produtos", href: "/products", icon: Package },
-  { name: "Pedidos", href: "/orders", icon: ShoppingCart },
+interface NavItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  external?: boolean
+}
+
+interface NavSection {
+  title: string
+  items: NavItem[]
+}
+
+const navSections: NavSection[] = [
+  {
+    title: "Geral",
+    items: [
+      { name: "Dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Lives", href: "/lives", icon: Radio },
+      { name: "Produtos", href: "/products", icon: Package },
+      { name: "Pedidos", href: "/orders", icon: ShoppingCart },
+      { name: "Clientes", href: "/customers", icon: Users },
+    ],
+  },
+  {
+    title: "Outros",
+    items: [
+      { name: "Configurações", href: "/settings/account", icon: Settings },
+      { name: "Documentação", href: "/docs", icon: FileText },
+    ],
+  },
 ]
 
-const bottomNavigation = [
-  { name: "Configuracoes", href: "/settings/account", icon: Settings },
+const supportItems: NavItem[] = [
+  { name: "Feedback", href: "mailto:feedback@livecart.app", icon: MessageSquare, external: true },
+  { name: "Suporte", href: "mailto:suporte@livecart.app", icon: HelpCircle, external: true },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { user, isLoading } = useUser()
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-sidebar">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          LiveCart
-        </Link>
+      {/* Organization Header */}
+      <div className="flex h-16 items-center gap-3 border-b px-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <Building2 className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex flex-col">
+          {isLoading ? (
+            <>
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="mt-1 h-3 w-16" />
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-semibold truncate max-w-[140px]">
+                {user?.store_name || "Minha Loja"}
+              </span>
+              <span className="text-xs text-muted-foreground">LiveCart</span>
+            </>
+          )}
+        </div>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 p-4">
-        <div className="flex flex-1 flex-col gap-1">
-          {navigation.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href))
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-6">
+          {navSections.map((section) => (
+            <div key={section.title}>
+              {/* Section Title */}
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {section.title}
+              </p>
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.name}
-              </Link>
-            )
-          })}
-        </div>
+              {/* Section Items */}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname.startsWith(item.href))
 
-        <div className="flex flex-col gap-1 border-t pt-4">
-          {bottomNavigation.map((item) => {
-            const isActive = pathname.startsWith(item.href)
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.name}
-              </Link>
-            )
-          })}
-
-          <button
-            type="button"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <LogOut className="h-5 w-5" />
-            Sair
-          </button>
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </nav>
+
+      {/* Footer - Support Links */}
+      <div className="border-t p-4">
+        <div className="space-y-1">
+          {supportItems.map((item) => (
+            <a
+              key={item.name}
+              href={item.href}
+              target={item.external ? "_blank" : undefined}
+              rel={item.external ? "noopener noreferrer" : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.name}
+            </a>
+          ))}
+        </div>
+      </div>
     </aside>
   )
 }
