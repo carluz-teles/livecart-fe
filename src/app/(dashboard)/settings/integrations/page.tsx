@@ -83,7 +83,7 @@ export default function IntegrationsPage() {
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
 
-  const integrations = data?.integrations ?? []
+  const integrations = data?.data ?? []
 
   // Handle OAuth callback results
   useEffect(() => {

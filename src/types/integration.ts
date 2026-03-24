@@ -13,8 +13,15 @@ export interface Integration {
   createdAt: string
 }
 
+// List response now follows the standard paginated pattern
 export interface IntegrationListResponse {
-  integrations: Integration[]
+  data: Integration[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
 
 export interface OAuthConnectResponse {
