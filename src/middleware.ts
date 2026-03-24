@@ -56,8 +56,9 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(onboardingUrl)
     }
   } catch {
-    // On error, allow access and let the page handle it
-    return NextResponse.next()
+    // On error, redirect to onboarding instead of allowing access
+    const onboardingUrl = new URL("/onboarding", req.url)
+    return NextResponse.redirect(onboardingUrl)
   }
 
   return NextResponse.next()
