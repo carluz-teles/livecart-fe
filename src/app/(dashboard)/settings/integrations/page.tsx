@@ -159,7 +159,7 @@ export default function IntegrationsPage() {
     setIsConnectingTiny(true)
     try {
       // First create integration with credentials, then get OAuth URL
-      const response = await connectApiKey.mutateAsync({
+      await connectApiKey.mutateAsync({
         type: "erp",
         provider: "tiny",
         credentials: {
