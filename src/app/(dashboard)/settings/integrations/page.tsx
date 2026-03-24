@@ -32,6 +32,7 @@ import {
   useIntegrations,
   useConnectOAuth,
   useConnectApiKey,
+  useConnectTiny,
   useDisconnectIntegration,
   useTestConnection,
 } from "@/hooks/integration"
@@ -70,6 +71,7 @@ export default function IntegrationsPage() {
   const { data, isLoading } = useIntegrations()
   const connectOAuth = useConnectOAuth()
   const connectApiKey = useConnectApiKey()
+  const connectTiny = useConnectTiny()
   const disconnectIntegration = useDisconnectIntegration()
   const testConnection = useTestConnection()
 
@@ -80,7 +82,6 @@ export default function IntegrationsPage() {
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
-  const [isConnectingTiny, setIsConnectingTiny] = useState(false)
 
   const integrations = data?.integrations ?? []
 
@@ -153,31 +154,19 @@ export default function IntegrationsPage() {
     )
   }
 
-  const handleConnectTiny = async () => {
+  const handleConnectTiny = () => {
     if (!tinyClientId.trim() || !tinyClientSecret.trim()) return
 
-    setIsConnectingTiny(true)
-    try {
-      // First create integration with credentials, then get OAuth URL
-      await connectApiKey.mutateAsync({
-        type: "erp",
-        provider: "tiny",
-        credentials: {
-          client_id: tinyClientId,
-          client_secret: tinyClientSecret,
+    connectTiny.mutate(
+      { clientId: tinyClientId, clientSecret: tinyClientSecret },
+      {
+        onSuccess: () => {
+          setTinyDialog(false)
+          setTinyClientId("")
+          setTinyClientSecret("")
         },
-      })
-
-      // Now start OAuth flow
-      connectOAuth.mutate("tiny")
-      setTinyDialog(false)
-      setTinyClientId("")
-      setTinyClientSecret("")
-    } catch {
-      toast.error("Falha ao salvar credenciais")
-    } finally {
-      setIsConnectingTiny(false)
-    }
+      }
+    )
   }
 
   const handleDisconnect = () => {
@@ -468,9 +457,9 @@ export default function IntegrationsPage() {
             </Button>
             <Button
               onClick={handleConnectTiny}
-              disabled={isConnectingTiny || !tinyClientId || !tinyClientSecret}
+              disabled={connectTiny.isPending || !tinyClientId || !tinyClientSecret}
             >
-              {isConnectingTiny ? (
+              {connectTiny.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <ExternalLink className="mr-2 h-4 w-4" />
