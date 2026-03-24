@@ -21,7 +21,7 @@ export function useConnectOAuth() {
     },
     onSuccess: (data) => {
       // Redirect to OAuth provider
-      window.location.href = data.auth_url
+      window.location.href = data.authUrl
     },
   })
 }

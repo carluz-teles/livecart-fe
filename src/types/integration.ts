@@ -4,13 +4,13 @@ export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnec
 
 export interface Integration {
   id: string
-  store_id: string
+  storeId: string
   type: IntegrationType
   provider: IntegrationProvider
   status: IntegrationStatus
   metadata?: Record<string, unknown>
-  last_synced_at?: string
-  created_at: string
+  lastSyncedAt?: string
+  createdAt: string
 }
 
 export interface IntegrationListResponse {
@@ -18,16 +18,16 @@ export interface IntegrationListResponse {
 }
 
 export interface OAuthConnectResponse {
-  auth_url: string
+  authUrl: string
   state: string
 }
 
 export interface TestConnectionResponse {
   success: boolean
   message: string
-  latency_ms: number
-  account_info?: Record<string, unknown>
-  tested_at: string
+  latencyMs: number
+  accountInfo?: Record<string, unknown>
+  testedAt: string
 }
 
 export interface CreateIntegrationPayload {

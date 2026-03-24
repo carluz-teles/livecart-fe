@@ -201,7 +201,7 @@ export default function IntegrationsPage() {
         setTestingId(null)
         if (result.success) {
           toast.success(`${providerName}: ${result.message}`, {
-            description: `Latência: ${result.latency_ms}ms`,
+            description: `Latência: ${result.latencyMs}ms`,
           })
         } else {
           toast.error(`${providerName}: ${result.message}`)
@@ -280,7 +280,7 @@ export default function IntegrationsPage() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Conectado em{" "}
-                          {new Date(integration.created_at).toLocaleDateString("pt-BR")}
+                          {new Date(integration.createdAt).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
                     </div>
