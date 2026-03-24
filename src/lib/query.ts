@@ -86,20 +86,6 @@ export function parseSorting(
   }
 }
 
-/**
- * Formats cents to currency string (BRL)
- */
-export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100)
-}
-
-/**
- * Parses currency string to cents
- */
-export function parseCurrency(value: string): number {
-  const cleaned = value.replace(/[^\d,]/g, "").replace(",", ".")
-  return Math.round(parseFloat(cleaned) * 100) || 0
-}
+// Re-export formatting functions from the centralized format module
+// for backwards compatibility
+export { formatCurrency, parseCurrency } from "./format"

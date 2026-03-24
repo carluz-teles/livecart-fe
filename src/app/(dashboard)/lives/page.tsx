@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Search, MoreHorizontal, Radio, Calendar, ShoppingCart, Play, Eye, Clock, Trash2, Square } from "lucide-react"
 import { toast } from "sonner"
 
+import { formatDate, formatTime } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { LiveForm } from "@/components/live/LiveForm"
@@ -60,18 +61,6 @@ const platformLabels: Record<string, string> = {
   facebook: "Facebook",
   youtube: "YouTube",
   tiktok: "TikTok",
-}
-
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "-"
-  const date = new Date(dateString)
-  return date.toLocaleDateString("pt-BR")
-}
-
-function formatTime(dateString: string | null): string {
-  if (!dateString) return "-"
-  const date = new Date(dateString)
-  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
 }
 
 export default function LivesPage() {

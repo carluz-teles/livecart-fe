@@ -14,6 +14,7 @@ import { Bar, BarChart, XAxis, YAxis } from "recharts"
 import { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,13 +39,6 @@ const chartConfig = {
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100)
-}
 
 export default function DashboardPage() {
   const [date, setDate] = useState<DateRange | undefined>({

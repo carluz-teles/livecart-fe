@@ -2,6 +2,7 @@
 
 import { Search, MoreHorizontal, ShoppingBag, Users, TrendingUp } from "lucide-react"
 
+import { formatCurrency, formatDate } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { CustomerFilters } from "@/components/shared/Filters"
@@ -36,19 +37,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 function getInitials(handle: string) {
   return handle.slice(0, 2).toUpperCase()
-}
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100)
-}
-
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "-"
-  const date = new Date(dateString)
-  return date.toLocaleDateString("pt-BR")
 }
 
 export default function CustomersPage() {

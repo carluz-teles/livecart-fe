@@ -2,6 +2,7 @@
 
 import { Search, MoreHorizontal, ShoppingCart, Clock, DollarSign, TrendingUp } from "lucide-react"
 
+import { formatCurrency, formatDate } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { OrderFilters } from "@/components/shared/Filters"
@@ -46,19 +47,6 @@ const paymentStatusConfig: Record<PaymentStatus | string, { label: string; varia
   paid: { label: "Pago", variant: "default" },
   failed: { label: "Falhou", variant: "destructive" },
   refunded: { label: "Reembolsado", variant: "secondary" },
-}
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100)
-}
-
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "-"
-  const date = new Date(dateString)
-  return date.toLocaleDateString("pt-BR")
 }
 
 export default function OrdersPage() {

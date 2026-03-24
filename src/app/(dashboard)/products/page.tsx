@@ -10,7 +10,7 @@ import { ProductForm } from "@/components/product/ProductForm"
 import { ProductFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct } from "@/hooks/product"
-import { formatCurrency } from "@/lib/query"
+import { formatCurrency } from "@/lib/format"
 import type { Product, ProductFilters as ProductFiltersType } from "@/types/product.types"
 import {
   Card,
