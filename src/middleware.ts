@@ -8,10 +8,18 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/(.*)",
 ])
 
+const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)"])
+
 const isOnboardingRoute = createRouteMatcher(["/onboarding"])
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, getToken, redirectToSignIn } = await auth()
+
+  // Redirect signed-in users away from auth pages to dashboard
+  if (userId && isAuthRoute(req)) {
+    const dashboardUrl = new URL("/", req.url)
+    return NextResponse.redirect(dashboardUrl)
+  }
 
   // Public routes - allow access
   if (isPublicRoute(req)) {
