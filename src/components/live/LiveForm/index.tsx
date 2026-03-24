@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, Radio } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,21 +33,29 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createLiveSchema, type CreateLiveFormData } from "@/schemas/live.schema"
+import { useCreateLive } from "@/hooks/live/useCreateLive"
+import { useUpdateLive } from "@/hooks/live/useUpdateLive"
+import type { LiveSession, CreateLiveSessionPayload, UpdateLiveSessionPayload } from "@/types/live.types"
 
 interface LiveFormProps {
+  live?: LiveSession
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onSuccess?: () => void
+  trigger?: React.ReactNode
 }
 
 const platformOptions = [
-  { value: "instagram", label: "Instagram", icon: "instagram" },
-  { value: "facebook", label: "Facebook", icon: "facebook" },
-  { value: "youtube", label: "YouTube", icon: "youtube" },
-  { value: "tiktok", label: "TikTok", icon: "tiktok" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "youtube", label: "YouTube" },
+  { value: "tiktok", label: "TikTok" },
 ]
 
-export function LiveForm({ onSuccess }: LiveFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function LiveForm({ live, open, onOpenChange, onSuccess, trigger }: LiveFormProps) {
+  const isEditing = !!live
+  const createLive = useCreateLive()
+  const updateLive = useUpdateLive()
 
   const form = useForm<CreateLiveFormData>({
     resolver: zodResolver(createLiveSchema),
@@ -56,24 +65,67 @@ export function LiveForm({ onSuccess }: LiveFormProps) {
     },
   })
 
+  // Reset form when live changes (for edit mode)
+  useEffect(() => {
+    if (live) {
+      form.reset({
+        platform: live.platform,
+        platformLiveId: live.platform_live_id,
+      })
+    } else {
+      form.reset({
+        platform: undefined,
+        platformLiveId: "",
+      })
+    }
+  }, [live, form])
+
   const selectedPlatform = form.watch("platform")
+  const isPending = createLive.isPending || updateLive.isPending
 
   async function onSubmit(data: CreateLiveFormData) {
-    setIsSubmitting(true)
-    try {
-      // TODO: Call API to connect to live
-      console.log("Connecting to live:", data)
+    if (isEditing) {
+      const payload: UpdateLiveSessionPayload = {
+        title: `Live ${data.platform}`,
+        platform: data.platform,
+        platformLiveId: data.platformLiveId,
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      updateLive.mutate(
+        { id: live.id, payload },
+        {
+          onSuccess: () => {
+            toast.success("Live atualizada com sucesso!")
+            onOpenChange?.(false)
+            onSuccess?.()
+          },
+          onError: (error) => {
+            toast.error("Erro ao atualizar live", {
+              description: error.message || "Tente novamente mais tarde.",
+            })
+          },
+        }
+      )
+    } else {
+      const payload: CreateLiveSessionPayload = {
+        title: `Live ${data.platform}`,
+        platform: data.platform,
+        platformLiveId: data.platformLiveId,
+      }
 
-      form.reset()
-      setOpen(false)
-      onSuccess?.()
-    } catch (error) {
-      console.error("Error connecting to live:", error)
-    } finally {
-      setIsSubmitting(false)
+      createLive.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Live conectada com sucesso!")
+          form.reset()
+          onOpenChange?.(false)
+          onSuccess?.()
+        },
+        onError: (error) => {
+          toast.error("Erro ao conectar live", {
+            description: error.message || "Tente novamente mais tarde.",
+          })
+        },
+      })
     }
   }
 
@@ -107,23 +159,30 @@ export function LiveForm({ onSuccess }: LiveFormProps) {
     }
   }
 
+  const defaultTrigger = (
+    <Button>
+      <Plus className="mr-2 h-4 w-4" />
+      Nova Live
+    </Button>
+  )
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Live
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      {trigger !== null && (
+        <SheetTrigger asChild>
+          {trigger || defaultTrigger}
+        </SheetTrigger>
+      )}
       <SheetContent className="w-[400px] sm:w-[480px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-destructive" />
-            Conectar a uma Live
+            {isEditing ? "Editar Live" : "Conectar a uma Live"}
           </SheetTitle>
           <SheetDescription>
-            Conecte-se a uma transmissão ao vivo existente para começar a capturar
-            pedidos em tempo real.
+            {isEditing
+              ? "Atualize os dados da live."
+              : "Conecte-se a uma transmissão ao vivo existente para começar a capturar pedidos em tempo real."}
           </SheetDescription>
         </SheetHeader>
 
@@ -137,7 +196,7 @@ export function LiveForm({ onSuccess }: LiveFormProps) {
                   <FormLabel>
                     Plataforma <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a plataforma" />
@@ -176,26 +235,34 @@ export function LiveForm({ onSuccess }: LiveFormProps) {
               )}
             />
 
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-              <p className="text-sm text-amber-800 dark:text-amber-200">
-                <strong>Importante:</strong> Certifique-se de que a live está ativa
-                antes de conectar. O sistema começará a monitorar os comentários
-                imediatamente após a conexão.
-              </p>
-            </div>
+            {!isEditing && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Importante:</strong> Certifique-se de que a live está ativa
+                  antes de conectar. O sistema começará a monitorar os comentários
+                  imediatamente após a conexão.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={isSubmitting}
+                onClick={() => onOpenChange?.(false)}
+                disabled={isPending}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? "Conectando..." : "Conectar"}
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending
+                  ? isEditing
+                    ? "Salvando..."
+                    : "Conectando..."
+                  : isEditing
+                    ? "Salvar"
+                    : "Conectar"}
               </Button>
             </div>
           </form>

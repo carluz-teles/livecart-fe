@@ -6,6 +6,7 @@ import type { LocalizationResource } from "@clerk/types"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { UserProvider } from "@/components/providers/user-provider"
+import { Toaster } from "@/components/ui/sonner"
 import { clerkAppearance } from "@/lib/clerk-theme"
 import "./globals.css"
 
@@ -49,6 +50,7 @@ export default function RootLayout({
           >
             <QueryProvider>
               <UserProvider>{children}</UserProvider>
+              <Toaster richColors closeButton />
             </QueryProvider>
           </ThemeProvider>
         </body>

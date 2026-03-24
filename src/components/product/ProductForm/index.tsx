@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,13 +32,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import {
   createProductSchema,
+  updateProductSchema,
   type CreateProductFormData,
+  type UpdateProductFormData,
 } from "@/schemas/product.schema"
+import { useCreateProduct } from "@/hooks/product/useCreateProduct"
+import { useUpdateProduct } from "@/hooks/product/useUpdateProduct"
+import type { Product, CreateProductPayload, UpdateProductPayload } from "@/types/product.types"
 
 interface ProductFormProps {
+  product?: Product
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onSuccess?: () => void
+  trigger?: React.ReactNode
 }
 
 const sourceOptions = [
@@ -47,12 +58,13 @@ const sourceOptions = [
   { value: "shopify", label: "Shopify" },
 ]
 
-export function ProductForm({ onSuccess }: ProductFormProps) {
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }: ProductFormProps) {
+  const isEditing = !!product
+  const createProduct = useCreateProduct()
+  const updateProduct = useUpdateProduct()
 
-  const form = useForm<CreateProductFormData>({
-    resolver: zodResolver(createProductSchema),
+  const form = useForm<CreateProductFormData | UpdateProductFormData>({
+    resolver: zodResolver(isEditing ? updateProductSchema : createProductSchema),
     defaultValues: {
       name: "",
       price: 0,
@@ -60,43 +72,109 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
       imageUrl: "",
       externalSource: "manual",
       externalId: "",
+      ...(isEditing && { active: true }),
     },
   })
 
+  // Reset form when product changes (for edit mode)
+  useEffect(() => {
+    if (product) {
+      form.reset({
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        imageUrl: product.imageUrl || "",
+        externalSource: product.externalSource,
+        externalId: product.externalId || "",
+        active: product.active,
+      })
+    } else {
+      form.reset({
+        name: "",
+        price: 0,
+        stock: 0,
+        imageUrl: "",
+        externalSource: "manual",
+        externalId: "",
+      })
+    }
+  }, [product, form])
+
   const externalSource = form.watch("externalSource")
+  const isPending = createProduct.isPending || updateProduct.isPending
 
-  async function onSubmit(data: CreateProductFormData) {
-    setIsSubmitting(true)
-    try {
-      // TODO: Call API to create product
-      console.log("Creating product:", data)
+  async function onSubmit(data: CreateProductFormData | UpdateProductFormData) {
+    if (isEditing) {
+      const payload: UpdateProductPayload = {
+        name: data.name,
+        price: data.price,
+        stock: data.stock,
+        imageUrl: data.imageUrl || undefined,
+        active: (data as UpdateProductFormData).active,
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      updateProduct.mutate(
+        { id: product.id, payload },
+        {
+          onSuccess: () => {
+            toast.success("Produto atualizado com sucesso!")
+            onOpenChange?.(false)
+            onSuccess?.()
+          },
+          onError: (error) => {
+            toast.error("Erro ao atualizar produto", {
+              description: error.message || "Tente novamente mais tarde.",
+            })
+          },
+        }
+      )
+    } else {
+      const payload: CreateProductPayload = {
+        name: data.name,
+        price: data.price,
+        stock: data.stock,
+        externalSource: data.externalSource,
+        imageUrl: data.imageUrl || undefined,
+        externalId: data.externalId || undefined,
+      }
 
-      form.reset()
-      setOpen(false)
-      onSuccess?.()
-    } catch (error) {
-      console.error("Error creating product:", error)
-    } finally {
-      setIsSubmitting(false)
+      createProduct.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Produto criado com sucesso!")
+          form.reset()
+          onOpenChange?.(false)
+          onSuccess?.()
+        },
+        onError: (error) => {
+          toast.error("Erro ao criar produto", {
+            description: error.message || "Tente novamente mais tarde.",
+          })
+        },
+      })
     }
   }
 
+  const defaultTrigger = (
+    <Button>
+      <Plus className="mr-2 h-4 w-4" />
+      Novo Produto
+    </Button>
+  )
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Produto
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      {trigger !== null && (
+        <SheetTrigger asChild>
+          {trigger || defaultTrigger}
+        </SheetTrigger>
+      )}
       <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Novo Produto</SheetTitle>
+          <SheetTitle>{isEditing ? "Editar Produto" : "Novo Produto"}</SheetTitle>
           <SheetDescription>
-            Preencha os dados do produto. A keyword será gerada automaticamente.
+            {isEditing
+              ? "Atualize os dados do produto."
+              : "Preencha os dados do produto. A keyword será gerada automaticamente."}
           </SheetDescription>
         </SheetHeader>
 
@@ -143,9 +221,7 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
                               : ""
                           }
                           onChange={(e) => {
-                            // Allow only digits and comma
                             const value = e.target.value.replace(/[^\d,]/g, "")
-                            // Convert to cents: "89,90" -> 8990
                             const normalized = value.replace(",", ".")
                             const cents = Math.round(parseFloat(normalized || "0") * 100)
                             field.onChange(isNaN(cents) ? 0 : cents)
@@ -205,53 +281,80 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="externalSource"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Origem <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a origem" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {sourceOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    De onde este produto foi importado
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!isEditing && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="externalSource"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Origem <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a origem" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {sourceOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        De onde este produto foi importado
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {externalSource !== "manual" && (
+                {externalSource !== "manual" && (
+                  <FormField
+                    control={form.control}
+                    name="externalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID Externo</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={`ID do produto no ${externalSource}`}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Identificador do produto no sistema de origem
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </>
+            )}
+
+            {isEditing && (
               <FormField
                 control={form.control}
-                name="externalId"
+                name="active"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Externo</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Produto ativo</FormLabel>
+                      <FormDescription>
+                        Produtos inativos não aparecem para compra
+                      </FormDescription>
+                    </div>
                     <FormControl>
-                      <Input
-                        placeholder={`ID do produto no ${externalSource}`}
-                        {...field}
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Identificador do produto no sistema de origem
-                    </FormDescription>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -261,14 +364,20 @@ export function ProductForm({ onSuccess }: ProductFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={isSubmitting}
+                onClick={() => onOpenChange?.(false)}
+                disabled={isPending}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? "Criando..." : "Criar Produto"}
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending
+                  ? isEditing
+                    ? "Salvando..."
+                    : "Criando..."
+                  : isEditing
+                    ? "Salvar"
+                    : "Criar Produto"}
               </Button>
             </div>
           </form>

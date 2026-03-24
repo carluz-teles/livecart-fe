@@ -32,7 +32,13 @@ export interface LiveComment {
 export interface CreateLiveSessionPayload {
   title: string
   platform: LivePlatform
-  platform_live_id: string
+  platformLiveId: string
+}
+
+export interface UpdateLiveSessionPayload {
+  title?: string
+  platform?: LivePlatform
+  platformLiveId?: string
 }
 
 export interface LiveStats {

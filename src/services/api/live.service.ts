@@ -4,6 +4,7 @@ import type {
   LiveSession,
   LiveStats,
   CreateLiveSessionPayload,
+  UpdateLiveSessionPayload,
   LiveListParams,
   LiveListResponse,
 } from "@/types"
@@ -25,8 +26,11 @@ export const liveService = {
   create: (storeId: string, payload: CreateLiveSessionPayload, token?: string | null) =>
     apiClient.post<LiveSession>(`/stores/${storeId}/lives`, payload, token),
 
-  update: (storeId: string, id: string, payload: CreateLiveSessionPayload, token?: string | null) =>
+  update: (storeId: string, id: string, payload: UpdateLiveSessionPayload, token?: string | null) =>
     apiClient.put<LiveSession>(`/stores/${storeId}/lives/${id}`, payload, token),
+
+  delete: (storeId: string, id: string, token?: string | null) =>
+    apiClient.delete<void>(`/stores/${storeId}/lives/${id}`, token),
 
   start: (storeId: string, id: string, token?: string | null) =>
     apiClient.post<LiveSession>(`/stores/${storeId}/lives/${id}/start`, {}, token),

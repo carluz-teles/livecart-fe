@@ -1,15 +1,17 @@
 "use client"
 
-import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse } from "lucide-react"
+import { useState } from "react"
+import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductForm } from "@/components/product/ProductForm"
 import { ProductFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
-import { useProducts, useProductStats } from "@/hooks/product"
+import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct } from "@/hooks/product"
 import { formatCurrency } from "@/lib/query"
-import type { ProductFilters as ProductFiltersType } from "@/types/product.types"
+import type { Product, ProductFilters as ProductFiltersType } from "@/types/product.types"
 import {
   Card,
   CardContent,
@@ -33,6 +35,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -47,6 +59,11 @@ function getProductInitials(name: string) {
 }
 
 export default function ProductsPage() {
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editFormOpen, setEditFormOpen] = useState(false)
+  const [createFormOpen, setCreateFormOpen] = useState(false)
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+
   const {
     search,
     setSearch,
@@ -55,12 +72,62 @@ export default function ProductsPage() {
     params,
   } = useListParams<ProductFiltersType>()
 
-  // Fetch products from API
   const { data, isLoading, error } = useProducts(params)
-  // Fetch product stats separately (global metrics)
   const { data: stats, isLoading: statsLoading } = useProductStats()
+  const updateProduct = useUpdateProduct()
+  const deleteProduct = useDeleteProduct()
 
   const products = data?.data ?? []
+
+  function handleEdit(product: Product) {
+    setEditingProduct(product)
+    setEditFormOpen(true)
+  }
+
+  function handleToggleActive(product: Product) {
+    updateProduct.mutate(
+      {
+        id: product.id,
+        payload: {
+          name: product.name,
+          price: product.price,
+          stock: product.stock,
+          imageUrl: product.imageUrl || undefined,
+          active: !product.active,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(product.active ? "Produto desativado" : "Produto ativado")
+        },
+        onError: (error) => {
+          toast.error("Erro ao alterar status", {
+            description: error.message || "Tente novamente mais tarde.",
+          })
+        },
+      }
+    )
+  }
+
+  function handleDelete(product: Product) {
+    setDeletingProduct(product)
+  }
+
+  function confirmDelete() {
+    if (!deletingProduct) return
+
+    deleteProduct.mutate(deletingProduct.id, {
+      onSuccess: () => {
+        toast.success("Produto excluído com sucesso!")
+        setDeletingProduct(null)
+      },
+      onError: (error) => {
+        toast.error("Erro ao excluir produto", {
+          description: error.message || "Tente novamente mais tarde.",
+        })
+      },
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,7 +138,10 @@ export default function ProductsPage() {
             Gerencie seu catálogo de produtos
           </p>
         </div>
-        <ProductForm />
+        <ProductForm
+          open={createFormOpen}
+          onOpenChange={setCreateFormOpen}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -83,7 +153,7 @@ export default function ProductsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalProducts ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              +3 novos este mês
+              Produtos cadastrados
             </p>
           </CardContent>
         </Card>
@@ -231,9 +301,20 @@ export default function ProductsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Editar produto</DropdownMenuItem>
-                            <DropdownMenuItem>Ajustar estoque</DropdownMenuItem>
-                            <DropdownMenuItem>{product.active ? "Desativar" : "Ativar"}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(product)}>
+                              Editar produto
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleActive(product)}>
+                              {product.active ? "Desativar" : "Ativar"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleDelete(product)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -245,6 +326,39 @@ export default function ProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Product Form */}
+      <ProductForm
+        product={editingProduct ?? undefined}
+        open={editFormOpen}
+        onOpenChange={(open) => {
+          setEditFormOpen(open)
+          if (!open) setEditingProduct(null)
+        }}
+        trigger={null}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingProduct} onOpenChange={(open) => !open && setDeletingProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o produto &quot;{deletingProduct?.name}&quot;?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteProduct.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,14 +1,17 @@
 "use client"
 
-import { Search, MoreHorizontal, Radio, Calendar, ShoppingCart, Play, Eye, Clock } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Search, MoreHorizontal, Radio, Calendar, ShoppingCart, Play, Eye, Clock, Trash2, Square } from "lucide-react"
+import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { LiveForm } from "@/components/live/LiveForm"
 import { LiveFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
-import { useLives, useLiveStats } from "@/hooks/live"
-import type { LiveFilters as LiveFiltersType, LiveStatus } from "@/types/live.types"
+import { useLives, useLiveStats, useStartLive, useEndLive, useDeleteLive } from "@/hooks/live"
+import type { LiveSession, LiveFilters as LiveFiltersType, LiveStatus } from "@/types/live.types"
 import {
   Card,
   CardContent,
@@ -32,6 +35,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -55,6 +68,13 @@ function formatTime(dateString: string | null): string {
 }
 
 export default function LivesPage() {
+  const router = useRouter()
+  const [editingLive, setEditingLive] = useState<LiveSession | null>(null)
+  const [editFormOpen, setEditFormOpen] = useState(false)
+  const [createFormOpen, setCreateFormOpen] = useState(false)
+  const [deletingLive, setDeletingLive] = useState<LiveSession | null>(null)
+  const [endingLive, setEndingLive] = useState<LiveSession | null>(null)
+
   const {
     search,
     setSearch,
@@ -63,12 +83,79 @@ export default function LivesPage() {
     params,
   } = useListParams<LiveFiltersType>()
 
-  // Fetch lives from API
   const { data, isLoading, error } = useLives(params)
-  // Fetch stats from API
   const { data: stats, isLoading: statsLoading } = useLiveStats()
+  const startLive = useStartLive()
+  const endLive = useEndLive()
+  const deleteLive = useDeleteLive()
 
   const lives = data?.data ?? []
+
+  function handleEdit(live: LiveSession) {
+    setEditingLive(live)
+    setEditFormOpen(true)
+  }
+
+  function handleStartLive(live: LiveSession) {
+    startLive.mutate(live.id, {
+      onSuccess: () => {
+        toast.success("Live iniciada com sucesso!")
+      },
+      onError: (error) => {
+        toast.error("Erro ao iniciar live", {
+          description: error.message || "Tente novamente mais tarde.",
+        })
+      },
+    })
+  }
+
+  function handleEndLive(live: LiveSession) {
+    setEndingLive(live)
+  }
+
+  function confirmEndLive() {
+    if (!endingLive) return
+
+    endLive.mutate(endingLive.id, {
+      onSuccess: () => {
+        toast.success("Live encerrada com sucesso!")
+        setEndingLive(null)
+      },
+      onError: (error) => {
+        toast.error("Erro ao encerrar live", {
+          description: error.message || "Tente novamente mais tarde.",
+        })
+      },
+    })
+  }
+
+  function handleDelete(live: LiveSession) {
+    setDeletingLive(live)
+  }
+
+  function confirmDelete() {
+    if (!deletingLive) return
+
+    deleteLive.mutate(deletingLive.id, {
+      onSuccess: () => {
+        toast.success("Live excluída com sucesso!")
+        setDeletingLive(null)
+      },
+      onError: (error) => {
+        toast.error("Erro ao excluir live", {
+          description: error.message || "Tente novamente mais tarde.",
+        })
+      },
+    })
+  }
+
+  function handleViewDetails(live: LiveSession) {
+    router.push(`/lives/${live.id}`)
+  }
+
+  function handleViewReport(live: LiveSession) {
+    router.push(`/lives/${live.id}/report`)
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,7 +166,10 @@ export default function LivesPage() {
             Gerencie suas lives e acompanhe as vendas em tempo real
           </p>
         </div>
-        <LiveForm />
+        <LiveForm
+          open={createFormOpen}
+          onOpenChange={setCreateFormOpen}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -222,16 +312,37 @@ export default function LivesPage() {
                               <DropdownMenuLabel>Ações</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               {live.status === "scheduled" && (
-                                <DropdownMenuItem>Iniciar live</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStartLive(live)}>
+                                  <Play className="mr-2 h-4 w-4" />
+                                  Iniciar live
+                                </DropdownMenuItem>
                               )}
                               {live.status === "live" && (
-                                <DropdownMenuItem>Encerrar live</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEndLive(live)}>
+                                  <Square className="mr-2 h-4 w-4" />
+                                  Encerrar live
+                                </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewDetails(live)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver detalhes
+                              </DropdownMenuItem>
                               {live.status === "ended" && (
-                                <DropdownMenuItem>Ver relatório</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewReport(live)}>
+                                  Ver relatório
+                                </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(live)}>
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleDelete(live)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -244,6 +355,58 @@ export default function LivesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Live Form */}
+      <LiveForm
+        live={editingLive ?? undefined}
+        open={editFormOpen}
+        onOpenChange={(open) => {
+          setEditFormOpen(open)
+          if (!open) setEditingLive(null)
+        }}
+        trigger={null}
+      />
+
+      {/* End Live Confirmation Dialog */}
+      <AlertDialog open={!!endingLive} onOpenChange={(open) => !open && setEndingLive(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar live</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja encerrar a live &quot;{endingLive?.title}&quot;?
+              Esta ação irá parar a captura de comentários e pedidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmEndLive}>
+              {endLive.isPending ? "Encerrando..." : "Encerrar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingLive} onOpenChange={(open) => !open && setDeletingLive(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir live</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a live &quot;{deletingLive?.title}&quot;?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLive.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
