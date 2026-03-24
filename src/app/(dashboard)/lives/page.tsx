@@ -6,13 +6,14 @@ import { Search, MoreHorizontal, Radio, Calendar, ShoppingCart, Play, Eye, Clock
 import { toast } from "sonner"
 
 import { formatDate, formatTime } from "@/lib/format"
+import { LIVE_STATUS_CONFIG, PLATFORM_LABELS, getStatusConfig, type LiveStatusConfig } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { LiveForm } from "@/components/live/LiveForm"
 import { LiveFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useLives, useLiveStats, useStartLive, useEndLive, useDeleteLive } from "@/hooks/live"
-import type { LiveSession, LiveFilters as LiveFiltersType, LiveStatus } from "@/types/live.types"
+import type { LiveSession, LiveFilters as LiveFiltersType } from "@/types/live.types"
 import {
   Card,
   CardContent,
@@ -49,19 +50,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const statusConfig: Record<LiveStatus | string, { label: string; variant: "outline" | "destructive" | "secondary" | "default"; icon: typeof Calendar }> = {
-  scheduled: { label: "Agendada", variant: "outline", icon: Calendar },
-  live: { label: "Ao Vivo", variant: "destructive", icon: Play },
-  ended: { label: "Finalizada", variant: "secondary", icon: Eye },
-  cancelled: { label: "Cancelada", variant: "outline", icon: Clock },
-}
-
-const platformLabels: Record<string, string> = {
-  instagram: "Instagram",
-  facebook: "Facebook",
-  youtube: "YouTube",
-  tiktok: "TikTok",
-}
+// Icon mapping for live statuses
+const LIVE_STATUS_ICONS = {
+  calendar: Calendar,
+  play: Play,
+  eye: Eye,
+  clock: Clock,
+} as const
 
 export default function LivesPage() {
   const router = useRouter()
@@ -274,12 +269,12 @@ export default function LivesPage() {
                   </TableRow>
                 ) : (
                   lives.map((live) => {
-                    const config = statusConfig[live.status] || statusConfig.scheduled
-                    const StatusIcon = config.icon
+                    const config = getStatusConfig(LIVE_STATUS_CONFIG, live.status, "scheduled") as LiveStatusConfig
+                    const StatusIcon = LIVE_STATUS_ICONS[config.icon]
                     return (
                       <TableRow key={live.id}>
                         <TableCell className="font-medium">{live.title || "Sem título"}</TableCell>
-                        <TableCell>{platformLabels[live.platform] ?? live.platform}</TableCell>
+                        <TableCell>{PLATFORM_LABELS[live.platform] ?? live.platform}</TableCell>
                         <TableCell>
                           <Badge variant={config.variant} className="gap-1">
                             <StatusIcon className="h-3 w-3" />

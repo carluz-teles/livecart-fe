@@ -3,12 +3,13 @@
 import { Search, MoreHorizontal, ShoppingCart, Clock, DollarSign, TrendingUp } from "lucide-react"
 
 import { formatCurrency, formatDate } from "@/lib/format"
+import { ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { OrderFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useOrders, useOrderStats } from "@/hooks/order"
-import type { OrderFilters as OrderFiltersType, OrderStatus, PaymentStatus } from "@/types/cart.types"
+import type { OrderFilters as OrderFiltersType } from "@/types/cart.types"
 import {
   Card,
   CardContent,
@@ -34,20 +35,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-
-const statusConfig: Record<OrderStatus | string, { label: string; variant: "outline" | "destructive" | "secondary" | "default" }> = {
-  pending: { label: "Pendente", variant: "outline" },
-  checkout: { label: "Checkout", variant: "secondary" },
-  completed: { label: "Completo", variant: "default" },
-  expired: { label: "Expirado", variant: "destructive" },
-}
-
-const paymentStatusConfig: Record<PaymentStatus | string, { label: string; variant: "outline" | "destructive" | "secondary" | "default" }> = {
-  pending: { label: "Pendente", variant: "outline" },
-  paid: { label: "Pago", variant: "default" },
-  failed: { label: "Falhou", variant: "destructive" },
-  refunded: { label: "Reembolsado", variant: "secondary" },
-}
 
 export default function OrdersPage() {
   const {
@@ -196,8 +183,8 @@ export default function OrdersPage() {
                   </TableRow>
                 ) : (
                   orders.map((order) => {
-                    const statusCfg = statusConfig[order.status] || statusConfig.pending
-                    const paymentCfg = paymentStatusConfig[order.paymentStatus] || paymentStatusConfig.pending
+                    const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "pending")
+                    const paymentCfg = getStatusConfig(PAYMENT_STATUS_CONFIG, order.paymentStatus, "pending")
                     return (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">
