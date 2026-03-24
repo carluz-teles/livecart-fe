@@ -1,11 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { Check, ExternalLink, Instagram, ShoppingBag, Store, Unplug } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Check, CreditCard, ExternalLink, Package, Unplug, Loader2, Zap } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,73 +20,223 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  useIntegrations,
+  useConnectOAuth,
+  useConnectApiKey,
+  useDisconnectIntegration,
+  useTestConnection,
+} from "@/hooks/integration"
+import type { Integration, IntegrationProvider } from "@/types/integration"
 
-interface Integration {
-  id: string
+interface ProviderConfig {
+  id: IntegrationProvider
   name: string
   description: string
   icon: React.ReactNode
-  connected: boolean
-  connectedAt?: string
-  accountName?: string
+  type: "payment" | "erp"
+  authType: "oauth" | "api_key" | "oauth_with_credentials"
 }
 
-const initialIntegrations: Integration[] = [
+const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   {
-    id: "instagram",
-    name: "Instagram",
-    description: "Conecte sua conta para capturar comentários das lives",
-    icon: <Instagram className="h-6 w-6" />,
-    connected: true,
-    connectedAt: "2024-02-15T10:30:00Z",
-    accountName: "@minhaloja",
-  },
-  {
-    id: "bling",
-    name: "Bling",
-    description: "Sincronize produtos e pedidos com o Bling ERP",
-    icon: <Store className="h-6 w-6" />,
-    connected: false,
+    id: "mercado_pago",
+    name: "Mercado Pago",
+    description: "Receba pagamentos via Pix, cartão e boleto",
+    icon: <CreditCard className="h-6 w-6" />,
+    type: "payment",
+    authType: "oauth",
   },
   {
     id: "tiny",
     name: "Tiny ERP",
-    description: "Integração com o sistema Tiny para gestão de estoque",
-    icon: <ShoppingBag className="h-6 w-6" />,
-    connected: false,
-  },
-  {
-    id: "shopify",
-    name: "Shopify",
-    description: "Conecte sua loja Shopify para sincronizar produtos",
-    icon: <ShoppingBag className="h-6 w-6" />,
-    connected: false,
+    description: "Sincronize produtos e pedidos com seu ERP",
+    icon: <Package className="h-6 w-6" />,
+    type: "erp",
+    authType: "oauth_with_credentials",
   },
 ]
 
 export default function IntegrationsPage() {
-  const [integrations, setIntegrations] = useState(initialIntegrations)
-  const [disconnectId, setDisconnectId] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const { data, isLoading } = useIntegrations()
+  const connectOAuth = useConnectOAuth()
+  const connectApiKey = useConnectApiKey()
+  const disconnectIntegration = useDisconnectIntegration()
+  const testConnection = useTestConnection()
 
-  const handleConnect = (id: string) => {
-    // TODO: Implement OAuth flow
-    console.log("Connecting:", id)
+  const [disconnectId, setDisconnectId] = useState<string | null>(null)
+  const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(null)
+  const [apiKey, setApiKey] = useState("")
+  const [testingId, setTestingId] = useState<string | null>(null)
+  const [tinyDialog, setTinyDialog] = useState(false)
+  const [tinyClientId, setTinyClientId] = useState("")
+  const [tinyClientSecret, setTinyClientSecret] = useState("")
+  const [isConnectingTiny, setIsConnectingTiny] = useState(false)
+
+  const integrations = data?.integrations ?? []
+
+  // Handle OAuth callback results
+  useEffect(() => {
+    const success = searchParams.get("success")
+    const error = searchParams.get("error")
+
+    if (success === "mercado_pago_connected") {
+      toast.success("Mercado Pago conectado com sucesso!")
+      // Clean URL
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+
+    if (success === "tiny_connected") {
+      toast.success("Tiny ERP conectado com sucesso!")
+      // Clean URL
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        missing_code: "Código de autorização não encontrado",
+        missing_state: "Parâmetro de estado não encontrado",
+        oauth_failed: "Falha na autenticação OAuth",
+      }
+      toast.error(errorMessages[error] || "Erro ao conectar integração")
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+  }, [searchParams])
+
+  const handleConnect = (provider: ProviderConfig) => {
+    switch (provider.authType) {
+      case "oauth":
+        connectOAuth.mutate(provider.id)
+        break
+      case "oauth_with_credentials":
+        if (provider.id === "tiny") {
+          setTinyDialog(true)
+        }
+        break
+      case "api_key":
+        setApiKeyDialog(provider.id)
+        break
+    }
+  }
+
+  const handleConnectApiKey = () => {
+    if (!apiKeyDialog || !apiKey.trim()) return
+
+    const provider = AVAILABLE_PROVIDERS.find((p) => p.id === apiKeyDialog)
+    if (!provider) return
+
+    connectApiKey.mutate(
+      {
+        type: provider.type,
+        provider: apiKeyDialog,
+        credentials: { api_key: apiKey },
+      },
+      {
+        onSuccess: () => {
+          toast.success(`${provider.name} conectado com sucesso!`)
+          setApiKeyDialog(null)
+          setApiKey("")
+        },
+        onError: () => {
+          toast.error("Falha ao conectar. Verifique a chave de API.")
+        },
+      }
+    )
+  }
+
+  const handleConnectTiny = async () => {
+    if (!tinyClientId.trim() || !tinyClientSecret.trim()) return
+
+    setIsConnectingTiny(true)
+    try {
+      // First create integration with credentials, then get OAuth URL
+      const response = await connectApiKey.mutateAsync({
+        type: "erp",
+        provider: "tiny",
+        credentials: {
+          client_id: tinyClientId,
+          client_secret: tinyClientSecret,
+        },
+      })
+
+      // Now start OAuth flow
+      connectOAuth.mutate("tiny")
+      setTinyDialog(false)
+      setTinyClientId("")
+      setTinyClientSecret("")
+    } catch {
+      toast.error("Falha ao salvar credenciais")
+    } finally {
+      setIsConnectingTiny(false)
+    }
   }
 
   const handleDisconnect = () => {
     if (!disconnectId) return
 
-    setIntegrations((prev) =>
-      prev.map((integration) =>
-        integration.id === disconnectId
-          ? { ...integration, connected: false, connectedAt: undefined, accountName: undefined }
-          : integration
-      )
-    )
-    setDisconnectId(null)
+    disconnectIntegration.mutate(disconnectId, {
+      onSuccess: () => {
+        toast.success("Integração desconectada")
+        setDisconnectId(null)
+      },
+      onError: () => {
+        toast.error("Falha ao desconectar")
+      },
+    })
   }
 
-  const integrationToDisconnect = integrations.find((i) => i.id === disconnectId)
+  const handleTestConnection = (integrationId: string, providerName: string) => {
+    setTestingId(integrationId)
+    testConnection.mutate(integrationId, {
+      onSuccess: (result) => {
+        setTestingId(null)
+        if (result.success) {
+          toast.success(`${providerName}: ${result.message}`, {
+            description: `Latência: ${result.latency_ms}ms`,
+          })
+        } else {
+          toast.error(`${providerName}: ${result.message}`)
+        }
+      },
+      onError: () => {
+        setTestingId(null)
+        toast.error("Falha ao testar conexão")
+      },
+    })
+  }
+
+  const getConnectedIntegration = (providerId: IntegrationProvider): Integration | undefined => {
+    return integrations.find(
+      (i) => i.provider === providerId && (i.status === "active" || i.status === "pending_auth")
+    )
+  }
+
+  const connectedProviders = AVAILABLE_PROVIDERS.filter((p) => getConnectedIntegration(p.id))
+  const availableProviders = AVAILABLE_PROVIDERS.filter((p) => !getConnectedIntegration(p.id))
+
+  const integrationToDisconnect = disconnectId
+    ? integrations.find((i) => i.id === disconnectId)
+    : null
+  const providerToDisconnect = integrationToDisconnect
+    ? AVAILABLE_PROVIDERS.find((p) => p.id === integrationToDisconnect.provider)
+    : null
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -90,56 +244,73 @@ export default function IntegrationsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Integrações conectadas</CardTitle>
-          <CardDescription>
-            Serviços atualmente conectados à sua loja
-          </CardDescription>
+          <CardDescription>Serviços atualmente conectados à sua loja</CardDescription>
         </CardHeader>
         <CardContent>
-          {integrations.filter((i) => i.connected).length === 0 ? (
+          {connectedProviders.length === 0 ? (
             <div className="flex h-24 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Nenhuma integração conectada
-              </p>
+              <p className="text-sm text-muted-foreground">Nenhuma integração conectada</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {integrations
-                .filter((i) => i.connected)
-                .map((integration) => (
+              {connectedProviders.map((provider) => {
+                const integration = getConnectedIntegration(provider.id)!
+                return (
                   <div
-                    key={integration.id}
+                    key={provider.id}
                     className="flex items-center justify-between rounded-lg border p-4"
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        {integration.icon}
+                        {provider.icon}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{integration.name}</h3>
-                          <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                            <Check className="mr-1 h-3 w-3" />
-                            Conectado
-                          </Badge>
+                          <h3 className="font-medium">{provider.name}</h3>
+                          {integration.status === "active" ? (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600">
+                              <Check className="mr-1 h-3 w-3" />
+                              Conectado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">
+                              Pendente
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {integration.accountName}
-                          {integration.connectedAt && (
-                            <> • Desde {new Date(integration.connectedAt).toLocaleDateString("pt-BR")}</>
-                          )}
+                          Conectado em{" "}
+                          {new Date(integration.created_at).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDisconnectId(integration.id)}
-                    >
-                      <Unplug className="mr-2 h-4 w-4" />
-                      Desconectar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestConnection(integration.id, provider.name)}
+                        disabled={testingId === integration.id}
+                      >
+                        {testingId === integration.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Zap className="mr-2 h-4 w-4" />
+                        )}
+                        Testar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDisconnectId(integration.id)}
+                        disabled={disconnectIntegration.isPending}
+                      >
+                        <Unplug className="mr-2 h-4 w-4" />
+                        Desconectar
+                      </Button>
+                    </div>
                   </div>
-                ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -149,64 +320,45 @@ export default function IntegrationsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Integrações disponíveis</CardTitle>
-          <CardDescription>
-            Conecte novos serviços para expandir as funcionalidades
-          </CardDescription>
+          <CardDescription>Conecte novos serviços para expandir as funcionalidades</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {integrations
-              .filter((i) => !i.connected)
-              .map((integration) => (
-                <div
-                  key={integration.id}
-                  className="flex flex-col gap-4 rounded-lg border p-4"
-                >
+          {availableProviders.length === 0 ? (
+            <div className="flex h-24 items-center justify-center rounded-lg border border-dashed">
+              <p className="text-sm text-muted-foreground">
+                Todas as integrações disponíveis estão conectadas
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {availableProviders.map((provider) => (
+                <div key={provider.id} className="flex flex-col gap-4 rounded-lg border p-4">
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      {integration.icon}
+                      {provider.icon}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{integration.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {integration.description}
-                      </p>
+                      <h3 className="font-medium">{provider.name}</h3>
+                      <p className="text-sm text-muted-foreground">{provider.description}</p>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => handleConnect(integration.id)}
+                    onClick={() => handleConnect(provider)}
+                    disabled={connectOAuth.isPending}
                   >
-                    <ExternalLink className="mr-2 h-4 w-4" />
+                    {connectOAuth.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                    )}
                     Conectar
                   </Button>
                 </div>
               ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* API Access */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Acesso à API</CardTitle>
-          <CardDescription>
-            Integre sua própria aplicação usando nossa API
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Chave de API</p>
-              <p className="text-sm text-muted-foreground">
-                Use para autenticar requisições à API do LiveCart
-              </p>
             </div>
-            <Button variant="outline">
-              Gerar chave
-            </Button>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -214,20 +366,120 @@ export default function IntegrationsPage() {
       <AlertDialog open={!!disconnectId} onOpenChange={() => setDisconnectId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Desconectar {integrationToDisconnect?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>Desconectar {providerToDisconnect?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              A integração com {integrationToDisconnect?.name} será removida.
-              Você precisará reconectar para usar os recursos novamente.
+              A integração com {providerToDisconnect?.name} será removida. Você precisará reconectar
+              para usar os recursos novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDisconnect}>
+            <AlertDialogAction
+              onClick={handleDisconnect}
+              disabled={disconnectIntegration.isPending}
+            >
+              {disconnectIntegration.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Desconectar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* API Key Dialog (for non-OAuth providers) */}
+      <Dialog open={!!apiKeyDialog} onOpenChange={() => setApiKeyDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Conectar {AVAILABLE_PROVIDERS.find((p) => p.id === apiKeyDialog)?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Insira a chave de API para conectar esta integração
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="api-key">Chave de API</Label>
+              <Input
+                id="api-key"
+                type="password"
+                placeholder="Insira sua chave de API"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApiKeyDialog(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConnectApiKey} disabled={connectApiKey.isPending || !apiKey}>
+              {connectApiKey.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Conectar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tiny OAuth Credentials Dialog */}
+      <Dialog open={tinyDialog} onOpenChange={() => setTinyDialog(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conectar Tiny ERP</DialogTitle>
+            <DialogDescription>
+              Insira as credenciais do seu aplicativo Tiny. Você pode criar um aplicativo em{" "}
+              <a
+                href="https://erp.tiny.com.br/configuracoes#checks=gestao_aplicativos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Configurações → Aplicativos
+              </a>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="tiny-client-id">Client ID</Label>
+              <Input
+                id="tiny-client-id"
+                placeholder="tiny-api-..."
+                value={tinyClientId}
+                onChange={(e) => setTinyClientId(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tiny-client-secret">Client Secret</Label>
+              <Input
+                id="tiny-client-secret"
+                type="password"
+                placeholder="Insira o Client Secret"
+                value={tinyClientSecret}
+                onChange={(e) => setTinyClientSecret(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTinyDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConnectTiny}
+              disabled={isConnectingTiny || !tinyClientId || !tinyClientSecret}
+            >
+              {isConnectingTiny ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="mr-2 h-4 w-4" />
+              )}
+              Continuar com OAuth
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

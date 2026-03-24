@@ -31,8 +31,8 @@ export async function completeOnboarding(formData: FormData): Promise<CompleteOn
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      store_name: storeName,
-      store_slug: storeSlug,
+      storeName: storeName,
+      storeSlug: storeSlug,
     }),
   })
 

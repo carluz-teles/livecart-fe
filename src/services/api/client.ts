@@ -34,6 +34,11 @@ async function request<T>(
       throw { status: res.status, ...err } as ApiError
     }
 
+    // Handle 204 No Content responses (e.g., DELETE)
+    if (res.status === 204) {
+      return undefined as T
+    }
+
     const json = await res.json()
     return json.data as T
   } catch (error) {
