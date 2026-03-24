@@ -19,8 +19,8 @@ export const orderService = {
   updateStatus: (storeId: string, id: string, status: Order["status"], token?: string | null) =>
     apiClient.patch<Order>(`/stores/${storeId}/orders/${id}`, { status }, token),
 
-  updatePaymentStatus: (storeId: string, id: string, paymentStatus: Order["payment_status"], token?: string | null) =>
-    apiClient.patch<Order>(`/stores/${storeId}/orders/${id}`, { payment_status: paymentStatus }, token),
+  updatePaymentStatus: (storeId: string, id: string, paymentStatus: Order["paymentStatus"], token?: string | null) =>
+    apiClient.patch<Order>(`/stores/${storeId}/orders/${id}`, { paymentStatus }, token),
 
   getStats: (storeId: string, token?: string | null) =>
     apiClient.get<OrderStats>(`/stores/${storeId}/orders/stats`, token),

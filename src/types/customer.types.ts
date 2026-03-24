@@ -3,16 +3,16 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 export interface Customer {
   id: string
   handle: string
-  total_orders: number
-  total_spent: number
-  last_order_at: string | null
-  first_order_at: string | null
+  totalOrders: number
+  totalSpent: number
+  lastOrderAt: string | null
+  firstOrderAt: string | null
 }
 
 export interface CustomerStats {
-  total_customers: number
-  active_customers: number
-  avg_spent_per_customer: number
+  totalCustomers: number
+  activeCustomers: number
+  avgSpentPerCustomer: number
 }
 
 // Filters for customer listing

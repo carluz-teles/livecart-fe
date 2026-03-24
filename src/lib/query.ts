@@ -29,7 +29,7 @@ export function buildQueryString(params: {
 
   // Add sorting
   if (params.sorting) {
-    if (params.sorting.sortBy !== "created_at") {
+    if (params.sorting.sortBy !== "createdAt") {
       searchParams.set("sortBy", params.sorting.sortBy)
     }
     if (params.sorting.sortOrder !== "desc") {
@@ -78,7 +78,7 @@ export function parsePagination(searchParams: URLSearchParams): Pagination {
  */
 export function parseSorting(
   searchParams: URLSearchParams,
-  defaultSortBy = "created_at"
+  defaultSortBy = "createdAt"
 ): Sorting {
   return {
     sortBy: searchParams.get("sortBy") || defaultSortBy,

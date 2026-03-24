@@ -55,6 +55,13 @@ const statusConfig: Record<LiveStatus | string, { label: string; variant: "outli
   cancelled: { label: "Cancelada", variant: "outline", icon: Clock },
 }
 
+const platformLabels: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+}
+
 function formatDate(dateString: string | null): string {
   if (!dateString) return "-"
   const date = new Date(dateString)
@@ -180,7 +187,7 @@ export default function LivesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_lives ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalLives ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Lives realizadas
@@ -194,7 +201,7 @@ export default function LivesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.active_lives ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.activeLives ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Acontecendo agora
@@ -208,7 +215,7 @@ export default function LivesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_orders ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalOrders ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Total de pedidos detectados
@@ -283,7 +290,7 @@ export default function LivesPage() {
                     return (
                       <TableRow key={live.id}>
                         <TableCell className="font-medium">{live.title || "Sem título"}</TableCell>
-                        <TableCell className="capitalize">{live.platform}</TableCell>
+                        <TableCell>{platformLabels[live.platform] ?? live.platform}</TableCell>
                         <TableCell>
                           <Badge variant={config.variant} className="gap-1">
                             <StatusIcon className="h-3 w-3" />
@@ -292,14 +299,14 @@ export default function LivesPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span>{formatDate(live.started_at)}</span>
+                            <span>{formatDate(live.startedAt)}</span>
                             <span className="text-xs text-muted-foreground">
-                              {formatTime(live.started_at)}
+                              {formatTime(live.startedAt)}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">{live.total_comments}</TableCell>
-                        <TableCell className="text-center">{live.total_orders}</TableCell>
+                        <TableCell className="text-center">{live.totalComments}</TableCell>
+                        <TableCell className="text-center">{live.totalOrders}</TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

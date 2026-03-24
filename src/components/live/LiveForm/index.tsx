@@ -70,7 +70,7 @@ export function LiveForm({ live, open, onOpenChange, onSuccess, trigger }: LiveF
     if (live) {
       form.reset({
         platform: live.platform,
-        platformLiveId: live.platform_live_id,
+        platformLiveId: live.platformLiveId,
       })
     } else {
       form.reset({

@@ -130,7 +130,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(stats?.total_revenue ?? 0)}
+                  {statsLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(stats?.totalRevenue ?? 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total de vendas
@@ -145,7 +145,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_orders ?? 0}
+                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalOrders ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total de pedidos
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.active_products ?? 0}
+                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.activeProducts ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Produtos no catálogo
@@ -179,7 +179,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_lives ?? 0}
+                  {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalLives ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total de lives
@@ -275,11 +275,11 @@ export default function DashboardPage() {
                             {product.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {product.keyword} • {product.total_sold} vendidos
+                            {product.keyword} • {product.totalSold} vendidos
                           </p>
                         </div>
                         <div className="text-sm font-medium">
-                          {formatCurrency(product.total_revenue)}
+                          {formatCurrency(product.totalRevenue)}
                         </div>
                       </div>
                     ))}

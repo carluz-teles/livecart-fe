@@ -8,13 +8,13 @@ export interface LiveSession {
   title: string
   status: LiveStatus
   platform: LivePlatform
-  platform_live_id: string
-  started_at: string | null
-  ended_at: string | null
-  total_comments: number
-  total_orders: number
-  created_at: string
-  updated_at: string
+  platformLiveId: string
+  startedAt: string | null
+  endedAt: string | null
+  totalComments: number
+  totalOrders: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface LiveComment {
@@ -42,9 +42,9 @@ export interface UpdateLiveSessionPayload {
 }
 
 export interface LiveStats {
-  total_lives: number
-  active_lives: number
-  total_orders: number
+  totalLives: number
+  activeLives: number
+  totalOrders: number
 }
 
 // Filters for live listing

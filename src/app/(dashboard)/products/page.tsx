@@ -58,6 +58,13 @@ function getProductInitials(name: string) {
     .slice(0, 2)
 }
 
+const sourceLabels: Record<string, string> = {
+  manual: "Manual",
+  bling: "Bling",
+  tiny: "Tiny",
+  shopify: "Shopify",
+}
+
 export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editFormOpen, setEditFormOpen] = useState(false)
@@ -276,7 +283,7 @@ export default function ProductsPage() {
                       <TableCell className="font-mono text-sm text-muted-foreground">
                         {product.keyword}
                       </TableCell>
-                      <TableCell className="capitalize">{product.externalSource}</TableCell>
+                      <TableCell>{sourceLabels[product.externalSource] ?? product.externalSource}</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(product.price)}
                       </TableCell>

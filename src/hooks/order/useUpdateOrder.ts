@@ -10,7 +10,7 @@ import { orderKeys } from "./useOrders"
 interface UpdateOrderParams {
   id: string
   status?: Order["status"]
-  paymentStatus?: Order["payment_status"]
+  paymentStatus?: Order["paymentStatus"]
 }
 
 export function useUpdateOrder() {

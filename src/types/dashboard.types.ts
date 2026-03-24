@@ -1,13 +1,13 @@
 export interface DashboardStats {
-  total_revenue: number
-  total_orders: number
-  active_products: number
-  total_lives: number
+  totalRevenue: number
+  totalOrders: number
+  activeProducts: number
+  totalLives: number
 }
 
 export interface MonthlyRevenueItem {
   month: string
-  month_num: number
+  monthNum: number
   revenue: number
 }
 
@@ -19,8 +19,8 @@ export interface TopProductItem {
   id: string
   name: string
   keyword: string
-  total_sold: number
-  total_revenue: number
+  totalSold: number
+  totalRevenue: number
 }
 
 export interface TopProductsResponse {

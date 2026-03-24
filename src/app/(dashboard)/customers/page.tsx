@@ -84,7 +84,7 @@ export default function CustomersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_customers ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalCustomers ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Clientes cadastrados
@@ -98,7 +98,7 @@ export default function CustomersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.active_customers ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.activeCustomers ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Compraram nos últimos 30 dias
@@ -112,7 +112,7 @@ export default function CustomersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avg_spent_per_customer ?? 0)}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avgSpentPerCustomer ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Média por cliente
@@ -199,14 +199,14 @@ export default function CustomersPage() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                          {customer.total_orders}
+                          {customer.totalOrders}
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(customer.total_spent)}
+                        {formatCurrency(customer.totalSpent)}
                       </TableCell>
-                      <TableCell>{formatDate(customer.first_order_at)}</TableCell>
-                      <TableCell>{formatDate(customer.last_order_at)}</TableCell>
+                      <TableCell>{formatDate(customer.firstOrderAt)}</TableCell>
+                      <TableCell>{formatDate(customer.lastOrderAt)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

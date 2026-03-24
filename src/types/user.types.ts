@@ -1,17 +1,17 @@
 export interface User {
   id: string
-  store_id: string
+  storeId: string
   email: string
   name: string | null
-  avatar_url: string | null
+  avatarUrl: string | null
   role: string
-  store_name: string
-  store_slug: string
-  created_at: string
-  updated_at: string
+  storeName: string
+  storeSlug: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SyncUserPayload {
-  store_name: string
-  store_slug: string
+  storeName: string
+  storeSlug: string
 }

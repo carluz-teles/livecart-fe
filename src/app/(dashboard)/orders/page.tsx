@@ -94,7 +94,7 @@ export default function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.total_orders ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalOrders ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Pedidos realizados
@@ -108,7 +108,7 @@ export default function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.pending_orders ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.pendingOrders ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Aguardando pagamento
@@ -122,7 +122,7 @@ export default function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.total_revenue ?? 0)}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.totalRevenue ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Valor total dos pedidos
@@ -136,7 +136,7 @@ export default function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avg_ticket ?? 0)}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avgTicket ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Valor médio por pedido
@@ -209,18 +209,18 @@ export default function OrdersPage() {
                 ) : (
                   orders.map((order) => {
                     const statusCfg = statusConfig[order.status] || statusConfig.pending
-                    const paymentCfg = paymentStatusConfig[order.payment_status] || paymentStatusConfig.pending
+                    const paymentCfg = paymentStatusConfig[order.paymentStatus] || paymentStatusConfig.pending
                     return (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">
-                          @{order.customer_handle}
+                          @{order.customerHandle}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {order.live_title || "Sem título"}
+                          {order.liveTitle || "Sem título"}
                         </TableCell>
-                        <TableCell className="text-center">{order.total_items}</TableCell>
+                        <TableCell className="text-center">{order.totalItems}</TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(order.total_amount)}
+                          {formatCurrency(order.totalAmount)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusCfg.variant}>
@@ -232,7 +232,7 @@ export default function OrdersPage() {
                             {paymentCfg.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatDate(order.created_at)}</TableCell>
+                        <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

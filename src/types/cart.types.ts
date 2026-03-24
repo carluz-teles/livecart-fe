@@ -6,14 +6,14 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
 
 export interface OrderItem {
   id: string
-  product_id: string
-  product_name: string
-  product_image: string | null
+  productId: string
+  productName: string
+  productImage: string | null
   keyword: string
   size: string | null
   quantity: number
-  unit_price: number
-  total_price: number
+  unitPrice: number
+  totalPrice: number
 }
 
 export interface Cart {
@@ -34,26 +34,26 @@ export interface Cart {
 
 export interface Order {
   id: string
-  live_session_id: string
-  live_title: string
-  live_platform: string
-  customer_handle: string
-  customer_id: string
+  liveSessionId: string
+  liveTitle: string
+  livePlatform: string
+  customerHandle: string
+  customerId: string
   status: OrderStatus
-  payment_status: PaymentStatus
+  paymentStatus: PaymentStatus
   items: OrderItem[]
-  total_items: number
-  total_amount: number
-  paid_at: string | null
-  created_at: string
-  expires_at: string | null
+  totalItems: number
+  totalAmount: number
+  paidAt: string | null
+  createdAt: string
+  expiresAt: string | null
 }
 
 export interface OrderStats {
-  total_orders: number
-  pending_orders: number
-  total_revenue: number
-  avg_ticket: number
+  totalOrders: number
+  pendingOrders: number
+  totalRevenue: number
+  avgTicket: number
 }
 
 export interface CartCheckoutPayload {

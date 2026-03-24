@@ -16,7 +16,7 @@ export function useUser() {
 export function useStoreId() {
   const { user, isLoading } = useUser()
   return {
-    storeId: user?.store_id ?? null,
+    storeId: user?.storeId ?? null,
     isLoading,
   }
 }
