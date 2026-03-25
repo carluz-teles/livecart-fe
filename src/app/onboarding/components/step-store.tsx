@@ -20,12 +20,12 @@ import { storeStepSchema, type StoreStepData } from "@/schemas/onboarding.schema
 
 function generateSlug(name: string): string {
   if (!name.trim()) return ""
+  // Backend expects alphanumeric only (no dashes or special chars)
   return name
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^a-z0-9]/g, "") // Keep only alphanumeric
     .substring(0, 50)
 }
 

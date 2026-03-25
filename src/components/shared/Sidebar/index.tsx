@@ -75,7 +75,7 @@ export function Sidebar() {
           ) : (
             <>
               <span className="text-sm font-semibold truncate max-w-[140px]">
-                {user?.storeName || "Minha Loja"}
+                {user?.membership?.storeName || "Minha Loja"}
               </span>
               <span className="text-xs text-muted-foreground">LiveCart</span>
             </>

@@ -22,9 +22,9 @@ export const invitationService = {
     apiClient.post<Invitation>(`/stores/${storeId}/invitations/${invitationId}/resend`, {}, token),
 
   // Public routes (auth required but not store-scoped)
-  getByToken: (inviteToken: string, token?: string | null) =>
-    apiClient.get<InvitationDetails>(`/invitations/${inviteToken}`, token),
+  getByToken: (inviteToken: string, authToken?: string | null) =>
+    apiClient.get<InvitationDetails>(`/invitations/token/${inviteToken}`, authToken),
 
-  accept: (inviteToken: string, payload: AcceptInvitationPayload, token?: string | null) =>
-    apiClient.post<AcceptInvitationResult>(`/invitations/${inviteToken}/accept`, payload, token),
+  accept: (payload: AcceptInvitationPayload, authToken?: string | null) =>
+    apiClient.post<AcceptInvitationResult>("/invitations/accept", payload, authToken),
 }

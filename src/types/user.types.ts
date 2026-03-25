@@ -1,28 +1,54 @@
-export interface User {
+// Membership represents a user's membership to a store
+export interface Membership {
   id: string
   storeId: string
+  storeName: string
+  storeSlug: string
+  clerkOrgId: string
+  role: string
+  status: string
   email: string
   name: string | null
   avatarUrl: string | null
-  role: string
-  status: string
-  storeName: string
-  storeSlug: string
+  lastAccessedAt: string | null
   createdAt: string
-  updatedAt: string
 }
 
+// SyncUserResponse from POST /users/sync
+export interface SyncUserResponse {
+  clerkUserId: string
+  memberships: Membership[]
+  lastAccessedStoreId: string | null
+  state: "no_store" | "ready"
+}
+
+// User represents the current user with their active store context
+// This is derived from SyncUserResponse for convenience in the frontend
+export interface User {
+  clerkUserId: string
+  // Current membership (last accessed or first)
+  membership: Membership | null
+  // All memberships
+  memberships: Membership[]
+  // State
+  state: "no_store" | "ready"
+}
+
+// UserStore for listing stores (from GET /users/me/stores)
 export interface UserStore {
   id: string
   storeId: string
-  role: string
-  status: string
   storeName: string
   storeSlug: string
+  clerkOrgId: string
+  role: string
+  status: string
+  email: string
+  name: string | null
+  avatarUrl: string | null
+  lastAccessedAt: string | null
   createdAt: string
 }
 
-export interface SyncUserPayload {
-  storeName: string
-  storeSlug: string
-}
+// Legacy alias for backward compatibility
+export type SyncUserPayload = Record<string, never>

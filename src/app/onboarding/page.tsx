@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useUser } from "@clerk/nextjs"
+import { useUser, useOrganizationList } from "@clerk/nextjs"
 import { toast } from "sonner"
 
 import { ProgressBar } from "./components/progress-bar"
@@ -21,12 +21,14 @@ const STEPS = [
 
 interface OnboardingData {
   store?: StoreStepData & { storeSlug: string }
+  storeId?: string
   cart?: CartStepData
   invites?: Array<{ email: string; role: "admin" | "member" }>
 }
 
 export default function OnboardingPage() {
   const { user } = useUser()
+  const { setActive } = useOrganizationList()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [data, setData] = useState<OnboardingData>({})
@@ -48,8 +50,14 @@ export default function OnboardingPage() {
         return
       }
 
-      // Store created successfully, save data and move to next step
-      setData((prev) => ({ ...prev, store: storeData }))
+      // Set the newly created organization as active in Clerk
+      // This ensures subsequent JWT tokens have the org context
+      if (result.clerkOrgId && setActive) {
+        await setActive({ organization: result.clerkOrgId })
+      }
+
+      // Store created successfully, save data (including storeId) and move to next step
+      setData((prev) => ({ ...prev, store: storeData, storeId: result.storeId }))
       setCurrentStep(2)
     } catch (error) {
       console.error("Store creation error:", error)
@@ -64,11 +72,11 @@ export default function OnboardingPage() {
     setIsSubmitting(true)
 
     try {
-      // Get token and update cart settings
+      // Get token and update cart settings (pass storeId for store-scoped endpoint)
       const response = await fetch("/api/onboarding/cart-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cartData),
+        body: JSON.stringify({ ...cartData, storeId: data.storeId }),
       })
 
       if (!response.ok) {

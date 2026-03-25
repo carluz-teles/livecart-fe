@@ -1,7 +1,16 @@
 import { apiClient } from "./client"
-import type { Store, UpdateStorePayload, UpdateCartSettingsPayload } from "@/types/store.types"
+import type {
+  Store,
+  UpdateStorePayload,
+  UpdateCartSettingsPayload,
+  CreateStorePayload,
+  CreateStoreResponse,
+} from "@/types/store.types"
 
 export const storeService = {
+  create: (payload: CreateStorePayload, token?: string | null) =>
+    apiClient.post<CreateStoreResponse>("/stores", payload, token),
+
   getCurrent: (token?: string | null) => apiClient.get<Store>("/stores/me", token),
 
   update: (payload: UpdateStorePayload, token?: string | null) =>

@@ -6,10 +6,11 @@ interface ActionResult {
   success?: boolean
   error?: string
   storeId?: string
+  clerkOrgId?: string
 }
 
-// Update store name and slug (step 1 of onboarding)
-export async function updateStore(formData: FormData): Promise<ActionResult> {
+// Create a new store (onboarding step)
+export async function createStore(formData: FormData): Promise<ActionResult> {
   const { userId, getToken } = await auth()
 
   if (!userId) {
@@ -20,83 +21,73 @@ export async function updateStore(formData: FormData): Promise<ActionResult> {
   const storeSlug = formData.get("storeSlug") as string
 
   if (!storeName || !storeSlug) {
-    return { error: "Nome da loja é obrigatório" }
+    return { error: "Nome e slug da loja são obrigatórios" }
+  }
+
+  // Validate slug format (alphanumeric only)
+  if (!/^[a-z0-9]+$/i.test(storeSlug)) {
+    return { error: "Slug deve conter apenas letras e números" }
   }
 
   const token = await getToken()
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
-  // First, get the storeId from /users/me
-  const userRes = await fetch(`${apiUrl}/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-
-  if (!userRes.ok) {
-    return { error: "Erro ao buscar dados do usuário" }
-  }
-
-  const { data: userData } = await userRes.json()
-  const storeId = userData.storeId
-
-  // Update store with name and slug
-  const updateRes = await fetch(`${apiUrl}/stores/${storeId}`, {
-    method: "PUT",
+  // Create the store via POST /stores
+  const response = await fetch(`${apiUrl}/stores`, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       name: storeName,
-      // Note: slug update requires a different endpoint if we want to change it
+      slug: storeSlug,
     }),
-  })
-
-  if (!updateRes.ok) {
-    const errorData = await updateRes.json().catch(() => ({}))
-    return { error: errorData.error || "Erro ao atualizar loja" }
-  }
-
-  return { success: true, storeId }
-}
-
-// Mark onboarding as complete (final step)
-export async function finishOnboarding(): Promise<ActionResult> {
-  const { userId, getToken } = await auth()
-
-  if (!userId) {
-    return { error: "Usuário não autenticado" }
-  }
-
-  const token = await getToken()
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-
-  // Get storeId
-  const userRes = await fetch(`${apiUrl}/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-
-  if (!userRes.ok) {
-    return { error: "Erro ao buscar dados do usuário" }
-  }
-
-  const { data: userData } = await userRes.json()
-  const storeId = userData.storeId
-
-  // Mark onboarding as complete
-  const response = await fetch(`${apiUrl}/stores/${storeId}/complete-onboarding`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
   })
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    return { error: errorData.error || "Erro ao finalizar onboarding" }
+
+    // Handle specific errors
+    if (response.status === 409) {
+      return { error: "Uma loja com esse slug já existe" }
+    }
+
+    return { error: errorData.error || "Erro ao criar loja" }
   }
 
-  return { success: true }
+  const { data } = await response.json()
+  const storeId = data.id
+  const clerkOrgId = data.clerkOrgId
+
+  // Select the newly created store as the active store
+  const selectResponse = await fetch(`${apiUrl}/users/me/select-store`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ storeId }),
+  })
+
+  if (!selectResponse.ok) {
+    console.error("Failed to select store:", await selectResponse.text())
+    // Continue anyway - store was created successfully
+  }
+
+  return { success: true, storeId, clerkOrgId }
 }
 
-// Legacy alias for backward compatibility (step 1)
+// Legacy aliases for backward compatibility
+export async function updateStore(formData: FormData): Promise<ActionResult> {
+  return createStore(formData)
+}
+
 export async function completeOnboarding(formData: FormData): Promise<ActionResult> {
-  return updateStore(formData)
+  return createStore(formData)
+}
+
+// No-op for backward compatibility - onboarding is complete when store is created
+export async function finishOnboarding(): Promise<ActionResult> {
+  return { success: true }
 }

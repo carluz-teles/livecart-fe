@@ -13,30 +13,13 @@ export async function POST(request: NextRequest) {
     const token = await getToken()
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
-    // First, get the user's store ID from /users/me
-    const userResponse = await fetch(`${apiUrl}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    // Use store-scoped endpoint if storeId is provided (during onboarding)
+    // This avoids relying on JWT org context which may not be available immediately
+    const endpoint = body.storeId
+      ? `${apiUrl}/stores/${body.storeId}/cart-settings`
+      : `${apiUrl}/stores/me/cart-settings`
 
-    if (!userResponse.ok) {
-      const errorData = await userResponse.json().catch(() => ({}))
-      return NextResponse.json(
-        { error: errorData.error || "Erro ao buscar usuário" },
-        { status: userResponse.status }
-      )
-    }
-
-    const userData = await userResponse.json()
-    const storeId = userData.data?.storeId
-
-    if (!storeId) {
-      return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 })
-    }
-
-    // Now update cart settings using the store-scoped endpoint
-    const response = await fetch(`${apiUrl}/stores/${storeId}/cart-settings`, {
+    const response = await fetch(endpoint, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

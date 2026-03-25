@@ -35,7 +35,7 @@ export function UserProvider({ children }: UserProviderProps) {
       setIsLoading(true)
       setError(null)
       const token = await getToken()
-      const data = await userService.getMe(token)
+      const data = await userService.sync(token)
       setUser(data)
     } catch (err: unknown) {
       const apiError = err as { status?: number; message?: string; error?: string }

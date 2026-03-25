@@ -45,3 +45,17 @@ export interface UpdateCartSettingsPayload {
   maxQuantityPerItem: number
   notifyBeforeExpiration: boolean
 }
+
+// Create store types
+export interface CreateStorePayload {
+  name: string
+  slug: string
+}
+
+export interface CreateStoreResponse {
+  id: string
+  name: string
+  slug: string
+  clerkOrgId: string
+  createdAt: string
+}

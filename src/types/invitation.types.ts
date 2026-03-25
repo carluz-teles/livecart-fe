@@ -27,10 +27,7 @@ export interface CreateInvitationPayload {
 }
 
 export interface AcceptInvitationPayload {
-  clerkUserId: string
-  email: string
-  name?: string
-  avatarUrl?: string
+  token: string
 }
 
 export interface AcceptInvitationResult {

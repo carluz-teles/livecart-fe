@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/register(.*)",
   "/cart/(.*)",
   "/api/webhooks/(.*)",
+  "/accept-invite(.*)",
 ])
 
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)"])
@@ -49,12 +50,11 @@ export default clerkMiddleware(async (auth, req) => {
 
     if (response.ok) {
       const { data } = await response.json()
-      // User needs to complete onboarding
-      if (data.state === "needs_onboarding") {
+      // Redirect to onboarding if user has no store
+      if (data.state === "no_store") {
         const onboardingUrl = new URL("/onboarding", req.url)
         return NextResponse.redirect(onboardingUrl)
       }
-      // User is ready - allow access
       return NextResponse.next()
     }
 

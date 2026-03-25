@@ -14,7 +14,7 @@ export function useUserStores() {
 
   return useQuery({
     queryKey: userStoresKeys.all,
-    queryFn: async (): Promise<{ data: UserStore[] }> => {
+    queryFn: async (): Promise<{ stores: UserStore[] }> => {
       const token = await getToken()
       return userService.getStores(token)
     },
