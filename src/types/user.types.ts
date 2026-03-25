@@ -2,9 +2,9 @@
 export interface Membership {
   id: string
   storeId: string
+  userId: string
   storeName: string
   storeSlug: string
-  clerkOrgId: string
   role: string
   status: string
   email: string
@@ -16,7 +16,11 @@ export interface Membership {
 
 // SyncUserResponse from POST /users/sync
 export interface SyncUserResponse {
+  userId: string
   clerkUserId: string
+  email: string
+  name: string | null
+  avatarUrl: string | null
   memberships: Membership[]
   lastAccessedStoreId: string | null
   state: "no_store" | "ready"
@@ -38,9 +42,9 @@ export interface User {
 export interface UserStore {
   id: string
   storeId: string
+  userId: string
   storeName: string
   storeSlug: string
-  clerkOrgId: string
   role: string
   status: string
   email: string

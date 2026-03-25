@@ -3,7 +3,6 @@ import type {
   Invitation,
   InvitationDetails,
   CreateInvitationPayload,
-  AcceptInvitationPayload,
   AcceptInvitationResult,
 } from "@/types"
 
@@ -21,10 +20,11 @@ export const invitationService = {
   resend: (storeId: string, invitationId: string, token?: string | null) =>
     apiClient.post<Invitation>(`/stores/${storeId}/invitations/${invitationId}/resend`, {}, token),
 
-  // Public routes (auth required but not store-scoped)
-  getByToken: (inviteToken: string, authToken?: string | null) =>
-    apiClient.get<InvitationDetails>(`/invitations/token/${inviteToken}`, authToken),
+  // Public routes (without /api/v1 prefix)
+  getByToken: (inviteToken: string) =>
+    apiClient.publicGet<InvitationDetails>(`/api/public/invitations/token/${inviteToken}`),
 
-  accept: (payload: AcceptInvitationPayload, authToken?: string | null) =>
-    apiClient.post<AcceptInvitationResult>("/invitations/accept", payload, authToken),
+  // Accept requires auth (uses /api/v1 prefix from apiClient)
+  accept: (inviteToken: string, authToken?: string | null) =>
+    apiClient.post<AcceptInvitationResult>("/invitations/accept", { token: inviteToken }, authToken),
 }

@@ -56,6 +56,5 @@ export interface CreateStoreResponse {
   id: string
   name: string
   slug: string
-  clerkOrgId: string
   createdAt: string
 }

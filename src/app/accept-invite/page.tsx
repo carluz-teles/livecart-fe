@@ -1,107 +1,100 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useSignIn, useSignUp, useOrganization } from '@clerk/nextjs'
+import { useAuth, SignIn } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { invitationService } from '@/services/api/invitation.service'
+import { userService } from '@/services/api/user.service'
+import { InvitationDetails } from '@/types/invitation.types'
 
-type PageState = 'loading' | 'signing_in' | 'sign_up_form' | 'success' | 'error'
+type PageState = 'loading' | 'show_login' | 'accepting' | 'success' | 'error'
 
 export default function AcceptInvitePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const ticket = searchParams.get('__clerk_ticket')
-  const status = searchParams.get('__clerk_status') // 'sign_in' or 'sign_up'
-
-  const { signIn, setActive: setActiveSignIn } = useSignIn()
-  const { signUp, setActive: setActiveSignUp } = useSignUp()
-  const { organization } = useOrganization()
+  const token = searchParams.get('token')
+  const { isSignedIn, isLoaded, getToken } = useAuth()
 
   const [pageState, setPageState] = useState<PageState>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
+  const acceptingRef = useRef(false)
 
-  // Sign up form fields
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [password, setPassword] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Case 1: User already has Clerk account -> Auto sign in
+  // Fetch invitation details when page loads
   useEffect(() => {
-    if (!signIn || !ticket || status !== 'sign_in' || organization) return
+    if (!token) {
+      setError('Token de convite inválido')
+      setPageState('error')
+      return
+    }
 
-    setPageState('signing_in')
-
-    const handleSignIn = async () => {
+    const fetchInvitation = async () => {
       try {
-        const result = await signIn.create({
-          strategy: 'ticket',
-          ticket: ticket,
-        })
-
-        if (result.status === 'complete') {
-          await setActiveSignIn({ session: result.createdSessionId })
-          setPageState('success')
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            router.push('/')
-          }, 2000)
-        }
+        const data = await invitationService.getByToken(token)
+        setInvitation(data)
+        setPageState('show_login')
       } catch (err) {
-        console.error('Sign-in error:', err)
-        setError('Erro ao processar o convite. O link pode ter expirado.')
+        console.error('Error fetching invitation:', err)
+        const errorObj = err as { status?: number; error?: string }
+        if (errorObj.status === 404) {
+          setError('Convite não encontrado')
+        } else if (errorObj.status === 410) {
+          setError('O convite expirou ou já foi utilizado')
+        } else {
+          setError('Erro ao carregar detalhes do convite')
+        }
         setPageState('error')
       }
     }
 
-    handleSignIn()
-  }, [signIn, ticket, status, organization, setActiveSignIn, router])
+    fetchInvitation()
+  }, [token])
 
-  // Case 2: User needs to sign up
+  // Auto-accept invitation when user signs in
   useEffect(() => {
-    if (!ticket || status !== 'sign_up') return
-    setPageState('sign_up_form')
-  }, [ticket, status])
+    if (!isLoaded || !isSignedIn || !token || !invitation || acceptingRef.current) {
+      return
+    }
 
-  // Handle sign up form submission
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!signUp || !ticket) return
+    const acceptInvitation = async () => {
+      acceptingRef.current = true
+      setPageState('accepting')
+      setError(null)
 
-    setIsSubmitting(true)
-    setError(null)
-
-    try {
-      const result = await signUp.create({
-        strategy: 'ticket',
-        ticket: ticket,
-        firstName,
-        lastName,
-        password,
-      })
-
-      if (result.status === 'complete') {
-        await setActiveSignUp({ session: result.createdSessionId })
+      try {
+        const authToken = await getToken()
+        // Sync user first to ensure they exist in our database
+        await userService.sync(authToken)
+        // Then accept the invitation
+        await invitationService.accept(token, authToken)
         setPageState('success')
+        // Redirect to dashboard after a short delay
         setTimeout(() => {
           router.push('/')
-        }, 2000)
+        }, 1500)
+      } catch (err) {
+        console.error('Error accepting invitation:', err)
+        const errorObj = err as { status?: number; error?: string }
+        if (errorObj.status === 403) {
+          setError('O email do convite não corresponde à sua conta')
+        } else if (errorObj.status === 410) {
+          setError('O convite expirou ou já foi utilizado')
+        } else {
+          setError('Erro ao aceitar convite. Tente novamente.')
+        }
+        setPageState('error')
+        acceptingRef.current = false
       }
-    } catch (err: unknown) {
-      console.error('Sign-up error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar conta'
-      setError(errorMessage)
-    } finally {
-      setIsSubmitting(false)
     }
-  }
 
-  // No ticket - invalid invite
-  if (!ticket) {
+    acceptInvitation()
+  }, [isLoaded, isSignedIn, token, invitation, getToken, router])
+
+  // No token - invalid invite
+  if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md">
@@ -109,11 +102,11 @@ export default function AcceptInvitePage() {
             <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <CardTitle>Convite Inválido</CardTitle>
             <CardDescription>
-              O link do convite é inválido ou expirou.
+              O link do convite é inválido. Verifique se você copiou o link completo.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => router.push('/sign-in')}>
+            <Button className="w-full" onClick={() => router.push('/login')}>
               Ir para Login
             </Button>
           </CardContent>
@@ -123,17 +116,32 @@ export default function AcceptInvitePage() {
   }
 
   // Loading state
-  if (pageState === 'loading' || pageState === 'signing_in') {
+  if (pageState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
-            <CardTitle>Processando Convite</CardTitle>
+            <CardTitle>Carregando Convite</CardTitle>
             <CardDescription>
-              {pageState === 'signing_in'
-                ? 'Entrando na sua conta...'
-                : 'Aguarde enquanto verificamos seu convite...'}
+              Aguarde enquanto verificamos seu convite...
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
+
+  // Accepting state
+  if (pageState === 'accepting') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
+            <CardTitle>Aceitando Convite</CardTitle>
+            <CardDescription>
+              Aguarde enquanto processamos seu aceite...
             </CardDescription>
           </CardHeader>
         </Card>
@@ -150,7 +158,7 @@ export default function AcceptInvitePage() {
             <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
             <CardTitle>Convite Aceito!</CardTitle>
             <CardDescription>
-              Você foi adicionado à organização com sucesso.
+              Você foi adicionado à loja com sucesso.
               Redirecionando para o dashboard...
             </CardDescription>
           </CardHeader>
@@ -166,11 +174,11 @@ export default function AcceptInvitePage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <CardTitle>Erro ao Aceitar Convite</CardTitle>
+            <CardTitle>Erro ao Processar Convite</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => router.push('/sign-in')}>
+          <CardContent className="space-y-2">
+            <Button className="w-full" onClick={() => router.push('/login')}>
               Ir para Login
             </Button>
           </CardContent>
@@ -179,75 +187,57 @@ export default function AcceptInvitePage() {
     )
   }
 
-  // Sign up form
+  // Show login with store name - this is the main state
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Criar sua Conta</CardTitle>
-          <CardDescription>
-            Você foi convidado para uma loja no LiveCart.
-            Preencha seus dados para aceitar o convite.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nome</Label>
-                <Input
-                  id="firstName"
-                  placeholder="João"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Sobrenome</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Silva"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-              <p className="text-xs text-muted-foreground">
-                Mínimo de 8 caracteres
-              </p>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
+      <div className="w-full max-w-md space-y-6">
+        {/* Custom header with store name */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Entrar para continuar em {invitation?.storeName}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Você foi convidado como{' '}
+            <span className="font-medium">
+              {invitation?.role === 'admin' ? 'Administrador' : 'Membro'}
+            </span>
+            {invitation?.inviterName && (
+              <> por {invitation.inviterName}</>
             )}
+          </p>
+        </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
-                </>
-              ) : (
-                'Criar Conta e Entrar'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {/* Clerk SignIn component */}
+        <div className="flex justify-center">
+          <SignIn
+            routing="hash"
+            signUpUrl={`/register?redirect_url=/accept-invite?token=${token}`}
+            forceRedirectUrl={`/accept-invite?token=${token}`}
+            appearance={{
+              elements: {
+                headerTitle: { display: 'none' },
+                headerSubtitle: { display: 'none' },
+                card: {
+                  boxShadow: 'none',
+                  border: '1px solid hsl(var(--border))',
+                },
+                footer: { display: 'none' },
+              },
+            }}
+          />
+        </div>
+
+        {/* Link to create account */}
+        <div className="text-center text-sm text-muted-foreground">
+          Não tem uma conta?{' '}
+          <a
+            href={`/register?redirect_url=/accept-invite?token=${token}`}
+            className="font-medium text-primary hover:underline"
+          >
+            Criar conta
+          </a>
+        </div>
+      </div>
     </div>
   )
 }

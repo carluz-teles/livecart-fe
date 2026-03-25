@@ -6,7 +6,6 @@ interface ActionResult {
   success?: boolean
   error?: string
   storeId?: string
-  clerkOrgId?: string
 }
 
 // Create a new store (onboarding step)
@@ -58,7 +57,6 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
 
   const { data } = await response.json()
   const storeId = data.id
-  const clerkOrgId = data.clerkOrgId
 
   // Select the newly created store as the active store
   const selectResponse = await fetch(`${apiUrl}/users/me/select-store`, {
@@ -75,7 +73,7 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
     // Continue anyway - store was created successfully
   }
 
-  return { success: true, storeId, clerkOrgId }
+  return { success: true, storeId }
 }
 
 // Legacy aliases for backward compatibility

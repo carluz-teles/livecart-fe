@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useUser, useOrganizationList } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 
 import { ProgressBar } from "./components/progress-bar"
@@ -28,7 +28,6 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
   const { user } = useUser()
-  const { setActive } = useOrganizationList()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [data, setData] = useState<OnboardingData>({})
@@ -48,12 +47,6 @@ export default function OnboardingPage() {
         toast.error(result.error)
         setIsSubmitting(false)
         return
-      }
-
-      // Set the newly created organization as active in Clerk
-      // This ensures subsequent JWT tokens have the org context
-      if (result.clerkOrgId && setActive) {
-        await setActive({ organization: result.clerkOrgId })
       }
 
       // Store created successfully, save data (including storeId) and move to next step

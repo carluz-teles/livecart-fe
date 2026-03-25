@@ -13,7 +13,7 @@ export function useAcceptInvitation() {
     mutationFn: async (inviteToken: string): Promise<AcceptInvitationResult> => {
       const authToken = await getToken()
       // Backend gets user info from JWT claims, we just send the invitation token
-      return invitationService.accept({ token: inviteToken }, authToken)
+      return invitationService.accept(inviteToken, authToken)
     },
     onSuccess: () => {
       // Invalidate user stores query to refresh the list
