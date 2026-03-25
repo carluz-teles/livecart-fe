@@ -206,6 +206,11 @@ export default function OnboardingPage() {
 
         {currentStep === 4 && (
           <StepTeam
+            currentUser={{
+              email: user?.primaryEmailAddress?.emailAddress || "",
+              name: user?.fullName || null,
+              avatarUrl: user?.imageUrl || null,
+            }}
             onFinish={handleTeamFinish}
             onBack={handleBack}
             onSkip={handleTeamSkip}
