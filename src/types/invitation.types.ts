@@ -1,16 +1,12 @@
 export interface Invitation {
   id: string
-  storeId: string
   email: string
   role: string
   status: string
+  inviterName: string | null
   expiresAt: string
+  acceptedAt?: string | null
   createdAt: string
-  invitedBy: {
-    id: string
-    name: string | null
-    email: string
-  }
 }
 
 export interface InvitationDetails {
@@ -19,11 +15,10 @@ export interface InvitationDetails {
   role: string
   status: string
   storeName: string
+  storeSlug: string
+  inviterName: string | null
   expiresAt: string
-  invitedBy: {
-    name: string | null
-    email: string
-  }
+  createdAt: string
 }
 
 export interface CreateInvitationPayload {

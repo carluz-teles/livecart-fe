@@ -36,7 +36,7 @@ import {
   useDisconnectIntegration,
   useTestConnection,
 } from "@/hooks/integration"
-import type { Integration, IntegrationProvider } from "@/types/integration"
+import type { Integration, IntegrationProvider } from "@/types"
 
 interface ProviderConfig {
   id: IntegrationProvider

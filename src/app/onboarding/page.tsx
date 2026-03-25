@@ -1,130 +1,218 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useUser } from "@clerk/nextjs"
+import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { completeOnboarding } from "./actions"
+import { ProgressBar } from "./components/progress-bar"
+import { StepStore } from "./components/step-store"
+import { StepCart } from "./components/step-cart"
+import { StepIntegrations } from "./components/step-integrations"
+import { StepTeam } from "./components/step-team"
+import { completeOnboarding, finishOnboarding } from "./actions"
+import type { StoreStepData, CartStepData } from "@/schemas/onboarding.schema"
 
-function generateSlug(name: string): string {
-  if (!name.trim()) return ""
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .substring(0, 50)
+const STEPS = [
+  { id: 1, name: "Loja", description: "Informações básicas" },
+  { id: 2, name: "Carrinho", description: "Configurações" },
+  { id: 3, name: "Integrações", description: "Pagamentos e ERP" },
+  { id: 4, name: "Equipe", description: "Convites" },
+]
+
+interface OnboardingData {
+  store?: StoreStepData & { storeSlug: string }
+  cart?: CartStepData
+  invites?: Array<{ email: string; role: "admin" | "member" }>
 }
 
 export default function OnboardingPage() {
   const { user } = useUser()
-  const [storeName, setStoreName] = useState("")
-  const [error, setError] = useState("")
+  const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [data, setData] = useState<OnboardingData>({})
 
-  const storeSlug = useMemo(() => generateSlug(storeName), [storeName])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-
-    if (!storeSlug) {
-      setError("Nome inválido para gerar URL da loja")
-      return
-    }
-
+  // Step 1: Store info
+  const handleStoreNext = async (storeData: StoreStepData & { storeSlug: string }) => {
     setIsSubmitting(true)
 
     try {
       const formData = new FormData()
-      formData.append("storeName", storeName)
-      formData.append("storeSlug", storeSlug)
+      formData.append("storeName", storeData.storeName)
+      formData.append("storeSlug", storeData.storeSlug)
 
       const result = await completeOnboarding(formData)
 
       if (result.error) {
-        setError(result.error)
+        toast.error(result.error)
         setIsSubmitting(false)
         return
       }
 
-      // Force a full page reload to refresh session claims from Clerk
-      window.location.href = "/"
-    } catch (err) {
-      console.error("Form submission error:", err)
-      setError("Erro inesperado ao criar loja")
+      // Store created successfully, save data and move to next step
+      setData((prev) => ({ ...prev, store: storeData }))
+      setCurrentStep(2)
+    } catch (error) {
+      console.error("Store creation error:", error)
+      toast.error("Erro ao criar loja")
+    } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Step 2: Cart settings
+  const handleCartNext = async (cartData: CartStepData) => {
+    setIsSubmitting(true)
+
+    try {
+      // Get token and update cart settings
+      const response = await fetch("/api/onboarding/cart-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cartData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || "Erro ao salvar configurações")
+        setIsSubmitting(false)
+        return
+      }
+
+      setData((prev) => ({ ...prev, cart: cartData }))
+      setCurrentStep(3)
+    } catch (error) {
+      console.error("Cart settings error:", error)
+      toast.error("Erro ao salvar configurações")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCartSkip = () => {
+    setCurrentStep(3)
+  }
+
+  // Step 3: Integrations
+  const handleIntegrationsNext = () => {
+    setCurrentStep(4)
+  }
+
+  const handleIntegrationsConnect = (integrationId: string) => {
+    // For now, just show a toast - actual connection would redirect to OAuth
+    toast.info(`Conectando ${integrationId}... (em breve)`)
+  }
+
+  const handleIntegrationsSkip = () => {
+    setCurrentStep(4)
+  }
+
+  // Step 4: Team
+  const handleTeamFinish = async (invites: Array<{ email: string; role: "admin" | "member" }>) => {
+    setIsSubmitting(true)
+
+    try {
+      // Send invites if any
+      if (invites.length > 0) {
+        const response = await fetch("/api/onboarding/invites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invites }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          toast.error(errorData.error || "Erro ao enviar convites")
+          // Continue anyway, invites can be sent later
+        }
+      }
+
+      // Mark onboarding as complete
+      const result = await finishOnboarding()
+      if (result.error) {
+        console.error("Finish onboarding error:", result.error)
+        // Continue to dashboard anyway
+      }
+
+      // Redirect to dashboard
+      window.location.href = "/"
+    } catch (error) {
+      console.error("Team invites error:", error)
+      // Continue to dashboard anyway
+      window.location.href = "/"
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleTeamSkip = async () => {
+    // Mark onboarding as complete even when skipping
+    try {
+      await finishOnboarding()
+    } catch (error) {
+      console.error("Finish onboarding error:", error)
+    }
+    window.location.href = "/"
+  }
+
+  // Go back
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(1, prev - 1))
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            Bem-vindo ao LiveCart
-          </CardTitle>
-          <CardDescription>
-            {user?.firstName ? `Olá, ${user.firstName}! ` : ""}
-            Vamos configurar sua loja para começar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="storeName" className="text-sm font-medium">
-                Nome da Loja <span className="text-destructive">*</span>
-              </label>
-              <Input
-                id="storeName"
-                placeholder="Minha Loja"
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                disabled={isSubmitting}
-                required
-                minLength={2}
-                maxLength={100}
-              />
-            </div>
+    <div className="min-h-screen bg-background p-4">
+      <div className="mx-auto max-w-2xl pt-8">
+        {/* Welcome message */}
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Bem-vindo ao LiveCart{user?.firstName ? `, ${user.firstName}` : ""}!
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Vamos configurar sua loja em poucos passos
+          </p>
+        </div>
 
-            {storeSlug && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">URL da Loja</p>
-                <div className="flex items-center gap-1 rounded-md border bg-muted/50 px-3 py-2">
-                  <span className="text-sm text-muted-foreground">
-                    livecart.com/
-                  </span>
-                  <span className="text-sm font-medium">{storeSlug}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Gerada automaticamente a partir do nome da loja
-                </p>
-              </div>
-            )}
+        {/* Progress bar */}
+        <ProgressBar steps={STEPS} currentStep={currentStep} />
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+        {/* Step content */}
+        {currentStep === 1 && (
+          <StepStore
+            defaultValues={data.store}
+            onNext={handleStoreNext}
+            isSubmitting={isSubmitting}
+          />
+        )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || !storeSlug}
-            >
-              {isSubmitting ? "Criando..." : "Criar Loja"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {currentStep === 2 && (
+          <StepCart
+            defaultValues={data.cart}
+            onNext={handleCartNext}
+            onBack={handleBack}
+            onSkip={handleCartSkip}
+            isSubmitting={isSubmitting}
+          />
+        )}
+
+        {currentStep === 3 && (
+          <StepIntegrations
+            onNext={handleIntegrationsNext}
+            onBack={handleBack}
+            onSkip={handleIntegrationsSkip}
+            onConnect={handleIntegrationsConnect}
+            isSubmitting={isSubmitting}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <StepTeam
+            onFinish={handleTeamFinish}
+            onBack={handleBack}
+            onSkip={handleTeamSkip}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </div>
     </div>
   )
 }

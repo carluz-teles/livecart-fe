@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
 import { integrationKeys } from "./useIntegrations"
-import type { IntegrationProvider, CreateIntegrationPayload } from "@/types/integration"
+import type { IntegrationProvider, CreateIntegrationPayload } from "@/types"
 
 // Hook for OAuth-based connections (Mercado Pago)
 export function useConnectOAuth() {

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
-import type { IntegrationListResponse } from "@/types/integration"
+import type { IntegrationListResponse } from "@/types"
 
 export const integrationKeys = {
   all: ["integrations"] as const,

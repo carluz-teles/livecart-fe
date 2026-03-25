@@ -6,7 +6,7 @@ import type {
   CreateIntegrationPayload,
   IntegrationProvider,
   TestConnectionResponse,
-} from "@/types/integration"
+} from "@/types"
 
 export const integrationService = {
   // List all integrations for a store

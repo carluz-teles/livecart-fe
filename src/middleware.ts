@@ -31,37 +31,40 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn({ returnBackUrl: req.url })
   }
 
-  // User is on onboarding page - allow access
+  // User is on onboarding page - allow access (prevents redirect loop)
   if (isOnboardingRoute(req)) {
     return NextResponse.next()
   }
 
-  // Check if user has completed onboarding by checking our backend
+  // Sync user with backend and check onboarding state
   try {
     const token = await getToken()
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/sync`, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     })
 
-    // If user exists in our backend, they've completed onboarding
     if (response.ok) {
+      const { data } = await response.json()
+      // User needs to complete onboarding
+      if (data.state === "needs_onboarding") {
+        const onboardingUrl = new URL("/onboarding", req.url)
+        return NextResponse.redirect(onboardingUrl)
+      }
+      // User is ready - allow access
       return NextResponse.next()
     }
 
-    // User doesn't exist in backend - redirect to onboarding
-    if (response.status === 404 || response.status === 401) {
-      const onboardingUrl = new URL("/onboarding", req.url)
-      return NextResponse.redirect(onboardingUrl)
-    }
-  } catch {
-    // On error, redirect to onboarding instead of allowing access
-    const onboardingUrl = new URL("/onboarding", req.url)
-    return NextResponse.redirect(onboardingUrl)
+    // On error, allow access (don't block user)
+    console.error("[middleware] Error syncing user:", response.status)
+    return NextResponse.next()
+  } catch (error) {
+    console.error("[middleware] Error syncing user:", error)
+    return NextResponse.next()
   }
-
-  return NextResponse.next()
 })
 
 export const config = {

@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useAuth } from "@clerk/nextjs"
+import { toast } from "sonner"
 import {
   UserPlus,
   MoreHorizontal,
@@ -10,6 +12,8 @@ import {
   UserX,
   Trash2,
   Search,
+  Loader2,
+  RefreshCw,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -59,49 +63,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-// Mock data - será substituído por dados reais da API
-const members = [
-  {
-    id: "1",
-    name: "João Silva",
-    email: "joao@minhaloja.com",
-    avatar: null,
-    role: "owner" as const,
-    status: "active" as const,
-    joinedAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "2",
-    name: "Maria Santos",
-    email: "maria@minhaloja.com",
-    avatar: null,
-    role: "admin" as const,
-    status: "active" as const,
-    joinedAt: "2024-02-20T14:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Pedro Costa",
-    email: "pedro@minhaloja.com",
-    avatar: null,
-    role: "member" as const,
-    status: "active" as const,
-    joinedAt: "2024-03-10T09:15:00Z",
-  },
-  {
-    id: "4",
-    name: "Ana Oliveira",
-    email: "ana@email.com",
-    avatar: null,
-    role: "member" as const,
-    status: "pending" as const,
-    joinedAt: "2024-03-20T16:45:00Z",
-  },
-]
+import { useStoreId } from "@/hooks/useUser"
+import { memberService } from "@/services/api/member.service"
+import { invitationService } from "@/services/api/invitation.service"
+import type { Member, Invitation } from "@/types"
 
 const roleLabels = {
-  owner: { label: "Proprietário", variant: "default" as const },
+  owner: { label: "Proprietario", variant: "default" as const },
   admin: { label: "Administrador", variant: "secondary" as const },
   member: { label: "Membro", variant: "outline" as const },
 }
@@ -112,7 +80,8 @@ const statusLabels = {
   inactive: { label: "Inativo", className: "bg-gray-500/10 text-gray-600" },
 }
 
-function getInitials(name: string) {
+function getInitials(name: string | null) {
+  if (!name) return "?"
   return name
     .split(" ")
     .map((n) => n[0])
@@ -122,30 +91,183 @@ function getInitials(name: string) {
 }
 
 export default function UsersPage() {
+  const { getToken } = useAuth()
+  const { storeId, isLoading: isLoadingStore } = useStoreId()
   const [searchQuery, setSearchQuery] = useState("")
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const [memberToRemove, setMemberToRemove] = useState<typeof members[0] | null>(null)
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null)
   const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState("member")
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member")
 
+  const [members, setMembers] = useState<Member[]>([])
+  const [invitations, setInvitations] = useState<Invitation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isInviting, setIsInviting] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
+  const [isResending, setIsResending] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    if (!storeId) return
+
+    try {
+      setIsLoading(true)
+      const token = await getToken()
+
+      const [membersRes, invitationsRes] = await Promise.all([
+        memberService.list(storeId, token),
+        invitationService.list(storeId, token),
+      ])
+
+      setMembers(membersRes.data || [])
+      setInvitations(invitationsRes.data || [])
+    } catch (error) {
+      console.error("Failed to fetch members:", error)
+      toast.error("Erro ao carregar membros", {
+        description: "Nao foi possivel carregar a lista de membros.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [storeId, getToken])
+
+  useEffect(() => {
+    if (storeId) {
+      fetchData()
+    }
+  }, [storeId, fetchData])
+
+  // Filter members by search
   const filteredMembers = members.filter(
     (member) =>
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleInvite = () => {
-    // TODO: Implement invite logic
-    console.log("Inviting:", inviteEmail, inviteRole)
-    setIsInviteOpen(false)
-    setInviteEmail("")
-    setInviteRole("member")
+  // Filter pending invitations (not accepted)
+  const pendingInvitations = invitations.filter((inv) => inv.status === "pending")
+
+  const handleInvite = async () => {
+    if (!storeId || !inviteEmail) return
+
+    setIsInviting(true)
+    try {
+      const token = await getToken()
+      await invitationService.create(storeId, { email: inviteEmail, role: inviteRole }, token)
+
+      toast.success("Convite enviado", {
+        description: `Convite enviado para ${inviteEmail}`,
+      })
+
+      setIsInviteOpen(false)
+      setInviteEmail("")
+      setInviteRole("member")
+      fetchData()
+    } catch (error: unknown) {
+      console.error("Failed to invite:", error)
+      const apiError = error as { error?: string }
+      toast.error("Erro ao enviar convite", {
+        description: apiError.error || "Nao foi possivel enviar o convite.",
+      })
+    } finally {
+      setIsInviting(false)
+    }
   }
 
-  const handleRemove = () => {
-    // TODO: Implement remove logic
-    console.log("Removing:", memberToRemove?.id)
-    setMemberToRemove(null)
+  const handleRemove = async () => {
+    if (!storeId || !memberToRemove) return
+
+    setIsRemoving(true)
+    try {
+      const token = await getToken()
+      await memberService.remove(storeId, memberToRemove.id, token)
+
+      toast.success("Membro removido", {
+        description: `${memberToRemove.name || memberToRemove.email} foi removido da equipe.`,
+      })
+
+      setMemberToRemove(null)
+      fetchData()
+    } catch (error: unknown) {
+      console.error("Failed to remove member:", error)
+      const apiError = error as { error?: string }
+      toast.error("Erro ao remover membro", {
+        description: apiError.error || "Nao foi possivel remover o membro.",
+      })
+    } finally {
+      setIsRemoving(false)
+    }
+  }
+
+  const handleRoleChange = async (member: Member, newRole: "admin" | "member") => {
+    if (!storeId) return
+
+    try {
+      const token = await getToken()
+      await memberService.updateRole(storeId, member.id, { role: newRole }, token)
+
+      toast.success("Funcao atualizada", {
+        description: `${member.name || member.email} agora e ${roleLabels[newRole].label}.`,
+      })
+
+      fetchData()
+    } catch (error: unknown) {
+      console.error("Failed to update role:", error)
+      const apiError = error as { error?: string }
+      toast.error("Erro ao alterar funcao", {
+        description: apiError.error || "Nao foi possivel alterar a funcao.",
+      })
+    }
+  }
+
+  const handleResendInvite = async (invitation: Invitation) => {
+    if (!storeId) return
+
+    setIsResending(invitation.id)
+    try {
+      const token = await getToken()
+      await invitationService.resend(storeId, invitation.id, token)
+
+      toast.success("Convite reenviado", {
+        description: `Convite reenviado para ${invitation.email}`,
+      })
+    } catch (error: unknown) {
+      console.error("Failed to resend invite:", error)
+      const apiError = error as { error?: string }
+      toast.error("Erro ao reenviar convite", {
+        description: apiError.error || "Nao foi possivel reenviar o convite.",
+      })
+    } finally {
+      setIsResending(null)
+    }
+  }
+
+  const handleRevokeInvite = async (invitation: Invitation) => {
+    if (!storeId) return
+
+    try {
+      const token = await getToken()
+      await invitationService.revoke(storeId, invitation.id, token)
+
+      toast.success("Convite revogado", {
+        description: `Convite para ${invitation.email} foi cancelado.`,
+      })
+
+      fetchData()
+    } catch (error: unknown) {
+      console.error("Failed to revoke invite:", error)
+      const apiError = error as { error?: string }
+      toast.error("Erro ao revogar convite", {
+        description: apiError.error || "Nao foi possivel revogar o convite.",
+      })
+    }
+  }
+
+  if (isLoadingStore || isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -157,7 +279,7 @@ export default function UsersPage() {
             <div>
               <CardTitle>Membros da equipe</CardTitle>
               <CardDescription>
-                Gerencie quem tem acesso à sua loja
+                Gerencie quem tem acesso a sua loja
               </CardDescription>
             </div>
             <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
@@ -171,7 +293,7 @@ export default function UsersPage() {
                 <DialogHeader>
                   <DialogTitle>Convidar novo membro</DialogTitle>
                   <DialogDescription>
-                    Envie um convite por e-mail para adicionar um novo membro à sua equipe.
+                    Envie um convite por e-mail para adicionar um novo membro a sua equipe.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -190,10 +312,10 @@ export default function UsersPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Função</Label>
-                    <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <Label htmlFor="role">Funcao</Label>
+                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "member")}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma função" />
+                        <SelectValue placeholder="Selecione uma funcao" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">
@@ -211,7 +333,7 @@ export default function UsersPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Administradores podem gerenciar membros e configurações.
+                      Administradores podem gerenciar membros e configuracoes.
                       Membros podem apenas operar a loja.
                     </p>
                   </div>
@@ -220,7 +342,8 @@ export default function UsersPage() {
                   <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleInvite} disabled={!inviteEmail}>
+                  <Button onClick={handleInvite} disabled={!inviteEmail || isInviting}>
+                    {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Enviar convite
                   </Button>
                 </DialogFooter>
@@ -246,7 +369,7 @@ export default function UsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Membro</TableHead>
-                  <TableHead>Função</TableHead>
+                  <TableHead>Funcao</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Desde</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -267,30 +390,32 @@ export default function UsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.avatar || undefined} />
+                            <AvatarImage src={member.avatarUrl || undefined} />
                             <AvatarFallback className="text-xs">
                               {getInitials(member.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{member.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {member.email}
-                            </p>
+                            <p className="font-medium">{member.name || member.email}</p>
+                            {member.name && (
+                              <p className="text-sm text-muted-foreground">
+                                {member.email}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={roleLabels[member.role].variant}>
-                          {roleLabels[member.role].label}
+                        <Badge variant={roleLabels[member.role as keyof typeof roleLabels]?.variant || "outline"}>
+                          {roleLabels[member.role as keyof typeof roleLabels]?.label || member.role}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={statusLabels[member.status].className}
+                          className={statusLabels[member.status as keyof typeof statusLabels]?.className || ""}
                         >
-                          {statusLabels[member.status].label}
+                          {statusLabels[member.status as keyof typeof statusLabels]?.label || member.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -306,20 +431,16 @@ export default function UsersPage() {
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Ações</span>
+                                <span className="sr-only">Acoes</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRoleChange(member, member.role === "admin" ? "member" : "admin")}
+                              >
                                 <Shield className="mr-2 h-4 w-4" />
-                                Alterar função
+                                {member.role === "admin" ? "Tornar Membro" : "Tornar Admin"}
                               </DropdownMenuItem>
-                              {member.status === "pending" && (
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  Reenviar convite
-                                </DropdownMenuItem>
-                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
@@ -341,16 +462,63 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
-      {/* Pending Invites Info */}
-      {members.some((m) => m.status === "pending") && (
+      {/* Pending Invites */}
+      {pendingInvitations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Convites pendentes</CardTitle>
             <CardDescription>
-              {members.filter((m) => m.status === "pending").length} convite(s)
-              aguardando aceitação
+              {pendingInvitations.length} convite(s) aguardando aceitacao
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs">
+                        {invitation.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{invitation.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {roleLabels[invitation.role as keyof typeof roleLabels]?.label || invitation.role} -
+                        Expira em {new Date(invitation.expiresAt).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleResendInvite(invitation)}
+                      disabled={isResending === invitation.id}
+                    >
+                      {isResending === invitation.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span className="ml-2 hidden sm:inline">Reenviar</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRevokeInvite(invitation)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <span className="sr-only">Revogar</span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
       )}
 
@@ -360,17 +528,19 @@ export default function UsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover acesso do membro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está prestes a remover o acesso de{" "}
-              <span className="font-medium">{memberToRemove?.name}</span> da sua
-              loja. Esta ação pode ser revertida convidando o usuário novamente.
+              Voce esta prestes a remover o acesso de{" "}
+              <span className="font-medium">{memberToRemove?.name || memberToRemove?.email}</span> da sua
+              loja. Esta acao pode ser revertida convidando o usuario novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemove}
+              disabled={isRemoving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
+              {isRemoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Trash2 className="mr-2 h-4 w-4" />
               Remover acesso
             </AlertDialogAction>
