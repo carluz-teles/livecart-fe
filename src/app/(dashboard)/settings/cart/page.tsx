@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Clock,
   Package,
-  Bell,
   Loader2,
 } from "lucide-react"
 
