@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth, SignIn } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,7 +10,20 @@ import { invitationService } from '@/services/api/invitation.service'
 import { userService } from '@/services/api/user.service'
 import { InvitationDetails } from '@/types/invitation.types'
 
-type PageState = 'loading' | 'show_login' | 'accepting' | 'success' | 'error'
+import { User } from '@/types'
+import { AlertTriangle } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+type PageState = 'loading' | 'show_login' | 'confirm_leave' | 'accepting' | 'success' | 'error'
 
 export default function AcceptInvitePage() {
   const searchParams = useSearchParams()
@@ -21,7 +34,39 @@ export default function AcceptInvitePage() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [error, setError] = useState<string | null>(null)
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const acceptingRef = useRef(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+
+  // Proceed with accepting the invitation
+  const proceedWithAcceptance = useCallback(async (authToken: string | null) => {
+    acceptingRef.current = true
+    setPageState('accepting')
+    setError(null)
+
+    try {
+      await invitationService.accept(token!, authToken)
+      setPageState('success')
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        router.push('/')
+      }, 1500)
+    } catch (err) {
+      console.error('Error accepting invitation:', err)
+      const errorObj = err as { status?: number; error?: string }
+      if (errorObj.status === 403) {
+        setError('O email do convite não corresponde à sua conta')
+      } else if (errorObj.status === 409) {
+        setError('Você é o dono de uma loja. Para aceitar este convite, primeiro exclua sua loja atual.')
+      } else if (errorObj.status === 410) {
+        setError('O convite expirou ou já foi utilizado')
+      } else {
+        setError('Erro ao aceitar convite. Tente novamente.')
+      }
+      setPageState('error')
+      acceptingRef.current = false
+    }
+  }, [token, router])
 
   // Fetch invitation details when page loads
   useEffect(() => {
@@ -53,45 +98,55 @@ export default function AcceptInvitePage() {
     fetchInvitation()
   }, [token])
 
-  // Auto-accept invitation when user signs in
+  // Check user status when signed in
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !token || !invitation || acceptingRef.current) {
       return
     }
 
-    const acceptInvitation = async () => {
-      acceptingRef.current = true
-      setPageState('accepting')
-      setError(null)
-
+    const checkAndAccept = async () => {
       try {
         const authToken = await getToken()
-        // Sync user first to ensure they exist in our database
-        await userService.sync(authToken)
-        // Then accept the invitation
-        await invitationService.accept(token, authToken)
-        setPageState('success')
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          router.push('/')
-        }, 1500)
-      } catch (err) {
-        console.error('Error accepting invitation:', err)
-        const errorObj = err as { status?: number; error?: string }
-        if (errorObj.status === 403) {
-          setError('O email do convite não corresponde à sua conta')
-        } else if (errorObj.status === 410) {
-          setError('O convite expirou ou já foi utilizado')
+        // Sync user first to check if they already have a store
+        const user = await userService.sync(authToken)
+        setCurrentUser(user)
+
+        // If user has an existing store, show confirmation
+        if (user.membership) {
+          // If user is owner of their store, they can't accept invites
+          if (user.membership.role === 'owner') {
+            setError('Você é o dono de uma loja. Para aceitar este convite, primeiro exclua sua loja atual.')
+            setPageState('error')
+            return
+          }
+          // Show confirmation dialog for members
+          setShowLeaveConfirm(true)
+          setPageState('confirm_leave')
         } else {
-          setError('Erro ao aceitar convite. Tente novamente.')
+          // No existing store, proceed with acceptance
+          await proceedWithAcceptance(authToken)
         }
+      } catch (err) {
+        console.error('Error checking user status:', err)
+        setError('Erro ao verificar status do usuário')
         setPageState('error')
-        acceptingRef.current = false
       }
     }
 
-    acceptInvitation()
-  }, [isLoaded, isSignedIn, token, invitation, getToken, router])
+    checkAndAccept()
+  }, [isLoaded, isSignedIn, token, invitation, getToken, proceedWithAcceptance])
+
+  // Handle confirmation to leave current store
+  const handleConfirmLeave = async () => {
+    setShowLeaveConfirm(false)
+    const authToken = await getToken()
+    await proceedWithAcceptance(authToken)
+  }
+
+  const handleCancelLeave = () => {
+    setShowLeaveConfirm(false)
+    router.push('/')
+  }
 
   // No token - invalid invite
   if (!token) {
@@ -128,6 +183,54 @@ export default function AcceptInvitePage() {
             </CardDescription>
           </CardHeader>
         </Card>
+      </div>
+    )
+  }
+
+  // Confirm leave current store state
+  if (pageState === 'confirm_leave') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
+            <CardTitle>Trocar de Loja</CardTitle>
+            <CardDescription className="space-y-2">
+              <p>
+                Você atualmente faz parte da loja <strong>{currentUser?.membership?.storeName}</strong>.
+              </p>
+              <p>
+                Ao aceitar este convite, você será removido da sua loja atual e passará a fazer parte de <strong>{invitation?.storeName}</strong>.
+              </p>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button className="w-full" onClick={handleConfirmLeave}>
+              Confirmar e Trocar de Loja
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleCancelLeave}>
+              Cancelar
+            </Button>
+          </CardContent>
+        </Card>
+
+        <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ao continuar, você será removido da loja <strong>{currentUser?.membership?.storeName}</strong> e
+                passará a fazer parte de <strong>{invitation?.storeName}</strong>. Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelLeave}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmLeave}>
+                Confirmar Troca
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     )
   }
