@@ -18,6 +18,15 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   notifyBeforeExpiration: true,
 }
 
+// Address structure
+export interface StoreAddress {
+  street: string
+  city: string
+  state: string
+  zip: string
+  country: string
+}
+
 export interface Store {
   id: string
   name: string
@@ -26,6 +35,10 @@ export interface Store {
   whatsappNumber: string | null
   emailAddress: string | null
   smsNumber: string | null
+  description: string | null
+  website: string | null
+  logoUrl: string | null
+  address: StoreAddress | null
   cartSettings: CartSettings
   createdAt: string
 }
@@ -35,6 +48,10 @@ export interface UpdateStorePayload {
   whatsappNumber?: string
   emailAddress?: string
   smsNumber?: string
+  description?: string
+  website?: string
+  logoUrl?: string
+  address?: StoreAddress
 }
 
 export interface UpdateCartSettingsPayload {
