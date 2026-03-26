@@ -230,7 +230,7 @@ export default function OrganizationPage() {
               />
 
               <div className="space-y-2">
-                <FormLabel>URL da loja</FormLabel>
+                <label className="text-sm font-medium leading-none">URL da loja</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
