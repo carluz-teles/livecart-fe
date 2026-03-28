@@ -2,6 +2,14 @@
 const nextConfig = {
   // Only use standalone output in production
   ...(process.env.NODE_ENV === "production" && { output: "standalone" }),
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
+  },
 }
 
 export default nextConfig

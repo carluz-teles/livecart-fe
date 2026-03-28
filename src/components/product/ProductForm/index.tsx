@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, forwardRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, ArrowLeft } from "lucide-react"
@@ -501,39 +501,13 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
           control={form.control}
           name="price"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Preço <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    R$
-                  </span>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    className="pl-10"
-                    value={
-                      field.value > 0
-                        ? (field.value / 100).toFixed(2).replace(".", ",")
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d,]/g, "")
-                      const normalized = value.replace(",", ".")
-                      const cents = Math.round(parseFloat(normalized || "0") * 100)
-                      field.onChange(isNaN(cents) ? 0 : cents)
-                    }}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <CurrencyInput
+              value={field.value as number}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              ref={field.ref}
+            />
           )}
         />
 
@@ -550,8 +524,11 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
                   type="number"
                   min={0}
                   placeholder="0"
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value, 10) || 0)}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />
@@ -583,3 +560,91 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
     </>
   )
 }
+
+// =============================================================================
+// CURRENCY INPUT
+// =============================================================================
+
+interface CurrencyInputProps {
+  value: number
+  onChange: (cents: number) => void
+  onBlur: () => void
+  name: string
+}
+
+const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
+  function CurrencyInput({ value, onChange, onBlur, name }, ref) {
+    const [displayValue, setDisplayValue] = useState(() =>
+      value > 0 ? (value / 100).toFixed(2).replace(".", ",") : ""
+    )
+
+    // Sync display when form resets (e.g. ERP product select)
+    const [prevValue, setPrevValue] = useState(value)
+    if (value !== prevValue) {
+      setPrevValue(value)
+      setDisplayValue(value > 0 ? (value / 100).toFixed(2).replace(".", ",") : "")
+    }
+
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+      const raw = e.target.value.replace(/[^\d,]/g, "")
+
+      // Allow only one comma
+      const parts = raw.split(",")
+      const sanitized = parts.length > 2
+        ? parts[0] + "," + parts.slice(1).join("")
+        : raw
+
+      // Limit decimal places to 2
+      const [integer, decimal] = sanitized.split(",")
+      const limited = decimal !== undefined
+        ? integer + "," + decimal.slice(0, 2)
+        : sanitized
+
+      setDisplayValue(limited)
+
+      const normalized = limited.replace(",", ".")
+      const cents = Math.round(parseFloat(normalized || "0") * 100)
+      onChange(isNaN(cents) ? 0 : cents)
+    }
+
+    function handleBlur() {
+      if (displayValue) {
+        const normalized = displayValue.replace(",", ".")
+        const num = parseFloat(normalized)
+        if (!isNaN(num) && num > 0) {
+          setDisplayValue(num.toFixed(2).replace(".", ","))
+        } else {
+          setDisplayValue("")
+        }
+      }
+      onBlur()
+    }
+
+    return (
+      <FormItem>
+        <FormLabel>
+          Preço <span className="text-destructive">*</span>
+        </FormLabel>
+        <FormControl>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+              R$
+            </span>
+            <Input
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              className="pl-10"
+              value={displayValue}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              name={name}
+              ref={ref}
+            />
+          </div>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )
+  }
+)
