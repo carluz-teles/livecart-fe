@@ -6,6 +6,7 @@ import type {
   CreateIntegrationPayload,
   IntegrationProvider,
   TestConnectionResponse,
+  ERPProductSearchResponse,
 } from "@/types"
 
 export const integrationService = {
@@ -37,6 +38,18 @@ export const integrationService = {
     apiClient.post<TestConnectionResponse>(
       `/stores/${storeId}/integrations/${integrationId}/test`,
       {},
+      token
+    ),
+
+  // Search products in an ERP integration
+  searchProducts: (
+    storeId: string,
+    integrationId: string,
+    search: string,
+    token?: string | null
+  ) =>
+    apiClient.get<ERPProductSearchResponse>(
+      `/stores/${storeId}/integrations/${integrationId}/products?search=${encodeURIComponent(search)}`,
       token
     ),
 }

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2 } from "lucide-react"
+import { Plus, Loader2, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
 import {
   createProductSchema,
   updateProductSchema,
@@ -41,7 +42,10 @@ import {
 } from "@/schemas/product.schema"
 import { useCreateProduct } from "@/hooks/product/useCreateProduct"
 import { useUpdateProduct } from "@/hooks/product/useUpdateProduct"
-import type { Product, CreateProductPayload, UpdateProductPayload } from "@/types/product.types"
+import { useIntegrations } from "@/hooks/integration"
+import { ProductFormERPSearch } from "./ProductForm.ERPSearch"
+import type { Product, CreateProductPayload, UpdateProductPayload, ProductSource } from "@/types/product.types"
+import type { ERPProduct, Integration } from "@/types"
 
 interface ProductFormProps {
   product?: Product
@@ -50,6 +54,10 @@ interface ProductFormProps {
   onSuccess?: () => void
   trigger?: React.ReactNode
 }
+
+type Step = "origin" | "form"
+
+const ERP_SOURCES: ProductSource[] = ["tiny", "bling", "shopify"]
 
 const sourceOptions = [
   { value: "manual", label: "Manual" },
@@ -62,6 +70,22 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
   const isEditing = !!product
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
+  const { data: integrationsData } = useIntegrations()
+
+  const [step, setStep] = useState<Step>(isEditing ? "form" : "origin")
+  const [selectedSource, setSelectedSource] = useState<ProductSource>("manual")
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
+
+  // Get active ERP integrations
+  const activeERPIntegrations = (integrationsData?.data ?? []).filter(
+    (i) => i.type === "erp" && i.status === "active"
+  )
+
+  // Build source options dynamically based on active integrations
+  const availableSourceOptions = sourceOptions.filter((opt) => {
+    if (opt.value === "manual") return true
+    return activeERPIntegrations.some((i) => i.provider === opt.value)
+  })
 
   const form = useForm<CreateProductFormData | UpdateProductFormData>({
     resolver: zodResolver(isEditing ? updateProductSchema : createProductSchema),
@@ -76,7 +100,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
     },
   })
 
-  // Reset form when product changes (for edit mode)
+  // Reset form when product changes (edit mode)
   useEffect(() => {
     if (product) {
       form.reset({
@@ -88,7 +112,15 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         externalId: product.externalId || "",
         active: product.active,
       })
-    } else {
+    }
+  }, [product, form])
+
+  // Reset state when sheet opens/closes
+  useEffect(() => {
+    if (!open && !isEditing) {
+      setStep("origin")
+      setSelectedSource("manual")
+      setSelectedIntegration(null)
       form.reset({
         name: "",
         price: 0,
@@ -98,10 +130,56 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         externalId: "",
       })
     }
-  }, [product, form])
+  }, [open, isEditing, form])
 
-  const externalSource = form.watch("externalSource")
   const isPending = createProduct.isPending || updateProduct.isPending
+
+  const handleSourceChange = useCallback(
+    (value: string) => {
+      const source = value as ProductSource
+      setSelectedSource(source)
+
+      if (source === "manual") {
+        setSelectedIntegration(null)
+        form.setValue("externalSource", "manual")
+        setStep("form")
+      } else {
+        const integration = activeERPIntegrations.find((i) => i.provider === source)
+        if (integration) {
+          setSelectedIntegration(integration)
+          form.setValue("externalSource", source)
+        }
+      }
+    },
+    [activeERPIntegrations, form]
+  )
+
+  const handleERPProductSelect = useCallback(
+    (erpProduct: ERPProduct) => {
+      form.reset({
+        name: erpProduct.name,
+        price: erpProduct.price,
+        stock: erpProduct.stock,
+        imageUrl: erpProduct.imageUrl || "",
+        externalSource: selectedSource,
+        externalId: erpProduct.id,
+      })
+      setStep("form")
+    },
+    [form, selectedSource]
+  )
+
+  const handleBack = useCallback(() => {
+    setStep("origin")
+    form.reset({
+      name: "",
+      price: 0,
+      stock: 0,
+      imageUrl: "",
+      externalSource: selectedSource,
+      externalId: "",
+    })
+  }, [form, selectedSource])
 
   async function onSubmit(data: CreateProductFormData | UpdateProductFormData) {
     if (isEditing) {
@@ -142,6 +220,9 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         onSuccess: () => {
           toast.success("Produto criado com sucesso!")
           form.reset()
+          setStep("origin")
+          setSelectedSource("manual")
+          setSelectedIntegration(null)
           onOpenChange?.(false)
           onSuccess?.()
         },
@@ -169,220 +250,338 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         </SheetTrigger>
       )}
       <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? "Editar Produto" : "Novo Produto"}</SheetTitle>
-          <SheetDescription>
-            {isEditing
-              ? "Atualize os dados do produto."
-              : "Preencha os dados do produto. A keyword será gerada automaticamente."}
-          </SheetDescription>
-        </SheetHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Nome <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Camiseta Básica Preta" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Preço <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                          R$
-                        </span>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0,00"
-                          className="pl-10"
-                          value={
-                            field.value > 0
-                              ? (field.value / 100).toFixed(2).replace(".", ",")
-                              : ""
-                          }
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^\d,]/g, "")
-                            const normalized = value.replace(",", ".")
-                            const cents = Math.round(parseFloat(normalized || "0") * 100)
-                            field.onChange(isNaN(cents) ? 0 : cents)
-                          }}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Estoque <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL da Imagem</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Link direto para a imagem do produto
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {!isEditing && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="externalSource"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Origem <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a origem" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {sourceOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        De onde este produto foi importado
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {externalSource !== "manual" && (
-                  <FormField
-                    control={form.control}
-                    name="externalId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ID Externo</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={`ID do produto no ${externalSource}`}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Identificador do produto no sistema de origem
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </>
-            )}
-
-            {isEditing && (
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Produto ativo</FormLabel>
-                      <FormDescription>
-                        Produtos inativos não aparecem para compra
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange?.(false)}
-                disabled={isPending}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending
-                  ? isEditing
-                    ? "Salvando..."
-                    : "Criando..."
-                  : isEditing
-                    ? "Salvar"
-                    : "Criar Produto"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        {isEditing ? (
+          <EditView
+            form={form}
+            product={product}
+            isPending={isPending}
+            onSubmit={onSubmit}
+            onCancel={() => onOpenChange?.(false)}
+          />
+        ) : step === "origin" ? (
+          <OriginStep
+            selectedSource={selectedSource}
+            availableSourceOptions={availableSourceOptions}
+            selectedIntegration={selectedIntegration}
+            onSourceChange={handleSourceChange}
+            onERPProductSelect={handleERPProductSelect}
+            onCancel={() => onOpenChange?.(false)}
+          />
+        ) : (
+          <FormStep
+            form={form}
+            selectedSource={selectedSource}
+            isPending={isPending}
+            onSubmit={onSubmit}
+            onBack={selectedSource !== "manual" ? handleBack : undefined}
+            onCancel={() => onOpenChange?.(false)}
+          />
+        )}
       </SheetContent>
     </Sheet>
+  )
+}
+
+// =============================================================================
+// ORIGIN STEP
+// =============================================================================
+
+interface OriginStepProps {
+  selectedSource: ProductSource
+  availableSourceOptions: { value: string; label: string }[]
+  selectedIntegration: Integration | null
+  onSourceChange: (value: string) => void
+  onERPProductSelect: (product: ERPProduct) => void
+  onCancel: () => void
+}
+
+function OriginStep({
+  selectedSource,
+  availableSourceOptions,
+  selectedIntegration,
+  onSourceChange,
+  onERPProductSelect,
+  onCancel,
+}: OriginStepProps) {
+  const isERPSource = ERP_SOURCES.includes(selectedSource)
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>Novo Produto</SheetTitle>
+        <SheetDescription>
+          Selecione a origem do produto para começar.
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="mt-6 space-y-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Origem <span className="text-destructive">*</span>
+          </label>
+          <Select value={selectedSource} onValueChange={onSourceChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a origem" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableSourceOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            De onde este produto será importado
+          </p>
+        </div>
+
+        {isERPSource && selectedIntegration && (
+          <>
+            <Separator />
+            <ProductFormERPSearch
+              integrationId={selectedIntegration.id}
+              onSelect={onERPProductSelect}
+            />
+          </>
+        )}
+
+        <div className="flex justify-end pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// =============================================================================
+// FORM STEP
+// =============================================================================
+
+interface FormStepProps {
+  form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
+  selectedSource: ProductSource
+  isPending: boolean
+  onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
+  onBack?: () => void
+  onCancel: () => void
+}
+
+function FormStep({ form, selectedSource, isPending, onSubmit, onBack, onCancel }: FormStepProps) {
+  const isFromERP = ERP_SOURCES.includes(selectedSource)
+
+  return (
+    <>
+      <SheetHeader>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div>
+            <SheetTitle>Novo Produto</SheetTitle>
+            <SheetDescription>
+              {isFromERP
+                ? "Revise os dados importados e ajuste se necessário."
+                : "Preencha os dados do produto. A keyword será gerada automaticamente."}
+            </SheetDescription>
+          </div>
+        </div>
+      </SheetHeader>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          <ProductFormFields form={form} />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? "Criando..." : "Criar Produto"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
+  )
+}
+
+// =============================================================================
+// EDIT VIEW
+// =============================================================================
+
+interface EditViewProps {
+  form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
+  product: Product
+  isPending: boolean
+  onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
+  onCancel: () => void
+}
+
+function EditView({ form, product, isPending, onSubmit, onCancel }: EditViewProps) {
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>Editar Produto</SheetTitle>
+        <SheetDescription>Atualize os dados do produto.</SheetDescription>
+      </SheetHeader>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          <ProductFormFields form={form} />
+
+          <FormField
+            control={form.control}
+            name="active"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Produto ativo</FormLabel>
+                  <FormDescription>
+                    Produtos inativos não aparecem para compra
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
+  )
+}
+
+// =============================================================================
+// SHARED FORM FIELDS
+// =============================================================================
+
+interface ProductFormFieldsProps {
+  form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
+}
+
+function ProductFormFields({ form }: ProductFormFieldsProps) {
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Nome <span className="text-destructive">*</span>
+            </FormLabel>
+            <FormControl>
+              <Input placeholder="Ex: Camiseta Básica Preta" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Preço <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    R$
+                  </span>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    className="pl-10"
+                    value={
+                      field.value > 0
+                        ? (field.value / 100).toFixed(2).replace(".", ",")
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d,]/g, "")
+                      const normalized = value.replace(",", ".")
+                      const cents = Math.round(parseFloat(normalized || "0") * 100)
+                      field.onChange(isNaN(cents) ? 0 : cents)
+                    }}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="stock"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Estoque <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="imageUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>URL da Imagem</FormLabel>
+            <FormControl>
+              <Input
+                type="url"
+                placeholder="https://exemplo.com/imagem.jpg"
+                {...field}
+              />
+            </FormControl>
+            <FormDescription>
+              Link direto para a imagem do produto
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
   )
 }

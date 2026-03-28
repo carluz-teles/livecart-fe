@@ -44,6 +44,23 @@ export interface CreateIntegrationPayload {
   metadata?: Record<string, unknown>
 }
 
+// ERP Product from search
+export interface ERPProduct {
+  id: string
+  sku?: string
+  name: string
+  price: number // in cents
+  stock: number
+  imageUrl?: string
+  active: boolean
+}
+
+export interface ERPProductSearchResponse {
+  products: ERPProduct[]
+  totalCount: number
+  hasMore: boolean
+}
+
 // Provider display info
 export interface ProviderInfo {
   id: IntegrationProvider
