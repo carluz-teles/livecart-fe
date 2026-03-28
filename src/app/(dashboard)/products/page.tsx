@@ -98,10 +98,22 @@ export default function ProductsPage() {
     syncProduct(
       { product },
       {
-        onSuccess: (updatedProduct) => {
+        onSuccess: (syncedData) => {
           toast.success("Produto sincronizado!", {
-            description: `${updatedProduct.name} atualizado via ERP`,
+            description: `${syncedData.name} atualizado via ERP`,
           })
+          const merged = {
+            ...product,
+            name: syncedData.name,
+            price: syncedData.price,
+            stock: syncedData.stock,
+            imageUrl: syncedData.imageUrl,
+            active: syncedData.active,
+            externalId: syncedData.externalId,
+          }
+          if (viewingProduct?.id === product.id) {
+            setViewingProduct(merged)
+          }
         },
         onError: (error) => {
           toast.error("Erro ao sincronizar", {
@@ -384,6 +396,9 @@ export default function ProductsPage() {
         product={viewingProduct}
         open={!!viewingProduct}
         onOpenChange={(open) => !open && setViewingProduct(null)}
+        onSync={handleSync}
+        isSyncing={isSyncing}
+        canSync={viewingProduct ? canSync(viewingProduct) : false}
       />
 
       {/* Delete Confirmation Dialog */}

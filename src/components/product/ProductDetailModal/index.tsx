@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import { Package, Tag, Hash, Layers, Calendar, Box, RefreshCw } from "lucide-react"
-import { toast } from "sonner"
 
 import {
   Dialog,
@@ -15,13 +14,15 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatCurrency, formatDateTime } from "@/lib/format"
-import { useSyncProduct } from "@/hooks/product"
 import type { Product } from "@/types/product.types"
 
 interface ProductDetailModalProps {
   product: Product | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSync?: (product: Product) => void
+  isSyncing?: boolean
+  canSync?: boolean
 }
 
 const sourceLabels: Record<string, string> = {
@@ -51,32 +52,11 @@ export function ProductDetailModal({
   product,
   open,
   onOpenChange,
+  onSync,
+  isSyncing = false,
+  canSync = false,
 }: ProductDetailModalProps) {
-  const { mutate: syncProduct, isPending: isSyncing, canSync } = useSyncProduct()
-
   if (!product) return null
-
-  const showSync = canSync(product)
-
-  function handleSync() {
-    if (!product) return
-
-    syncProduct(
-      { product },
-      {
-        onSuccess: (updatedProduct) => {
-          toast.success("Produto sincronizado com sucesso!", {
-            description: `${updatedProduct.name} atualizado via ${sourceLabels[updatedProduct.externalSource] ?? updatedProduct.externalSource}`,
-          })
-        },
-        onError: (error) => {
-          toast.error("Erro ao sincronizar produto", {
-            description: error.message || "Tente novamente mais tarde.",
-          })
-        },
-      }
-    )
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,11 +100,11 @@ export function ProductDetailModal({
                 <DialogTitle className="text-2xl font-semibold tracking-tight">
                   {product.name}
                 </DialogTitle>
-                {showSync && (
+                {canSync && onSync && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleSync}
+                    onClick={() => onSync(product)}
                     disabled={isSyncing}
                     className="gap-2"
                   >

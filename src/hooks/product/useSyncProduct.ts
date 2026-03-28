@@ -54,7 +54,7 @@ export function useSyncProduct() {
         )
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: productKeys.lists() })
+        queryClient.invalidateQueries({ queryKey: productKeys.all })
       },
     }),
     canSync: (product: Product) =>
