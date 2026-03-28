@@ -253,7 +253,6 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         {isEditing ? (
           <EditView
             form={form}
-            product={product}
             isPending={isPending}
             onSubmit={onSubmit}
             onCancel={() => onOpenChange?.(false)}
@@ -417,13 +416,12 @@ function FormStep({ form, selectedSource, isPending, onSubmit, onBack, onCancel 
 
 interface EditViewProps {
   form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
-  product: Product
   isPending: boolean
   onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
   onCancel: () => void
 }
 
-function EditView({ form, product, isPending, onSubmit, onCancel }: EditViewProps) {
+function EditView({ form, isPending, onSubmit, onCancel }: EditViewProps) {
   return (
     <>
       <SheetHeader>

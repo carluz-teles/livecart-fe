@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Package, Loader2, AlertCircle } from "lucide-react"
+import Image from "next/image"
+import { Search, Package, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -75,16 +76,17 @@ export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERP
                   <button
                     type="button"
                     onClick={() => handleSelect(product)}
-                    className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent ${
-                      selectedId === product.id
+                    className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent ${selectedId === product.id
                         ? "bg-accent ring-1 ring-inset ring-primary"
                         : ""
-                    }`}
+                      }`}
                   >
                     {product.imageUrl ? (
-                      <img
+                      <Image
                         src={product.imageUrl}
                         alt={product.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 shrink-0 rounded-md object-cover bg-muted"
                       />
                     ) : (
