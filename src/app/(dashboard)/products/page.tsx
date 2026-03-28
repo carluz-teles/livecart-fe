@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductForm } from "@/components/product/ProductForm"
+import { ProductDetailModal } from "@/components/product/ProductDetailModal"
 import { ProductFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct } from "@/hooks/product"
@@ -70,6 +71,7 @@ export default function ProductsPage() {
   const [editFormOpen, setEditFormOpen] = useState(false)
   const [createFormOpen, setCreateFormOpen] = useState(false)
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
 
   const {
     search,
@@ -268,7 +270,11 @@ export default function ProductsPage() {
                   </TableRow>
                 ) : (
                   products.map((product) => (
-                    <TableRow key={product.id}>
+                    <TableRow
+                      key={product.id}
+                      className="cursor-pointer transition-colors hover:bg-muted/50"
+                      onClick={() => setViewingProduct(product)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 rounded-md">
@@ -297,7 +303,7 @@ export default function ProductsPage() {
                           {product.active ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -343,6 +349,13 @@ export default function ProductsPage() {
           if (!open) setEditingProduct(null)
         }}
         trigger={null}
+      />
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        product={viewingProduct}
+        open={!!viewingProduct}
+        onOpenChange={(open) => !open && setViewingProduct(null)}
       />
 
       {/* Delete Confirmation Dialog */}
