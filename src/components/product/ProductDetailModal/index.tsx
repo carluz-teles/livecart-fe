@@ -1,7 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { Package, Tag, Hash, Layers, Calendar, Box } from "lucide-react"
+import { Package, Tag, Hash, Layers, Calendar, Box, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   Dialog,
@@ -10,9 +11,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatCurrency, formatDateTime } from "@/lib/format"
+import { useSyncProduct } from "@/hooks/product"
 import type { Product } from "@/types/product.types"
 
 interface ProductDetailModalProps {
@@ -49,7 +52,31 @@ export function ProductDetailModal({
   open,
   onOpenChange,
 }: ProductDetailModalProps) {
+  const { mutate: syncProduct, isPending: isSyncing, canSync } = useSyncProduct()
+
   if (!product) return null
+
+  const showSync = canSync(product)
+
+  function handleSync() {
+    if (!product) return
+
+    syncProduct(
+      { product },
+      {
+        onSuccess: (updatedProduct) => {
+          toast.success("Produto sincronizado com sucesso!", {
+            description: `${updatedProduct.name} atualizado via ${sourceLabels[updatedProduct.externalSource] ?? updatedProduct.externalSource}`,
+          })
+        },
+        onError: (error) => {
+          toast.error("Erro ao sincronizar produto", {
+            description: error.message || "Tente novamente mais tarde.",
+          })
+        },
+      }
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,9 +116,25 @@ export function ProductDetailModal({
           {/* Content */}
           <div className="p-6">
             <DialogHeader className="mb-4">
-              <DialogTitle className="text-2xl font-semibold tracking-tight">
-                {product.name}
-              </DialogTitle>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-2xl font-semibold tracking-tight">
+                  {product.name}
+                </DialogTitle>
+                {showSync && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="gap-2"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                    />
+                    {isSyncing ? "Sincronizando..." : "Sincronizar"}
+                  </Button>
+                )}
+              </div>
             </DialogHeader>
 
             {/* Price highlight */}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2 } from "lucide-react"
+import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,7 @@ import { ProductForm } from "@/components/product/ProductForm"
 import { ProductDetailModal } from "@/components/product/ProductDetailModal"
 import { ProductFilters } from "@/components/shared/Filters"
 import { useListParams } from "@/hooks/shared/useListParams"
-import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct } from "@/hooks/product"
+import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct, useSyncProduct } from "@/hooks/product"
 import { formatCurrency } from "@/lib/format"
 import type { Product, ProductFilters as ProductFiltersType } from "@/types/product.types"
 import {
@@ -85,12 +85,31 @@ export default function ProductsPage() {
   const { data: stats, isLoading: statsLoading } = useProductStats()
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
+  const { mutate: syncProduct, isPending: isSyncing, canSync } = useSyncProduct()
 
   const products = data?.data ?? []
 
   function handleEdit(product: Product) {
     setEditingProduct(product)
     setEditFormOpen(true)
+  }
+
+  function handleSync(product: Product) {
+    syncProduct(
+      { product },
+      {
+        onSuccess: (updatedProduct) => {
+          toast.success("Produto sincronizado!", {
+            description: `${updatedProduct.name} atualizado via ERP`,
+          })
+        },
+        onError: (error) => {
+          toast.error("Erro ao sincronizar", {
+            description: error.message || "Tente novamente mais tarde.",
+          })
+        },
+      }
+    )
   }
 
   function handleToggleActive(product: Product) {
@@ -320,6 +339,15 @@ export default function ProductsPage() {
                             <DropdownMenuItem onClick={() => handleToggleActive(product)}>
                               {product.active ? "Desativar" : "Ativar"}
                             </DropdownMenuItem>
+                            {canSync(product) && (
+                              <DropdownMenuItem
+                                onClick={() => handleSync(product)}
+                                disabled={isSyncing}
+                              >
+                                <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+                                Sincronizar via ERP
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"

@@ -7,6 +7,7 @@ import type {
   IntegrationProvider,
   TestConnectionResponse,
   ERPProductSearchResponse,
+  Product,
 } from "@/types"
 
 export const integrationService = {
@@ -50,6 +51,19 @@ export const integrationService = {
   ) =>
     apiClient.get<ERPProductSearchResponse>(
       `/stores/${storeId}/integrations/${integrationId}/products?search=${encodeURIComponent(search)}`,
+      token
+    ),
+
+  // Sync a single product from ERP
+  syncProduct: (
+    storeId: string,
+    integrationId: string,
+    productId: string,
+    token?: string | null
+  ) =>
+    apiClient.post<Product>(
+      `/stores/${storeId}/integrations/${integrationId}/products/${productId}/sync`,
+      {},
       token
     ),
 }
