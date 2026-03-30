@@ -86,3 +86,21 @@ export function formatRelativeTime(dateString: string): string {
   if (diffDays < 7) return `${diffDays}d atras`
   return formatDate(dateString)
 }
+
+/**
+ * Formats a relative date (e.g., "Hoje", "Ontem", "3 dias atras")
+ * @param dateString - ISO date string
+ * @returns Relative date string
+ */
+export function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.floor((today.getTime() - dateDay.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return "Hoje"
+  if (diffDays === 1) return "Ontem"
+  if (diffDays < 7) return `${diffDays} dias atras`
+  return formatDate(dateString)
+}

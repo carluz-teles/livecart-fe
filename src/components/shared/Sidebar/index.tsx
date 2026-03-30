@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Radio,
+  Calendar,
   Package,
   ShoppingCart,
   Settings,
@@ -35,7 +36,7 @@ const navSections: NavSection[] = [
     title: "Geral",
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
-      { name: "Lives", href: "/lives", icon: Radio },
+      { name: "Eventos", href: "/events", icon: Calendar },
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
       { name: "Clientes", href: "/customers", icon: Users },

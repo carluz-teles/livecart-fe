@@ -4,6 +4,7 @@
  */
 
 import type { LiveStatus, LivePlatform } from "@/types/live.types"
+import type { EventStatus } from "@/types/event.types"
 import type { OrderStatus, PaymentStatus } from "@/types/cart.types"
 
 // =============================================================================
@@ -26,9 +27,22 @@ export interface LiveStatusConfig extends StatusConfig {
  */
 export const LIVE_STATUS_CONFIG: Record<LiveStatus, LiveStatusConfig> = {
   scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
+  active: { label: "Ao Vivo", variant: "destructive", icon: "play" },
   live: { label: "Ao Vivo", variant: "destructive", icon: "play" },
   ended: { label: "Finalizada", variant: "secondary", icon: "eye" },
   cancelled: { label: "Cancelada", variant: "outline", icon: "clock" },
+}
+
+export interface EventStatusConfig extends StatusConfig {
+  icon: "radio" | "check-circle"
+}
+
+/**
+ * Event status configuration
+ */
+export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
+  active: { label: "Ao Vivo", variant: "destructive", icon: "radio" },
+  ended: { label: "Finalizado", variant: "secondary", icon: "check-circle" },
 }
 
 /**
