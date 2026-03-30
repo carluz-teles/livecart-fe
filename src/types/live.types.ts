@@ -1,11 +1,13 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 
-export type LiveStatus = "scheduled" | "live" | "ended" | "cancelled"
+export type LiveStatus = "scheduled" | "active" | "live" | "ended" | "cancelled"
+export type LiveEventType = "single" | "multi"
 export type LivePlatform = "instagram" | "tiktok" | "youtube" | "facebook"
 
-export interface LiveSession {
+export interface LiveEvent {
   id: string
   title: string
+  type: LiveEventType
   status: LiveStatus
   platform: LivePlatform
   platformLiveId: string
@@ -16,6 +18,9 @@ export interface LiveSession {
   createdAt: string
   updatedAt: string
 }
+
+// Alias for backwards compatibility
+export type LiveSession = LiveEvent
 
 export interface LiveComment {
   id: string
@@ -29,11 +34,15 @@ export interface LiveComment {
   createdAt: string
 }
 
-export interface CreateLiveSessionPayload {
+export interface CreateLiveEventPayload {
   title: string
-  platform: LivePlatform
-  platformLiveId: string
+  type?: LiveEventType
+  platform?: LivePlatform
+  platformLiveId?: string
 }
+
+// Alias for backwards compatibility
+export type CreateLiveSessionPayload = CreateLiveEventPayload
 
 export interface UpdateLiveSessionPayload {
   title?: string
