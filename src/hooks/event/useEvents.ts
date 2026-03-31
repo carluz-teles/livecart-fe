@@ -16,6 +16,7 @@ export const eventKeys = {
   // Event details page
   detailStats: (storeId: string, eventId: string) => [...eventKeys.all, "detail-stats", storeId, eventId] as const,
   detailCarts: (storeId: string, eventId: string) => [...eventKeys.all, "detail-carts", storeId, eventId] as const,
+  detailProducts: (storeId: string, eventId: string) => [...eventKeys.all, "detail-products", storeId, eventId] as const,
 }
 
 export function useEvents(params?: EventListParams) {

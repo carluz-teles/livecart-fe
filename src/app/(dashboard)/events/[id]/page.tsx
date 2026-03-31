@@ -6,18 +6,21 @@ import {
   ArrowLeft,
   MessageCircle,
   ShoppingCart,
-  CheckCircle,
   DollarSign,
   TrendingUp,
   User,
   RefreshCw,
+  Package,
   Radio,
   Play,
+  CheckCircle,
   Clock,
   ChevronDown,
+  Plus,
+  RotateCcw,
 } from "lucide-react"
 
-import { formatCurrency, formatRelativeTime, formatDate, formatDateTime } from "@/lib/format"
+import { formatCurrency, formatDateTime } from "@/lib/format"
 import {
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
@@ -51,8 +54,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { useEvent, useEventDetailStats, useEventCarts } from "@/hooks/event"
-import type { EventCart, EventSession, Platform } from "@/types/event.types"
+import { useEvent, useEventDetailStats, useEventCarts, useEventProducts } from "@/hooks/event"
+import type { EventCart, EventProduct, EventSession, Platform } from "@/types/event.types"
 
 export default function EventDetailsPage() {
   const params = useParams<{ id: string }>()
@@ -62,10 +65,12 @@ export default function EventDetailsPage() {
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id)
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useEventDetailStats(id)
   const { data: carts, isLoading: cartsLoading, refetch: refetchCarts } = useEventCarts(id)
+  const { data: products, isLoading: productsLoading, refetch: refetchProducts } = useEventProducts(id)
 
   const handleRefresh = () => {
     refetchStats()
     refetchCarts()
+    refetchProducts()
   }
 
   if (eventError) {
@@ -122,76 +127,103 @@ export default function EventDetailsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-5">
+        {/* Card 1: Mensagens */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comentarios</CardTitle>
+            <CardTitle className="text-sm font-medium">Mensagens</CardTitle>
             <MessageCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalComments ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">total de comentarios</p>
+            <p className="text-xs text-muted-foreground">comentários detectados</p>
           </CardContent>
         </Card>
 
+        {/* Card 2: Carrinhos (pagos + abertos) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Carrinhos Abertos</CardTitle>
+            <CardTitle className="text-sm font-medium">Carrinhos</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.openCarts ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground">pendentes</p>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-green-600">{stats?.paidCarts ?? 0}</span>
+                  <span className="text-sm text-muted-foreground">pagos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold">{stats?.openCarts ?? 0}</span>
+                  <span className="text-sm text-muted-foreground">abertos</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Card 3: Produtos Vendidos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Checkout</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Produtos Vendidos</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.checkoutCarts ?? 0}
+              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalProductsSold ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">finalizados</p>
+            <p className="text-xs text-muted-foreground">unidades em carrinhos</p>
           </CardContent>
         </Card>
 
+        {/* Card 4: Receita (confirmada + projetada) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Projetada</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                formatCurrency(stats?.projectedRevenue ?? 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">carrinhos abertos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Checkout</CardTitle>
+            <CardTitle className="text-sm font-medium">Receita</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                formatCurrency(stats?.checkoutRevenue ?? 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">em checkout</p>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-green-600">
+                    {formatCurrency(stats?.confirmedRevenue ?? 0)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {formatCurrency(stats?.projectedRevenue ?? 0)} projetada
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 5: Conversão */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversão</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {stats?.totalComments && stats.totalComments > 0
+                    ? (((stats.paidCarts ?? 0) + (stats.openCarts ?? 0)) / stats.totalComments * 100).toFixed(1)
+                    : "0.0"}%
+                </div>
+                <p className="text-xs text-muted-foreground">mensagens → carrinhos</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -200,7 +232,7 @@ export default function EventDetailsPage() {
       <Card>
         <Collapsible defaultOpen>
           <CardHeader className="pb-3">
-            <CollapsibleTrigger className="flex w-full items-center justify-between">
+            <CollapsibleTrigger className="flex w-full items-center justify-between [&[data-state=open]>svg.chevron]:rotate-180">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Radio className="h-4 w-4" />
@@ -214,7 +246,7 @@ export default function EventDetailsPage() {
                   )}
                 </CardDescription>
               </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              <ChevronDown className="chevron h-4 w-4 text-muted-foreground transition-transform duration-200" />
             </CollapsibleTrigger>
           </CardHeader>
           <CollapsibleContent>
@@ -222,7 +254,7 @@ export default function EventDetailsPage() {
               {eventLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 2 }).map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
+                    <Skeleton key={i} className="h-24 w-full" />
                   ))}
                 </div>
               ) : !event?.sessions || event.sessions.length === 0 ? (
@@ -247,53 +279,102 @@ export default function EventDetailsPage() {
         </Collapsible>
       </Card>
 
-      {/* Carts Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Carrinhos</CardTitle>
-          <CardDescription>
-            Lista de todos os carrinhos criados neste evento
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Pagamento</TableHead>
-                  <TableHead className="text-center">Itens</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Criado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cartsLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24 ml-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : !carts || carts.length === 0 ? (
+      {/* Tables Side by Side */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Carts Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Carrinhos
+            </CardTitle>
+            <CardDescription>
+              Lista de todos os carrinhos criados neste evento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      Nenhum carrinho encontrado
-                    </TableCell>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Itens</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
-                ) : (
-                  carts.map((cart) => <CartRow key={cart.id} cart={cart} />)
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {cartsLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : !carts || carts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Nenhum carrinho encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    carts.map((cart) => <CartRow key={cart.id} cart={cart} />)
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Products Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Produtos Vendidos
+            </CardTitle>
+            <CardDescription>
+              Produtos adicionados aos carrinhos neste evento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Keyword</TableHead>
+                    <TableHead className="text-center">Qtd</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productsLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : !products || products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Nenhum produto vendido
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((product) => <ProductRow key={product.id} product={product} />)
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -304,6 +385,9 @@ function CartRow({ cart }: { cart: EventCart }) {
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null
 
+  // Determine which badge to show: payment status if paid, otherwise cart status
+  const displayConfig = paymentConfig && cart.paymentStatus === "paid" ? paymentConfig : statusConfig
+
   return (
     <TableRow>
       <TableCell>
@@ -313,26 +397,45 @@ function CartRow({ cart }: { cart: EventCart }) {
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-      </TableCell>
-      <TableCell>
-        {paymentConfig ? (
-          <Badge variant={paymentConfig.variant}>{paymentConfig.label}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
+        <Badge variant={displayConfig.variant}>{displayConfig.label}</Badge>
       </TableCell>
       <TableCell className="text-center">{cart.totalItems}</TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(cart.totalValue)}
       </TableCell>
+    </TableRow>
+  )
+}
+
+function ProductRow({ product }: { product: EventProduct }) {
+  return (
+    <TableRow>
       <TableCell>
-        <div className="flex flex-col">
-          <span>{formatRelativeTime(cart.createdAt)}</span>
-          <span className="text-xs text-muted-foreground">
-            {formatDate(cart.createdAt)}
+        <div className="flex items-center gap-2">
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-8 w-8 rounded object-cover"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+          <span className="font-medium truncate max-w-[120px]" title={product.name}>
+            {product.name}
           </span>
         </div>
+      </TableCell>
+      <TableCell>
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+          {product.keyword}
+        </code>
+      </TableCell>
+      <TableCell className="text-center">{product.totalQuantity}</TableCell>
+      <TableCell className="text-right font-medium">
+        {formatCurrency(product.totalRevenue)}
       </TableCell>
     </TableRow>
   )
@@ -359,7 +462,8 @@ function SessionCard({ session, index }: { session: EventSession; index: number 
           <div className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
             <span className="text-sm font-medium">{index}</span>
           </div>
-          <div>
+          <div className="space-y-2">
+            {/* Status and basic info */}
             <div className="flex items-center gap-2">
               <span className="font-medium">Sessao {index}</span>
               <Badge variant={statusConfig.variant} className="gap-1">
@@ -367,11 +471,30 @@ function SessionCard({ session, index }: { session: EventSession; index: number 
                 {statusConfig.label}
               </Badge>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
+
+            {/* Stats row */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span className="flex items-center gap-1 text-muted-foreground">
                 <MessageCircle className="h-3 w-3" />
                 {session.totalComments} comentarios
               </span>
+              <span className="flex items-center gap-1">
+                <ShoppingCart className="h-3 w-3 text-muted-foreground" />
+                <span className="text-green-600 font-medium">{session.paidCarts}</span>
+                <span className="text-muted-foreground">pagos</span>
+                <span className="text-muted-foreground">·</span>
+                <span>{session.totalCarts}</span>
+                <span className="text-muted-foreground">total</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <DollarSign className="h-3 w-3 text-muted-foreground" />
+                <span className="text-green-600 font-medium">{formatCurrency(session.paidRevenue)}</span>
+                <span className="text-muted-foreground">confirmado</span>
+              </span>
+            </div>
+
+            {/* Timestamps */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {session.startedAt && (
                 <span className="flex items-center gap-1">
                   <Play className="h-3 w-3" />
@@ -385,9 +508,10 @@ function SessionCard({ session, index }: { session: EventSession; index: number 
                 </span>
               )}
             </div>
+
             {/* Platforms */}
             {session.platforms && session.platforms.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {session.platforms.map((platform) => (
                   <Badge key={platform.id} variant="outline" className="text-xs">
                     {PLATFORM_LABELS[platform.platform as Platform] || platform.platform}
@@ -399,6 +523,20 @@ function SessionCard({ session, index }: { session: EventSession; index: number 
               </div>
             )}
           </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          {!isActive && (
+            <Button variant="outline" size="sm" className="gap-1">
+              <RotateCcw className="h-3 w-3" />
+              Reconectar
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="gap-1">
+            <Plus className="h-3 w-3" />
+            Plataforma
+          </Button>
         </div>
       </div>
     </div>

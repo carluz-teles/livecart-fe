@@ -30,6 +30,10 @@ export interface EventSession {
   startedAt: string | null
   endedAt: string | null
   totalComments: number
+  totalCarts: number
+  paidCarts: number
+  totalRevenue: number
+  paidRevenue: number
   platforms: EventPlatform[]
   createdAt: string
   updatedAt: string
@@ -137,9 +141,10 @@ export type EventListResponse = PaginatedResponse<Event>
 export interface EventDetailStats {
   totalComments: number
   openCarts: number
-  checkoutCarts: number
+  paidCarts: number
+  totalProductsSold: number
   projectedRevenue: number
-  checkoutRevenue: number
+  confirmedRevenue: number
 }
 
 // Cart with total value for event details page
@@ -159,11 +164,26 @@ export interface EventCart {
 export interface EventDetailStatsResponse {
   totalComments: number
   openCarts: number
-  checkoutCarts: number
+  paidCarts: number
+  totalProductsSold: number
   projectedRevenue: number
-  checkoutRevenue: number
+  confirmedRevenue: number
 }
 
 export interface EventCartsResponse {
   data: EventCart[]
+}
+
+// Product sold in an event
+export interface EventProduct {
+  id: string
+  name: string
+  imageUrl: string | null
+  keyword: string
+  totalQuantity: number
+  totalRevenue: number
+}
+
+export interface EventProductsResponse {
+  data: EventProduct[]
 }

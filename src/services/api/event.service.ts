@@ -16,6 +16,7 @@ import type {
   EventPlatform,
   EventDetailStatsResponse,
   EventCartsResponse,
+  EventProductsResponse,
 } from "@/types"
 
 export const eventService = {
@@ -69,4 +70,8 @@ export const eventService = {
   // Event Details - List carts for an event
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
+
+  // Event Details - List products sold in an event
+  listProducts: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventProductsResponse>(`/stores/${storeId}/lives/${eventId}/products`, token),
 }
