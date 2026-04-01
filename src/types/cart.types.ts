@@ -92,3 +92,61 @@ export interface OrderListParams {
 
 // Response type for order listing
 export type OrderListResponse = PaginatedResponse<Order>
+
+// =============================================================================
+// PUBLIC CHECKOUT TYPES
+// =============================================================================
+
+export interface PublicCheckoutItem {
+  id: string
+  productId: string
+  name: string
+  imageUrl: string | null
+  keyword: string | null
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  waitlisted: boolean
+}
+
+export interface PublicCheckoutEvent {
+  id: string
+  title: string
+}
+
+export interface PublicCheckoutStore {
+  id: string
+  name: string
+  logoUrl: string | null
+}
+
+export interface PublicCheckoutSummary {
+  subtotal: number
+  totalItems: number
+}
+
+export interface PublicCheckoutCart {
+  id: string
+  token: string
+  status: CartStatus
+  customerEmail: string | null
+  paymentStatus: PaymentStatus | null
+  checkoutUrl: string | null
+  platformHandle: string
+  allowEdit: boolean
+  expiresAt: string | null
+  createdAt: string
+  event: PublicCheckoutEvent
+  store: PublicCheckoutStore
+  items: PublicCheckoutItem[]
+  summary: PublicCheckoutSummary
+}
+
+export interface GenerateCheckoutRequest {
+  email: string
+}
+
+export interface GenerateCheckoutResponse {
+  checkoutUrl: string
+  expiresAt: string | null
+}
