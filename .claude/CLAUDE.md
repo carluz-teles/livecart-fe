@@ -42,6 +42,46 @@ Quando recebo uma tarefa de UI, sempre me pergunto:
 
 ---
 
+## Como rodar os serviços
+
+**IMPORTANTE: Sempre usar estes comandos para rodar os serviços.**
+
+| Serviço | Diretório | Comando |
+|---------|-----------|---------|
+| **Frontend** | `/home/carluz_teles/livecart-fe` | `npm run dev` |
+| **Backend** | `/home/carluz_teles/livecart-be` | `docker compose up` |
+| **Backend + Tunnel** | `/home/carluz_teles/livecart-be` | `docker compose --profile dev up` |
+
+### Notas:
+- Frontend roda na porta **3000**
+- Backend API roda na porta **3001**
+- Tunnel expõe a API em **https://livecart-api.loca.lt**
+- Para rebuild do backend: `docker compose up -d --build api`
+- Para ver logs do backend: `docker compose logs -f api`
+- Para ver logs do tunnel: `docker compose logs -f tunnel`
+- **Nunca** usar `go run` diretamente para o backend
+- **Nunca** usar outras formas de iniciar o frontend além de `npm run dev`
+
+### Tunnel (para integrações OAuth)
+
+O tunnel é necessário para testar integrações que precisam de callbacks (Mercado Pago, Tiny ERP).
+Ele expõe a API local para a internet através de `https://livecart-api.loca.lt`.
+
+```bash
+# Iniciar backend COM tunnel (recomendado para desenvolvimento)
+docker compose --profile dev up
+
+# Iniciar backend SEM tunnel (apenas API local)
+docker compose up
+```
+
+**Callback URL para Mercado Pago:**
+```
+https://livecart-api.loca.lt/api/v1/integrations/oauth/mercado_pago/callback
+```
+
+---
+
 ## Estilo visual
 
 O LiveCart é um produto B2B usado por lojistas durante lives — um momento

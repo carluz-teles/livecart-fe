@@ -74,7 +74,7 @@ export default function EventsPage() {
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
   const [endingEvent, setEndingEvent] = useState<Event | null>(null)
   const [sessionEvent, setSessionEvent] = useState<Event | null>(null)
-  const [reconnectEvent, setReconnectEvent] = useState<{ event: Event; sessionId: string } | null>(null)
+  const [reconnectEvent, setReconnectEvent] = useState<Event | null>(null)
 
   const {
     search,
@@ -145,10 +145,10 @@ export default function EventsPage() {
   }
 
   function handleReconnect(event: Event) {
-    // Find the active session to reconnect to
+    // Check if there's an active session to reconnect to
     const activeSession = event.sessions?.find(s => s.status === "active" || s.status === "live")
     if (activeSession) {
-      setReconnectEvent({ event, sessionId: activeSession.id })
+      setReconnectEvent(event)
     } else {
       toast.error("Nenhuma sessao ativa encontrada")
     }
@@ -376,8 +376,7 @@ export default function EventsPage() {
       {/* Reconnect Dialog */}
       {reconnectEvent && (
         <ReconnectForm
-          eventId={reconnectEvent.event.id}
-          sessionId={reconnectEvent.sessionId}
+          eventId={reconnectEvent.id}
           open={!!reconnectEvent}
           onOpenChange={(open) => !open && setReconnectEvent(null)}
         />

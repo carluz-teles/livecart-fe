@@ -9,7 +9,6 @@ import { eventKeys } from "./useEvents"
 
 interface AddPlatformParams {
   eventId: string
-  sessionId: string
   payload: AddPlatformPayload
 }
 
@@ -19,10 +18,10 @@ export function useAddPlatform() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ eventId, sessionId, payload }: AddPlatformParams): Promise<EventPlatform> => {
+    mutationFn: async ({ eventId, payload }: AddPlatformParams): Promise<EventPlatform> => {
       if (!storeId) throw new Error("Store ID is required")
       const token = await getToken()
-      return eventService.addPlatform(storeId, eventId, sessionId, payload, token)
+      return eventService.addPlatform(storeId, eventId, payload, token)
     },
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })

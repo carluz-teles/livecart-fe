@@ -36,7 +36,6 @@ import { useAddPlatform } from "@/hooks/event"
 
 interface ReconnectFormProps {
   eventId: string
-  sessionId: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
@@ -49,7 +48,7 @@ const platformOptions = [
   { value: "tiktok", label: "TikTok" },
 ]
 
-export function ReconnectForm({ eventId, sessionId, open, onOpenChange, onSuccess }: ReconnectFormProps) {
+export function ReconnectForm({ eventId, open, onOpenChange, onSuccess }: ReconnectFormProps) {
   const addPlatform = useAddPlatform()
 
   const form = useForm<AddPlatformFormData>({
@@ -67,7 +66,6 @@ export function ReconnectForm({ eventId, sessionId, open, onOpenChange, onSucces
     addPlatform.mutate(
       {
         eventId,
-        sessionId,
         payload: {
           platform: data.platform,
           platformLiveId: data.platformLiveId,

@@ -23,6 +23,11 @@ export interface EventPlatform {
 // SESSION - Platform-agnostic broadcast with start/end times
 // =============================================================================
 
+export interface SessionComment {
+  handle: string
+  text: string
+}
+
 export interface EventSession {
   id: string
   eventId: string
@@ -35,6 +40,7 @@ export interface EventSession {
   totalRevenue: number
   paidRevenue: number
   platforms: EventPlatform[]
+  comments?: SessionComment[]
   createdAt: string
   updatedAt: string
 }

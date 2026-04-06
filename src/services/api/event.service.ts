@@ -59,9 +59,9 @@ export const eventService = {
   createSession: (storeId: string, eventId: string, payload: CreateSessionPayload, token?: string | null) =>
     apiClient.post<EventSession>(`/stores/${storeId}/lives/${eventId}/sessions`, payload, token),
 
-  // Add platform to session (reconnect)
-  addPlatform: (storeId: string, eventId: string, sessionId: string, payload: AddPlatformPayload, token?: string | null) =>
-    apiClient.post<EventPlatform>(`/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/platforms`, payload, token),
+  // Add platform to active session (crash recovery)
+  addPlatform: (storeId: string, eventId: string, payload: AddPlatformPayload, token?: string | null) =>
+    apiClient.post<EventPlatform>(`/stores/${storeId}/lives/${eventId}/platforms`, payload, token),
 
   // Event Details - Stats for a specific event
   getEventStats: (storeId: string, eventId: string, token?: string | null) =>

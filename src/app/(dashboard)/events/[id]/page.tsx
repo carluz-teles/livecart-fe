@@ -16,8 +16,9 @@ import {
   CheckCircle,
   Clock,
   ChevronDown,
-  Plus,
   RotateCcw,
+  StopCircle,
+  Plus,
 } from "lucide-react"
 
 import { formatCurrency, formatDateTime } from "@/lib/format"
@@ -54,24 +55,82 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { useEvent, useEventDetailStats, useEventCarts, useEventProducts } from "@/hooks/event"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useEvent, useEventDetailStats, useEventCarts, useEventProducts, useAddPlatform, useEndEvent } from "@/hooks/event"
 import type { EventCart, EventProduct, EventSession, Platform } from "@/types/event.types"
+import { useState } from "react"
 
 export default function EventDetailsPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
   const router = useRouter()
 
-  const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id)
+  const { data: event, isLoading: eventLoading, error: eventError, refetch: refetchEvent } = useEvent(id)
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useEventDetailStats(id)
   const { data: carts, isLoading: cartsLoading, refetch: refetchCarts } = useEventCarts(id)
   const { data: products, isLoading: productsLoading, refetch: refetchProducts } = useEventProducts(id)
 
+  const [endEventOpen, setEndEventOpen] = useState(false)
+  const [createSessionOpen, setCreateSessionOpen] = useState(false)
+  const [newSessionPlatform, setNewSessionPlatform] = useState<Platform>("instagram")
+  const [newSessionLiveId, setNewSessionLiveId] = useState("")
+
+  const endEventMutation = useEndEvent()
+
   const handleRefresh = () => {
+    refetchEvent()
     refetchStats()
     refetchCarts()
     refetchProducts()
   }
+
+  const handleEndEvent = async () => {
+    try {
+      await endEventMutation.mutateAsync({
+        id,
+        payload: { autoSendCheckoutLinks: true },
+      })
+      setEndEventOpen(false)
+    } catch (error) {
+      console.error("Failed to end event:", error)
+    }
+  }
+
+  const isEventActive = event?.status === "active"
 
   if (eventError) {
     return (
@@ -119,11 +178,133 @@ export default function EventDetailsPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+
+          {isEventActive && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm">
+                  Acoes
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setCreateSessionOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Sessao
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setEndEventOpen(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <StopCircle className="mr-2 h-4 w-4" />
+                  Finalizar Evento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
+
+      {/* End Event Confirmation Dialog */}
+      <AlertDialog open={endEventOpen} onOpenChange={setEndEventOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Evento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar este evento? Todas as sessoes ativas serao encerradas
+              e os carrinhos serao finalizados. Links de checkout serao enviados automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={endEventMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEndEvent}
+              disabled={endEventMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {endEventMutation.isPending ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Finalizando...
+                </>
+              ) : (
+                "Finalizar"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Create New Session Dialog */}
+      <Dialog open={createSessionOpen} onOpenChange={setCreateSessionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Sessao</DialogTitle>
+            <DialogDescription>
+              Crie uma nova sessao de transmissao para este evento. Os carrinhos existentes serao mantidos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-platform">Plataforma</Label>
+              <Select
+                value={newSessionPlatform}
+                onValueChange={(value) => setNewSessionPlatform(value as Platform)}
+              >
+                <SelectTrigger id="new-platform">
+                  <SelectValue placeholder="Selecione a plataforma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="tiktok">TikTok</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-liveId">
+                ID da Live <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="new-liveId"
+                placeholder="Ex: 18043029837128493"
+                value={newSessionLiveId}
+                onChange={(e) => setNewSessionLiveId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Cole o ID ou URL da transmissao ao vivo
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateSessionOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: Implement createSession mutation
+                console.log("Create session:", { platform: newSessionPlatform, liveId: newSessionLiveId })
+                setCreateSessionOpen(false)
+                setNewSessionLiveId("")
+              }}
+              disabled={!newSessionLiveId.trim()}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Sessao
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-5">
@@ -269,6 +450,7 @@ export default function EventDetailsPage() {
                     <SessionCard
                       key={session.id}
                       session={session}
+                      eventId={event.id}
                       index={index + 1}
                     />
                   ))}
@@ -450,10 +632,35 @@ const SESSION_STATUS_ICONS = {
   cancelled: Clock,
 } as const
 
-function SessionCard({ session, index }: { session: EventSession; index: number }) {
+function SessionCard({ session, eventId, index }: { session: EventSession; eventId: string; index: number }) {
   const statusConfig = getStatusConfig(LIVE_STATUS_CONFIG, session.status, "ended") as LiveStatusConfig
   const StatusIcon = SESSION_STATUS_ICONS[session.status as keyof typeof SESSION_STATUS_ICONS] || Clock
   const isActive = session.status === "active" || session.status === "live"
+
+  const [commentsOpen, setCommentsOpen] = useState(false)
+  const [recoveryOpen, setRecoveryOpen] = useState(false)
+  const [recoveryPlatform, setRecoveryPlatform] = useState<Platform>("instagram")
+  const [recoveryLiveId, setRecoveryLiveId] = useState("")
+
+  const addPlatformMutation = useAddPlatform()
+
+  const handleCrashRecovery = async () => {
+    if (!recoveryLiveId.trim()) return
+
+    try {
+      await addPlatformMutation.mutateAsync({
+        eventId,
+        payload: {
+          platform: recoveryPlatform,
+          platformLiveId: recoveryLiveId,
+        },
+      })
+      setRecoveryOpen(false)
+      setRecoveryLiveId("")
+    } catch (error) {
+      console.error("Failed to recover session:", error)
+    }
+  }
 
   return (
     <div className={`rounded-lg border p-4 ${isActive ? "border-primary bg-primary/5" : ""}`}>
@@ -527,16 +734,134 @@ function SessionCard({ session, index }: { session: EventSession; index: number 
 
         {/* Actions */}
         <div className="flex gap-2">
-          {!isActive && (
-            <Button variant="outline" size="sm" className="gap-1">
-              <RotateCcw className="h-3 w-3" />
-              Reconectar
-            </Button>
-          )}
-          <Button variant="outline" size="sm" className="gap-1">
-            <Plus className="h-3 w-3" />
-            Plataforma
-          </Button>
+          <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <MessageCircle className="h-3 w-3" />
+                Comentarios
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  Comentarios da Sessao {index}
+                </DialogTitle>
+                <DialogDescription>
+                  {session.totalComments} comentario(s) recebido(s)
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[50vh] overflow-y-auto">
+                {!session.comments || session.comments.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground/50" />
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Nenhum comentario registrado
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {session.comments.map((comment, i) => (
+                      <div key={i} className="rounded-lg border p-3">
+                        <div className="flex items-start gap-2">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                            {comment.handle.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-primary">
+                              @{comment.handle}
+                            </p>
+                            <p className="text-sm text-foreground break-words">
+                              {comment.text}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={recoveryOpen} onOpenChange={setRecoveryOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Crash Recovery
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Crash Recovery</DialogTitle>
+                <DialogDescription>
+                  Se a live caiu, insira o novo ID da transmissao para reconectar a sessao.
+                  Os carrinhos existentes serao mantidos.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="platform">Plataforma</Label>
+                  <Select
+                    value={recoveryPlatform}
+                    onValueChange={(value) => setRecoveryPlatform(value as Platform)}
+                  >
+                    <SelectTrigger id="platform">
+                      <SelectValue placeholder="Selecione a plataforma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="instagram">Instagram</SelectItem>
+                      <SelectItem value="tiktok">TikTok</SelectItem>
+                      <SelectItem value="youtube">YouTube</SelectItem>
+                      <SelectItem value="facebook">Facebook</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="liveId">
+                    ID da Nova Live <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="liveId"
+                    placeholder="Ex: 18043029837128493"
+                    value={recoveryLiveId}
+                    onChange={(e) => setRecoveryLiveId(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Cole o ID ou URL da nova transmissao ao vivo
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setRecoveryOpen(false)}
+                  disabled={addPlatformMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCrashRecovery}
+                  disabled={!recoveryLiveId.trim() || addPlatformMutation.isPending}
+                >
+                  {addPlatformMutation.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Reconectando...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Reconectar
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
