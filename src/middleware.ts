@@ -7,6 +7,8 @@ const isPublicRoute = createRouteMatcher([
   "/cart/(.*)",
   "/api/webhooks/(.*)",
   "/accept-invite(.*)",
+  "/privacy",
+  "/terms",
 ])
 
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)"])
