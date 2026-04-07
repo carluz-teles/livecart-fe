@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Check, CreditCard, ExternalLink, Instagram, Package, Unplug, Loader2, Zap } from "lucide-react"
+import { Check, CreditCard, ExternalLink, Instagram, Package, Unplug, Loader2, Zap, Info, User, Clock, Activity } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Separator } from "@/components/ui/separator"
 import {
   useIntegrations,
   useConnectOAuth,
@@ -90,6 +98,9 @@ export default function IntegrationsPage() {
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
+  const [detailsSheet, setDetailsSheet] = useState<{ integration: Integration; provider: ProviderConfig } | null>(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsData, setDetailsData] = useState<{ success: boolean; message: string; latencyMs: number; accountInfo?: Record<string, unknown>; testedAt: string } | null>(null)
 
   const integrations = data?.data ?? []
 
@@ -218,6 +229,28 @@ export default function IntegrationsPage() {
     })
   }
 
+  const handleOpenDetails = (integration: Integration, provider: ProviderConfig) => {
+    setDetailsSheet({ integration, provider })
+    setDetailsLoading(true)
+    setDetailsData(null)
+
+    testConnection.mutate(integration.id, {
+      onSuccess: (result) => {
+        setDetailsLoading(false)
+        setDetailsData(result)
+      },
+      onError: () => {
+        setDetailsLoading(false)
+        setDetailsData(null)
+      },
+    })
+  }
+
+  const handleCloseDetails = () => {
+    setDetailsSheet(null)
+    setDetailsData(null)
+  }
+
   const getConnectedIntegration = (providerId: IntegrationProvider): Integration | undefined => {
     return integrations.find(
       (i) => i.provider === providerId && (i.status === "active" || i.status === "pending_auth")
@@ -289,6 +322,14 @@ export default function IntegrationsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDetails(integration, provider)}
+                      >
+                        <Info className="mr-2 h-4 w-4" />
+                        Detalhes
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -484,6 +525,184 @@ export default function IntegrationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Integration Details Sheet */}
+      <Sheet open={!!detailsSheet} onOpenChange={handleCloseDetails}>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {detailsSheet?.provider.icon}
+              </div>
+              <div>
+                <SheetTitle>{detailsSheet?.provider.name}</SheetTitle>
+                <SheetDescription>{detailsSheet?.provider.description}</SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-6">
+            {/* Status Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Status da Conexão</h4>
+              <div className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Status</span>
+                  {detailsSheet?.integration.status === "active" ? (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600">
+                      <Check className="mr-1 h-3 w-3" />
+                      Conectado
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">
+                      Pendente
+                    </Badge>
+                  )}
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Conectado em</span>
+                  <span className="text-sm text-muted-foreground">
+                    {detailsSheet?.integration.createdAt
+                      ? new Date(detailsSheet.integration.createdAt).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Info Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Informações da Conta</h4>
+              <div className="rounded-lg border p-4">
+                {detailsLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : detailsData?.accountInfo ? (
+                  <div className="space-y-3">
+                    {detailsData.accountInfo.username && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Usuário</p>
+                            <p className="font-medium">@{String(detailsData.accountInfo.username)}</p>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+                    {detailsData.accountInfo.name && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Nome</p>
+                            <p className="font-medium">{String(detailsData.accountInfo.name)}</p>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+                    {detailsData.accountInfo.id && (
+                      <div className="flex items-center gap-3">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">ID da Conta</p>
+                          <p className="font-mono text-sm">{String(detailsData.accountInfo.id)}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Mercado Pago specific fields */}
+                    {detailsData.accountInfo.email && (
+                      <>
+                        <Separator />
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Email</p>
+                            <p className="font-medium">{String(detailsData.accountInfo.email)}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {detailsData.accountInfo.nickname && (
+                      <>
+                        <Separator />
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Apelido</p>
+                            <p className="font-medium">{String(detailsData.accountInfo.nickname)}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : detailsData?.success === false ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-destructive">{detailsData.message}</p>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">Não foi possível carregar as informações</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Connection Test Section */}
+            {detailsData && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">Último Teste</h4>
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Resultado</span>
+                    {detailsData.success ? (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600">
+                        <Check className="mr-1 h-3 w-3" />
+                        Sucesso
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-red-500/10 text-red-600">
+                        Falha
+                      </Badge>
+                    )}
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Latência</span>
+                    </div>
+                    <span className="text-sm font-mono">{detailsData.latencyMs}ms</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Testado em</span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(detailsData.testedAt).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
