@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Check, CreditCard, ExternalLink, Package, Unplug, Loader2, Zap } from "lucide-react"
+import { Check, CreditCard, ExternalLink, Instagram, Package, Unplug, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,7 @@ interface ProviderConfig {
   name: string
   description: string
   icon: React.ReactNode
-  type: "payment" | "erp"
+  type: "payment" | "erp" | "social"
   authType: "oauth" | "api_key" | "oauth_with_credentials"
 }
 
@@ -63,6 +63,14 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     icon: <Package className="h-6 w-6" />,
     type: "erp",
     authType: "oauth_with_credentials",
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    description: "Receba comentários e mensagens de lives",
+    icon: <Instagram className="h-6 w-6" />,
+    type: "social",
+    authType: "oauth",
   },
 ]
 
@@ -102,11 +110,18 @@ export default function IntegrationsPage() {
       window.history.replaceState({}, "", "/settings/integrations")
     }
 
+    if (success === "instagram_connected") {
+      toast.success("Instagram conectado com sucesso!")
+      // Clean URL
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+
     if (error) {
       const errorMessages: Record<string, string> = {
         missing_code: "Código de autorização não encontrado",
         missing_state: "Parâmetro de estado não encontrado",
         oauth_failed: "Falha na autenticação OAuth",
+        instagram_denied: "Acesso ao Instagram foi negado pelo usuário",
       }
       toast.error(errorMessages[error] || "Erro ao conectar integração")
       window.history.replaceState({}, "", "/settings/integrations")

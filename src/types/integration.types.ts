@@ -1,5 +1,5 @@
-export type IntegrationType = "payment" | "erp"
-export type IntegrationProvider = "mercado_pago" | "tiny"
+export type IntegrationType = "payment" | "erp" | "social"
+export type IntegrationProvider = "mercado_pago" | "tiny" | "instagram"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
 export interface Integration {
@@ -87,5 +87,13 @@ export const PROVIDERS: ProviderInfo[] = [
     description: "Sincronize produtos e pedidos com seu ERP",
     icon: "/icons/tiny.svg",
     supportsOAuth: false,
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    type: "social",
+    description: "Receba comentários e mensagens de lives do Instagram",
+    icon: "/icons/instagram.svg",
+    supportsOAuth: true,
   },
 ]
