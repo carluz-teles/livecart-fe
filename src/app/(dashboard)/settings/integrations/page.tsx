@@ -587,7 +587,7 @@ export default function IntegrationsPage() {
                   </div>
                 ) : detailsData?.accountInfo ? (
                   <div className="space-y-3">
-                    {detailsData.accountInfo.username && (
+                    {"username" in detailsData.accountInfo && detailsData.accountInfo.username ? (
                       <>
                         <div className="flex items-center gap-3">
                           <User className="h-4 w-4 text-muted-foreground" />
@@ -598,8 +598,8 @@ export default function IntegrationsPage() {
                         </div>
                         <Separator />
                       </>
-                    )}
-                    {detailsData.accountInfo.name && (
+                    ) : null}
+                    {"name" in detailsData.accountInfo && detailsData.accountInfo.name ? (
                       <>
                         <div className="flex items-center gap-3">
                           <User className="h-4 w-4 text-muted-foreground" />
@@ -610,8 +610,8 @@ export default function IntegrationsPage() {
                         </div>
                         <Separator />
                       </>
-                    )}
-                    {detailsData.accountInfo.id && (
+                    ) : null}
+                    {"id" in detailsData.accountInfo && detailsData.accountInfo.id ? (
                       <div className="flex items-center gap-3">
                         <Activity className="h-4 w-4 text-muted-foreground" />
                         <div>
@@ -619,9 +619,9 @@ export default function IntegrationsPage() {
                           <p className="font-mono text-sm">{String(detailsData.accountInfo.id)}</p>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                     {/* Mercado Pago specific fields */}
-                    {detailsData.accountInfo.email && (
+                    {"email" in detailsData.accountInfo && detailsData.accountInfo.email ? (
                       <>
                         <Separator />
                         <div className="flex items-center gap-3">
@@ -632,8 +632,8 @@ export default function IntegrationsPage() {
                           </div>
                         </div>
                       </>
-                    )}
-                    {detailsData.accountInfo.nickname && (
+                    ) : null}
+                    {"nickname" in detailsData.accountInfo && detailsData.accountInfo.nickname ? (
                       <>
                         <Separator />
                         <div className="flex items-center gap-3">
@@ -644,7 +644,7 @@ export default function IntegrationsPage() {
                           </div>
                         </div>
                       </>
-                    )}
+                    ) : null}
                   </div>
                 ) : detailsData?.success === false ? (
                   <div className="text-center py-4">
