@@ -295,14 +295,14 @@ export default function IntegrationsPage() {
                 return (
                   <div
                     key={provider.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex flex-col gap-4 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         {provider.icon}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-medium">{provider.name}</h3>
                           {integration.status === "active" ? (
                             <Badge variant="outline" className="bg-green-500/10 text-green-600">
@@ -321,7 +321,7 @@ export default function IntegrationsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 lg:shrink-0">
                       <Button
                         variant="outline"
                         size="sm"
