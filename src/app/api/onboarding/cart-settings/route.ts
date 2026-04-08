@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
         maxItems: body.maxItems,
         maxQuantityPerItem: body.maxQuantityPerItem,
         notifyBeforeExpiration: body.notifyBeforeExpiration,
+        allowEdit: true,
+        autoSendCheckoutLinks: false,
+        checkoutLinkExpiryHours: 48,
       }),
     })
 

@@ -10,6 +10,8 @@ import {
   Clock,
   Package,
   Loader2,
+  Pencil,
+  Link,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -28,6 +30,9 @@ const cartSettingsSchema = z.object({
   maxItems: z.number().min(0, "Deve ser 0 ou maior"),
   maxQuantityPerItem: z.number().min(1, "Mínimo de 1 item"),
   notifyBeforeExpiration: z.boolean(),
+  allowEdit: z.boolean(),
+  autoSendCheckoutLinks: z.boolean(),
+  checkoutLinkExpiryHours: z.number().min(1, "Mínimo de 1 hora").max(168, "Máximo de 7 dias"),
 })
 
 type CartSettingsFormData = z.infer<typeof cartSettingsSchema>
@@ -36,6 +41,7 @@ export default function CartSettingsPage() {
   const { getToken } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [storeId, setStoreId] = useState<string | null>(null)
 
   const form = useForm<CartSettingsFormData>({
     resolver: zodResolver(cartSettingsSchema),
@@ -46,6 +52,9 @@ export default function CartSettingsPage() {
       maxItems: 0,
       maxQuantityPerItem: 5,
       notifyBeforeExpiration: true,
+      allowEdit: true,
+      autoSendCheckoutLinks: false,
+      checkoutLinkExpiryHours: 48,
     },
   })
 
@@ -55,6 +64,8 @@ export default function CartSettingsPage() {
   const enabled = watch("enabled")
   const reserveStock = watch("reserveStock")
   const notifyBeforeExpiration = watch("notifyBeforeExpiration")
+  const allowEdit = watch("allowEdit")
+  const autoSendCheckoutLinks = watch("autoSendCheckoutLinks")
 
   // Load current settings
   useEffect(() => {
@@ -62,6 +73,7 @@ export default function CartSettingsPage() {
       try {
         const token = await getToken()
         const store = await storeService.getCurrent(token)
+        setStoreId(store.id)
 
         if (store.cartSettings) {
           const settings = store.cartSettings
@@ -71,6 +83,9 @@ export default function CartSettingsPage() {
           setValue("maxItems", settings.maxItems)
           setValue("maxQuantityPerItem", settings.maxQuantityPerItem)
           setValue("notifyBeforeExpiration", settings.notifyBeforeExpiration)
+          setValue("allowEdit", settings.allowEdit ?? true)
+          setValue("autoSendCheckoutLinks", settings.autoSendCheckoutLinks ?? false)
+          setValue("checkoutLinkExpiryHours", settings.checkoutLinkExpiryHours ?? 48)
         }
       } catch (error) {
         console.error("Failed to load cart settings:", error)
@@ -96,9 +111,12 @@ export default function CartSettingsPage() {
         maxItems: data.maxItems,
         maxQuantityPerItem: data.maxQuantityPerItem,
         notifyBeforeExpiration: data.notifyBeforeExpiration,
+        allowEdit: data.allowEdit,
+        autoSendCheckoutLinks: data.autoSendCheckoutLinks,
+        checkoutLinkExpiryHours: data.checkoutLinkExpiryHours,
       }
 
-      await storeService.updateCartSettings(payload, token)
+      await storeService.updateCartSettings(payload, token, storeId ?? undefined)
 
       toast.success("Configurações salvas", {
         description: "As configurações do carrinho foram atualizadas com sucesso.",
@@ -254,6 +272,79 @@ export default function CartSettingsPage() {
                 <p className="text-sm text-destructive">{errors.maxQuantityPerItem.message}</p>
               )}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cart Editing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5" />
+            Edição do carrinho
+          </CardTitle>
+          <CardDescription>
+            Permissões de edição para o cliente na página de checkout
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowEdit">Permitir edição</Label>
+              <p className="text-sm text-muted-foreground">
+                Cliente pode remover itens ou alterar quantidades no checkout
+              </p>
+            </div>
+            <Switch
+              id="allowEdit"
+              checked={allowEdit}
+              onCheckedChange={(checked) => setValue("allowEdit", checked, { shouldDirty: true })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Checkout Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link className="h-5 w-5" />
+            Links de checkout
+          </CardTitle>
+          <CardDescription>
+            Configure como os links de checkout são gerados e enviados
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="autoSendCheckoutLinks">Envio automático</Label>
+              <p className="text-sm text-muted-foreground">
+                Enviar links de checkout automaticamente quando a live terminar
+              </p>
+            </div>
+            <Switch
+              id="autoSendCheckoutLinks"
+              checked={autoSendCheckoutLinks}
+              onCheckedChange={(checked) => setValue("autoSendCheckoutLinks", checked, { shouldDirty: true })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="checkoutLinkExpiryHours">Tempo de expiração do link (horas)</Label>
+            <Input
+              id="checkoutLinkExpiryHours"
+              type="number"
+              min={1}
+              max={168}
+              {...register("checkoutLinkExpiryHours", { valueAsNumber: true })}
+            />
+            {errors.checkoutLinkExpiryHours && (
+              <p className="text-sm text-destructive">{errors.checkoutLinkExpiryHours.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Após este tempo, o link de checkout expira (1 - 168 horas)
+            </p>
           </div>
         </CardContent>
       </Card>

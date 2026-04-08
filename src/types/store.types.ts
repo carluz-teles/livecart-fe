@@ -1,3 +1,6 @@
+// Checkout send method options
+export type CheckoutSendMethod = 'public_link' | 'manual' | 'whatsapp' | 'instagram_dm'
+
 // Cart settings configuration
 export interface CartSettings {
   enabled: boolean
@@ -6,6 +9,11 @@ export interface CartSettings {
   maxItems: number
   maxQuantityPerItem: number
   notifyBeforeExpiration: boolean
+  allowEdit: boolean
+  // Checkout settings
+  autoSendCheckoutLinks: boolean
+  checkoutLinkExpiryHours: number
+  checkoutSendMethods: CheckoutSendMethod[]
 }
 
 // Default cart settings for new stores
@@ -16,6 +24,10 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   maxItems: 0,
   maxQuantityPerItem: 5,
   notifyBeforeExpiration: true,
+  allowEdit: true,
+  autoSendCheckoutLinks: false,
+  checkoutLinkExpiryHours: 48,
+  checkoutSendMethods: ['public_link', 'manual'],
 }
 
 // Address structure
@@ -61,6 +73,10 @@ export interface UpdateCartSettingsPayload {
   maxItems: number
   maxQuantityPerItem: number
   notifyBeforeExpiration: boolean
+  allowEdit: boolean
+  autoSendCheckoutLinks: boolean
+  checkoutLinkExpiryHours: number
+  checkoutSendMethods: CheckoutSendMethod[]
 }
 
 // Create store types

@@ -16,6 +16,6 @@ export const storeService = {
   update: (payload: UpdateStorePayload, token?: string | null) =>
     apiClient.put<Store>("/stores/me", payload, token),
 
-  updateCartSettings: (payload: UpdateCartSettingsPayload, token?: string | null) =>
-    apiClient.put<Store>("/stores/me/cart-settings", payload, token),
+  updateCartSettings: (payload: UpdateCartSettingsPayload, token?: string | null, storeId?: string) =>
+    apiClient.put<Store>(storeId ? `/stores/${storeId}/cart-settings` : "/stores/me/cart-settings", payload, token),
 }
