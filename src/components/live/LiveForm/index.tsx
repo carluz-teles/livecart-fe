@@ -173,7 +173,7 @@ export function LiveForm({ live, open, onOpenChange, onSuccess, trigger }: LiveF
           {trigger || defaultTrigger}
         </SheetTrigger>
       )}
-      <SheetContent className="w-[400px] sm:w-[480px]">
+      <SheetContent className="w-[400px] sm:w-[480px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-destructive" />
