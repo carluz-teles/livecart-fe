@@ -230,16 +230,16 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               </span>
             </div>
 
-            <FormItem>
-              <FormLabel>Plataforma</FormLabel>
+            <div className="space-y-2">
+              <Label>Plataforma</Label>
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
                 <Instagram className="h-5 w-5 text-pink-500" />
                 <span className="text-sm font-medium">Instagram</span>
               </div>
-              <FormDescription>
+              <p className="text-sm text-muted-foreground">
                 Apenas Instagram e suportado no momento
-              </FormDescription>
-            </FormItem>
+              </p>
+            </div>
 
             <FormField
               control={form.control}
