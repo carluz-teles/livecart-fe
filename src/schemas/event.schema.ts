@@ -23,11 +23,9 @@ export const eventDetailsSchema = z.object({
 
 export type EventDetailsFormData = z.infer<typeof eventDetailsSchema>
 
-// Step 3: Platform Connection (optional)
+// Step 3: Platform Connection (optional) - Only Instagram supported
 export const platformConnectionSchema = z.object({
-  platform: z.enum(["instagram", "facebook", "youtube", "tiktok"], {
-    message: "Selecione a plataforma",
-  }),
+  platform: z.literal("instagram").optional(),
   platformLiveId: z
     .string()
     .min(1, "ID da live e obrigatorio")
@@ -43,8 +41,13 @@ export const createEventSchema = z.object({
     .min(1, "Titulo e obrigatorio")
     .max(200, "Titulo deve ter no maximo 200 caracteres"),
   type: z.enum(["single", "multi"]).optional(),
-  platform: z.enum(["instagram", "facebook", "youtube", "tiktok"]).optional(),
+  platform: z.literal("instagram").optional(), // Only Instagram supported
   platformLiveId: z.string().max(100).optional(),
+  // Cart settings (override store defaults)
+  closeCartOnEventEnd: z.boolean().optional(),
+  cartExpirationMinutes: z.number().min(5).max(1440).nullable().optional(),
+  cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
+  autoSendCheckoutLinks: z.boolean().nullable().optional(),
 })
 
 export type CreateEventFormData = z.infer<typeof createEventSchema>
@@ -63,9 +66,7 @@ export const updateEventSchema = z.object({
 export type UpdateEventFormData = z.infer<typeof updateEventSchema>
 
 export const createSessionSchema = z.object({
-  platform: z.enum(["instagram", "facebook", "youtube", "tiktok"], {
-    message: "Selecione a plataforma",
-  }),
+  platform: z.literal("instagram").optional(), // Only Instagram supported
   platformLiveId: z
     .string()
     .min(1, "ID da live e obrigatorio")
@@ -75,9 +76,7 @@ export const createSessionSchema = z.object({
 export type CreateSessionFormData = z.infer<typeof createSessionSchema>
 
 export const addPlatformSchema = z.object({
-  platform: z.enum(["instagram", "facebook", "youtube", "tiktok"], {
-    message: "Selecione a plataforma",
-  }),
+  platform: z.literal("instagram").optional(), // Only Instagram supported
   platformLiveId: z
     .string()
     .min(1, "ID da live e obrigatorio")

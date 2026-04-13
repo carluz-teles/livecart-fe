@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import {
   Search,
   MoreHorizontal,
@@ -23,7 +22,7 @@ import { formatDate, formatRelativeDate } from "@/lib/format"
 import { EVENT_STATUS_CONFIG, getStatusConfig, type EventStatusConfig } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { EventFilters, SessionForm, ReconnectForm } from "@/components/event"
+import { EventFilters, EventForm, SessionForm, ReconnectForm } from "@/components/event"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useEvents, useEventStats, useEndEvent, useDeleteEvent } from "@/hooks/event"
 import type { Event, EventFilters as EventFiltersType } from "@/types/event.types"
@@ -163,12 +162,7 @@ export default function EventsPage() {
             Gerencie seus eventos e acompanhe as vendas em tempo real
           </p>
         </div>
-        <Button asChild>
-          <Link href="/events/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Evento
-          </Link>
-        </Button>
+        <EventForm />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

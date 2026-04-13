@@ -3,11 +3,15 @@
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, Radio } from "lucide-react"
+import { Plus, Loader2, Radio, Instagram } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import {
   Sheet,
   SheetContent,
@@ -44,11 +48,23 @@ interface EventFormProps {
   trigger?: React.ReactNode
 }
 
-const platformOptions = [
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-  { value: "youtube", label: "YouTube" },
-  { value: "tiktok", label: "TikTok" },
+// Cart expiration options
+const expirationOptions = [
+  { value: "inherit", label: "Usar padrao da loja" },
+  { value: "15", label: "15 minutos" },
+  { value: "30", label: "30 minutos" },
+  { value: "60", label: "1 hora" },
+  { value: "120", label: "2 horas" },
+  { value: "1440", label: "24 horas" },
+]
+
+// Max quantity per item options
+const maxQuantityOptions = [
+  { value: "inherit", label: "Usar padrao da loja" },
+  { value: "1", label: "1 unidade" },
+  { value: "3", label: "3 unidades" },
+  { value: "5", label: "5 unidades" },
+  { value: "10", label: "10 unidades" },
 ]
 
 export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: EventFormProps) {
@@ -59,8 +75,13 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     resolver: zodResolver(createEventSchema),
     defaultValues: {
       title: "",
+      type: "single",
       platform: undefined,
       platformLiveId: "",
+      closeCartOnEventEnd: true,
+      cartExpirationMinutes: null,
+      cartMaxQuantityPerItem: null,
+      autoSendCheckoutLinks: null,
     },
   })
 
@@ -69,26 +90,43 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     if (event) {
       form.reset({
         title: event.title || "",
+        type: event.type || "single",
         platform: undefined,
         platformLiveId: "",
+        closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
+        cartExpirationMinutes: event.cartExpirationMinutes,
+        cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
+        autoSendCheckoutLinks: event.autoSendCheckoutLinks,
       })
     } else {
       form.reset({
         title: "",
+        type: "single",
         platform: undefined,
         platformLiveId: "",
+        closeCartOnEventEnd: true,
+        cartExpirationMinutes: null,
+        cartMaxQuantityPerItem: null,
+        autoSendCheckoutLinks: null,
       })
     }
   }, [event, form])
 
-  const selectedPlatform = form.watch("platform")
+  const platformLiveId = form.watch("platformLiveId")
   const isPending = createEvent.isPending
 
   async function onSubmit(data: CreateEventFormData) {
     const payload: CreateEventPayload = {
       title: data.title,
-      platform: data.platform,
-      platformLiveId: data.platformLiveId,
+      type: data.type,
+      // Only include platform if platformLiveId is provided
+      platform: data.platformLiveId ? "instagram" : undefined,
+      platformLiveId: data.platformLiveId || undefined,
+      // Cart settings
+      closeCartOnEventEnd: data.closeCartOnEventEnd,
+      cartExpirationMinutes: data.cartExpirationMinutes,
+      cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
+      autoSendCheckoutLinks: data.autoSendCheckoutLinks,
     }
 
     createEvent.mutate(payload, {
@@ -104,36 +142,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         })
       },
     })
-  }
-
-  function getPlaceholder() {
-    switch (selectedPlatform) {
-      case "instagram":
-        return "Ex: 17841400000000000"
-      case "facebook":
-        return "Ex: 1234567890"
-      case "youtube":
-        return "Ex: dQw4w9WgXcQ"
-      case "tiktok":
-        return "Ex: 7000000000000000000"
-      default:
-        return "ID da live na plataforma"
-    }
-  }
-
-  function getDescription() {
-    switch (selectedPlatform) {
-      case "instagram":
-        return "ID da live do Instagram (encontrado na URL ou API)"
-      case "facebook":
-        return "ID do video ao vivo do Facebook"
-      case "youtube":
-        return "ID do video do YouTube (parte final da URL)"
-      case "tiktok":
-        return "ID da live do TikTok"
-      default:
-        return "Identificador unico da transmissao ao vivo"
-    }
   }
 
   const defaultTrigger = (
@@ -186,52 +194,71 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
 
             <FormField
               control={form.control}
-              name="platform"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Plataforma <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a plataforma" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {platformOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Plataforma onde a live esta acontecendo
-                  </FormDescription>
+                  <FormLabel>Tipo</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="single" id="type-single" />
+                        <Label htmlFor="type-single" className="font-normal cursor-pointer">
+                          Live Unica
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="multi" id="type-multi" />
+                        <Label htmlFor="type-multi" className="font-normal cursor-pointer">
+                          Multi-sessao
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="relative py-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                Conectar a uma live (opcional)
+              </span>
+            </div>
+
+            <FormItem>
+              <FormLabel>Plataforma</FormLabel>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
+                <Instagram className="h-5 w-5 text-pink-500" />
+                <span className="text-sm font-medium">Instagram</span>
+              </div>
+              <FormDescription>
+                Apenas Instagram e suportado no momento
+              </FormDescription>
+            </FormItem>
 
             <FormField
               control={form.control}
               name="platformLiveId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    ID da Live <span className="text-destructive">*</span>
-                  </FormLabel>
+                  <FormLabel>ID da Live</FormLabel>
                   <FormControl>
-                    <Input placeholder={getPlaceholder()} {...field} />
+                    <Input placeholder="Ex: 17841400000000000" {...field} />
                   </FormControl>
-                  <FormDescription>{getDescription()}</FormDescription>
+                  <FormDescription>
+                    ID da live do Instagram (encontrado na URL ou API)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {!isEditing && (
+            {!isEditing && platformLiveId && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
                 <p className="text-sm text-amber-800 dark:text-amber-200">
                   <strong>Importante:</strong> Certifique-se de que a live esta ativa
@@ -240,6 +267,125 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                 </p>
               </div>
             )}
+
+            <div className="relative py-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                Configuracoes do carrinho
+              </span>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="closeCartOnEventEnd"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm font-medium">
+                      Fechar carrinho ao finalizar
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Carrinho para de aceitar itens quando o evento termina
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cartExpirationMinutes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expiracao do carrinho</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value === "inherit" ? null : parseInt(value, 10))
+                    }}
+                    value={field.value === null ? "inherit" : field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a expiracao" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {expirationOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Tempo ate o carrinho expirar apos inatividade
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cartMaxQuantityPerItem"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantidade maxima por item</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value === "inherit" ? null : parseInt(value, 10))
+                    }}
+                    value={field.value === null ? "inherit" : field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a quantidade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {maxQuantityOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Limite maximo de unidades por produto no carrinho
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="autoSendCheckoutLinks"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm font-medium">
+                      Enviar links automaticamente
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Enviar links de checkout via DM quando o evento terminar
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value ?? false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

@@ -114,6 +114,7 @@ export default function CartSettingsPage() {
         allowEdit: data.allowEdit,
         autoSendCheckoutLinks: data.autoSendCheckoutLinks,
         checkoutLinkExpiryHours: data.checkoutLinkExpiryHours,
+        checkoutSendMethods: ['public_link', 'manual'], // Default methods
       }
 
       await storeService.updateCartSettings(payload, token, storeId ?? undefined)

@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Instagram } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -24,13 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { createSessionSchema, type CreateSessionFormData } from "@/schemas/event.schema"
 import { useCreateSession } from "@/hooks/event"
 
@@ -41,25 +34,17 @@ interface SessionFormProps {
   onSuccess?: () => void
 }
 
-const platformOptions = [
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-  { value: "youtube", label: "YouTube" },
-  { value: "tiktok", label: "TikTok" },
-]
-
 export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionFormProps) {
   const createSession = useCreateSession()
 
   const form = useForm<CreateSessionFormData>({
     resolver: zodResolver(createSessionSchema),
     defaultValues: {
-      platform: undefined,
+      platform: "instagram",
       platformLiveId: "",
     },
   })
 
-  const selectedPlatform = form.watch("platform")
   const isPending = createSession.isPending
 
   async function onSubmit(data: CreateSessionFormData) {
@@ -67,7 +52,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       {
         eventId,
         payload: {
-          platform: data.platform,
+          platform: "instagram", // Only Instagram supported
           platformLiveId: data.platformLiveId,
         },
       },
@@ -87,21 +72,6 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     )
   }
 
-  function getPlaceholder() {
-    switch (selectedPlatform) {
-      case "instagram":
-        return "Ex: 17841400000000000"
-      case "facebook":
-        return "Ex: 1234567890"
-      case "youtube":
-        return "Ex: dQw4w9WgXcQ"
-      case "tiktok":
-        return "Ex: 7000000000000000000"
-      default:
-        return "ID da live na plataforma"
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -118,32 +88,16 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="platform"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Plataforma <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a plataforma" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {platformOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>Plataforma</FormLabel>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
+                <Instagram className="h-5 w-5 text-pink-500" />
+                <span className="text-sm font-medium">Instagram</span>
+              </div>
+              <FormDescription>
+                Apenas Instagram e suportado no momento
+              </FormDescription>
+            </FormItem>
 
             <FormField
               control={form.control}
@@ -154,10 +108,10 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                     ID da Live <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder={getPlaceholder()} {...field} />
+                    <Input placeholder="Ex: 17841400000000000" {...field} />
                   </FormControl>
                   <FormDescription>
-                    ID da nova transmissao na plataforma
+                    ID da transmissao do Instagram
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -6,7 +6,7 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 
 export type EventStatus = "active" | "ended"
 export type EventType = "single" | "multi"
-export type Platform = "instagram" | "tiktok" | "youtube" | "facebook"
+export type Platform = "instagram" // Only Instagram supported for now
 
 // =============================================================================
 // PLATFORM - Platform IDs associated with sessions
@@ -55,6 +55,10 @@ export interface Event {
   type: EventType
   status: EventStatus
   totalOrders: number
+  closeCartOnEventEnd: boolean
+  cartExpirationMinutes: number | null
+  cartMaxQuantityPerItem: number | null
+  autoSendCheckoutLinks: boolean | null
   sessions?: EventSession[]
   createdAt: string
   updatedAt: string
@@ -70,6 +74,11 @@ export interface CreateEventPayload {
   type?: EventType
   platform?: Platform
   platformLiveId?: string
+  // Cart settings (override store defaults)
+  closeCartOnEventEnd?: boolean
+  cartExpirationMinutes?: number | null
+  cartMaxQuantityPerItem?: number | null
+  autoSendCheckoutLinks?: boolean | null
 }
 
 export interface CreateEventResponse {
