@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, Radio, Instagram } from "lucide-react"
@@ -71,6 +71,14 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
   const isEditing = !!event
   const createEvent = useCreateEvent()
 
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = open !== undefined
+  const sheetOpen = isControlled ? open : internalOpen
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next)
+    onOpenChange?.(next)
+  }
+
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
@@ -133,7 +141,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       onSuccess: () => {
         toast.success("Evento criado com sucesso!")
         form.reset()
-        onOpenChange?.(false)
+        handleOpenChange(false)
         onSuccess?.()
       },
       onError: (error) => {
@@ -152,7 +160,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
   )
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={sheetOpen} onOpenChange={handleOpenChange}>
       {trigger !== null && (
         <SheetTrigger asChild>
           {trigger || defaultTrigger}
@@ -391,7 +399,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange?.(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={isPending}
               >
                 Cancelar
