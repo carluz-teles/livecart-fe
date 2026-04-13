@@ -8,13 +8,13 @@ import {
   Radio,
   Calendar,
   ShoppingCart,
-  Eye,
   Trash2,
   Square,
   Plus,
   RefreshCw,
   CheckCircle,
   DollarSign,
+  ChevronRight,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -253,7 +253,7 @@ export default function EventsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead className="text-center">Pedidos</TableHead>
                   <TableHead>Criado em</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[80px] text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -264,7 +264,7 @@ export default function EventsPage() {
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : error ? (
@@ -284,8 +284,18 @@ export default function EventsPage() {
                     const config = getStatusConfig(EVENT_STATUS_CONFIG, event.status, "ended") as EventStatusConfig
                     const StatusIcon = EVENT_STATUS_ICONS[config.icon]
                     return (
-                      <TableRow key={event.id}>
-                        <TableCell className="font-medium">{event.title || "Sem titulo"}</TableCell>
+                      <TableRow
+                        key={event.id}
+                        onClick={() => handleViewDetails(event)}
+                        className="group cursor-pointer transition-colors hover:bg-muted/60"
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className="transition-colors group-hover:text-primary">
+                              {event.title || "Sem titulo"}
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={config.variant} className="gap-1">
                             <StatusIcon className="h-3 w-3" />
@@ -301,41 +311,40 @@ export default function EventsPage() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Abrir menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Acoes</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleViewDetails(event)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Ver detalhes
-                              </DropdownMenuItem>
-                              {event.status === "active" && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleNewSession(event)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Nova Sessao
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleReconnect(event)}>
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    Reconectar
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEndEvent(event)}>
-                                    <Square className="mr-2 h-4 w-4" />
-                                    Finalizar evento
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {event.status === "ended" && (
-                                <>
-                                  <DropdownMenuSeparator />
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-60 transition-opacity group-hover:opacity-100"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Abrir menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Acoes</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {event.status === "active" && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleNewSession(event)}>
+                                      <Plus className="mr-2 h-4 w-4" />
+                                      Nova Sessao
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleReconnect(event)}>
+                                      <RefreshCw className="mr-2 h-4 w-4" />
+                                      Reconectar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleEndEvent(event)}>
+                                      <Square className="mr-2 h-4 w-4" />
+                                      Finalizar evento
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {event.status === "ended" && (
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => handleDelete(event)}
@@ -343,10 +352,11 @@ export default function EventsPage() {
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Excluir
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -355,6 +365,9 @@ export default function EventsPage() {
               </TableBody>
             </Table>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Clique em uma linha para ver os detalhes do evento
+          </p>
         </CardContent>
       </Card>
 
