@@ -4,6 +4,7 @@ export interface Membership {
   storeId: string
   storeName: string
   storeSlug: string
+  storeLogoUrl: string | null
   role: string
   status: string
   email: string

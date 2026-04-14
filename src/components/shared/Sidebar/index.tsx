@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -63,8 +64,18 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r bg-sidebar">
       {/* Organization Header */}
       <div className="flex h-16 items-center gap-3 border-b px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-          <Building2 className="h-5 w-5 text-primary" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
+          {user?.membership?.storeLogoUrl ? (
+            <Image
+              src={user.membership.storeLogoUrl}
+              alt={user.membership.storeName || "Logo"}
+              width={36}
+              height={36}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Building2 className="h-5 w-5 text-primary" />
+          )}
         </div>
         <div className="flex flex-col">
           {isLoading ? (
