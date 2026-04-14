@@ -4,7 +4,8 @@ export interface ApiResponse<T> {
 
 export interface ApiError {
   status: number
-  message: string
+  error?: string
+  message?: string
   fields?: Record<string, string>
 }
 

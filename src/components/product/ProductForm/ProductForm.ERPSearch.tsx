@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSearchERPProducts } from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
+import { getERPSearchErrorMessage } from "@/lib/api-errors"
 import type { ERPProduct } from "@/types"
 
 interface ProductFormERPSearchProps {
@@ -18,7 +19,7 @@ interface ProductFormERPSearchProps {
 export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERPSearchProps) {
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { data, isLoading, isError } = useSearchERPProducts(integrationId, search)
+  const { data, isLoading, isError, error } = useSearchERPProducts(integrationId, search)
 
   const products = data?.products ?? []
   const selectedProduct = products.find((p) => p.id === selectedId)
@@ -54,9 +55,9 @@ export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERP
           {isLoading && <SearchSkeleton />}
 
           {isError && (
-            <div className="flex items-center gap-3 p-4 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>Erro ao buscar produtos. Tente novamente.</span>
+            <div className="flex items-start gap-3 p-4 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{getERPSearchErrorMessage(error)}</span>
             </div>
           )}
 

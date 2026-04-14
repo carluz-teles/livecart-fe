@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -21,14 +22,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -47,7 +40,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function getProductInitials(name: string) {
@@ -64,6 +56,13 @@ const sourceLabels: Record<string, string> = {
   bling: "Bling",
   tiny: "Tiny",
   shopify: "Shopify",
+}
+
+const sourceColors: Record<string, string> = {
+  manual: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  bling: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  tiny: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+  shopify: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 }
 
 export default function ProductsPage() {
@@ -256,127 +255,158 @@ export default function ProductsPage() {
             <ProductFilters filters={filters} onChange={setFilters} />
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Keyword</TableHead>
-                  <TableHead>Fonte</TableHead>
-                  <TableHead className="text-right">Preço</TableHead>
-                  <TableHead className="text-center">Estoque</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-9 w-9 rounded-md" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-14" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-destructive">
-                      Erro ao carregar produtos. Tente novamente.
-                    </TableCell>
-                  </TableRow>
-                ) : products.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      Nenhum produto encontrado.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  products.map((product) => (
-                    <TableRow
-                      key={product.id}
-                      className="cursor-pointer transition-colors hover:bg-muted/50"
-                      onClick={() => setViewingProduct(product)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 rounded-md">
-                            <AvatarImage src={product.imageUrl ?? undefined} alt={product.name} />
-                            <AvatarFallback className="rounded-md text-xs">
-                              {getProductInitials(product.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{product.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-muted-foreground">
-                        {product.keyword}
-                      </TableCell>
-                      <TableCell>{sourceLabels[product.externalSource] ?? product.externalSource}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(product.price)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className={product.stock <= 5 ? "text-destructive font-medium" : ""}>
-                          {product.stock}
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-lg border bg-card">
+                  <Skeleton className="aspect-square w-full rounded-none" />
+                  <div className="space-y-2 p-4">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-sm text-destructive">
+              Erro ao carregar produtos. Tente novamente.
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center">
+              <Package className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhum produto encontrado.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => setViewingProduct(product)}
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                >
+                  <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                    {product.imageUrl ? (
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Package className="h-8 w-8" />
+                        <span className="text-lg font-semibold">
+                          {getProductInitials(product.name)}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={product.active ? "default" : "secondary"}>
-                          {product.active ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Abrir menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEdit(product)}>
-                              Editar produto
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleToggleActive(product)}>
-                              {product.active ? "Desativar" : "Ativar"}
-                            </DropdownMenuItem>
-                            {canSync(product) && (
-                              <DropdownMenuItem
-                                onClick={() => handleSync(product)}
-                                disabled={isSyncing}
-                              >
-                                <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-                                Sincronizar via ERP
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
+                      </div>
+                    )}
+
+                    <div className="absolute left-2 top-2 flex items-center gap-1.5">
+                      <Badge
+                        variant={product.active ? "default" : "secondary"}
+                        className="h-6 shadow-sm"
+                      >
+                        {product.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+
+                    <div
+                      className="absolute right-2 top-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8 bg-background/90 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Abrir menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEdit(product)}>
+                            Editar produto
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleActive(product)}>
+                            {product.active ? "Desativar" : "Ativar"}
+                          </DropdownMenuItem>
+                          {canSync(product) && (
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(product)}
+                              onClick={() => handleSync(product)}
+                              disabled={isSyncing}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
+                              <RefreshCw
+                                className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                              />
+                              Sincronizar via ERP
                             </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(product)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {product.stock === 0 && (
+                      <div className="absolute inset-x-0 bottom-0 bg-destructive/90 py-1 text-center text-xs font-medium text-destructive-foreground backdrop-blur-sm">
+                        Esgotado
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-2 p-4">
+                    <h3 className="line-clamp-2 text-sm font-medium leading-snug transition-colors group-hover:text-primary">
+                      {product.name}
+                    </h3>
+
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-lg font-semibold tracking-tight">
+                        {formatCurrency(product.price)}
+                      </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          product.stock === 0
+                            ? "text-destructive"
+                            : product.stock <= 5
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {product.stock} un.
+                      </span>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-medium ${sourceColors[product.externalSource] ?? ""}`}
+                      >
+                        {sourceLabels[product.externalSource] ?? product.externalSource}
+                      </Badge>
+                      {product.keyword && (
+                        <span className="truncate font-mono text-[11px] text-muted-foreground">
+                          #{product.keyword}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

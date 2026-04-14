@@ -6,7 +6,7 @@ import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
 import { integrationKeys } from "./useIntegrations"
-import type { ERPProductSearchResponse } from "@/types"
+import type { ApiError, ERPProductSearchResponse } from "@/types"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value)
@@ -24,11 +24,29 @@ export function useSearchERPProducts(integrationId: string, search: string) {
   const { storeId, isLoading: storeLoading } = useStoreId()
   const debouncedSearch = useDebounce(search, 300)
 
-  return useQuery({
+  return useQuery<ERPProductSearchResponse, ApiError>({
     queryKey: [...integrationKeys.all, "erp-products", integrationId, debouncedSearch],
     queryFn: async (): Promise<ERPProductSearchResponse> => {
       const token = await getToken()
-      return integrationService.searchProducts(storeId!, integrationId, debouncedSearch, token)
+      try {
+        return await integrationService.searchProducts(
+          storeId!,
+          integrationId,
+          debouncedSearch,
+          token,
+        )
+      } catch (err) {
+        const apiError = err as ApiError
+        // 404 "Produto não encontrado no ERP" é um estado vazio, não um erro destrutivo
+        if (apiError?.status === 404 && apiError?.error?.toLowerCase().includes("produto")) {
+          return { products: [], totalCount: 0, hasMore: false }
+        }
+        throw apiError
+      }
+    },
+    retry: (failureCount, error) => {
+      if (error?.status && error.status >= 400 && error.status < 500) return false
+      return failureCount < 2
     },
     enabled:
       isLoaded &&
