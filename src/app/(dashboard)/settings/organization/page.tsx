@@ -243,7 +243,7 @@ export default function OrganizationPage() {
             {/* Logo */}
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={store?.logoUrl || undefined} alt={store?.name} />
+                <AvatarImage src={store?.logoUrl || undefined} alt={store?.name} className="object-contain" />
                 <AvatarFallback className="text-lg bg-primary/10 text-primary">
                   <Building2 className="h-8 w-8" />
                 </AvatarFallback>
