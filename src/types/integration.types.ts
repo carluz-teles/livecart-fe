@@ -1,5 +1,5 @@
 export type IntegrationType = "payment" | "erp" | "social"
-export type IntegrationProvider = "mercado_pago" | "tiny" | "instagram"
+export type IntegrationProvider = "mercado_pago" | "pagarme" | "tiny" | "instagram"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
 export interface Integration {
@@ -79,6 +79,14 @@ export const PROVIDERS: ProviderInfo[] = [
     description: "Receba pagamentos via Pix, cartão e boleto",
     icon: "/icons/mercado-pago.svg",
     supportsOAuth: true,
+  },
+  {
+    id: "pagarme",
+    name: "Pagar.me",
+    type: "payment",
+    description: "Receba pagamentos via Pix, cartão e boleto com Pagar.me",
+    icon: "/icons/pagarme.svg",
+    supportsOAuth: false,
   },
   {
     id: "tiny",

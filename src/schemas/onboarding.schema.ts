@@ -1,5 +1,16 @@
 import { z } from "zod"
 
+// Address schema
+export const addressSchema = z.object({
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  country: z.string().optional(),
+})
+
+export type AddressData = z.infer<typeof addressSchema>
+
 // Step 1: Store info
 export const storeStepSchema = z.object({
   storeName: z
@@ -8,6 +19,7 @@ export const storeStepSchema = z.object({
     .max(100, "Nome deve ter no máximo 100 caracteres"),
   whatsappNumber: z.string().optional(),
   emailAddress: z.string().email("Email inválido").optional().or(z.literal("")),
+  address: addressSchema.optional(),
 })
 
 export type StoreStepData = z.infer<typeof storeStepSchema>

@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Store, ArrowRight } from "lucide-react"
+import { Store, ArrowRight, MapPin } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { storeStepSchema, type StoreStepData } from "@/schemas/onboarding.schema"
 
 function generateSlug(name: string): string {
@@ -47,6 +52,13 @@ export function StepStore({ defaultValues, onNext, isSubmitting }: StepStoreProp
       storeName: "",
       whatsappNumber: "",
       emailAddress: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "Brasil",
+      },
       ...defaultValues,
     },
   })
@@ -125,6 +137,73 @@ export function StepStore({ defaultValues, onNext, isSubmitting }: StepStoreProp
               <p className="text-sm text-destructive">{errors.emailAddress.message}</p>
             )}
           </div>
+
+          {/* Address Section */}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2 px-0 text-muted-foreground hover:text-foreground"
+              >
+                <MapPin className="h-4 w-4" />
+                Adicionar endereço (opcional)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="street">Endereço</Label>
+                <Input
+                  id="street"
+                  placeholder="Rua das Flores, 123"
+                  {...register("address.street")}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    placeholder="São Paulo"
+                    {...register("address.city")}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado</Label>
+                  <Input
+                    id="state"
+                    placeholder="SP"
+                    {...register("address.state")}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="zip">CEP</Label>
+                  <Input
+                    id="zip"
+                    placeholder="01234-567"
+                    {...register("address.zip")}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">País</Label>
+                  <Input
+                    id="country"
+                    placeholder="Brasil"
+                    {...register("address.country")}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={isSubmitting || !storeSlug}>

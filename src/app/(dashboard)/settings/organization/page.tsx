@@ -1,14 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2 } from "lucide-react"
+import { useAuth } from "@clerk/nextjs"
+import { useQueryClient } from "@tanstack/react-query"
+import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -23,14 +24,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { toast } from "sonner"
-import { useStore } from "@/hooks/store/useStore"
+import { useStore, storeKeys } from "@/hooks/store/useStore"
 import { useUpdateStore } from "@/hooks/store/useUpdateStore"
+import { uploadService } from "@/services/api/upload.service"
 
 const organizationSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
-  description: z.string().optional(),
   emailAddress: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  whatsappNumber: z.string().optional(),
+  phone: z.string().optional(),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
   address: z.object({
     street: z.string().optional(),
@@ -46,16 +47,19 @@ type OrganizationFormData = z.infer<typeof organizationSchema>
 export default function OrganizationPage() {
   const { data: store, isLoading } = useStore()
   const updateStore = useUpdateStore()
+  const { getToken } = useAuth()
+  const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<OrganizationFormData>({
     resolver: zodResolver(organizationSchema),
     defaultValues: {
       name: "",
-      description: "",
       emailAddress: "",
-      whatsappNumber: "",
+      phone: "",
       website: "",
       address: {
         street: "",
@@ -72,9 +76,8 @@ export default function OrganizationPage() {
     if (store) {
       form.reset({
         name: store.name,
-        description: store.description || "",
         emailAddress: store.emailAddress || "",
-        whatsappNumber: store.whatsappNumber || "",
+        phone: store.whatsappNumber || "",
         website: store.website || "",
         address: {
           street: store.address?.street || "",
@@ -99,9 +102,8 @@ export default function OrganizationPage() {
     try {
       await updateStore.mutateAsync({
         name: data.name,
-        description: data.description,
         emailAddress: data.emailAddress,
-        whatsappNumber: data.whatsappNumber,
+        whatsappNumber: data.phone,
         website: data.website,
         address: {
           street: data.address.street || "",
@@ -126,9 +128,8 @@ export default function OrganizationPage() {
     if (store) {
       form.reset({
         name: store.name,
-        description: store.description || "",
         emailAddress: store.emailAddress || "",
-        whatsappNumber: store.whatsappNumber || "",
+        phone: store.whatsappNumber || "",
         website: store.website || "",
         address: {
           street: store.address?.street || "",
@@ -140,6 +141,59 @@ export default function OrganizationPage() {
       })
     }
     setIsEditing(false)
+  }
+
+  const handleLogoClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Arquivo inválido", {
+        description: "Por favor, selecione uma imagem (JPG, PNG, GIF ou WebP).",
+      })
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Arquivo muito grande", {
+        description: "A imagem deve ter no máximo 2MB.",
+      })
+      return
+    }
+
+    setIsUploadingLogo(true)
+    try {
+      const token = await getToken()
+      if (!token) {
+        throw new Error("Not authenticated")
+      }
+
+      await uploadService.uploadStoreLogo(file, token)
+
+      // Refetch store query to refresh the data immediately
+      await queryClient.refetchQueries({ queryKey: storeKeys.current() })
+
+      toast.success("Logo atualizado", {
+        description: "O logo da loja foi alterado com sucesso.",
+      })
+    } catch (error) {
+      console.error("Failed to upload logo:", error)
+      toast.error("Erro ao enviar logo", {
+        description: "Não foi possível atualizar o logo. Tente novamente.",
+      })
+    } finally {
+      setIsUploadingLogo(false)
+      // Clear the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
   }
 
   if (isLoading) {
@@ -195,8 +249,26 @@ export default function OrganizationPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-1">
-                <Button variant="outline" size="sm" type="button" disabled>
-                  Alterar logo
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={handleLogoClick}
+                  disabled={isUploadingLogo}
+                >
+                  {isUploadingLogo ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="mr-2 h-4 w-4" />
+                  )}
+                  {isUploadingLogo ? "Enviando..." : "Alterar logo"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   Recomendado: 256x256px, PNG ou JPG
@@ -255,25 +327,6 @@ export default function OrganizationPage() {
                 </div>
               </div>
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        disabled={!isEditing}
-                        rows={3}
-                        placeholder="Descreva sua loja..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -299,10 +352,10 @@ export default function OrganizationPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="whatsappNumber"
+                  name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WhatsApp</FormLabel>
+                      <FormLabel>Telefone de contato</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -495,19 +548,7 @@ export default function OrganizationPage() {
               Ações irreversíveis para sua organização
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Transferir propriedade</p>
-                <p className="text-sm text-muted-foreground">
-                  Transfira a propriedade desta loja para outro usuário
-                </p>
-              </div>
-              <Button variant="outline" size="sm" type="button" disabled>
-                Transferir
-              </Button>
-            </div>
-            <Separator />
+          <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Excluir organização</p>
