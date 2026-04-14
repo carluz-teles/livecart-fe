@@ -90,7 +90,7 @@ function getInitials(name: string | null) {
     .slice(0, 2)
 }
 
-export default function UsersPage() {
+export default function TeamPage() {
   const { getToken } = useAuth()
   const { storeId, isLoading: isLoadingStore } = useStoreId()
   const [searchQuery, setSearchQuery] = useState("")

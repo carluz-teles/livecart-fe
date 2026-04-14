@@ -26,8 +26,8 @@ const settingsNav = [
     description: "Configure o carrinho de compras",
   },
   {
-    title: "Usuários",
-    href: "/settings/users",
+    title: "Equipe",
+    href: "/settings/team",
     icon: Users,
     description: "Gerencie os membros da sua equipe",
   },
