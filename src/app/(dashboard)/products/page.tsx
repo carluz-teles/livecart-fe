@@ -249,19 +249,35 @@ export default function ProductsPage() {
           </div>
 
           {isLoading ? (
-            <div className="divide-y rounded-lg border">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-3">
-                  <Skeleton className="h-12 w-12 shrink-0 rounded-md" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-3 w-1/5" />
+            <div className="overflow-hidden rounded-lg border">
+              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]">
+                <span></span>
+                <span>Produto</span>
+                <span>Origem</span>
+                <span className="text-right">Preço</span>
+                <span className="text-right">Estoque</span>
+                <span>Status</span>
+                <span></span>
+              </div>
+              <div className="divide-y">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]"
+                  >
+                    <Skeleton className="h-10 w-10 rounded-md" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="hidden h-4 w-16 md:block" />
+                    <Skeleton className="hidden h-4 w-16 md:block ml-auto" />
+                    <Skeleton className="hidden h-4 w-16 md:block ml-auto" />
+                    <Skeleton className="hidden h-5 w-14 md:block" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
                   </div>
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-12" />
-                  <Skeleton className="h-8 w-8 rounded-md" />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : error ? (
             <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-sm text-destructive">
@@ -273,114 +289,133 @@ export default function ProductsPage() {
               <p className="text-sm text-muted-foreground">Nenhum produto encontrado.</p>
             </div>
           ) : (
-            <div className="divide-y rounded-lg border bg-card">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => setViewingProduct(product)}
-                  className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
-                    {product.imageUrl ? (
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                        sizes="48px"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
-                        {getProductInitials(product.name)}
-                      </div>
-                    )}
-                  </div>
+            <div className="overflow-hidden rounded-lg border bg-card">
+              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]">
+                <span></span>
+                <span>Produto</span>
+                <span>Origem</span>
+                <span className="text-right">Preço</span>
+                <span className="text-right">Estoque</span>
+                <span>Status</span>
+                <span></span>
+              </div>
+              <div className="divide-y">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => setViewingProduct(product)}
+                    className="group grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 text-sm transition-colors hover:bg-muted/50 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]"
+                  >
+                    <div className="relative h-10 w-10 overflow-hidden rounded-md border bg-muted">
+                      {product.imageUrl ? (
+                        <Image
+                          src={product.imageUrl}
+                          alt={product.name}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-muted-foreground">
+                          {getProductInitials(product.name)}
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate text-sm font-medium transition-colors group-hover:text-primary">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium leading-tight transition-colors group-hover:text-primary">
                         {product.name}
-                      </h3>
-                      {!product.active && (
-                        <Badge variant="secondary" className="h-5 text-[10px]">
-                          Inativo
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      {product.keyword && (
-                        <span className="font-mono">#{product.keyword}</span>
-                      )}
-                      <span className="text-muted-foreground/40">·</span>
-                      <span>{sourceLabels[product.externalSource] ?? product.externalSource}</span>
-                    </div>
-                  </div>
-
-                  <div className="hidden items-center gap-6 sm:flex">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold tracking-tight">
-                        {formatCurrency(product.price)}
                       </p>
-                      <p
-                        className={`text-xs ${
-                          product.stock === 0
-                            ? "text-destructive"
-                            : product.stock <= 5
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-muted-foreground"
+                      {product.keyword && (
+                        <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                          #{product.keyword}
+                        </p>
+                      )}
+                    </div>
+
+                    <span className="hidden truncate text-xs text-muted-foreground md:block">
+                      {sourceLabels[product.externalSource] ?? product.externalSource}
+                    </span>
+
+                    <span className="hidden text-right font-medium tracking-tight md:block">
+                      {formatCurrency(product.price)}
+                    </span>
+
+                    <span
+                      className={`hidden text-right text-xs md:block ${
+                        product.stock === 0
+                          ? "font-medium text-destructive"
+                          : product.stock <= 5
+                            ? "font-medium text-amber-600 dark:text-amber-400"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {product.stock === 0 ? "Esgotado" : `${product.stock} un.`}
+                    </span>
+
+                    <span className="hidden md:block">
+                      <Badge
+                        variant={product.active ? "outline" : "secondary"}
+                        className={`h-5 text-[10px] font-medium ${
+                          product.active
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                            : ""
                         }`}
                       >
-                        {product.stock === 0 ? "Esgotado" : `${product.stock} em estoque`}
-                      </p>
+                        {product.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </span>
+
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex justify-end"
+                    >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-60 transition-opacity group-hover:opacity-100"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Abrir menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEdit(product)}>
+                            Editar produto
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleActive(product)}>
+                            {product.active ? "Desativar" : "Ativar"}
+                          </DropdownMenuItem>
+                          {canSync(product) && (
+                            <DropdownMenuItem
+                              onClick={() => handleSync(product)}
+                              disabled={isSyncing}
+                            >
+                              <RefreshCw
+                                className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                              />
+                              Sincronizar via ERP
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(product)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
-
-                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-60 transition-opacity group-hover:opacity-100"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Abrir menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEdit(product)}>
-                          Editar produto
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleActive(product)}>
-                          {product.active ? "Desativar" : "Ativar"}
-                        </DropdownMenuItem>
-                        {canSync(product) && (
-                          <DropdownMenuItem
-                            onClick={() => handleSync(product)}
-                            disabled={isSyncing}
-                          >
-                            <RefreshCw
-                              className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-                            />
-                            Sincronizar via ERP
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => handleDelete(product)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
