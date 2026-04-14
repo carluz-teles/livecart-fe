@@ -71,7 +71,7 @@ export function Sidebar() {
               alt={user.membership.storeName || "Logo"}
               width={36}
               height={36}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           ) : (
             <Building2 className="h-5 w-5 text-primary" />
