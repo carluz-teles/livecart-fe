@@ -65,6 +65,14 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     authType: "oauth",
   },
   {
+    id: "pagarme",
+    name: "Pagar.me",
+    description: "Receba pagamentos via Pix, cartão e boleto",
+    icon: <CreditCard className="h-6 w-6" />,
+    type: "payment",
+    authType: "api_key",
+  },
+  {
     id: "tiny",
     name: "Tiny ERP",
     description: "Sincronize produtos e pedidos com seu ERP",

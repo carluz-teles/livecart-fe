@@ -41,6 +41,23 @@ export default function OnboardingPage() {
       formData.append("storeName", storeData.storeName)
       formData.append("storeSlug", storeData.storeSlug)
 
+      // Add optional fields
+      if (storeData.whatsappNumber) {
+        formData.append("whatsappNumber", storeData.whatsappNumber)
+      }
+      if (storeData.emailAddress) {
+        formData.append("emailAddress", storeData.emailAddress)
+      }
+
+      // Add address fields
+      if (storeData.address) {
+        if (storeData.address.street) formData.append("address.street", storeData.address.street)
+        if (storeData.address.city) formData.append("address.city", storeData.address.city)
+        if (storeData.address.state) formData.append("address.state", storeData.address.state)
+        if (storeData.address.zip) formData.append("address.zip", storeData.address.zip)
+        if (storeData.address.country) formData.append("address.country", storeData.address.country)
+      }
+
       const result = await completeOnboarding(formData)
 
       if (result.error) {
