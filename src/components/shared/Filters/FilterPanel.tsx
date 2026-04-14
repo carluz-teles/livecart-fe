@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Filter, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -173,42 +173,56 @@ export function FilterRange({
   formatValue,
   parseValue,
 }: FilterRangeProps) {
-  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (!value) {
-      onMinChange(undefined)
+  const formatForDisplay = useCallback(
+    (value: number | undefined) => {
+      if (value === undefined) return ""
+      return formatValue ? formatValue(value) : String(value)
+    },
+    [formatValue]
+  )
+
+  const [minDisplay, setMinDisplay] = useState(() => formatForDisplay(minValue))
+  const [maxDisplay, setMaxDisplay] = useState(() => formatForDisplay(maxValue))
+  const [minFocused, setMinFocused] = useState(false)
+  const [maxFocused, setMaxFocused] = useState(false)
+
+  // Sync external value changes when input is not focused
+  useEffect(() => {
+    if (!minFocused) setMinDisplay(formatForDisplay(minValue))
+  }, [minValue, minFocused, formatForDisplay])
+
+  useEffect(() => {
+    if (!maxFocused) setMaxDisplay(formatForDisplay(maxValue))
+  }, [maxValue, maxFocused, formatForDisplay])
+
+  const handleRawChange = (
+    raw: string,
+    setDisplay: (v: string) => void,
+    onChange: (value: number | undefined) => void
+  ) => {
+    // Accept digits and a single separator (. or ,)
+    const sanitized = raw.replace(/[^\d.,]/g, "")
+    setDisplay(sanitized)
+
+    if (!sanitized) {
+      onChange(undefined)
       return
     }
-    const parsed = parseValue ? parseValue(value) : parseInt(value, 10)
+
+    const parsed = parseValue ? parseValue(sanitized) : parseInt(sanitized, 10)
     if (!isNaN(parsed)) {
-      onMinChange(parsed)
+      onChange(parsed)
     }
   }
 
-  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (!value) {
-      onMaxChange(undefined)
-      return
-    }
-    const parsed = parseValue ? parseValue(value) : parseInt(value, 10)
-    if (!isNaN(parsed)) {
-      onMaxChange(parsed)
-    }
+  const handleBlur = (
+    currentValue: number | undefined,
+    setDisplay: (v: string) => void,
+    setFocused: (v: boolean) => void
+  ) => {
+    setFocused(false)
+    setDisplay(formatForDisplay(currentValue))
   }
-
-  const displayMin =
-    minValue !== undefined
-      ? formatValue
-        ? formatValue(minValue)
-        : String(minValue)
-      : ""
-  const displayMax =
-    maxValue !== undefined
-      ? formatValue
-        ? formatValue(maxValue)
-        : String(maxValue)
-      : ""
 
   return (
     <div className="flex items-center gap-2">
@@ -220,9 +234,11 @@ export function FilterRange({
         )}
         <input
           type="text"
-          inputMode="numeric"
-          value={displayMin}
-          onChange={handleMinChange}
+          inputMode="decimal"
+          value={minDisplay}
+          onFocus={() => setMinFocused(true)}
+          onBlur={() => handleBlur(minValue, setMinDisplay, setMinFocused)}
+          onChange={(e) => handleRawChange(e.target.value, setMinDisplay, onMinChange)}
           placeholder={minPlaceholder}
           className={cn(
             "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
@@ -239,9 +255,11 @@ export function FilterRange({
         )}
         <input
           type="text"
-          inputMode="numeric"
-          value={displayMax}
-          onChange={handleMaxChange}
+          inputMode="decimal"
+          value={maxDisplay}
+          onFocus={() => setMaxFocused(true)}
+          onBlur={() => handleBlur(maxValue, setMaxDisplay, setMaxFocused)}
+          onChange={(e) => handleRawChange(e.target.value, setMaxDisplay, onMaxChange)}
           placeholder={maxPlaceholder}
           className={cn(
             "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",

@@ -58,13 +58,6 @@ const sourceLabels: Record<string, string> = {
   shopify: "Shopify",
 }
 
-const sourceColors: Record<string, string> = {
-  manual: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  bling: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  tiny: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
-  shopify: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-}
-
 export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editFormOpen, setEditFormOpen] = useState(false)
@@ -256,15 +249,17 @@ export default function ProductsPage() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-lg border bg-card">
-                  <Skeleton className="aspect-square w-full rounded-none" />
-                  <div className="space-y-2 p-4">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-5 w-1/2" />
-                    <Skeleton className="h-3 w-1/3" />
+            <div className="divide-y rounded-lg border">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3">
+                  <Skeleton className="h-12 w-12 shrink-0 rounded-md" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/5" />
                   </div>
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-12" />
+                  <Skeleton className="h-8 w-8 rounded-md" />
                 </div>
               ))}
             </div>
@@ -278,106 +273,57 @@ export default function ProductsPage() {
               <p className="text-sm text-muted-foreground">Nenhum produto encontrado.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="divide-y rounded-lg border bg-card">
               {products.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => setViewingProduct(product)}
-                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                  className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
                     {product.imageUrl ? (
                       <Image
                         src={product.imageUrl}
                         alt={product.name}
                         fill
                         unoptimized
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        className="object-cover"
+                        sizes="48px"
                       />
                     ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Package className="h-8 w-8" />
-                        <span className="text-lg font-semibold">
-                          {getProductInitials(product.name)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="absolute left-2 top-2 flex items-center gap-1.5">
-                      <Badge
-                        variant={product.active ? "default" : "secondary"}
-                        className="h-6 shadow-sm"
-                      >
-                        {product.active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-
-                    <div
-                      className="absolute right-2 top-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8 bg-background/90 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Abrir menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEdit(product)}>
-                            Editar produto
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleActive(product)}>
-                            {product.active ? "Desativar" : "Ativar"}
-                          </DropdownMenuItem>
-                          {canSync(product) && (
-                            <DropdownMenuItem
-                              onClick={() => handleSync(product)}
-                              disabled={isSyncing}
-                            >
-                              <RefreshCw
-                                className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-                              />
-                              Sincronizar via ERP
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(product)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {product.stock === 0 && (
-                      <div className="absolute inset-x-0 bottom-0 bg-destructive/90 py-1 text-center text-xs font-medium text-destructive-foreground backdrop-blur-sm">
-                        Esgotado
+                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
+                        {getProductInitials(product.name)}
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    <h3 className="line-clamp-2 text-sm font-medium leading-snug transition-colors group-hover:text-primary">
-                      {product.name}
-                    </h3>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-sm font-medium transition-colors group-hover:text-primary">
+                        {product.name}
+                      </h3>
+                      {!product.active && (
+                        <Badge variant="secondary" className="h-5 text-[10px]">
+                          Inativo
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      {product.keyword && (
+                        <span className="font-mono">#{product.keyword}</span>
+                      )}
+                      <span className="text-muted-foreground/40">·</span>
+                      <span>{sourceLabels[product.externalSource] ?? product.externalSource}</span>
+                    </div>
+                  </div>
 
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-lg font-semibold tracking-tight">
+                  <div className="hidden items-center gap-6 sm:flex">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold tracking-tight">
                         {formatCurrency(product.price)}
-                      </span>
-                      <span
-                        className={`text-xs font-medium ${
+                      </p>
+                      <p
+                        className={`text-xs ${
                           product.stock === 0
                             ? "text-destructive"
                             : product.stock <= 5
@@ -385,23 +331,53 @@ export default function ProductsPage() {
                               : "text-muted-foreground"
                         }`}
                       >
-                        {product.stock} un.
-                      </span>
+                        {product.stock === 0 ? "Esgotado" : `${product.stock} em estoque`}
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-medium ${sourceColors[product.externalSource] ?? ""}`}
-                      >
-                        {sourceLabels[product.externalSource] ?? product.externalSource}
-                      </Badge>
-                      {product.keyword && (
-                        <span className="truncate font-mono text-[11px] text-muted-foreground">
-                          #{product.keyword}
-                        </span>
-                      )}
-                    </div>
+                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-60 transition-opacity group-hover:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEdit(product)}>
+                          Editar produto
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleActive(product)}>
+                          {product.active ? "Desativar" : "Ativar"}
+                        </DropdownMenuItem>
+                        {canSync(product) && (
+                          <DropdownMenuItem
+                            onClick={() => handleSync(product)}
+                            disabled={isSyncing}
+                          >
+                            <RefreshCw
+                              className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                            />
+                            Sincronizar via ERP
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDelete(product)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
