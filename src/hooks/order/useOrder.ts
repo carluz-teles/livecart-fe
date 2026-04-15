@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { orderService } from "@/services/api/order.service"
 import { useStoreId } from "@/hooks/useUser"
-import type { Order } from "@/types"
+import type { OrderDetail } from "@/types"
 import { orderKeys } from "./useOrders"
 
 export function useOrder(id: string) {
@@ -13,7 +13,7 @@ export function useOrder(id: string) {
 
   return useQuery({
     queryKey: orderKeys.detail(storeId ?? "", id),
-    queryFn: async (): Promise<Order> => {
+    queryFn: async (): Promise<OrderDetail> => {
       const token = await getToken()
       return orderService.getById(storeId!, id, token)
     },

@@ -11,7 +11,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { checkoutService } from "@/services/api"
-import type { PublicCheckoutCart, ApiError } from "@/types"
+import {
+  CheckoutPaymentMethods,
+  CheckoutCardForm,
+  CheckoutPixDisplay,
+} from "@/components/checkout"
+import type {
+  PublicCheckoutCart,
+  CheckoutConfigResponse,
+  PaymentMethod,
+  ProcessCardPaymentResponse,
+  ApiError,
+} from "@/types"
 
 // Format currency in BRL
 function formatCurrency(cents: number): string {
@@ -165,6 +176,9 @@ function CartItem({ item }: { item: PublicCheckoutCart["items"][0] }) {
   )
 }
 
+// Checkout form step
+type CheckoutStep = "email" | "payment" | "processing"
+
 // Main checkout page component
 export default function CheckoutPage() {
   const params = useParams()
@@ -176,8 +190,16 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Checkout config state
+  const [checkoutConfig, setCheckoutConfig] = useState<CheckoutConfigResponse | null>(null)
+  const [configLoading, setConfigLoading] = useState(false)
+  const [configError, setConfigError] = useState<string | null>(null)
+
+  // Payment state
+  const [step, setStep] = useState<CheckoutStep>("email")
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("card")
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
 
   // Fetch cart data
   const fetchCart = useCallback(async () => {
@@ -197,35 +219,69 @@ export default function CheckoutPage() {
     }
   }, [token])
 
+  // Fetch checkout config
+  const fetchConfig = useCallback(async () => {
+    setConfigLoading(true)
+    setConfigError(null)
+    try {
+      const config = await checkoutService.getConfig(token)
+      setCheckoutConfig(config)
+      // Set default method to first available
+      if (config.availableMethods.length > 0) {
+        setSelectedMethod(config.availableMethods[0])
+      }
+    } catch (err) {
+      const apiError = err as ApiError
+      setConfigError(apiError.message || "Erro ao carregar configuração de pagamento")
+    } finally {
+      setConfigLoading(false)
+    }
+  }, [token])
+
   useEffect(() => {
     if (token) {
       fetchCart()
     }
   }, [token, fetchCart])
 
-  // Handle checkout submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle email submission
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) {
-      setSubmitError("Email é obrigatório")
       return
     }
 
-    setSubmitting(true)
-    setSubmitError(null)
+    // Fetch checkout config
+    await fetchConfig()
+    setStep("payment")
+  }
 
-    try {
-      const result = await checkoutService.generateCheckout(token, { email })
-      // Redirect to payment page
-      if (result.checkoutUrl) {
-        window.location.href = result.checkoutUrl
-      }
-    } catch (err) {
-      const apiError = err as ApiError
-      setSubmitError(apiError.message || "Erro ao gerar link de pagamento")
-    } finally {
-      setSubmitting(false)
+  // Handle card payment success
+  const handleCardSuccess = (result: ProcessCardPaymentResponse) => {
+    if (result.status === "approved") {
+      setPaymentSuccess(true)
+      fetchCart() // Refresh cart to show updated status
+    } else if (result.status === "pending" || result.status === "in_process") {
+      // Show processing state
+      setStep("processing")
     }
+  }
+
+  // Handle PIX success
+  const handlePixSuccess = () => {
+    setPaymentSuccess(true)
+    fetchCart()
+  }
+
+  // Handle payment error
+  const handlePaymentError = (error: string) => {
+    console.error("Payment error:", error)
+  }
+
+  // Reset to email step
+  const handleBack = () => {
+    setStep("email")
+    setCheckoutConfig(null)
   }
 
   // Loading state
@@ -247,8 +303,8 @@ export default function CheckoutPage() {
     return <FailedState onRetry={() => window.location.href = `/cart/${token}`} />
   }
 
-  // Check if cart is already paid
-  if (cart.paymentStatus === "paid") {
+  // Check if cart is already paid or payment success
+  if (cart.paymentStatus === "paid" || paymentSuccess) {
     return <SuccessState cart={cart} />
   }
 
@@ -359,44 +415,100 @@ export default function CheckoutPage() {
         {availableItems.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Finalizar Compra</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Finalizar Compra</span>
+                {step === "payment" && (
+                  <Button variant="ghost" size="sm" onClick={handleBack}>
+                    Voltar
+                  </Button>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email para receber o comprovante</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                {submitError && (
-                  <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                    {submitError}
+              {/* Step 1: Email */}
+              {step === "email" && (
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email para receber o comprovante</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
 
-                <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-                  {submitting ? (
+                  <Button type="submit" className="w-full" size="lg">
+                    Continuar
+                  </Button>
+                </form>
+              )}
+
+              {/* Step 2: Payment */}
+              {step === "payment" && (
+                <div className="space-y-6">
+                  {configLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        Carregando opções de pagamento...
+                      </span>
+                    </div>
+                  ) : configError ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <AlertCircle className="h-8 w-8 text-destructive" />
+                      <p className="mt-2 text-sm text-destructive">{configError}</p>
+                      <Button variant="outline" className="mt-4" onClick={fetchConfig}>
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  ) : checkoutConfig ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando link de pagamento...
-                    </>
-                  ) : (
-                    <>Pagar {formatCurrency(cart.summary.subtotal)}</>
-                  )}
-                </Button>
+                      {/* Payment method selector */}
+                      <CheckoutPaymentMethods
+                        selectedMethod={selectedMethod}
+                        onMethodChange={setSelectedMethod}
+                        availableMethods={checkoutConfig.availableMethods}
+                      />
 
-                <p className="text-center text-xs text-muted-foreground">
-                  Você será redirecionado para o Mercado Pago para finalizar o pagamento.
-                </p>
-              </form>
+                      <Separator />
+
+                      {/* Payment form based on method */}
+                      {selectedMethod === "card" ? (
+                        <CheckoutCardForm
+                          token={token}
+                          provider={checkoutConfig.provider}
+                          publicKey={checkoutConfig.publicKey}
+                          amount={checkoutConfig.totalAmount}
+                          email={email}
+                          onSuccess={handleCardSuccess}
+                          onError={handlePaymentError}
+                        />
+                      ) : (
+                        <CheckoutPixDisplay
+                          token={token}
+                          email={email}
+                          onSuccess={handlePixSuccess}
+                          onError={handlePaymentError}
+                        />
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Step 3: Processing */}
+              {step === "processing" && (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <h3 className="mt-4 text-lg font-semibold">Processando pagamento...</h3>
+                  <p className="mt-2 text-center text-sm text-muted-foreground">
+                    Aguarde enquanto confirmamos seu pagamento.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

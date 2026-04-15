@@ -49,6 +49,16 @@ export interface Order {
   expiresAt: string | null
 }
 
+export interface OrderComment {
+  id: string
+  text: string
+  createdAt: string
+}
+
+export interface OrderDetail extends Order {
+  comments: OrderComment[]
+}
+
 export interface OrderStats {
   totalOrders: number
   pendingOrders: number
@@ -149,4 +159,65 @@ export interface GenerateCheckoutRequest {
 export interface GenerateCheckoutResponse {
   checkoutUrl: string
   expiresAt: string | null
+}
+
+// =============================================================================
+// TRANSPARENT CHECKOUT TYPES
+// =============================================================================
+
+export type PaymentProvider = "mercado_pago" | "pagarme"
+export type PaymentMethod = "card" | "pix"
+
+export interface CheckoutConfigResponse {
+  provider: PaymentProvider
+  publicKey: string
+  availableMethods: PaymentMethod[]
+  totalAmount: number
+  currency: string
+}
+
+export interface ProcessCardPaymentRequest {
+  email: string
+  token: string
+  installments: number
+  paymentMethodId?: string // For Mercado Pago
+  issuerId?: string // For Mercado Pago
+  deviceId?: string
+  customerName?: string
+  customerDocument?: string
+  customerPhone?: string
+}
+
+export interface ProcessCardPaymentResponse {
+  paymentId: string
+  status: "approved" | "rejected" | "pending" | "in_process"
+  statusDetail?: string
+  message: string
+  amount: number
+  installments: number
+  lastFourDigits?: string
+  cardBrand?: string
+}
+
+export interface GeneratePixRequest {
+  email: string
+  customerName?: string
+  customerDocument?: string
+  customerPhone?: string
+}
+
+export interface GeneratePixResponse {
+  paymentId: string
+  qrCode: string
+  qrCodeText: string
+  amount: number
+  expiresAt: string
+  ticketUrl?: string
+}
+
+export interface PaymentStatusResponse {
+  status: CartStatus
+  paymentStatus: string
+  paidAt: string | null
+  message?: string
 }

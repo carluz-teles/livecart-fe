@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Search, MoreHorizontal, ShoppingCart, Clock, DollarSign, TrendingUp } from "lucide-react"
 
 import { formatCurrency, formatDate } from "@/lib/format"
@@ -186,7 +187,11 @@ export default function OrdersPage() {
                     const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "pending")
                     const paymentCfg = getStatusConfig(PAYMENT_STATUS_CONFIG, order.paymentStatus, "pending")
                     return (
-                      <TableRow key={order.id}>
+                      <TableRow
+                        key={order.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => window.location.href = `/orders/${order.id}`}
+                      >
                         <TableCell className="font-medium">
                           @{order.customerHandle}
                         </TableCell>
@@ -219,7 +224,9 @@ export default function OrdersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Ações</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/orders/${order.id}`}>Ver detalhes</Link>
+                              </DropdownMenuItem>
                               <DropdownMenuItem>Atualizar status</DropdownMenuItem>
                               <DropdownMenuItem>Enviar notificação</DropdownMenuItem>
                             </DropdownMenuContent>
