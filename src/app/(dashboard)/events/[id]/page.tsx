@@ -92,6 +92,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEvent, useEventDetailStats, useEventCarts, useEventProducts, useAddPlatform, useEndEvent } from "@/hooks/event"
 import type { EventCart, EventProduct, EventSession, Platform } from "@/types/event.types"
+import { FunnelVisualization } from "@/components/analytics/FunnelVisualization"
 import { useState } from "react"
 
 export default function EventDetailsPage() {
@@ -305,6 +306,17 @@ export default function EventDetailsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Funnel Visualization */}
+      {!statsLoading && stats && (
+        <FunnelVisualization
+          totalComments={stats.totalComments}
+          totalCarts={stats.totalCarts ?? 0}
+          checkoutCarts={stats.checkoutCarts ?? 0}
+          paidCarts={stats.paidCarts}
+          confirmedRevenue={stats.confirmedRevenue}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-5">
@@ -562,7 +574,7 @@ export default function EventDetailsPage() {
 }
 
 function CartRow({ cart }: { cart: EventCart }) {
-  const statusConfig = getStatusConfig(ORDER_STATUS_CONFIG, cart.status, "pending")
+  const statusConfig = getStatusConfig(ORDER_STATUS_CONFIG, cart.status, "active")
   const paymentConfig = cart.paymentStatus
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null

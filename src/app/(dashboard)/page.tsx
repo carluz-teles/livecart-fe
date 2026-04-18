@@ -31,7 +31,25 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useDashboardStats, useDashboardChart, useTopProducts } from "@/hooks/dashboard"
+import {
+  useDashboardStats,
+  useDashboardChart,
+  useTopProducts,
+  useEventsWithRevenue,
+  useAggregatedFunnel,
+} from "@/hooks/dashboard"
+import { FunnelVisualization } from "@/components/analytics/FunnelVisualization"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { EVENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
+import Link from "next/link"
 
 const chartConfig = {
   revenue: {
@@ -50,9 +68,12 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: chartData, isLoading: chartLoading } = useDashboardChart()
   const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts()
+  const { data: eventsWithRevenue, isLoading: eventsLoading } = useEventsWithRevenue(20)
+  const { data: aggregatedFunnel, isLoading: funnelLoading } = useAggregatedFunnel(30)
 
   const chartItems = chartData?.data ?? []
   const topProducts = topProductsData?.data ?? []
+  const events = eventsWithRevenue?.data ?? []
 
   return (
     <div className="flex flex-col gap-6">
@@ -285,17 +306,146 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
+          {/* Aggregated Funnel */}
+          {funnelLoading ? (
+            <Card className="p-6">
+              <Skeleton className="h-48 w-full" />
+            </Card>
+          ) : aggregatedFunnel ? (
+            <FunnelVisualization
+              totalComments={aggregatedFunnel.totalComments}
+              totalCarts={aggregatedFunnel.totalCarts}
+              checkoutCarts={aggregatedFunnel.checkoutCarts}
+              paidCarts={aggregatedFunnel.paidCarts}
+              confirmedRevenue={aggregatedFunnel.confirmedRevenue}
+            />
+          ) : null}
+
+          {/* Additional Funnel Stats */}
+          {aggregatedFunnel && (
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Ticket Medio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(aggregatedFunnel.averageTicket)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">por pedido pago</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Comentario → Carrinho</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {aggregatedFunnel.commentsToCartsRate.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">taxa de conversao</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Carrinho → Checkout</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {aggregatedFunnel.cartsToCheckoutRate.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">taxa de conversao</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Checkout → Pago</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {aggregatedFunnel.checkoutToPaidRate.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">taxa de conversao</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Events with Revenue Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Análises</CardTitle>
+              <CardTitle>GMV por Evento</CardTitle>
               <CardDescription>
-                Análises detalhadas estarão disponíveis em breve
+                Receita confirmada por cada evento de vendas
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Esta seção mostrará análises detalhadas das suas vendas, produtos mais vendidos e comportamento dos clientes.
-              </p>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Evento</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Comentarios</TableHead>
+                      <TableHead className="text-center">Carrinhos</TableHead>
+                      <TableHead className="text-center">Pagos</TableHead>
+                      <TableHead className="text-right">Conversao</TableHead>
+                      <TableHead className="text-right">GMV</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {eventsLoading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : events.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center">
+                          Nenhum evento encontrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      events.map((event) => {
+                        const statusConfig = getStatusConfig(EVENT_STATUS_CONFIG, event.status, "ended")
+                        return (
+                          <TableRow key={event.id}>
+                            <TableCell>
+                              <Link
+                                href={`/events/${event.id}`}
+                                className="font-medium hover:underline"
+                              >
+                                {event.title || "Sem titulo"}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">{event.totalComments}</TableCell>
+                            <TableCell className="text-center">{event.totalCarts}</TableCell>
+                            <TableCell className="text-center text-green-600 font-medium">
+                              {event.paidCarts}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {event.conversionRate.toFixed(1)}%
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-green-600">
+                              {formatCurrency(event.confirmedRevenue)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

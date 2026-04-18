@@ -155,7 +155,9 @@ export type EventListResponse = PaginatedResponse<Event>
 // Stats for a specific event
 export interface EventDetailStats {
   totalComments: number
+  totalCarts: number
   openCarts: number
+  checkoutCarts: number
   paidCarts: number
   totalProductsSold: number
   projectedRevenue: number
@@ -178,7 +180,9 @@ export interface EventCart {
 // Response types
 export interface EventDetailStatsResponse {
   totalComments: number
+  totalCarts: number
   openCarts: number
+  checkoutCarts: number
   paidCarts: number
   totalProductsSold: number
   projectedRevenue: number

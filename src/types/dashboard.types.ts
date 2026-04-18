@@ -26,3 +26,36 @@ export interface TopProductItem {
 export interface TopProductsResponse {
   data: TopProductItem[]
 }
+
+// =============================================================================
+// ANALYTICS - Revenue Attribution
+// =============================================================================
+
+export interface EventWithRevenue {
+  id: string
+  title: string
+  status: string
+  createdAt: string
+  totalComments: number
+  totalCarts: number
+  paidCarts: number
+  confirmedRevenue: number
+  conversionRate: number
+}
+
+export interface EventsWithRevenueResponse {
+  data: EventWithRevenue[]
+}
+
+export interface AggregatedFunnel {
+  totalComments: number
+  totalCarts: number
+  checkoutCarts: number
+  paidCarts: number
+  confirmedRevenue: number
+  averageTicket: number
+  commentsToCartsRate: number
+  cartsToCheckoutRate: number
+  checkoutToPaidRate: number
+  overallConversionRate: number
+}
