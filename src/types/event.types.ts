@@ -206,3 +206,28 @@ export interface EventProduct {
 export interface EventProductsResponse {
   data: EventProduct[]
 }
+
+// =============================================================================
+// LIVE MODE - Active Product & Pause Processing
+// =============================================================================
+
+export interface ActiveProduct {
+  id: string
+  name: string
+  keyword: string
+  price: number
+  imageUrl: string | null
+}
+
+export interface LiveModeState {
+  processingPaused: boolean
+  activeProduct: ActiveProduct | null
+}
+
+export interface SetActiveProductPayload {
+  productId: string | null // null to clear
+}
+
+export interface SetProcessingPausedPayload {
+  paused: boolean
+}

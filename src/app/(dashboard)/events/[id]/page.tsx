@@ -93,6 +93,7 @@ import { Label } from "@/components/ui/label"
 import { useEvent, useEventDetailStats, useEventCarts, useEventProducts, useAddPlatform, useEndEvent } from "@/hooks/event"
 import type { EventCart, EventProduct, EventSession, Platform } from "@/types/event.types"
 import { FunnelVisualization } from "@/components/analytics/FunnelVisualization"
+import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
 import { useState } from "react"
 
 export default function EventDetailsPage() {
@@ -306,6 +307,11 @@ export default function EventDetailsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Live Mode Control Panel - Only show for active events */}
+      {isEventActive && (
+        <LiveModeControlPanel eventId={id} enabled={isEventActive} />
+      )}
 
       {/* Funnel Visualization */}
       {!statsLoading && stats && (

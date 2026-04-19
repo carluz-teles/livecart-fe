@@ -17,6 +17,9 @@ import type {
   EventDetailStatsResponse,
   EventCartsResponse,
   EventProductsResponse,
+  LiveModeState,
+  SetActiveProductPayload,
+  SetProcessingPausedPayload,
 } from "@/types"
 
 export const eventService = {
@@ -74,4 +77,16 @@ export const eventService = {
   // Event Details - List products sold in an event
   listProducts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventProductsResponse>(`/stores/${storeId}/lives/${eventId}/products`, token),
+
+  // Live Mode - Get current state (active product + pause status)
+  getLiveModeState: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<LiveModeState>(`/stores/${storeId}/lives/${eventId}/live-mode`, token),
+
+  // Live Mode - Set active product (fallback for generic purchase intents)
+  setActiveProduct: (storeId: string, eventId: string, payload: SetActiveProductPayload, token?: string | null) =>
+    apiClient.patch<void>(`/stores/${storeId}/lives/${eventId}/active-product`, payload, token),
+
+  // Live Mode - Pause/resume comment processing
+  setProcessingPaused: (storeId: string, eventId: string, payload: SetProcessingPausedPayload, token?: string | null) =>
+    apiClient.patch<void>(`/stores/${storeId}/lives/${eventId}/pause-processing`, payload, token),
 }

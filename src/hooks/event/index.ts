@@ -10,3 +10,7 @@ export { useDeleteEvent } from "./useDeleteEvent"
 export { useEndEvent } from "./useEndEvent"
 export { useCreateSession } from "./useCreateSession"
 export { useAddPlatform } from "./useAddPlatform"
+// Live mode
+export { useLiveModeState } from "./useLiveModeState"
+export { useSetActiveProduct } from "./useSetActiveProduct"
+export { useSetProcessingPaused } from "./useSetProcessingPaused"
