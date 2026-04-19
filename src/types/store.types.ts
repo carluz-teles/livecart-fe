@@ -14,6 +14,12 @@ export interface CartSettings {
   autoSendCheckoutLinks: boolean
   checkoutLinkExpiryHours: number
   checkoutSendMethods: CheckoutSendMethod[]
+  // Automatic message settings
+  sendOnFirstItem: boolean
+  sendOnNewItems: boolean
+  messageCooldownSeconds: number
+  sendExpirationReminder: boolean
+  expirationReminderMinutes: number
 }
 
 // Default cart settings for new stores
@@ -28,6 +34,12 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   autoSendCheckoutLinks: false,
   checkoutLinkExpiryHours: 48,
   checkoutSendMethods: ['public_link', 'manual'],
+  // Automatic message settings
+  sendOnFirstItem: true,
+  sendOnNewItems: true,
+  messageCooldownSeconds: 30,
+  sendExpirationReminder: true,
+  expirationReminderMinutes: 15,
 }
 
 // Address structure
@@ -77,6 +89,12 @@ export interface UpdateCartSettingsPayload {
   autoSendCheckoutLinks: boolean
   checkoutLinkExpiryHours: number
   checkoutSendMethods: CheckoutSendMethod[]
+  // Automatic message settings
+  sendOnFirstItem: boolean
+  sendOnNewItems: boolean
+  messageCooldownSeconds: number
+  sendExpirationReminder: boolean
+  expirationReminderMinutes: number
 }
 
 // Create store types

@@ -11,8 +11,9 @@ import {
   Eye,
   AlertCircle,
   CheckCircle2,
-  HelpCircle,
+  Info,
 } from "lucide-react"
+
 // Simple debounce implementation
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function debounce<T extends (...args: any[]) => any>(
@@ -30,7 +31,6 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -55,13 +55,42 @@ import { storeService } from "@/services/api/store.service"
 import { notificationService } from "@/services/api/notification.service"
 import type { TemplateVariable, TemplateSettings } from "@/types/notification.types"
 
-const MAX_BYTES = 1000
+const MAX_CHARS = 1000
+
+// Friendly names for template variables
+const variableFriendlyNames: Record<string, string> = {
+  "{handle}": "@ Perfil",
+  "{produto}": "Produto",
+  "{keyword}": "Palavra-chave",
+  "{quantidade}": "Quantidade",
+  "{total_itens}": "Nº de itens",
+  "{total}": "Valor total",
+  "{link}": "Link",
+  "{loja}": "Nome da loja",
+  "{expira_em}": "Tempo restante",
+  "{live_titulo}": "Título da live",
+}
+
+// Convert technical variables to display format: {handle} -> {@ Perfil}
+function toDisplayFormat(template: string): string {
+  let result = template
+  for (const [technical, friendly] of Object.entries(variableFriendlyNames)) {
+    result = result.replaceAll(technical, `{${friendly}}`)
+  }
+  return result
+}
+
+// Convert display format back to technical: {@ Perfil} -> {handle}
+function toTechnicalFormat(template: string): string {
+  let result = template
+  for (const [technical, friendly] of Object.entries(variableFriendlyNames)) {
+    result = result.replaceAll(`{${friendly}}`, technical)
+  }
+  return result
+}
 
 const templateSettingsSchema = z.object({
   enabled: z.boolean(),
-  on_first_item: z.boolean().optional(),
-  on_new_items: z.boolean().optional(),
-  cooldown_seconds: z.number().min(0).max(3600).optional(),
   template: z.string().min(1, "Template não pode estar vazio").max(1500),
 })
 
@@ -75,12 +104,15 @@ type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>
 
 // Default templates
 const defaultTemplates = {
+  // Mensagem durante a live - quando cliente pede um produto
   checkout_immediate:
-    "Olá {handle}! 🛒\n\nVocê pediu {produto} na live!\n\nTotal: {total}\n\nFinalize aqui: {link}\n\n⏰ Válido por {expira_em}",
+    "Oi {handle}! 🛒\n\nAnotei seu pedido de {produto}!\n\nSeu carrinho: {total}\n\nQuando quiser finalizar: {link}",
+  // Mensagem de fim de live - quando a live termina (informativo)
   item_added:
-    "Oi {handle}! ➕\n\nNovo item adicionado: {produto}\n\nSeu carrinho agora tem {total_itens} itens\nTotal: {total}\n\nFinalize: {link}",
+    "Oi {handle}! 👋\n\nSeu carrinho foi fechado!\n\nSeus itens estão esperando por você:\n🛒 {total_itens} itens - {total}\n\nFinalize quando quiser: {link}\n\n⏰ Válido por {expira_em}",
+  // Lembrete de expiração - antes do carrinho expirar
   checkout_reminder:
-    "Oi {handle}! 🛒\n\nSeu carrinho com {total_itens} itens está esperando!\n\nTotal: {total}\n\nFinalize aqui: {link}\n\n⏰ Válido por {expira_em}",
+    "Ei {handle}! ⏰\n\nSeu carrinho vai expirar em breve!\n\n{total_itens} itens - {total}\n\nFinaliza logo: {link}",
 }
 
 interface TemplateEditorProps {
@@ -89,9 +121,8 @@ interface TemplateEditorProps {
   typeKey: "checkout_immediate" | "item_added" | "checkout_reminder"
   settings: TemplateSettings | null
   onChange: (settings: TemplateSettings | null) => void
-  onPreview: (template: string) => Promise<{ preview: string; byteCount: number; isValid: boolean; error?: string }>
+  onPreview: (template: string) => Promise<{ preview: string; charCount: number; isValid: boolean; error?: string }>
   variables: TemplateVariable[]
-  showFirstItemOptions?: boolean
 }
 
 function TemplateEditor({
@@ -102,10 +133,9 @@ function TemplateEditor({
   onChange,
   onPreview,
   variables,
-  showFirstItemOptions = false,
 }: TemplateEditorProps) {
   const [preview, setPreview] = useState<string>("")
-  const [byteCount, setByteCount] = useState<number>(0)
+  const [charCount, setCharCount] = useState<number>(0)
   const [isValid, setIsValid] = useState<boolean>(true)
   const [error, setError] = useState<string>("")
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -113,13 +143,15 @@ function TemplateEditor({
 
   const enabled = settings?.enabled ?? false
   const template = settings?.template ?? defaultTemplates[typeKey]
+  // Display template with friendly variable names
+  const displayTemplate = toDisplayFormat(template)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedPreview = useCallback(
     debounce(async (templateText: string) => {
       if (!templateText.trim()) {
         setPreview("")
-        setByteCount(0)
+        setCharCount(0)
         setIsValid(false)
         setError("Template não pode estar vazio")
         return
@@ -129,7 +161,7 @@ function TemplateEditor({
       try {
         const result = await onPreview(templateText)
         setPreview(result.preview)
-        setByteCount(result.byteCount)
+        setCharCount(result.charCount)
         setIsValid(result.isValid)
         setError(result.error || "")
       } catch (err) {
@@ -152,20 +184,15 @@ function TemplateEditor({
     onChange({
       enabled: checked,
       template: settings?.template || defaultTemplates[typeKey],
-      on_first_item: settings?.on_first_item ?? true,
-      on_new_items: settings?.on_new_items ?? true,
-      cooldown_seconds: settings?.cooldown_seconds ?? 30,
     })
   }
 
-  const handleTemplateChange = (newTemplate: string) => {
+  const handleTemplateChange = (displayText: string) => {
+    // Convert friendly format back to technical format before saving
+    const technicalTemplate = toTechnicalFormat(displayText)
     onChange({
-      ...settings,
       enabled: settings?.enabled ?? true,
-      template: newTemplate,
-      on_first_item: settings?.on_first_item ?? true,
-      on_new_items: settings?.on_new_items ?? true,
-      cooldown_seconds: settings?.cooldown_seconds ?? 30,
+      template: technicalTemplate,
     })
   }
 
@@ -174,18 +201,20 @@ function TemplateEditor({
     if (textarea) {
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
-      const newTemplate = template.slice(0, start) + variable + template.slice(end)
+      // Insert friendly format in the display
+      const friendlyVar = `{${variableFriendlyNames[variable] || variable.slice(1, -1)}}`
+      const newTemplate = displayTemplate.slice(0, start) + friendlyVar + displayTemplate.slice(end)
       handleTemplateChange(newTemplate)
       // Restore cursor position after the inserted variable
       setTimeout(() => {
         textarea.focus()
-        textarea.setSelectionRange(start + variable.length, start + variable.length)
+        textarea.setSelectionRange(start + friendlyVar.length, start + friendlyVar.length)
       }, 0)
     }
   }
 
-  const bytePercentage = (byteCount / MAX_BYTES) * 100
-  const bytesRemaining = MAX_BYTES - byteCount
+  const charPercentage = (charCount / MAX_CHARS) * 100
+  const charsRemaining = MAX_CHARS - charCount
 
   return (
     <Card>
@@ -203,67 +232,6 @@ function TemplateEditor({
       </CardHeader>
       {enabled && (
         <CardContent className="space-y-4">
-          {showFirstItemOptions && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label className="text-sm">Primeiro item</Label>
-                  <p className="text-xs text-muted-foreground">Enviar quando carrinho é criado</p>
-                </div>
-                <Switch
-                  checked={settings?.on_first_item ?? true}
-                  onCheckedChange={(checked) =>
-                    onChange({ ...settings!, on_first_item: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label className="text-sm">Novos itens</Label>
-                  <p className="text-xs text-muted-foreground">Enviar ao adicionar item</p>
-                </div>
-                <Switch
-                  checked={settings?.on_new_items ?? true}
-                  onCheckedChange={(checked) =>
-                    onChange({ ...settings!, on_new_items: checked })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {showFirstItemOptions && (
-            <div className="space-y-2">
-              <Label htmlFor={`cooldown-${typeKey}`}>
-                Cooldown entre mensagens (segundos)
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="ml-1 inline h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Tempo mínimo entre mensagens para o mesmo usuário</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <Input
-                id={`cooldown-${typeKey}`}
-                type="number"
-                min={0}
-                max={3600}
-                value={settings?.cooldown_seconds ?? 30}
-                onChange={(e) =>
-                  onChange({
-                    ...settings!,
-                    cooldown_seconds: parseInt(e.target.value) || 0,
-                  })
-                }
-                className="w-32"
-              />
-            </div>
-          )}
-
           {/* Template Editor */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -271,26 +239,26 @@ function TemplateEditor({
               <div className="flex items-center gap-2">
                 {isPreviewing && <Loader2 className="h-3 w-3 animate-spin" />}
                 <Badge
-                  variant={bytesRemaining < 0 ? "destructive" : bytesRemaining < 100 ? "secondary" : "outline"}
+                  variant={charsRemaining < 0 ? "destructive" : charsRemaining < 100 ? "secondary" : "outline"}
                 >
-                  {byteCount}/{MAX_BYTES} bytes
+                  {charCount}/{MAX_CHARS} caracteres
                 </Badge>
               </div>
             </div>
             <Textarea
               id={`template-${typeKey}`}
-              value={template}
+              value={displayTemplate}
               onChange={(e) => handleTemplateChange(e.target.value)}
-              className="min-h-[150px] font-mono text-sm"
+              className="min-h-[150px] text-sm"
               placeholder="Digite sua mensagem..."
             />
             {/* Progress bar */}
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className={`h-full transition-all ${
-                  bytePercentage > 100 ? "bg-destructive" : bytePercentage > 80 ? "bg-yellow-500" : "bg-primary"
+                  charPercentage > 100 ? "bg-destructive" : charPercentage > 80 ? "bg-yellow-500" : "bg-primary"
                 }`}
-                style={{ width: `${Math.min(bytePercentage, 100)}%` }}
+                style={{ width: `${Math.min(charPercentage, 100)}%` }}
               />
             </div>
             {!isValid && error && (
@@ -304,7 +272,7 @@ function TemplateEditor({
           {/* Variables */}
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">Variáveis disponíveis (clique para inserir)</Label>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {variables.map((v) => (
                 <TooltipProvider key={v.name}>
                   <Tooltip>
@@ -313,14 +281,15 @@ function TemplateEditor({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-xs font-mono"
+                        className="h-7 px-2.5 text-xs"
                         onClick={() => insertVariable(v.name)}
                       >
-                        {v.name}
+                        {variableFriendlyNames[v.name] || v.name}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p className="font-medium">{v.description}</p>
+                      <p className="text-muted-foreground">Insere: <code className="font-mono">{v.name}</code></p>
                       <p className="text-muted-foreground">Ex: {v.example}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -375,9 +344,6 @@ export default function NotificationSettingsPage() {
     defaultValues: {
       checkout_immediate: {
         enabled: true,
-        on_first_item: true,
-        on_new_items: true,
-        cooldown_seconds: 30,
         template: defaultTemplates.checkout_immediate,
       },
       item_added: {
@@ -406,13 +372,22 @@ export default function NotificationSettingsPage() {
         const notifSettings = await notificationService.getSettings(store.id, token)
         if (notifSettings) {
           if (notifSettings.checkout_immediate) {
-            setValue("checkout_immediate", notifSettings.checkout_immediate)
+            setValue("checkout_immediate", {
+              enabled: notifSettings.checkout_immediate.enabled,
+              template: notifSettings.checkout_immediate.template,
+            })
           }
           if (notifSettings.item_added) {
-            setValue("item_added", notifSettings.item_added)
+            setValue("item_added", {
+              enabled: notifSettings.item_added.enabled,
+              template: notifSettings.item_added.template,
+            })
           }
           if (notifSettings.checkout_reminder) {
-            setValue("checkout_reminder", notifSettings.checkout_reminder)
+            setValue("checkout_reminder", {
+              enabled: notifSettings.checkout_reminder.enabled,
+              template: notifSettings.checkout_reminder.template,
+            })
           }
         }
 
@@ -438,7 +413,7 @@ export default function NotificationSettingsPage() {
       const result = await notificationService.previewTemplate(storeId!, template, token)
       return {
         preview: result.preview,
-        byteCount: result.byte_count,
+        charCount: result.preview.length,
         isValid: result.is_valid,
         error: result.error,
       }
@@ -446,7 +421,7 @@ export default function NotificationSettingsPage() {
       console.error("Preview error:", error)
       return {
         preview: template,
-        byteCount: new Blob([template]).size,
+        charCount: template.length,
         isValid: false,
         error: "Erro ao gerar prévia",
       }
@@ -462,7 +437,7 @@ export default function NotificationSettingsPage() {
       await notificationService.updateSettings(storeId, data, token)
 
       toast.success("Configurações salvas", {
-        description: "As configurações de notificação foram atualizadas.",
+        description: "Os templates de notificação foram atualizados.",
       })
 
       form.reset(data)
@@ -487,46 +462,43 @@ export default function NotificationSettingsPage() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Mensagens automáticas
-          </CardTitle>
-          <CardDescription>
-            Configure as mensagens enviadas automaticamente via Instagram Direct quando
-            clientes adicionam produtos ao carrinho durante uma live.
-          </CardDescription>
-        </CardHeader>
+      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+        <CardContent className="flex items-start gap-3 pt-6">
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            Configure os templates das mensagens automáticas enviadas via Instagram Direct.
+            As configurações de <strong>quando enviar</strong> (primeiro item, novos itens, lembrete)
+            estão em <strong>Configurações &gt; Carrinho &gt; Mensagens automáticas</strong>.
+          </p>
+        </CardContent>
       </Card>
 
-      {/* Checkout Immediate */}
+      {/* Durante a Live */}
       <TemplateEditor
-        title="Checkout imediato"
-        description="Enviada quando o cliente adiciona um produto ao carrinho"
+        title="Mensagem durante a live"
+        description="Enviada quando o cliente adiciona produtos ao carrinho durante uma live ativa"
         typeKey="checkout_immediate"
         settings={settings.checkout_immediate}
         onChange={(s) => setValue("checkout_immediate", s, { shouldDirty: true })}
         onPreview={handlePreview}
         variables={variables}
-        showFirstItemOptions={true}
       />
 
-      {/* Item Added (disabled for now as per decision) */}
-      {/* <TemplateEditor
-        title="Item adicionado"
-        description="Enviada quando um novo item é adicionado a um carrinho existente"
+      {/* Fim de Live */}
+      <TemplateEditor
+        title="Mensagem de fim de live"
+        description="Enviada automaticamente quando a live é finalizada para clientes com carrinho"
         typeKey="item_added"
         settings={settings.item_added}
         onChange={(s) => setValue("item_added", s, { shouldDirty: true })}
         onPreview={handlePreview}
         variables={variables}
-      /> */}
+      />
 
-      {/* Checkout Reminder */}
+      {/* Lembrete de Expiração */}
       <TemplateEditor
-        title="Lembrete de checkout"
-        description="Enviada quando a live termina (se ativado nas configurações da live)"
+        title="Lembrete de expiração"
+        description="Enviada alguns minutos antes do carrinho expirar (configurável em Carrinho)"
         typeKey="checkout_reminder"
         settings={settings.checkout_reminder}
         onChange={(s) => setValue("checkout_reminder", s, { shouldDirty: true })}

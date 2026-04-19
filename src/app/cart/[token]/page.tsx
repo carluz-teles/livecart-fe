@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import Image from "next/image"
-import { Loader2, ShoppingBag, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, ShoppingBag, AlertCircle, CheckCircle, XCircle, User, MapPin, CreditCard, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,26 +32,11 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
-// Status badge component
-function PaymentStatusBadge({ status }: { status: string | null }) {
-  if (!status || status === "unpaid") return null
-
-  const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
-    paid: { variant: "default", label: "Pago" },
-    pending: { variant: "secondary", label: "Pendente" },
-    failed: { variant: "destructive", label: "Falhou" },
-    refunded: { variant: "outline", label: "Reembolsado" },
-  }
-
-  const config = variants[status] || { variant: "secondary" as const, label: status }
-  return <Badge variant={config.variant}>{config.label}</Badge>
-}
-
 // Loading state component
 function LoadingState() {
   return (
     <main className="min-h-screen bg-surface-secondary">
-      <div className="mx-auto max-w-2xl p-4 py-8">
+      <div className="mx-auto max-w-6xl p-4 py-8">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="mt-4 text-sm text-muted-foreground">Carregando carrinho...</p>
@@ -65,8 +50,8 @@ function LoadingState() {
 function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <main className="min-h-screen bg-surface-secondary">
-      <div className="mx-auto max-w-2xl p-4 py-8">
-        <Card>
+      <div className="mx-auto max-w-6xl p-4 py-8">
+        <Card className="mx-auto max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <AlertCircle className="h-12 w-12 text-destructive" />
             <h2 className="mt-4 text-lg font-semibold">Erro ao carregar</h2>
@@ -87,8 +72,8 @@ function ErrorState({ message, onRetry }: { message: string; onRetry?: () => voi
 function SuccessState({ cart }: { cart: PublicCheckoutCart }) {
   return (
     <main className="min-h-screen bg-surface-secondary">
-      <div className="mx-auto max-w-2xl p-4 py-8">
-        <Card>
+      <div className="mx-auto max-w-6xl p-4 py-8">
+        <Card className="mx-auto max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="rounded-full bg-green-100 p-4">
               <CheckCircle className="h-12 w-12 text-green-600" />
@@ -97,7 +82,7 @@ function SuccessState({ cart }: { cart: PublicCheckoutCart }) {
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Obrigado pela sua compra. Você receberá um email com os detalhes do pedido.
             </p>
-            <div className="mt-6 w-full max-w-sm">
+            <div className="mt-6 w-full">
               <div className="rounded-lg border p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Loja</span>
@@ -120,8 +105,8 @@ function SuccessState({ cart }: { cart: PublicCheckoutCart }) {
 function FailedState({ onRetry }: { onRetry: () => void }) {
   return (
     <main className="min-h-screen bg-surface-secondary">
-      <div className="mx-auto max-w-2xl p-4 py-8">
-        <Card>
+      <div className="mx-auto max-w-6xl p-4 py-8">
+        <Card className="mx-auto max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="rounded-full bg-red-100 p-4">
               <XCircle className="h-12 w-12 text-red-600" />
@@ -140,44 +125,71 @@ function FailedState({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-// Cart item component
-function CartItem({ item }: { item: PublicCheckoutCart["items"][0] }) {
+// Section header component
+function SectionHeader({
+  icon: Icon,
+  title,
+  number,
+  isComplete
+}: {
+  icon: React.ElementType
+  title: string
+  number: number
+  isComplete: boolean
+}) {
   return (
-    <div className="flex gap-4 py-4">
-      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
-        {item.imageUrl ? (
-          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <ShoppingBag className="h-8 w-8 text-muted-foreground/50" />
-          </div>
-        )}
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+        isComplete
+          ? "bg-green-100 text-green-600"
+          : "bg-primary/10 text-primary"
+      }`}>
+        {isComplete ? <Check className="h-4 w-4" /> : number}
       </div>
-      <div className="flex flex-1 flex-col">
-        <div className="flex justify-between">
-          <div>
-            <h3 className="font-medium">{item.name}</h3>
-            {item.keyword && (
-              <p className="text-sm text-muted-foreground">Palavra-chave: {item.keyword}</p>
-            )}
-          </div>
-          <p className="font-medium">{formatCurrency(item.totalPrice)}</p>
-        </div>
-        <div className="mt-auto flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Qtd: {item.quantity}</p>
-          {item.waitlisted && (
-            <Badge variant="secondary" className="text-xs">
-              Lista de espera
-            </Badge>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">{title}</h2>
       </div>
     </div>
   )
 }
 
-// Checkout form step
-type CheckoutStep = "email" | "payment" | "processing"
+// Cart item component (compact version for sidebar)
+function CartItemCompact({ item }: { item: PublicCheckoutCart["items"][0] }) {
+  return (
+    <div className="flex gap-3 py-3">
+      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
+        {item.imageUrl ? (
+          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <ShoppingBag className="h-6 w-6 text-muted-foreground/50" />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col justify-center min-w-0">
+        <h3 className="font-medium text-sm truncate">{item.name}</h3>
+        <p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p>
+      </div>
+      <p className="font-medium text-sm">{formatCurrency(item.totalPrice)}</p>
+    </div>
+  )
+}
+
+// Form data type
+interface CheckoutFormData {
+  email: string
+  phone: string
+  address: {
+    zipCode: string
+    street: string
+    number: string
+    complement: string
+    neighborhood: string
+    city: string
+    state: string
+  }
+}
 
 // Main checkout page component
 export default function CheckoutPage() {
@@ -189,7 +201,25 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<PublicCheckoutCart | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState("")
+
+  // Form state
+  const [formData, setFormData] = useState<CheckoutFormData>({
+    email: "",
+    phone: "",
+    address: {
+      zipCode: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+    },
+  })
+
+  // Section completion state
+  const [personalInfoComplete, setPersonalInfoComplete] = useState(false)
+  const [addressComplete, setAddressComplete] = useState(false)
 
   // Checkout config state
   const [checkoutConfig, setCheckoutConfig] = useState<CheckoutConfigResponse | null>(null)
@@ -197,9 +227,9 @@ export default function CheckoutPage() {
   const [configError, setConfigError] = useState<string | null>(null)
 
   // Payment state
-  const [step, setStep] = useState<CheckoutStep>("email")
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("card")
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Fetch cart data
   const fetchCart = useCallback(async () => {
@@ -209,7 +239,7 @@ export default function CheckoutPage() {
       const data = await checkoutService.getCart(token)
       setCart(data)
       if (data.customerEmail) {
-        setEmail(data.customerEmail)
+        setFormData(prev => ({ ...prev, email: data.customerEmail || "" }))
       }
     } catch (err) {
       const apiError = err as ApiError
@@ -226,7 +256,6 @@ export default function CheckoutPage() {
     try {
       const config = await checkoutService.getConfig(token)
       setCheckoutConfig(config)
-      // Set default method to first available
       if (config.availableMethods.length > 0) {
         setSelectedMethod(config.availableMethods[0])
       }
@@ -241,42 +270,44 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (token) {
       fetchCart()
+      fetchConfig()
     }
-  }, [token, fetchCart])
+  }, [token, fetchCart, fetchConfig])
 
-  // Poll for cart updates when live is active (every 5 seconds)
+  // Check section completion
   useEffect(() => {
-    if (!cart || cart.status !== "active" || cart.paymentStatus === "paid") {
-      return
+    const emailValid = formData.email.includes("@") && formData.email.includes(".")
+    const phoneValid = formData.phone.replace(/\D/g, "").length >= 10
+    setPersonalInfoComplete(emailValid && phoneValid)
+  }, [formData.email, formData.phone])
+
+  useEffect(() => {
+    const { zipCode, street, number, neighborhood, city, state } = formData.address
+    const isComplete = zipCode.length >= 8 && street.length > 0 && number.length > 0 &&
+                       neighborhood.length > 0 && city.length > 0 && state.length === 2
+    setAddressComplete(isComplete)
+  }, [formData.address])
+
+  // Handle form field changes
+  const handleInputChange = (field: string, value: string) => {
+    if (field.startsWith("address.")) {
+      const addressField = field.replace("address.", "")
+      setFormData(prev => ({
+        ...prev,
+        address: { ...prev.address, [addressField]: value }
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
     }
-
-    const interval = setInterval(() => {
-      fetchCart()
-    }, 5000) // 5 seconds
-
-    return () => clearInterval(interval)
-  }, [cart?.status, cart?.paymentStatus, fetchCart])
-
-  // Handle email submission
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email.trim()) {
-      return
-    }
-
-    // Fetch checkout config
-    await fetchConfig()
-    setStep("payment")
   }
 
   // Handle card payment success
   const handleCardSuccess = (result: ProcessCardPaymentResponse) => {
     if (result.status === "approved") {
       setPaymentSuccess(true)
-      fetchCart() // Refresh cart to show updated status
+      fetchCart()
     } else if (result.status === "pending" || result.status === "in_process") {
-      // Show processing state
-      setStep("processing")
+      setIsProcessing(true)
     }
   }
 
@@ -291,11 +322,8 @@ export default function CheckoutPage() {
     console.error("Payment error:", error)
   }
 
-  // Reset to email step
-  const handleBack = () => {
-    setStep("email")
-    setCheckoutConfig(null)
-  }
+  // Can proceed to payment
+  const canProceedToPayment = personalInfoComplete && addressComplete
 
   // Loading state
   if (loading) {
@@ -330,7 +358,7 @@ export default function CheckoutPage() {
     )
   }
 
-  // Check if cart is not ready for checkout (allow both 'active' and 'checkout' status)
+  // Check if cart is not ready for checkout
   if (cart.status !== "checkout" && cart.status !== "active") {
     return (
       <ErrorState
@@ -339,92 +367,278 @@ export default function CheckoutPage() {
     )
   }
 
-  // Check if live is still ongoing
   const isLiveActive = cart.status === "active"
-
-  // Available items (not waitlisted)
   const availableItems = cart.items.filter((item) => !item.waitlisted)
-  const waitlistedItems = cart.items.filter((item) => item.waitlisted)
+
+  if (availableItems.length === 0) {
+    return (
+      <ErrorState message="Nenhum item disponível para pagamento." />
+    )
+  }
 
   return (
     <main className="min-h-screen bg-surface-secondary">
-      <div className="mx-auto max-w-2xl p-4 py-8">
-        {/* Store header */}
-        <div className="mb-6 flex items-center gap-4">
-          {cart.store.logoUrl && (
-            <div className="relative h-12 w-12 overflow-hidden rounded-full border">
-              <Image src={cart.store.logoUrl} alt={cart.store.name} fill className="object-cover" />
-            </div>
-          )}
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold">{cart.store.name}</h1>
-            <p className="text-sm text-muted-foreground">{cart.event.title}</p>
-          </div>
-          {isLiveActive && (
-            <Badge variant="destructive" className="animate-pulse">
-              🔴 Live em andamento
-            </Badge>
-          )}
-        </div>
-
-        {/* Live active notice */}
-        {isLiveActive && (
-          <div className="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950">
-            <p className="text-sm text-orange-800 dark:text-orange-200">
-              <strong>A live ainda está acontecendo!</strong> Seu carrinho pode receber novos itens durante a transmissão.
-              Você pode finalizar a compra agora ou aguardar o fim do evento.
-            </p>
-          </div>
-        )}
-
-        {/* Cart items */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Seu Carrinho</span>
-              <PaymentStatusBadge status={cart.paymentStatus} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {availableItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Nenhum item disponível para pagamento
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y">
-                {availableItems.map((item) => (
-                  <CartItem key={item.id} item={item} />
-                ))}
+      {/* Header */}
+      <div className="border-b bg-background">
+        <div className="mx-auto max-w-6xl px-4 py-4">
+          <div className="flex items-center gap-4">
+            {cart.store.logoUrl && (
+              <div className="relative h-10 w-10 overflow-hidden rounded-full border">
+                <Image src={cart.store.logoUrl} alt={cart.store.name} fill className="object-cover" />
               </div>
             )}
+            <div className="flex-1">
+              <h1 className="text-lg font-semibold">{cart.store.name}</h1>
+              <p className="text-sm text-muted-foreground">Checkout seguro</p>
+            </div>
+            {isLiveActive && (
+              <Badge variant="destructive" className="animate-pulse">
+                🔴 Live em andamento
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
 
-            {/* Waitlisted items */}
-            {waitlistedItems.length > 0 && (
-              <>
-                <Separator className="my-4" />
-                <div className="rounded-lg bg-muted/50 p-4">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Lista de Espera ({waitlistedItems.length} itens)
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Estes itens serão cobrados separadamente quando estiverem disponíveis.
-                  </p>
-                  <div className="mt-3 divide-y divide-muted">
-                    {waitlistedItems.map((item) => (
-                      <CartItem key={item.id} item={item} />
-                    ))}
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="grid gap-8 lg:grid-cols-[1fr,400px]">
+          {/* Left Column - Checkout Form */}
+          <div className="space-y-6">
+            {/* Section 1: Personal Info */}
+            <Card>
+              <CardContent className="pt-6">
+                <SectionHeader
+                  icon={User}
+                  title="Informações Pessoais"
+                  number={1}
+                  isComplete={personalInfoComplete}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">
+                      Email <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">
+                      Telefone <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                    />
                   </div>
                 </div>
-              </>
-            )}
+              </CardContent>
+            </Card>
 
-            {/* Summary */}
-            {availableItems.length > 0 && (
-              <>
-                <Separator className="my-4" />
+            {/* Section 2: Address */}
+            <Card>
+              <CardContent className="pt-6">
+                <SectionHeader
+                  icon={MapPin}
+                  title="Endereço de Entrega"
+                  number={2}
+                  isComplete={addressComplete}
+                />
+                <div className="grid gap-4">
+                  <div className="grid gap-4 sm:grid-cols-[140px,1fr]">
+                    <div className="space-y-2">
+                      <Label htmlFor="zipCode">
+                        CEP <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="zipCode"
+                        placeholder="00000-000"
+                        value={formData.address.zipCode}
+                        onChange={(e) => handleInputChange("address.zipCode", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="street">
+                        Rua <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="street"
+                        placeholder="Nome da rua"
+                        value={formData.address.street}
+                        onChange={(e) => handleInputChange("address.street", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-[100px,1fr]">
+                    <div className="space-y-2">
+                      <Label htmlFor="number">
+                        Número <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="number"
+                        placeholder="123"
+                        value={formData.address.number}
+                        onChange={(e) => handleInputChange("address.number", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="complement">Complemento</Label>
+                      <Input
+                        id="complement"
+                        placeholder="Apto, bloco, etc."
+                        value={formData.address.complement}
+                        onChange={(e) => handleInputChange("address.complement", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="neighborhood">
+                        Bairro <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="neighborhood"
+                        placeholder="Bairro"
+                        value={formData.address.neighborhood}
+                        onChange={(e) => handleInputChange("address.neighborhood", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">
+                        Cidade <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="city"
+                        placeholder="Cidade"
+                        value={formData.address.city}
+                        onChange={(e) => handleInputChange("address.city", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">
+                        Estado <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="state"
+                        placeholder="SP"
+                        maxLength={2}
+                        value={formData.address.state}
+                        onChange={(e) => handleInputChange("address.state", e.target.value.toUpperCase())}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Section 3: Payment */}
+            <Card>
+              <CardContent className="pt-6">
+                <SectionHeader
+                  icon={CreditCard}
+                  title="Pagamento"
+                  number={3}
+                  isComplete={false}
+                />
+
+                {!canProceedToPayment ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Preencha as informações acima para continuar
+                    </p>
+                  </div>
+                ) : configLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      Carregando opções de pagamento...
+                    </span>
+                  </div>
+                ) : configError ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
+                    <p className="mt-2 text-sm text-destructive">{configError}</p>
+                    <Button variant="outline" className="mt-4" onClick={fetchConfig}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : checkoutConfig ? (
+                  <div className="space-y-6">
+                    <CheckoutPaymentMethods
+                      selectedMethod={selectedMethod}
+                      onMethodChange={setSelectedMethod}
+                      availableMethods={checkoutConfig.availableMethods}
+                    />
+
+                    <Separator />
+
+                    {selectedMethod === "card" ? (
+                      <CheckoutCardForm
+                        token={token}
+                        provider={checkoutConfig.provider}
+                        publicKey={checkoutConfig.publicKey}
+                        amount={checkoutConfig.totalAmount}
+                        email={formData.email}
+                        onSuccess={handleCardSuccess}
+                        onError={handlePaymentError}
+                      />
+                    ) : (
+                      <CheckoutPixDisplay
+                        token={token}
+                        email={formData.email}
+                        onSuccess={handlePixSuccess}
+                        onError={handlePaymentError}
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {isProcessing && (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <h3 className="mt-4 text-lg font-semibold">Processando pagamento...</h3>
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      Aguarde enquanto confirmamos seu pagamento.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Order Summary (Sticky) */}
+          <div className="lg:sticky lg:top-8 lg:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Resumo do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Live notice */}
+                {isLiveActive && (
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-900 dark:bg-orange-950">
+                    <p className="text-xs text-orange-800 dark:text-orange-200">
+                      <strong>Live em andamento!</strong> Novos itens podem ser adicionados.
+                    </p>
+                  </div>
+                )}
+
+                {/* Items */}
+                <div className="divide-y">
+                  {availableItems.map((item) => (
+                    <CartItemCompact key={item.id} item={item} />
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Summary */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -432,122 +646,37 @@ export default function CheckoutPage() {
                     </span>
                     <span>{formatCurrency(cart.summary.subtotal)}</span>
                   </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Frete</span>
+                    <span className="text-green-600">Grátis</span>
+                  </div>
+                  <Separator />
                   <div className="flex justify-between text-lg font-semibold">
                     <span>Total</span>
                     <span>{formatCurrency(cart.summary.subtotal)}</span>
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Checkout form */}
-        {availableItems.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Finalizar Compra</span>
-                {step === "payment" && (
-                  <Button variant="ghost" size="sm" onClick={handleBack}>
-                    Voltar
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Step 1: Email */}
-              {step === "email" && (
-                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email para receber o comprovante</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" className="w-full" size="lg">
-                    Continuar
-                  </Button>
-                </form>
-              )}
-
-              {/* Step 2: Payment */}
-              {step === "payment" && (
-                <div className="space-y-6">
-                  {configLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        Carregando opções de pagamento...
-                      </span>
-                    </div>
-                  ) : configError ? (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <AlertCircle className="h-8 w-8 text-destructive" />
-                      <p className="mt-2 text-sm text-destructive">{configError}</p>
-                      <Button variant="outline" className="mt-4" onClick={fetchConfig}>
-                        Tentar novamente
-                      </Button>
-                    </div>
-                  ) : checkoutConfig ? (
-                    <>
-                      {/* Payment method selector */}
-                      <CheckoutPaymentMethods
-                        selectedMethod={selectedMethod}
-                        onMethodChange={setSelectedMethod}
-                        availableMethods={checkoutConfig.availableMethods}
-                      />
-
-                      <Separator />
-
-                      {/* Payment form based on method */}
-                      {selectedMethod === "card" ? (
-                        <CheckoutCardForm
-                          token={token}
-                          provider={checkoutConfig.provider}
-                          publicKey={checkoutConfig.publicKey}
-                          amount={checkoutConfig.totalAmount}
-                          email={email}
-                          onSuccess={handleCardSuccess}
-                          onError={handlePaymentError}
-                        />
-                      ) : (
-                        <CheckoutPixDisplay
-                          token={token}
-                          email={email}
-                          onSuccess={handlePixSuccess}
-                          onError={handlePaymentError}
-                        />
-                      )}
-                    </>
-                  ) : null}
-                </div>
-              )}
-
-              {/* Step 3: Processing */}
-              {step === "processing" && (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <h3 className="mt-4 text-lg font-semibold">Processando pagamento...</h3>
-                  <p className="mt-2 text-center text-sm text-muted-foreground">
-                    Aguarde enquanto confirmamos seu pagamento.
+                {/* User info */}
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    Comprando como <span className="font-medium">@{cart.platformHandle}</span>
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* User handle */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Comprando como <span className="font-medium">@{cart.platformHandle}</span>
-        </p>
+                {/* Security badges */}
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Pagamento seguro</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </main>
   )

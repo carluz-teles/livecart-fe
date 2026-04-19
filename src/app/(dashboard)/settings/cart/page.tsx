@@ -12,6 +12,7 @@ import {
   Loader2,
   Pencil,
   Link,
+  MessageSquare,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,12 @@ const cartSettingsSchema = z.object({
   allowEdit: z.boolean(),
   autoSendCheckoutLinks: z.boolean(),
   checkoutLinkExpiryHours: z.number().min(1, "Mínimo de 1 hora").max(168, "Máximo de 7 dias"),
+  // Automatic message settings
+  sendOnFirstItem: z.boolean(),
+  sendOnNewItems: z.boolean(),
+  messageCooldownSeconds: z.number().min(0, "Deve ser 0 ou maior").max(300, "Máximo de 5 minutos"),
+  sendExpirationReminder: z.boolean(),
+  expirationReminderMinutes: z.number().min(1, "Mínimo de 1 minuto").max(60, "Máximo de 60 minutos"),
 })
 
 type CartSettingsFormData = z.infer<typeof cartSettingsSchema>
@@ -55,6 +62,12 @@ export default function CartSettingsPage() {
       allowEdit: true,
       autoSendCheckoutLinks: false,
       checkoutLinkExpiryHours: 48,
+      // Automatic message settings
+      sendOnFirstItem: true,
+      sendOnNewItems: true,
+      messageCooldownSeconds: 30,
+      sendExpirationReminder: true,
+      expirationReminderMinutes: 15,
     },
   })
 
@@ -66,6 +79,10 @@ export default function CartSettingsPage() {
   const notifyBeforeExpiration = watch("notifyBeforeExpiration")
   const allowEdit = watch("allowEdit")
   const autoSendCheckoutLinks = watch("autoSendCheckoutLinks")
+  // Automatic message settings
+  const sendOnFirstItem = watch("sendOnFirstItem")
+  const sendOnNewItems = watch("sendOnNewItems")
+  const sendExpirationReminder = watch("sendExpirationReminder")
 
   // Load current settings
   useEffect(() => {
@@ -86,6 +103,12 @@ export default function CartSettingsPage() {
           setValue("allowEdit", settings.allowEdit ?? true)
           setValue("autoSendCheckoutLinks", settings.autoSendCheckoutLinks ?? false)
           setValue("checkoutLinkExpiryHours", settings.checkoutLinkExpiryHours ?? 48)
+          // Automatic message settings
+          setValue("sendOnFirstItem", settings.sendOnFirstItem ?? true)
+          setValue("sendOnNewItems", settings.sendOnNewItems ?? true)
+          setValue("messageCooldownSeconds", settings.messageCooldownSeconds ?? 30)
+          setValue("sendExpirationReminder", settings.sendExpirationReminder ?? true)
+          setValue("expirationReminderMinutes", settings.expirationReminderMinutes ?? 15)
         }
       } catch (error) {
         console.error("Failed to load cart settings:", error)
@@ -115,6 +138,12 @@ export default function CartSettingsPage() {
         autoSendCheckoutLinks: data.autoSendCheckoutLinks,
         checkoutLinkExpiryHours: data.checkoutLinkExpiryHours,
         checkoutSendMethods: ['public_link', 'manual'], // Default methods
+        // Automatic message settings
+        sendOnFirstItem: data.sendOnFirstItem,
+        sendOnNewItems: data.sendOnNewItems,
+        messageCooldownSeconds: data.messageCooldownSeconds,
+        sendExpirationReminder: data.sendExpirationReminder,
+        expirationReminderMinutes: data.expirationReminderMinutes,
       }
 
       await storeService.updateCartSettings(payload, token, storeId ?? undefined)
@@ -346,6 +375,100 @@ export default function CartSettingsPage() {
             <p className="text-xs text-muted-foreground">
               Após este tempo, o link de checkout expira (1 - 168 horas)
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Automatic Messages */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Mensagens automáticas
+          </CardTitle>
+          <CardDescription>
+            Configure quando mensagens são enviadas automaticamente durante a live
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="sendOnFirstItem">Enviar ao adicionar primeiro item</Label>
+              <p className="text-sm text-muted-foreground">
+                Envia mensagem quando o cliente adiciona o primeiro item ao carrinho
+              </p>
+            </div>
+            <Switch
+              id="sendOnFirstItem"
+              checked={sendOnFirstItem}
+              onCheckedChange={(checked) => setValue("sendOnFirstItem", checked, { shouldDirty: true })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="sendOnNewItems">Enviar ao adicionar novos itens</Label>
+              <p className="text-sm text-muted-foreground">
+                Envia mensagem quando o cliente adiciona mais itens ao carrinho
+              </p>
+            </div>
+            <Switch
+              id="sendOnNewItems"
+              checked={sendOnNewItems}
+              onCheckedChange={(checked) => setValue("sendOnNewItems", checked, { shouldDirty: true })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="messageCooldownSeconds">Intervalo mínimo entre mensagens (segundos)</Label>
+            <Input
+              id="messageCooldownSeconds"
+              type="number"
+              min={0}
+              max={300}
+              {...register("messageCooldownSeconds", { valueAsNumber: true })}
+            />
+            {errors.messageCooldownSeconds && (
+              <p className="text-sm text-destructive">{errors.messageCooldownSeconds.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Evita spam de mensagens. 0 = sem limite (0 - 300 segundos)
+            </p>
+          </div>
+
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="sendExpirationReminder">Lembrete de expiração</Label>
+                <p className="text-sm text-muted-foreground">
+                  Envia lembrete antes do carrinho expirar
+                </p>
+              </div>
+              <Switch
+                id="sendExpirationReminder"
+                checked={sendExpirationReminder}
+                onCheckedChange={(checked) => setValue("sendExpirationReminder", checked, { shouldDirty: true })}
+              />
+            </div>
+
+            {sendExpirationReminder && (
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="expirationReminderMinutes">Enviar lembrete X minutos antes</Label>
+                <Input
+                  id="expirationReminderMinutes"
+                  type="number"
+                  min={1}
+                  max={60}
+                  {...register("expirationReminderMinutes", { valueAsNumber: true })}
+                />
+                {errors.expirationReminderMinutes && (
+                  <p className="text-sm text-destructive">{errors.expirationReminderMinutes.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Tempo antes da expiração para enviar o lembrete (1 - 60 minutos)
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

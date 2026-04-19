@@ -1,9 +1,7 @@
 // Template settings for a notification type
+// Triggers (when to send) are now in CartSettings
 export interface TemplateSettings {
   enabled: boolean
-  on_first_item?: boolean // Only for checkout_immediate
-  on_new_items?: boolean // Only for checkout_immediate
-  cooldown_seconds?: number
   template: string
 }
 
