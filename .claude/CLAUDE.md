@@ -86,14 +86,19 @@ https://livecart-api.loca.lt/api/v1/integrations/oauth/mercado_pago/callback
 
 ### Antes de fazer push
 
-**IMPORTANTE: Sempre rodar o build do Docker antes de fazer push para garantir que o código compila corretamente.**
+**OBRIGATÓRIO: Claude DEVE rodar `npm run build` antes de qualquer `git push` no frontend.**
 
 ```bash
-# No diretório do frontend, rodar:
+# SEMPRE rodar antes de push:
 npm run build
 
 # Se o build falhar, corrigir os erros antes de fazer push
 ```
+
+Checklist antes de push:
+1. Rodar `npm run build` e verificar se passa
+2. Se falhar, corrigir os erros
+3. Só então fazer `git push`
 
 Isso evita quebrar o CI/CD e garante que:
 - Não há erros de TypeScript
