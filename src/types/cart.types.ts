@@ -1,7 +1,7 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 
-export type CartStatus = "pending" | "checkout" | "completed" | "expired"
-export type OrderStatus = "pending" | "checkout" | "completed" | "expired"
+export type CartStatus = "active" | "checkout" | "completed" | "expired"
+export type OrderStatus = "active" | "checkout" | "completed" | "expired"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
 
 export interface OrderItem {

@@ -49,7 +49,7 @@ export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
  * Order status configuration
  */
 export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
-  pending: { label: "Pendente", variant: "outline" },
+  active: { label: "Ativo", variant: "outline" },
   checkout: { label: "Checkout", variant: "secondary" },
   completed: { label: "Completo", variant: "default" },
   expired: { label: "Expirado", variant: "destructive" },
