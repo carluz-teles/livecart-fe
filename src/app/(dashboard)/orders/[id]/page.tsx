@@ -86,7 +86,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     )
   }
 
-  const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "pending")
+  const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "active")
   const paymentCfg = getStatusConfig(PAYMENT_STATUS_CONFIG, order.paymentStatus, "pending")
 
   return (
@@ -115,7 +115,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {order.status === "pending" && (
+          {order.status === "active" && (
             <Button>Marcar como Enviado</Button>
           )}
           <Button variant="outline" size="icon" onClick={handleOpenInstagramDM}>

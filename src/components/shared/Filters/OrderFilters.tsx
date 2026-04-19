@@ -15,11 +15,10 @@ interface OrderFiltersProps {
 }
 
 const statusOptions = [
-  { value: "pending", label: "Pendente" },
-  { value: "confirmed", label: "Confirmado" },
-  { value: "shipped", label: "Enviado" },
-  { value: "delivered", label: "Entregue" },
-  { value: "cancelled", label: "Cancelado" },
+  { value: "active", label: "Ativo" },
+  { value: "checkout", label: "Aguardando Pagamento" },
+  { value: "completed", label: "Completo" },
+  { value: "expired", label: "Expirado" },
 ]
 
 const paymentStatusOptions = [

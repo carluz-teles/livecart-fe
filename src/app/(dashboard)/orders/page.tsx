@@ -184,7 +184,7 @@ export default function OrdersPage() {
                   </TableRow>
                 ) : (
                   orders.map((order) => {
-                    const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "pending")
+                    const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "active")
                     const paymentCfg = getStatusConfig(PAYMENT_STATUS_CONFIG, order.paymentStatus, "pending")
                     return (
                       <TableRow
