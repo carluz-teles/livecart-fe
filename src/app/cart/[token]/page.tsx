@@ -244,6 +244,19 @@ export default function CheckoutPage() {
     }
   }, [token, fetchCart])
 
+  // Poll for cart updates when live is active (every 5 seconds)
+  useEffect(() => {
+    if (!cart || cart.status !== "active" || cart.paymentStatus === "paid") {
+      return
+    }
+
+    const interval = setInterval(() => {
+      fetchCart()
+    }, 5000) // 5 seconds
+
+    return () => clearInterval(interval)
+  }, [cart?.status, cart?.paymentStatus, fetchCart])
+
   // Handle email submission
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -317,14 +330,17 @@ export default function CheckoutPage() {
     )
   }
 
-  // Check if cart is not ready for checkout
-  if (cart.status !== "checkout") {
+  // Check if cart is not ready for checkout (allow both 'active' and 'checkout' status)
+  if (cart.status !== "checkout" && cart.status !== "active") {
     return (
       <ErrorState
-        message="Este carrinho ainda não está pronto para pagamento. Aguarde o fim do evento."
+        message="Este carrinho não está disponível para pagamento."
       />
     )
   }
+
+  // Check if live is still ongoing
+  const isLiveActive = cart.status === "active"
 
   // Available items (not waitlisted)
   const availableItems = cart.items.filter((item) => !item.waitlisted)
@@ -340,11 +356,26 @@ export default function CheckoutPage() {
               <Image src={cart.store.logoUrl} alt={cart.store.name} fill className="object-cover" />
             </div>
           )}
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-semibold">{cart.store.name}</h1>
             <p className="text-sm text-muted-foreground">{cart.event.title}</p>
           </div>
+          {isLiveActive && (
+            <Badge variant="destructive" className="animate-pulse">
+              🔴 Live em andamento
+            </Badge>
+          )}
         </div>
+
+        {/* Live active notice */}
+        {isLiveActive && (
+          <div className="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950">
+            <p className="text-sm text-orange-800 dark:text-orange-200">
+              <strong>A live ainda está acontecendo!</strong> Seu carrinho pode receber novos itens durante a transmissão.
+              Você pode finalizar a compra agora ou aguardar o fim do evento.
+            </p>
+          </div>
+        )}
 
         {/* Cart items */}
         <Card className="mb-6">
