@@ -82,6 +82,26 @@ https://livecart-api.loca.lt/api/v1/integrations/oauth/mercado_pago/callback
 
 ---
 
+## Git Workflow
+
+### Antes de fazer push
+
+**IMPORTANTE: Sempre rodar o build do Docker antes de fazer push para garantir que o código compila corretamente.**
+
+```bash
+# No diretório do frontend, rodar:
+npm run build
+
+# Se o build falhar, corrigir os erros antes de fazer push
+```
+
+Isso evita quebrar o CI/CD e garante que:
+- Não há erros de TypeScript
+- O `package-lock.json` está sincronizado com `package.json`
+- Todos os imports estão corretos
+
+---
+
 ## Estilo visual
 
 O LiveCart é um produto B2B usado por lojistas durante lives — um momento
