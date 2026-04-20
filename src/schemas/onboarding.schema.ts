@@ -1,25 +1,64 @@
 import { z } from "zod"
 
-// Address schema
+// CNPJ validation helper
+function isValidCNPJ(cnpj: string): boolean {
+  // Remove formatting
+  const cleaned = cnpj.replace(/[^\d]/g, "")
+
+  // Must have 14 digits
+  if (cleaned.length !== 14) return false
+
+  // Check for known invalid patterns (all same digits)
+  if (/^(\d)\1+$/.test(cleaned)) return false
+
+  // Validate check digits
+  let sum = 0
+  let weight = 5
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(cleaned[i]) * weight
+    weight = weight === 2 ? 9 : weight - 1
+  }
+  let remainder = sum % 11
+  if (parseInt(cleaned[12]) !== (remainder < 2 ? 0 : 11 - remainder)) return false
+
+  sum = 0
+  weight = 6
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(cleaned[i]) * weight
+    weight = weight === 2 ? 9 : weight - 1
+  }
+  remainder = sum % 11
+  if (parseInt(cleaned[13]) !== (remainder < 2 ? 0 : 11 - remainder)) return false
+
+  return true
+}
+
+// Address schema - city and state required for Brazilian addresses
 export const addressSchema = z.object({
   street: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
+  city: z.string().min(2, "Cidade obrigatória"),
+  state: z.string().min(2, "Estado obrigatório"),
   zip: z.string().optional(),
   country: z.string().optional(),
 })
 
 export type AddressData = z.infer<typeof addressSchema>
 
-// Step 1: Store info
+// Step 1: Store info (simplified wizard)
 export const storeStepSchema = z.object({
   storeName: z
     .string()
     .min(2, "Nome deve ter pelo menos 2 caracteres")
     .max(100, "Nome deve ter no máximo 100 caracteres"),
+  cnpj: z
+    .string()
+    .optional()
+    .refine((val) => !val || isValidCNPJ(val), {
+      message: "CNPJ inválido",
+    }),
   whatsappNumber: z.string().optional(),
   emailAddress: z.string().email("Email inválido").optional().or(z.literal("")),
-  address: addressSchema.optional(),
+  address: addressSchema,
 })
 
 export type StoreStepData = z.infer<typeof storeStepSchema>

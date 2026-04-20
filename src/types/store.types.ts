@@ -56,6 +56,7 @@ export interface Store {
   website: string | null
   logoUrl: string | null
   address: StoreAddress | null
+  cnpj: string | null
   cartSettings: CartSettings
   createdAt: string
 }
@@ -69,6 +70,7 @@ export interface UpdateStorePayload {
   website?: string
   logoUrl?: string
   address?: StoreAddress
+  cnpj?: string
 }
 
 export interface UpdateCartSettingsPayload {

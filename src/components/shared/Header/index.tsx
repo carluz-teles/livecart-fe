@@ -7,6 +7,7 @@ import { Bell, Moon, Sun, LogOut, User, Settings, ChevronsUpDown } from "lucide-
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
+import { OnboardingChecklist } from "@/components/shared/OnboardingChecklist"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -60,6 +61,9 @@ export function Header() {
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notificações</span>
         </Button>
+
+        {/* Onboarding Checklist */}
+        <OnboardingChecklist.Trigger />
 
         {/* User Dropdown */}
         <DropdownMenu>

@@ -26,6 +26,7 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
 
   const storeName = formData.get("storeName") as string
   const storeSlug = formData.get("storeSlug") as string
+  const cnpj = formData.get("cnpj") as string | null
   const whatsappNumber = formData.get("whatsappNumber") as string | null
   const emailAddress = formData.get("emailAddress") as string | null
 
@@ -90,8 +91,8 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
     // Continue anyway - store was created successfully
   }
 
-  // Update store with additional info (whatsapp, email, address)
-  const hasAdditionalInfo = whatsappNumber || emailAddress || addressStreet || addressCity || addressState || addressZip
+  // Update store with additional info (cnpj, whatsapp, email, address)
+  const hasAdditionalInfo = cnpj || whatsappNumber || emailAddress || addressStreet || addressCity || addressState || addressZip
 
   if (hasAdditionalInfo) {
     const address: StoreAddress = {}
@@ -105,6 +106,7 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
       name: storeName,
     }
 
+    if (cnpj) updatePayload.cnpj = cnpj
     if (whatsappNumber) updatePayload.whatsappNumber = whatsappNumber
     if (emailAddress) updatePayload.emailAddress = emailAddress
     if (Object.keys(address).length > 0) updatePayload.address = address
