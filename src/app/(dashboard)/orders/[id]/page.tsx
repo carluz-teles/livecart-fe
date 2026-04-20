@@ -1,6 +1,5 @@
 "use client"
 
-import { use } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -19,6 +18,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { useState } from "react"
+import { useParams } from "next/navigation"
 
 import { useOrder } from "@/hooks/order"
 import { formatCurrency, formatDateTime } from "@/lib/format"
@@ -44,12 +44,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-interface OrderDetailPageProps {
-  params: Promise<{ id: string }>
-}
-
-export default function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const { id } = use(params)
+export default function OrderDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params.id
   const { data: order, isLoading, error } = useOrder(id)
   const [copiedAddress, setCopiedAddress] = useState(false)
 
