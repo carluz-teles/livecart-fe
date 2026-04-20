@@ -19,6 +19,9 @@ export const eventKeys = {
   detailProducts: (storeId: string, eventId: string) => [...eventKeys.all, "detail-products", storeId, eventId] as const,
   // Live mode
   liveMode: (storeId: string, eventId: string) => [...eventKeys.all, "live-mode", storeId, eventId] as const,
+  // Whitelist & Upsells
+  whitelist: (storeId: string, eventId: string) => [...eventKeys.all, "whitelist", storeId, eventId] as const,
+  upsells: (storeId: string, eventId: string) => [...eventKeys.all, "upsells", storeId, eventId] as const,
 }
 
 export function useEvents(params?: EventListParams) {

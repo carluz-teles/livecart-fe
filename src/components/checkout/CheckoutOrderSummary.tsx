@@ -1,0 +1,387 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { CheckoutCouponField } from "./CheckoutCouponField"
+import { CheckoutTrustBadges } from "./CheckoutTrustBadges"
+import { CheckoutExpirationTimer } from "./CheckoutExpirationTimer"
+import { cn } from "@/lib/utils"
+
+interface OrderItem {
+  id: string
+  name: string
+  imageUrl?: string | null
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
+interface AppliedCoupon {
+  code: string
+  discountAmount: number
+  discountType: "percentage" | "fixed"
+  discountValue: number
+}
+
+interface CheckoutOrderSummaryProps {
+  items: OrderItem[]
+  subtotal: number
+  totalItems: number
+  shipping?: number | "free"
+  discount?: number
+  total: number
+  platformHandle?: string
+  isLiveActive?: boolean
+  allowEdit?: boolean
+  maxQuantityPerItem?: number
+  expiresAt?: string | null
+  appliedCoupon?: AppliedCoupon | null
+  onApplyCoupon?: (code: string) => Promise<AppliedCoupon | null>
+  onRemoveCoupon?: () => void
+  onUpdateQuantity?: (itemId: string, quantity: number) => void
+  onRemoveItem?: (itemId: string) => void
+  onExpired?: () => void
+  formatCurrency: (cents: number) => string
+  className?: string
+}
+
+// Premium item component with hover effects
+function OrderItemCompact({
+  item,
+  formatCurrency,
+  allowEdit,
+  maxQuantityPerItem,
+  onUpdateQuantity,
+  onRemoveItem,
+  index,
+}: {
+  item: OrderItem
+  formatCurrency: (cents: number) => string
+  allowEdit?: boolean
+  maxQuantityPerItem?: number
+  onUpdateQuantity?: (itemId: string, quantity: number) => void
+  onRemoveItem?: (itemId: string) => void
+  index: number
+}) {
+  const [mounted, setMounted] = useState(false)
+  const canDecrease = item.quantity > 1
+  const canIncrease = !maxQuantityPerItem || maxQuantityPerItem === 0 || item.quantity < maxQuantityPerItem
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), index * 50)
+    return () => clearTimeout(timer)
+  }, [index])
+
+  return (
+    <div
+      className={cn(
+        "group flex gap-4 rounded-xl p-3 transition-all duration-300 hover:bg-gray-50",
+        mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+      )}
+    >
+      {/* Image container with quantity badge */}
+      <div className="relative flex-shrink-0">
+        <div className="h-16 w-16 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 shadow-sm">
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Package className="h-6 w-6 text-gray-300" />
+            </div>
+          )}
+        </div>
+        {/* Quantity badge - floating */}
+        {!allowEdit && (
+          <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white shadow-md ring-2 ring-white">
+            {item.quantity}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col justify-center min-w-0">
+        <h3 className="text-sm font-medium text-gray-900 truncate">{item.name}</h3>
+        <p className="text-xs text-gray-500">
+          {formatCurrency(item.unitPrice)} cada
+        </p>
+      </div>
+
+      {allowEdit && onUpdateQuantity ? (
+        <div className="flex items-center gap-2">
+          {/* Quantity controls with premium styling */}
+          <div className="flex items-center rounded-lg border border-gray-200 bg-white shadow-sm">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-r-none hover:bg-gray-100"
+              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+              disabled={!canDecrease}
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="w-8 text-center text-sm font-semibold tabular-nums">
+              {item.quantity}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-l-none hover:bg-gray-100"
+              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+              disabled={!canIncrease}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+
+          {/* Remove button */}
+          {onRemoveItem && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+              onClick={() => onRemoveItem(item.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm font-semibold text-gray-900 self-center tabular-nums">
+          {formatCurrency(item.totalPrice)}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function CheckoutOrderSummary({
+  items,
+  subtotal,
+  totalItems,
+  shipping = "free",
+  discount = 0,
+  total,
+  platformHandle,
+  isLiveActive,
+  allowEdit,
+  maxQuantityPerItem,
+  expiresAt,
+  appliedCoupon,
+  onApplyCoupon,
+  onRemoveCoupon,
+  onUpdateQuantity,
+  onRemoveItem,
+  onExpired,
+  formatCurrency,
+  className,
+}: CheckoutOrderSummaryProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const shippingDisplay = shipping === "free" ? "Grátis" : formatCurrency(shipping)
+
+  // Shared content component
+  const SummaryContent = () => (
+    <div className="space-y-4">
+      {/* Expiration timer */}
+      {expiresAt && (
+        <CheckoutExpirationTimer
+          expiresAt={expiresAt}
+          onExpired={onExpired}
+        />
+      )}
+
+      {/* Live notice with pulse */}
+      {isLiveActive && (
+        <div className="relative overflow-hidden rounded-xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
+          <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-orange-200/50" />
+          <p className="relative text-sm text-orange-800">
+            <span className="font-semibold">Live em andamento!</span>
+            <br />
+            <span className="text-orange-600">Novos itens podem ser adicionados.</span>
+          </p>
+        </div>
+      )}
+
+      {/* Coupon field */}
+      {onApplyCoupon && onRemoveCoupon && (
+        <CheckoutCouponField
+          onApplyCoupon={onApplyCoupon}
+          onRemoveCoupon={onRemoveCoupon}
+          appliedCoupon={appliedCoupon}
+        />
+      )}
+
+      <Separator className="bg-gray-100" />
+
+      {/* Items list */}
+      <div className="space-y-1">
+        {items.map((item, index) => (
+          <OrderItemCompact
+            key={item.id}
+            item={item}
+            index={index}
+            formatCurrency={formatCurrency}
+            allowEdit={allowEdit}
+            maxQuantityPerItem={maxQuantityPerItem}
+            onUpdateQuantity={onUpdateQuantity}
+            onRemoveItem={onRemoveItem}
+          />
+        ))}
+      </div>
+
+      <Separator className="bg-gray-100" />
+
+      {/* Summary with refined styling */}
+      <div className="space-y-3 rounded-xl bg-gray-50/50 p-4">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">
+            Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
+          </span>
+          <span className="font-medium text-gray-700">{formatCurrency(subtotal)}</span>
+        </div>
+
+        {discount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Desconto</span>
+            <span className="font-medium text-emerald-600">-{formatCurrency(discount)}</span>
+          </div>
+        )}
+
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Frete</span>
+          <span className={cn(
+            "font-medium",
+            shipping === "free" ? "text-emerald-600" : "text-gray-700"
+          )}>
+            {shippingDisplay}
+          </span>
+        </div>
+
+        <Separator className="bg-gray-200" />
+
+        <div className="flex justify-between items-center">
+          <span className="text-base font-semibold text-gray-900">Total</span>
+          <span className="text-xl font-bold text-gray-900">{formatCurrency(total)}</span>
+        </div>
+      </div>
+
+      {/* User info */}
+      {platformHandle && (
+        <div className="flex items-center gap-2 rounded-xl bg-gray-50 p-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+            {platformHandle.charAt(0).toUpperCase()}
+          </div>
+          <p className="text-sm text-gray-600">
+            Comprando como <span className="font-medium text-gray-900">@{platformHandle}</span>
+          </p>
+        </div>
+      )}
+
+      {/* Max quantity info */}
+      {allowEdit && maxQuantityPerItem && maxQuantityPerItem > 0 && (
+        <p className="text-xs text-center text-gray-400">
+          Limite de {maxQuantityPerItem} unidades por item
+        </p>
+      )}
+
+      {/* Trust badges */}
+      <CheckoutTrustBadges className="pt-2" />
+    </div>
+  )
+
+  // Mobile collapsible version
+  const MobileVersion = () => (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="lg:hidden">
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "flex w-full items-center justify-between rounded-xl border bg-white px-4 py-4 shadow-sm transition-all duration-300",
+            isOpen ? "border-gray-300 shadow-md" : "border-gray-200 hover:border-gray-300 hover:shadow-md",
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+              <ShoppingBag className="h-5 w-5 text-gray-600" />
+            </div>
+            <div className="text-left">
+              <span className="text-sm font-medium text-gray-900">
+                Ver pedido
+              </span>
+              <span className="ml-2 text-xs text-gray-500">
+                ({totalItems} {totalItems === 1 ? "item" : "itens"})
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
+            <div className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-transform duration-300",
+              isOpen && "rotate-180"
+            )}>
+              <ChevronDown className="h-4 w-4 text-gray-500" />
+            </div>
+          </div>
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <SummaryContent />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+
+  // Desktop sticky version
+  const DesktopVersion = () => (
+    <Card
+      className={cn(
+        "hidden lg:block border-gray-100 shadow-lg shadow-gray-100/50 transition-all duration-700",
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      )}
+    >
+      <CardHeader className="pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900">
+            <ShoppingBag className="h-5 w-5 text-white" />
+          </div>
+          <CardTitle className="text-lg font-semibold tracking-tight">
+            Resumo do Pedido
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <SummaryContent />
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className={className}>
+      <MobileVersion />
+      <DesktopVersion />
+    </div>
+  )
+}

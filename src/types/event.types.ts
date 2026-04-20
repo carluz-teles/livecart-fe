@@ -4,7 +4,7 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 // EVENT STATUS & PLATFORM
 // =============================================================================
 
-export type EventStatus = "active" | "ended"
+export type EventStatus = "scheduled" | "active" | "ended"
 export type EventType = "single" | "multi"
 export type Platform = "instagram" // Only Instagram supported for now
 
@@ -58,7 +58,11 @@ export interface Event {
   closeCartOnEventEnd: boolean
   cartExpirationMinutes: number | null
   cartMaxQuantityPerItem: number | null
-  autoSendCheckoutLinks: boolean | null
+  sendOnLiveEnd: boolean | null
+  scheduledAt: string | null
+  description: string | null
+  productCount: number
+  upsellCount: number
   sessions?: EventSession[]
   createdAt: string
   updatedAt: string
@@ -74,11 +78,14 @@ export interface CreateEventPayload {
   type?: EventType
   platform?: Platform
   platformLiveId?: string
+  // Scheduling
+  scheduledAt?: string | null
+  description?: string | null
   // Cart settings (override store defaults)
   closeCartOnEventEnd?: boolean
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
-  autoSendCheckoutLinks?: boolean | null
+  sendOnLiveEnd?: boolean | null
 }
 
 export interface CreateEventResponse {
@@ -97,7 +104,7 @@ export interface UpdateEventPayload {
 
 // End Event
 export interface EndEventPayload {
-  autoSendCheckoutLinks?: boolean
+  sendOnLiveEnd?: boolean
 }
 
 export interface EndEventResponse {
@@ -167,6 +174,7 @@ export interface EventDetailStats {
 // Cart with total value for event details page
 export interface EventCart {
   id: string
+  sessionId: string | null
   platformUserId: string
   platformHandle: string
   status: string
@@ -193,8 +201,8 @@ export interface EventCartsResponse {
   data: EventCart[]
 }
 
-// Product sold in an event
-export interface EventProduct {
+// Product sold in an event (sales report)
+export interface EventSoldProduct {
   id: string
   name: string
   imageUrl: string | null
@@ -203,8 +211,85 @@ export interface EventProduct {
   totalRevenue: number
 }
 
-export interface EventProductsResponse {
-  data: EventProduct[]
+export interface EventSoldProductsResponse {
+  data: EventSoldProduct[]
+}
+
+// =============================================================================
+// EVENT WHITELIST - Products allowed for sale in an event
+// =============================================================================
+
+export interface EventWhitelistProduct {
+  id: string
+  productId: string
+  name: string
+  keyword: string
+  imageUrl: string | null
+  originalPrice: number
+  specialPrice: number | null
+  effectivePrice: number
+  maxQuantity: number | null
+  displayOrder: number
+  featured: boolean
+  stock: number
+  productActive: boolean
+}
+
+export interface AddEventProductPayload {
+  productId: string
+  specialPrice?: number | null
+  maxQuantity?: number | null
+  displayOrder?: number
+  featured?: boolean
+}
+
+export interface UpdateEventProductPayload {
+  specialPrice?: number | null
+  maxQuantity?: number | null
+  displayOrder?: number
+  featured?: boolean
+}
+
+export interface EventWhitelistResponse {
+  data: EventWhitelistProduct[]
+}
+
+// =============================================================================
+// EVENT UPSELLS - Suggested products at checkout
+// =============================================================================
+
+export interface EventUpsell {
+  id: string
+  productId: string
+  name: string
+  keyword: string
+  imageUrl: string | null
+  originalPrice: number
+  discountPercent: number
+  discountedPrice: number
+  messageTemplate: string | null
+  displayOrder: number
+  active: boolean
+  stock: number
+}
+
+export interface AddEventUpsellPayload {
+  productId: string
+  discountPercent: number
+  messageTemplate?: string | null
+  displayOrder?: number
+  active?: boolean
+}
+
+export interface UpdateEventUpsellPayload {
+  discountPercent?: number
+  messageTemplate?: string | null
+  displayOrder?: number
+  active?: boolean
+}
+
+export interface EventUpsellsResponse {
+  data: EventUpsell[]
 }
 
 // =============================================================================

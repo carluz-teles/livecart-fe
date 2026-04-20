@@ -8,15 +8,11 @@ export interface CartSettings {
   reserveStock: boolean
   maxItems: number
   maxQuantityPerItem: number
-  notifyBeforeExpiration: boolean
   allowEdit: boolean
-  // Checkout settings
-  autoSendCheckoutLinks: boolean
-  checkoutLinkExpiryHours: number
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings
-  sendOnFirstItem: boolean
-  sendOnNewItems: boolean
+  realTimeCart: boolean
+  sendOnLiveEnd: boolean
   messageCooldownSeconds: number
   sendExpirationReminder: boolean
   expirationReminderMinutes: number
@@ -29,14 +25,11 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   reserveStock: true,
   maxItems: 0,
   maxQuantityPerItem: 5,
-  notifyBeforeExpiration: true,
   allowEdit: true,
-  autoSendCheckoutLinks: false,
-  checkoutLinkExpiryHours: 48,
   checkoutSendMethods: ['public_link', 'manual'],
   // Automatic message settings
-  sendOnFirstItem: true,
-  sendOnNewItems: true,
+  realTimeCart: true,
+  sendOnLiveEnd: false,
   messageCooldownSeconds: 30,
   sendExpirationReminder: true,
   expirationReminderMinutes: 15,
@@ -84,14 +77,11 @@ export interface UpdateCartSettingsPayload {
   reserveStock: boolean
   maxItems: number
   maxQuantityPerItem: number
-  notifyBeforeExpiration: boolean
   allowEdit: boolean
-  autoSendCheckoutLinks: boolean
-  checkoutLinkExpiryHours: number
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings
-  sendOnFirstItem: boolean
-  sendOnNewItems: boolean
+  realTimeCart: boolean
+  sendOnLiveEnd: boolean
   messageCooldownSeconds: number
   sendExpirationReminder: boolean
   expirationReminderMinutes: number

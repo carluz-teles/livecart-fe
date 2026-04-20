@@ -31,10 +31,12 @@ export async function POST(request: NextRequest) {
         reserveStock: body.reserveStock,
         maxItems: body.maxItems,
         maxQuantityPerItem: body.maxQuantityPerItem,
-        notifyBeforeExpiration: body.notifyBeforeExpiration,
         allowEdit: true,
-        autoSendCheckoutLinks: false,
-        checkoutLinkExpiryHours: 48,
+        realTimeCart: true,
+        sendOnLiveEnd: false,
+        messageCooldownSeconds: 30,
+        sendExpirationReminder: true,
+        expirationReminderMinutes: 15,
       }),
     })
 

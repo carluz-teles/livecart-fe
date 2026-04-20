@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Puzzle, ShoppingCart, MessageSquare } from "lucide-react"
+import { User, Building2, Users, Puzzle, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -20,16 +20,10 @@ const settingsNav = [
     description: "Informações e configurações da loja",
   },
   {
-    title: "Carrinho",
-    href: "/settings/cart",
-    icon: ShoppingCart,
-    description: "Configure o carrinho de compras",
-  },
-  {
-    title: "Notificações",
-    href: "/settings/notifications",
-    icon: MessageSquare,
-    description: "Configure mensagens automáticas",
+    title: "Checkout",
+    href: "/settings/checkout",
+    icon: CreditCard,
+    description: "Carrinho, mensagens e checkout",
   },
   {
     title: "Equipe",

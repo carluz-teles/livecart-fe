@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, Radio, Instagram } from "lucide-react"
+import { Plus, Loader2, Radio, Instagram, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +15,9 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Sheet,
   SheetContent,
@@ -86,10 +92,12 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       type: "single",
       platform: undefined,
       platformLiveId: "",
+      scheduledAt: null,
+      description: null,
       closeCartOnEventEnd: true,
       cartExpirationMinutes: null,
       cartMaxQuantityPerItem: null,
-      autoSendCheckoutLinks: null,
+      sendOnLiveEnd: null,
     },
   })
 
@@ -101,10 +109,12 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         type: event.type || "single",
         platform: undefined,
         platformLiveId: "",
+        scheduledAt: event.scheduledAt,
+        description: event.description,
         closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
         cartExpirationMinutes: event.cartExpirationMinutes,
         cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
-        autoSendCheckoutLinks: event.autoSendCheckoutLinks,
+        sendOnLiveEnd: event.sendOnLiveEnd,
       })
     } else {
       form.reset({
@@ -112,10 +122,12 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         type: "single",
         platform: undefined,
         platformLiveId: "",
+        scheduledAt: null,
+        description: null,
         closeCartOnEventEnd: true,
         cartExpirationMinutes: null,
         cartMaxQuantityPerItem: null,
-        autoSendCheckoutLinks: null,
+        sendOnLiveEnd: null,
       })
     }
   }, [event, form])
@@ -130,11 +142,14 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       // Only include platform if platformLiveId is provided
       platform: data.platformLiveId ? "instagram" : undefined,
       platformLiveId: data.platformLiveId || undefined,
+      // Scheduling
+      scheduledAt: data.scheduledAt || undefined,
+      description: data.description || undefined,
       // Cart settings
       closeCartOnEventEnd: data.closeCartOnEventEnd,
       cartExpirationMinutes: data.cartExpirationMinutes,
       cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
-      autoSendCheckoutLinks: data.autoSendCheckoutLinks,
+      sendOnLiveEnd: data.sendOnLiveEnd,
     }
 
     createEvent.mutate(payload, {
@@ -374,7 +389,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
 
             <FormField
               control={form.control}
-              name="autoSendCheckoutLinks"
+              name="sendOnLiveEnd"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
@@ -391,6 +406,126 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <div className="relative py-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                Agendamento (opcional)
+              </span>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="scheduledAt"
+              render={({ field }) => {
+                const selectedDate = field.value ? new Date(field.value) : undefined
+                const timeValue = selectedDate
+                  ? format(selectedDate, "HH:mm")
+                  : ""
+
+                const handleDateSelect = (date: Date | undefined) => {
+                  if (!date) {
+                    field.onChange(null)
+                    return
+                  }
+                  // Preserve time if already set
+                  if (selectedDate) {
+                    date.setHours(selectedDate.getHours(), selectedDate.getMinutes())
+                  } else {
+                    // Default to 10:00
+                    date.setHours(10, 0)
+                  }
+                  field.onChange(date.toISOString())
+                }
+
+                const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const [hours, minutes] = e.target.value.split(":").map(Number)
+                  const date = selectedDate ? new Date(selectedDate) : new Date()
+                  date.setHours(hours, minutes, 0, 0)
+                  field.onChange(date.toISOString())
+                }
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data e hora do evento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value
+                              ? format(new Date(field.value), "PPP 'às' HH:mm", { locale: ptBR })
+                              : "Selecione data e hora"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={handleDateSelect}
+                          disabled={(date) => date < new Date()}
+                          locale={ptBR}
+                        />
+                        <div className="border-t p-3">
+                          <Label className="text-sm">Horário</Label>
+                          <Input
+                            type="time"
+                            value={timeValue}
+                            onChange={handleTimeChange}
+                            className="mt-1"
+                          />
+                        </div>
+                        {field.value && (
+                          <div className="border-t p-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => field.onChange(null)}
+                            >
+                              Limpar data
+                            </Button>
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Agende para iniciar o evento automaticamente nesta data
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Notas internas sobre o evento, produtos destaque, etc..."
+                      className="resize-none min-h-[80px]"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Descrição interna para identificação (não visível aos clientes)
+                  </FormDescription>
+                  <FormMessage />
                 </FormItem>
               )}
             />

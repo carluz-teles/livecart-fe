@@ -16,7 +16,15 @@ import type {
   EventPlatform,
   EventDetailStatsResponse,
   EventCartsResponse,
-  EventProductsResponse,
+  EventSoldProductsResponse,
+  EventWhitelistProduct,
+  EventWhitelistResponse,
+  AddEventProductPayload,
+  UpdateEventProductPayload,
+  EventUpsell,
+  EventUpsellsResponse,
+  AddEventUpsellPayload,
+  UpdateEventUpsellPayload,
   LiveModeState,
   SetActiveProductPayload,
   SetProcessingPausedPayload,
@@ -74,9 +82,9 @@ export const eventService = {
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
 
-  // Event Details - List products sold in an event
-  listProducts: (storeId: string, eventId: string, token?: string | null) =>
-    apiClient.get<EventProductsResponse>(`/stores/${storeId}/lives/${eventId}/products`, token),
+  // Event Details - List products sold in an event (sales report)
+  listSoldProducts: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventSoldProductsResponse>(`/stores/${storeId}/lives/${eventId}/products`, token),
 
   // Live Mode - Get current state (active product + pause status)
   getLiveModeState: (storeId: string, eventId: string, token?: string | null) =>
@@ -89,4 +97,64 @@ export const eventService = {
   // Live Mode - Pause/resume comment processing
   setProcessingPaused: (storeId: string, eventId: string, payload: SetProcessingPausedPayload, token?: string | null) =>
     apiClient.patch<void>(`/stores/${storeId}/lives/${eventId}/pause-processing`, payload, token),
+
+  // ==========================================================================
+  // EVENT WHITELIST - Products allowed for sale in this event
+  // ==========================================================================
+
+  // List whitelist products
+  listWhitelist: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventWhitelistResponse>(`/stores/${storeId}/lives/${eventId}/whitelist`, token),
+
+  // Add product to whitelist
+  addToWhitelist: (storeId: string, eventId: string, payload: AddEventProductPayload, token?: string | null) =>
+    apiClient.post<EventWhitelistProduct>(`/stores/${storeId}/lives/${eventId}/whitelist`, payload, token),
+
+  // Update whitelist product config
+  updateWhitelistProduct: (
+    storeId: string,
+    eventId: string,
+    productId: string,
+    payload: UpdateEventProductPayload,
+    token?: string | null
+  ) =>
+    apiClient.put<EventWhitelistProduct>(
+      `/stores/${storeId}/lives/${eventId}/whitelist/${productId}`,
+      payload,
+      token
+    ),
+
+  // Remove from whitelist
+  removeFromWhitelist: (storeId: string, eventId: string, productId: string, token?: string | null) =>
+    apiClient.delete<void>(`/stores/${storeId}/lives/${eventId}/whitelist/${productId}`, token),
+
+  // ==========================================================================
+  // EVENT UPSELLS - Suggested products at checkout
+  // ==========================================================================
+
+  // List upsells
+  listUpsells: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventUpsellsResponse>(`/stores/${storeId}/lives/${eventId}/upsells`, token),
+
+  // Add upsell
+  addUpsell: (storeId: string, eventId: string, payload: AddEventUpsellPayload, token?: string | null) =>
+    apiClient.post<EventUpsell>(`/stores/${storeId}/lives/${eventId}/upsells`, payload, token),
+
+  // Update upsell
+  updateUpsell: (
+    storeId: string,
+    eventId: string,
+    upsellId: string,
+    payload: UpdateEventUpsellPayload,
+    token?: string | null
+  ) =>
+    apiClient.put<EventUpsell>(
+      `/stores/${storeId}/lives/${eventId}/upsells/${upsellId}`,
+      payload,
+      token
+    ),
+
+  // Remove upsell
+  removeUpsell: (storeId: string, eventId: string, upsellId: string, token?: string | null) =>
+    apiClient.delete<void>(`/stores/${storeId}/lives/${eventId}/upsells/${upsellId}`, token),
 }

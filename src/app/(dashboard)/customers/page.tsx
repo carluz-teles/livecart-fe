@@ -6,6 +6,8 @@ import { formatCurrency, formatDate } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { CustomerFilters } from "@/components/shared/Filters"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useCustomers, useCustomerStats } from "@/hooks/customer"
 import type { CustomerFilters as CustomerFiltersType } from "@/types/customer.types"
@@ -57,56 +59,34 @@ export default function CustomersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie seus clientes e visualize o histórico de compras.
-        </p>
-      </div>
+      <PageHeader
+        title="Clientes"
+        description="Gerencie seus clientes e visualize o histórico de compras"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalCustomers ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Clientes cadastrados
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.activeCustomers ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Compraram nos últimos 30 dias
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gasto Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avgSpentPerCustomer ?? 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Média por cliente
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total de Clientes"
+          value={stats?.totalCustomers ?? 0}
+          description="Clientes cadastrados"
+          icon={Users}
+          isLoading={statsLoading}
+        />
+        <StatsCard
+          title="Clientes Ativos"
+          value={stats?.activeCustomers ?? 0}
+          description="Compraram nos últimos 30 dias"
+          icon={ShoppingBag}
+          isLoading={statsLoading}
+          variant="success"
+        />
+        <StatsCard
+          title="Gasto Médio"
+          value={formatCurrency(stats?.avgSpentPerCustomer ?? 0)}
+          description="Média por cliente"
+          icon={TrendingUp}
+          isLoading={statsLoading}
+        />
       </div>
 
       <Card>

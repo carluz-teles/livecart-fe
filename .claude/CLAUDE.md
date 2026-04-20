@@ -37,8 +37,127 @@ Quando recebo uma tarefa de UI, sempre me pergunto:
 - **Framework**: Next.js 14 (App Router + React Server Components)
 - **UI**: shadcn/ui + Tailwind CSS
 - **Auth**: Clerk
+- **State Management**: TanStack Query (React Query) para server state
+- **Forms**: React Hook Form + Zod
 - **Padrão de componentes**: Compound Components
 - **Padrão de camadas**: Component → Hook → Service
+
+---
+
+## React Query (Server State Management)
+
+### Regra fundamental
+
+**Todo estado que vem do servidor deve ser gerenciado com React Query.**
+Nunca usar `useState` + `useEffect` para fetch de dados.
+
+```tsx
+// ✅ correto — usando React Query
+function ProductGrid() {
+  const { data: products, isLoading, error } = useProducts()
+  return <ProductGridView products={products} loading={isLoading} />
+}
+
+// ❌ errado — useState + useEffect manual
+function ProductGrid() {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    productService.list().then(setProducts).finally(() => setLoading(false))
+  }, [])
+}
+```
+
+### Estrutura de hooks
+
+Cada domínio tem seus hooks em `src/hooks/{domain}/`:
+
+```
+hooks/
+├── product/
+│   ├── useProducts.ts       # Lista com React Query
+│   ├── useProduct.ts        # Detalhe com React Query
+│   ├── useCreateProduct.ts  # Mutation
+│   └── useUpdateProduct.ts  # Mutation
+├── checkout/
+│   ├── useCheckoutCart.ts
+│   ├── useCheckoutConfig.ts
+│   └── index.ts
+```
+
+### Padrão de query keys
+
+```ts
+export const productKeys = {
+  all: ["products"] as const,
+  lists: () => [...productKeys.all, "list"] as const,
+  list: (storeId: string, params?: ProductListParams) =>
+    [...productKeys.lists(), storeId, params] as const,
+  details: () => [...productKeys.all, "detail"] as const,
+  detail: (storeId: string, id: string) =>
+    [...productKeys.details(), storeId, id] as const,
+}
+```
+
+### Padrão de hook
+
+```ts
+export function useProducts(params?: ProductListParams) {
+  const { getToken } = useAuth()
+  const { storeId } = useStoreId()
+
+  return useQuery({
+    queryKey: productKeys.list(storeId ?? "", params),
+    queryFn: async () => {
+      const token = await getToken()
+      return productService.list(storeId!, params, token)
+    },
+    enabled: !!storeId,
+  })
+}
+```
+
+### Mutations
+
+```ts
+export function useCreateProduct() {
+  const queryClient = useQueryClient()
+  const { storeId } = useStoreId()
+
+  return useMutation({
+    mutationFn: (data: CreateProductPayload) =>
+      productService.create(storeId!, data),
+    onSuccess: () => {
+      // Invalida a lista para refetch
+      queryClient.invalidateQueries({ queryKey: productKeys.lists() })
+    },
+  })
+}
+```
+
+### Server Components com Prefetch (opcional)
+
+Para páginas que precisam de SSR/SSG:
+
+```tsx
+// app/products/page.tsx (Server Component)
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+
+export default async function ProductsPage() {
+  const queryClient = new QueryClient()
+
+  await queryClient.prefetchQuery({
+    queryKey: ['products'],
+    queryFn: getProducts,
+  })
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ProductList />
+    </HydrationBoundary>
+  )
+}
+```
 
 ---
 

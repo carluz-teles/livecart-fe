@@ -43,11 +43,14 @@ export const createEventSchema = z.object({
   type: z.enum(["single", "multi"]).optional(),
   platform: z.literal("instagram").optional(), // Only Instagram supported
   platformLiveId: z.string().max(100).optional(),
+  // Scheduling (optional)
+  scheduledAt: z.string().nullable().optional(),
+  description: z.string().max(1000).nullable().optional(),
   // Cart settings (override store defaults)
   closeCartOnEventEnd: z.boolean().optional(),
   cartExpirationMinutes: z.number().min(5).max(1440).nullable().optional(),
   cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
-  autoSendCheckoutLinks: z.boolean().nullable().optional(),
+  sendOnLiveEnd: z.boolean().nullable().optional(),
 })
 
 export type CreateEventFormData = z.infer<typeof createEventSchema>

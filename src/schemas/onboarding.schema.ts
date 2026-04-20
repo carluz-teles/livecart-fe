@@ -31,7 +31,6 @@ export const cartStepSchema = z.object({
   reserveStock: z.boolean(),
   maxItems: z.number().min(0, "Deve ser 0 ou maior"),
   maxQuantityPerItem: z.number().min(0, "Deve ser 0 ou maior"),
-  notifyBeforeExpiration: z.boolean(),
 })
 
 export type CartStepData = z.infer<typeof cartStepSchema>

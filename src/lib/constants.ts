@@ -34,13 +34,14 @@ export const LIVE_STATUS_CONFIG: Record<LiveStatus, LiveStatusConfig> = {
 }
 
 export interface EventStatusConfig extends StatusConfig {
-  icon: "radio" | "check-circle"
+  icon: "radio" | "check-circle" | "calendar"
 }
 
 /**
  * Event status configuration
  */
 export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
+  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
   active: { label: "Ao Vivo", variant: "destructive", icon: "radio" },
   ended: { label: "Finalizado", variant: "secondary", icon: "check-circle" },
 }

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { ProductForm } from "@/components/product/ProductForm"
 import { ProductDetailModal } from "@/components/product/ProductDetailModal"
 import { ProductFilters } from "@/components/shared/Filters"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct, useSyncProduct } from "@/hooks/product"
 import { formatCurrency } from "@/lib/format"
@@ -163,68 +165,47 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Produtos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie seu catálogo de produtos
-          </p>
-        </div>
+      <PageHeader
+        title="Produtos"
+        description="Gerencie seu catálogo de produtos"
+      >
         <ProductForm
           open={createFormOpen}
           onOpenChange={setCreateFormOpen}
         />
-      </div>
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalProducts ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Produtos cadastrados
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produtos Ativos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.activeCount ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Disponíveis para venda
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.lowStockCount ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Precisam de reposição
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor em Estoque</CardTitle>
-            <Warehouse className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsLoading ? <Skeleton className="h-8 w-12" /> : formatCurrency(stats?.stockValue ?? 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor total do inventário
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total de Produtos"
+          value={stats?.totalProducts ?? 0}
+          description="Produtos cadastrados"
+          icon={Package}
+          isLoading={statsLoading}
+        />
+        <StatsCard
+          title="Produtos Ativos"
+          value={stats?.activeCount ?? 0}
+          description="Disponíveis para venda"
+          icon={CheckCircle}
+          isLoading={statsLoading}
+          variant="success"
+        />
+        <StatsCard
+          title="Estoque Baixo"
+          value={stats?.lowStockCount ?? 0}
+          description="Precisam de reposição"
+          icon={AlertTriangle}
+          isLoading={statsLoading}
+          variant="warning"
+        />
+        <StatsCard
+          title="Valor em Estoque"
+          value={formatCurrency(stats?.stockValue ?? 0)}
+          description="Valor total do inventário"
+          icon={Warehouse}
+          isLoading={statsLoading}
+        />
       </div>
 
       <Card>

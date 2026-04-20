@@ -144,6 +144,7 @@ export interface PublicCheckoutCart {
   checkoutUrl: string | null
   platformHandle: string
   allowEdit: boolean
+  maxQuantityPerItem: number
   expiresAt: string | null
   createdAt: string
   event: PublicCheckoutEvent

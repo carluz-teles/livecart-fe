@@ -8,6 +8,8 @@ import { ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, getStatusConfig } from "@/l
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { OrderFilters } from "@/components/shared/Filters"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useOrders, useOrderStats } from "@/hooks/order"
 import type { OrderFilters as OrderFiltersType } from "@/types/cart.types"
@@ -55,70 +57,42 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Pedidos</h1>
-        <p className="text-sm text-muted-foreground">
-          Acompanhe e gerencie os pedidos das suas lives
-        </p>
-      </div>
+      <PageHeader
+        title="Pedidos"
+        description="Acompanhe e gerencie os pedidos das suas lives"
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.totalOrders ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pedidos realizados
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-12" /> : stats?.pendingOrders ?? 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Aguardando pagamento
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.totalRevenue ?? 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor total dos pedidos
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.avgTicket ?? 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor médio por pedido
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total de Pedidos"
+          value={stats?.totalOrders ?? 0}
+          description="Pedidos realizados"
+          icon={ShoppingCart}
+          isLoading={statsLoading}
+        />
+        <StatsCard
+          title="Pedidos Pendentes"
+          value={stats?.pendingOrders ?? 0}
+          description="Aguardando pagamento"
+          icon={Clock}
+          isLoading={statsLoading}
+          variant="warning"
+        />
+        <StatsCard
+          title="Receita Total"
+          value={formatCurrency(stats?.totalRevenue ?? 0)}
+          description="Valor total dos pedidos"
+          icon={DollarSign}
+          isLoading={statsLoading}
+          variant="success"
+        />
+        <StatsCard
+          title="Ticket Médio"
+          value={formatCurrency(stats?.avgTicket ?? 0)}
+          description="Valor médio por pedido"
+          icon={TrendingUp}
+          isLoading={statsLoading}
+        />
       </div>
 
       <Card>

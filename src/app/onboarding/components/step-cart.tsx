@@ -149,20 +149,6 @@ export function StepCart({ defaultValues, onNext, onBack, onSkip, isSubmitting }
             )}
           </div>
 
-          {/* Notify Before Expiration */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Notificar Antes de Expirar</Label>
-              <p className="text-xs text-muted-foreground">
-                Avisa o cliente antes do carrinho expirar
-              </p>
-            </div>
-            <Switch
-              checked={watch("notifyBeforeExpiration")}
-              onCheckedChange={(checked) => setValue("notifyBeforeExpiration", checked)}
-              disabled={isSubmitting}
-            />
-          </div>
         </CardContent>
         <CardFooter className="flex gap-2">
           <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
