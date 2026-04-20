@@ -54,15 +54,20 @@ export function useOnboardingStatus(): OnboardingStatus {
       (i) => i.type === "payment" && i.status === "active"
     ) ?? false
 
-    // Task 3: Connect Instagram
+    // Task 3: Connect ERP
+    const hasERP = integrations?.data?.some(
+      (i) => i.type === "erp" && i.status === "active"
+    ) ?? false
+
+    // Task 4: Connect Instagram
     const hasInstagram = integrations?.data?.some(
       (i) => i.provider === "instagram" && i.status === "active"
     ) ?? false
 
-    // Task 4: Create first event
+    // Task 5: Create first event
     const hasEvents = (eventStats?.totalLives ?? 0) > 0
 
-    // Task 5: Configure notifications
+    // Task 6: Configure notifications
     const hasNotifications =
       notificationSettings?.checkout_immediate?.enabled ||
       notificationSettings?.item_added?.enabled ||
@@ -82,6 +87,13 @@ export function useOnboardingStatus(): OnboardingStatus {
         title: "Conectar pagamento",
         description: "Configure o Mercado Pago ou Pagar.me",
         completed: hasPayment,
+        href: "/settings/integrations",
+      },
+      {
+        id: "erp",
+        title: "Integrar ERP",
+        description: "Conecte o Bling ou Tiny para importar produtos",
+        completed: hasERP,
         href: "/settings/integrations",
       },
       {
