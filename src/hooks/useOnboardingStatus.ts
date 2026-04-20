@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { useUser, useStoreId } from "@/hooks/useUser"
-import { useProductStats } from "@/hooks/product/useProductStats"
 import { useIntegrations } from "@/hooks/integration/useIntegrations"
 import { useEventStats } from "@/hooks/event/useEventStats"
 import { notificationService } from "@/services/api/notification.service"
@@ -32,7 +31,6 @@ export function useOnboardingStatus(): OnboardingStatus {
   const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth()
 
   // Fetch all required data
-  const { data: productStats, isLoading: productsLoading } = useProductStats()
   const { data: integrations, isLoading: integrationsLoading } = useIntegrations()
   const { data: eventStats, isLoading: eventsLoading } = useEventStats()
 
@@ -51,23 +49,20 @@ export function useOnboardingStatus(): OnboardingStatus {
     // Task 1: Create store
     const storeCreated = user?.state === "ready"
 
-    // Task 2: Register a product
-    const hasProducts = (productStats?.totalProducts ?? 0) > 0
-
-    // Task 3: Connect payment
+    // Task 2: Connect payment
     const hasPayment = integrations?.data?.some(
       (i) => i.type === "payment" && i.status === "active"
     ) ?? false
 
-    // Task 4: Connect Instagram
+    // Task 3: Connect Instagram
     const hasInstagram = integrations?.data?.some(
       (i) => i.provider === "instagram" && i.status === "active"
     ) ?? false
 
-    // Task 5: Create first event
+    // Task 4: Create first event
     const hasEvents = (eventStats?.totalLives ?? 0) > 0
 
-    // Task 6: Configure notifications
+    // Task 5: Configure notifications
     const hasNotifications =
       notificationSettings?.checkout_immediate?.enabled ||
       notificationSettings?.item_added?.enabled ||
@@ -81,13 +76,6 @@ export function useOnboardingStatus(): OnboardingStatus {
         description: "Configure os dados básicos da sua loja",
         completed: storeCreated,
         // No href - this is done in onboarding wizard
-      },
-      {
-        id: "product",
-        title: "Cadastrar produto",
-        description: "Adicione pelo menos um produto ao catálogo",
-        completed: hasProducts,
-        href: "/products",
       },
       {
         id: "payment",
@@ -118,7 +106,7 @@ export function useOnboardingStatus(): OnboardingStatus {
         href: "/settings/checkout",
       },
     ]
-  }, [user, productStats, integrations, eventStats, notificationSettings])
+  }, [user, integrations, eventStats, notificationSettings])
 
   // Calculate completion stats
   const completedCount = tasks.filter((t) => t.completed).length
@@ -129,7 +117,6 @@ export function useOnboardingStatus(): OnboardingStatus {
   // Combined loading state
   const isLoading =
     userLoading ||
-    productsLoading ||
     integrationsLoading ||
     eventsLoading ||
     notificationsLoading
