@@ -2,14 +2,28 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Check, CreditCard, ExternalLink, Instagram, Package, Unplug, Loader2, Zap, Info, User, Clock, Activity } from "lucide-react"
+import {
+  Check,
+  ExternalLink,
+  Unplug,
+  Loader2,
+  Zap,
+  Info,
+  User,
+  Clock,
+  Activity,
+  CreditCard,
+  Package,
+  Share2,
+  Sparkles,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +50,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import { IntegrationCard } from "@/components/integration/IntegrationCard"
 import {
   useIntegrations,
   useConnectOAuth,
@@ -44,14 +59,15 @@ import {
   useDisconnectIntegration,
   useTestConnection,
 } from "@/hooks/integration"
-import type { Integration, IntegrationProvider } from "@/types"
+import type { Integration, IntegrationProvider, IntegrationType } from "@/types"
+import { cn } from "@/lib/utils"
 
 interface ProviderConfig {
   id: IntegrationProvider
   name: string
   description: string
-  icon: React.ReactNode
-  type: "payment" | "erp" | "social"
+  features: string[]
+  type: IntegrationType
   authType: "oauth" | "api_key" | "oauth_with_credentials"
 }
 
@@ -60,35 +76,53 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     id: "mercado_pago",
     name: "Mercado Pago",
     description: "Receba pagamentos via Pix, cartão e boleto",
-    icon: <CreditCard className="h-6 w-6" />,
+    features: ["Pix instantâneo", "Cartão de crédito", "Boleto bancário"],
     type: "payment",
     authType: "oauth",
   },
   {
     id: "pagarme",
     name: "Pagar.me",
-    description: "Receba pagamentos via Pix, cartão e boleto",
-    icon: <CreditCard className="h-6 w-6" />,
+    description: "Gateway de pagamentos completo",
+    features: ["Pix", "Cartão", "Boleto", "Split de pagamento"],
     type: "payment",
     authType: "api_key",
   },
   {
     id: "tiny",
     name: "Tiny ERP",
-    description: "Sincronize produtos e pedidos com seu ERP",
-    icon: <Package className="h-6 w-6" />,
+    description: "Sincronize produtos e pedidos automaticamente",
+    features: ["Importar produtos", "Sincronizar estoque", "Gerar notas fiscais"],
     type: "erp",
     authType: "oauth_with_credentials",
   },
   {
     id: "instagram",
     name: "Instagram",
-    description: "Receba comentários e mensagens de lives",
-    icon: <Instagram className="h-6 w-6" />,
+    description: "Capture comentários das suas lives em tempo real",
+    features: ["Comentários em tempo real", "Detecção de pedidos", "DMs automáticas"],
     type: "social",
     authType: "oauth",
   },
 ]
+
+const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
+  payment: {
+    label: "Pagamentos",
+    icon: <CreditCard className="h-4 w-4" />,
+    description: "Receba pagamentos dos seus clientes",
+  },
+  erp: {
+    label: "ERP",
+    icon: <Package className="h-4 w-4" />,
+    description: "Gerencie produtos e estoque",
+  },
+  social: {
+    label: "Redes Sociais",
+    icon: <Share2 className="h-4 w-4" />,
+    description: "Conecte suas lives e capture pedidos",
+  },
+}
 
 function IntegrationsContent() {
   const searchParams = useSearchParams()
@@ -106,9 +140,18 @@ function IntegrationsContent() {
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
-  const [detailsSheet, setDetailsSheet] = useState<{ integration: Integration; provider: ProviderConfig } | null>(null)
+  const [detailsSheet, setDetailsSheet] = useState<{
+    integration: Integration
+    provider: ProviderConfig
+  } | null>(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
-  const [detailsData, setDetailsData] = useState<{ success: boolean; message: string; latencyMs: number; accountInfo?: Record<string, unknown>; testedAt: string } | null>(null)
+  const [detailsData, setDetailsData] = useState<{
+    success: boolean
+    message: string
+    latencyMs: number
+    accountInfo?: Record<string, unknown>
+    testedAt: string
+  } | null>(null)
 
   const integrations = data?.data ?? []
 
@@ -119,19 +162,16 @@ function IntegrationsContent() {
 
     if (success === "mercado_pago_connected") {
       toast.success("Mercado Pago conectado com sucesso!")
-      // Clean URL
       window.history.replaceState({}, "", "/settings/integrations")
     }
 
     if (success === "tiny_connected") {
       toast.success("Tiny ERP conectado com sucesso!")
-      // Clean URL
       window.history.replaceState({}, "", "/settings/integrations")
     }
 
     if (success === "instagram_connected") {
       toast.success("Instagram conectado com sucesso!")
-      // Clean URL
       window.history.replaceState({}, "", "/settings/integrations")
     }
 
@@ -266,7 +306,8 @@ function IntegrationsContent() {
   }
 
   const connectedProviders = AVAILABLE_PROVIDERS.filter((p) => getConnectedIntegration(p.id))
-  const availableProviders = AVAILABLE_PROVIDERS.filter((p) => !getConnectedIntegration(p.id))
+  const getProvidersByType = (type: IntegrationType) =>
+    AVAILABLE_PROVIDERS.filter((p) => p.type === type)
 
   const integrationToDisconnect = disconnectId
     ? integrations.find((i) => i.id === disconnectId)
@@ -284,58 +325,53 @@ function IntegrationsContent() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Connected Integrations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Integrações conectadas</CardTitle>
-          <CardDescription>Serviços atualmente conectados à sua loja</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {connectedProviders.length === 0 ? (
-            <div className="flex h-24 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">Nenhuma integração conectada</p>
+    <div className="space-y-8">
+      {/* Connected Integrations - Hero Section */}
+      {connectedProviders.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+              <Sparkles className="h-4 w-4 text-emerald-600" />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {connectedProviders.map((provider) => {
-                const integration = getConnectedIntegration(provider.id)!
-                return (
-                  <div
-                    key={provider.id}
-                    className="flex flex-col gap-4 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        {provider.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-medium">{provider.name}</h3>
-                          {integration.status === "active" ? (
-                            <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                              <Check className="mr-1 h-3 w-3" />
-                              Conectado
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">
-                              Pendente
-                            </Badge>
-                          )}
+            <div>
+              <h2 className="font-semibold tracking-tight">Integrações Ativas</h2>
+              <p className="text-sm text-muted-foreground">
+                {connectedProviders.length} {connectedProviders.length === 1 ? "serviço conectado" : "serviços conectados"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {connectedProviders.map((provider) => {
+              const integration = getConnectedIntegration(provider.id)!
+              const isActive = integration.status === "active"
+
+              return (
+                <IntegrationCard key={provider.id} provider={provider.id} connected>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <IntegrationCard.Logo provider={provider.id} size="md" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{provider.name}</h3>
+                            <IntegrationCard.Status status={isActive ? "active" : "pending"} />
+                          </div>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            Conectado em{" "}
+                            {new Date(integration.createdAt).toLocaleDateString("pt-BR")}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Conectado em{" "}
-                          {new Date(integration.createdAt).toLocaleDateString("pt-BR")}
-                        </p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 lg:shrink-0">
+
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenDetails(integration, provider)}
                       >
-                        <Info className="mr-2 h-4 w-4" />
+                        <Info className="mr-1.5 h-3.5 w-3.5" />
                         Detalhes
                       </Button>
                       <Button
@@ -345,75 +381,167 @@ function IntegrationsContent() {
                         disabled={testingId === integration.id}
                       >
                         {testingId === integration.id ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Zap className="mr-2 h-4 w-4" />
+                          <Zap className="mr-1.5 h-3.5 w-3.5" />
                         )}
                         Testar
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
+                        className="text-muted-foreground hover:text-destructive"
                         onClick={() => setDisconnectId(integration.id)}
-                        disabled={disconnectIntegration.isPending}
                       >
-                        <Unplug className="mr-2 h-4 w-4" />
+                        <Unplug className="mr-1.5 h-3.5 w-3.5" />
                         Desconectar
                       </Button>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </IntegrationCard>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
-      {/* Available Integrations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Integrações disponíveis</CardTitle>
-          <CardDescription>Conecte novos serviços para expandir as funcionalidades</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {availableProviders.length === 0 ? (
-            <div className="flex h-24 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Todas as integrações disponíveis estão conectadas
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {availableProviders.map((provider) => (
-                <div key={provider.id} className="flex flex-col gap-4 rounded-lg border p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      {provider.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{provider.name}</h3>
-                      <p className="text-sm text-muted-foreground">{provider.description}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleConnect(provider)}
-                    disabled={connectOAuth.isPending}
-                  >
-                    {connectOAuth.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ExternalLink className="mr-2 h-4 w-4" />
+      {/* Available Integrations by Category */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-semibold tracking-tight">Adicionar Integrações</h2>
+          <p className="text-sm text-muted-foreground">
+            Conecte novos serviços para expandir as funcionalidades
+          </p>
+        </div>
+
+        <Tabs defaultValue="payment" className="w-full">
+          <TabsList className="mb-6 w-full justify-start border-b bg-transparent p-0">
+            {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
+              const config = categoryConfig[type]
+              const providersInCategory = getProvidersByType(type)
+              const connectedCount = providersInCategory.filter((p) =>
+                getConnectedIntegration(p.id)
+              ).length
+
+              return (
+                <TabsTrigger
+                  key={type}
+                  value={type}
+                  className={cn(
+                    "relative rounded-none border-b-2 border-transparent px-4 pb-3 pt-2",
+                    "data-[state=active]:border-primary data-[state=active]:bg-transparent",
+                    "data-[state=active]:shadow-none"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {config.icon}
+                    <span>{config.label}</span>
+                    {connectedCount > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                        {connectedCount}/{providersInCategory.length}
+                      </Badge>
                     )}
-                    Conectar
-                  </Button>
+                  </div>
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
+
+          {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
+            const config = categoryConfig[type]
+            const providers = getProvidersByType(type)
+
+            return (
+              <TabsContent key={type} value={type} className="mt-0 space-y-4">
+                <p className="text-sm text-muted-foreground">{config.description}</p>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {providers.map((provider) => {
+                    const connected = getConnectedIntegration(provider.id)
+                    const isConnected = !!connected
+
+                    return (
+                      <IntegrationCard
+                        key={provider.id}
+                        provider={provider.id}
+                        connected={isConnected}
+                      >
+                        <div className="flex h-full flex-col p-5">
+                          <div className="flex items-start gap-4">
+                            <IntegrationCard.Logo provider={provider.id} size="lg" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold">{provider.name}</h3>
+                                {isConnected && (
+                                  <IntegrationCard.Status
+                                    status={connected.status === "active" ? "active" : "pending"}
+                                  />
+                                )}
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {provider.description}
+                              </p>
+
+                              {/* Features */}
+                              <div className="mt-3 flex min-h-[52px] flex-wrap content-start gap-1.5">
+                                {provider.features.map((feature) => (
+                                  <span
+                                    key={feature}
+                                    className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                  >
+                                    {feature}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto pt-4">
+                            {isConnected ? (
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => handleOpenDetails(connected, provider)}
+                                >
+                                  <Info className="mr-1.5 h-3.5 w-3.5" />
+                                  Ver detalhes
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-muted-foreground hover:text-destructive"
+                                  onClick={() => setDisconnectId(connected.id)}
+                                >
+                                  <Unplug className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                className="w-full"
+                                onClick={() => handleConnect(provider)}
+                                disabled={connectOAuth.isPending}
+                              >
+                                {connectOAuth.isPending ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ExternalLink className="mr-2 h-4 w-4" />
+                                )}
+                                Conectar {provider.name}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </IntegrationCard>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </TabsContent>
+            )
+          })}
+        </Tabs>
+      </section>
 
       {/* Disconnect Confirmation */}
       <AlertDialog open={!!disconnectId} onOpenChange={() => setDisconnectId(null)}>
@@ -421,8 +549,8 @@ function IntegrationsContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Desconectar {providerToDisconnect?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              A integração com {providerToDisconnect?.name} será removida. Você precisará reconectar
-              para usar os recursos novamente.
+              A integração com {providerToDisconnect?.name} será removida. Você precisará
+              reconectar para usar os recursos novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -430,6 +558,7 @@ function IntegrationsContent() {
             <AlertDialogAction
               onClick={handleDisconnect}
               disabled={disconnectIntegration.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {disconnectIntegration.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -440,7 +569,7 @@ function IntegrationsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* API Key Dialog (for non-OAuth providers) */}
+      {/* API Key Dialog */}
       <Dialog open={!!apiKeyDialog} onOpenChange={() => setApiKeyDialog(null)}>
         <DialogContent>
           <DialogHeader>
@@ -539,9 +668,9 @@ function IntegrationsContent() {
         <SheetContent className="w-[400px] sm:w-[540px]">
           <SheetHeader>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                {detailsSheet?.provider.icon}
-              </div>
+              {detailsSheet && (
+                <IntegrationCard.Logo provider={detailsSheet.provider.id} size="md" />
+              )}
               <div>
                 <SheetTitle>{detailsSheet?.provider.name}</SheetTitle>
                 <SheetDescription>{detailsSheet?.provider.description}</SheetDescription>
@@ -557,14 +686,9 @@ function IntegrationsContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Status</span>
                   {detailsSheet?.integration.status === "active" ? (
-                    <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                      <Check className="mr-1 h-3 w-3" />
-                      Conectado
-                    </Badge>
+                    <IntegrationCard.Status status="active" />
                   ) : (
-                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">
-                      Pendente
-                    </Badge>
+                    <IntegrationCard.Status status="pending" />
                   )}
                 </div>
                 <Separator />
@@ -601,7 +725,9 @@ function IntegrationsContent() {
                           <User className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">Usuário</p>
-                            <p className="font-medium">@{String(detailsData.accountInfo.username)}</p>
+                            <p className="font-medium">
+                              @{String(detailsData.accountInfo.username)}
+                            </p>
                           </div>
                         </div>
                         <Separator />
@@ -624,11 +750,12 @@ function IntegrationsContent() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">ID da Conta</p>
-                          <p className="font-mono text-sm">{String(detailsData.accountInfo.id)}</p>
+                          <p className="font-mono text-sm">
+                            {String(detailsData.accountInfo.id)}
+                          </p>
                         </div>
                       </div>
                     ) : null}
-                    {/* Mercado Pago specific fields */}
                     {"email" in detailsData.accountInfo && detailsData.accountInfo.email ? (
                       <>
                         <Separator />
@@ -648,7 +775,9 @@ function IntegrationsContent() {
                           <User className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">Apelido</p>
-                            <p className="font-medium">{String(detailsData.accountInfo.nickname)}</p>
+                            <p className="font-medium">
+                              {String(detailsData.accountInfo.nickname)}
+                            </p>
                           </div>
                         </div>
                       </>
@@ -660,7 +789,9 @@ function IntegrationsContent() {
                   </div>
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">Não foi possível carregar as informações</p>
+                    <p className="text-sm text-muted-foreground">
+                      Não foi possível carregar as informações
+                    </p>
                   </div>
                 )}
               </div>
@@ -674,12 +805,18 @@ function IntegrationsContent() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Resultado</span>
                     {detailsData.success ? (
-                      <Badge variant="outline" className="bg-green-500/10 text-green-600">
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                      >
                         <Check className="mr-1 h-3 w-3" />
                         Sucesso
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-red-500/10 text-red-600">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-500/10 text-red-600 border-red-500/20"
+                      >
                         Falha
                       </Badge>
                     )}
