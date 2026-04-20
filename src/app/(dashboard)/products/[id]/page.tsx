@@ -1,11 +1,12 @@
+"use client"
+
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
-interface ProductDetailPageProps {
-  params: { id: string }
-}
-
-export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params.id
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
@@ -17,7 +18,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </Link>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Produto #{params.id}
+            Produto #{id}
           </h1>
           <p className="text-sm text-muted-foreground">
             Edite as informacoes do produto

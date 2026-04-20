@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Check, CreditCard, ExternalLink, Instagram, Package, Unplug, Loader2, Zap, Info, User, Clock, Activity } from "lucide-react"
 import { toast } from "sonner"
@@ -90,7 +90,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   },
 ]
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams()
   const { data, isLoading } = useIntegrations()
   const connectOAuth = useConnectOAuth()
@@ -712,5 +712,19 @@ export default function IntegrationsPage() {
         </SheetContent>
       </Sheet>
     </div>
+  )
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <IntegrationsContent />
+    </Suspense>
   )
 }

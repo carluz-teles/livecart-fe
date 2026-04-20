@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -740,8 +740,8 @@ function CheckoutContent({ token }: { token: string }) {
   )
 }
 
-// Page component
-export default function CheckoutPage() {
+// Page content component (uses searchParams)
+function CheckoutPageContent() {
   const params = useParams()
   const searchParams = useSearchParams()
   const token = params.token as string
@@ -753,4 +753,13 @@ export default function CheckoutPage() {
   }
 
   return <CheckoutContent token={token} />
+}
+
+// Page component with Suspense boundary
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <CheckoutPageContent />
+    </Suspense>
+  )
 }

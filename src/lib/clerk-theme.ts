@@ -1,6 +1,4 @@
-import type { Appearance } from "@clerk/types"
-
-export const clerkAppearance: Appearance = {
+export const clerkAppearance = {
   variables: {
     colorPrimary: "hsl(37.69 92.13% 50.2%)", // amber primary
     colorText: "hsl(0 0% 14.9%)",
@@ -91,7 +89,7 @@ export const clerkAppearance: Appearance = {
 }
 
 // Dark mode overrides
-export const clerkDarkAppearance: Appearance = {
+export const clerkDarkAppearance = {
   variables: {
     colorPrimary: "hsl(37.69 92.13% 50.2%)", // amber primary
     colorText: "hsl(0 0% 89.8%)",

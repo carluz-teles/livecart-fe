@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import { ptBR } from "@clerk/localizations"
-import type { LocalizationResource } from "@clerk/types"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { UserProvider } from "@/components/providers/user-provider"
@@ -37,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider localization={ptBR as LocalizationResource} appearance={clerkAppearance}>
+    <ClerkProvider localization={ptBR} appearance={clerkAppearance}>
       <html lang="pt-BR" suppressHydrationWarning>
         <body
           className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} font-sans antialiased`}

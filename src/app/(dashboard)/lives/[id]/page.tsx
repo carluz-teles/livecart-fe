@@ -1,11 +1,12 @@
+"use client"
+
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
-interface LiveDetailPageProps {
-  params: { id: string }
-}
-
-export default function LiveDetailPage({ params }: LiveDetailPageProps) {
+export default function LiveDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params.id
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
@@ -17,7 +18,7 @@ export default function LiveDetailPage({ params }: LiveDetailPageProps) {
         </Link>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Live #{params.id}
+            Live #{id}
           </h1>
           <p className="text-sm text-muted-foreground">
             Monitoramento em tempo real
@@ -46,7 +47,7 @@ export default function LiveDetailPage({ params }: LiveDetailPageProps) {
           </div>
 
           <Link
-            href={`/lives/${params.id}/report`}
+            href={`/lives/${id}/report`}
             className="rounded-lg border bg-card p-6 text-center transition-colors hover:bg-accent"
           >
             <p className="font-medium">Ver Relatorio</p>

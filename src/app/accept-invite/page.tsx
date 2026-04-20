@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { Suspense, useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth, SignIn } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,7 +25,7 @@ import {
 
 type PageState = 'loading' | 'show_login' | 'confirm_leave' | 'accepting' | 'success' | 'error'
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get('token')
@@ -342,5 +342,24 @@ export default function AcceptInvitePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="w-full max-w-md">
+            <div className="text-center">
+              <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
+              <p className="text-sm text-muted-foreground">Carregando...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <AcceptInviteContent />
+    </Suspense>
   )
 }
