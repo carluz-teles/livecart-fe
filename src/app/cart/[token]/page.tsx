@@ -159,9 +159,6 @@ function ExpiredState({ cart }: { cart: PublicCheckoutCart }) {
               </div>
             </div>
 
-            <p className="mt-6 text-xs text-center text-gray-400 max-w-xs">
-              Dica: Durante a próxima live, finalize seu pedido antes do tempo limite.
-            </p>
           </CardContent>
         </Card>
       </div>
