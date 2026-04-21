@@ -285,11 +285,17 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                           Nenhuma live ativa no momento
                         </div>
                       ) : (
-                        lives.map((live) => (
-                          <SelectItem key={live.id} value={live.id}>
-                            Live #{live.id.slice(-6)} (@{live.username})
-                          </SelectItem>
-                        ))
+                        lives.map((live) => {
+                          const startTime = live.timestamp
+                            ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                            : null
+                          return (
+                            <SelectItem key={live.id} value={live.id}>
+                              Live @{live.username}
+                              {startTime && ` (iniciada às ${startTime})`}
+                            </SelectItem>
+                          )
+                        })
                       )}
                     </SelectContent>
                   </Select>

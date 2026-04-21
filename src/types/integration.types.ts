@@ -67,6 +67,7 @@ export interface InstagramLive {
   media_type: string
   media_product_type: string
   username: string
+  timestamp?: string
 }
 
 export interface InstagramLivesResponse {
