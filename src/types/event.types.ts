@@ -58,7 +58,6 @@ export interface Event {
   closeCartOnEventEnd: boolean
   cartExpirationMinutes: number | null
   cartMaxQuantityPerItem: number | null
-  sendOnLiveEnd: boolean | null
   scheduledAt: string | null
   description: string | null
   productCount: number
@@ -85,7 +84,6 @@ export interface CreateEventPayload {
   closeCartOnEventEnd?: boolean
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
-  sendOnLiveEnd?: boolean | null
 }
 
 export interface CreateEventResponse {
@@ -102,10 +100,9 @@ export interface UpdateEventPayload {
   title: string
 }
 
-// End Event
-export interface EndEventPayload {
-  sendOnLiveEnd?: boolean
-}
+// End Event - payload is now empty since auto-send is handled via Private Reply during the live
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface EndEventPayload {}
 
 export interface EndEventResponse {
   live: Event

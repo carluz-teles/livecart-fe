@@ -100,7 +100,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       closeCartOnEventEnd: true,
       cartExpirationMinutes: null,
       cartMaxQuantityPerItem: null,
-      sendOnLiveEnd: null,
     },
   })
 
@@ -117,7 +116,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
         cartExpirationMinutes: event.cartExpirationMinutes,
         cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
-        sendOnLiveEnd: event.sendOnLiveEnd,
       })
     } else {
       form.reset({
@@ -130,7 +128,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         closeCartOnEventEnd: true,
         cartExpirationMinutes: null,
         cartMaxQuantityPerItem: null,
-        sendOnLiveEnd: null,
       })
     }
   }, [event, form])
@@ -152,7 +149,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       closeCartOnEventEnd: data.closeCartOnEventEnd,
       cartExpirationMinutes: data.cartExpirationMinutes,
       cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
-      sendOnLiveEnd: data.sendOnLiveEnd,
     }
 
     createEvent.mutate(payload, {
@@ -409,29 +405,6 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                     Limite maximo de unidades por produto no carrinho
                   </FormDescription>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="sendOnLiveEnd"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-sm font-medium">
-                      Enviar links automaticamente
-                    </FormLabel>
-                    <FormDescription className="text-xs">
-                      Enviar links de checkout via DM quando o evento terminar
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value ?? false}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
                 </FormItem>
               )}
             />

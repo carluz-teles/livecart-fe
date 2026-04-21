@@ -116,7 +116,7 @@ export default function EventDetailsPage() {
     try {
       await endEventMutation.mutateAsync({
         id,
-        payload: { sendOnLiveEnd: true },
+        payload: {},
       })
       setEndEventOpen(false)
     } catch (error) {

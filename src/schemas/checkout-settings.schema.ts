@@ -30,9 +30,6 @@ export const checkoutSettingsSchema = z.object({
     .min(0, "Deve ser 0 ou maior")
     .max(300, "Máximo de 5 minutos"),
 
-  // End of live message
-  sendOnLiveEnd: z.boolean(),
-
   // Expiration reminder
   sendExpirationReminder: z.boolean(),
   expirationReminderMinutes: z

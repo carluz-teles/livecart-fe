@@ -66,9 +66,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
       realTimeCart: true,
       messageCooldownSeconds: 30,
 
-      // End of live
-      sendOnLiveEnd: false,
-
       // Expiration reminder
       sendExpirationReminder: true,
       expirationReminderMinutes: 15,
@@ -114,9 +111,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
           // Real-time cart (new unified field)
           setValue("realTimeCart", cs.realTimeCart ?? true)
           setValue("messageCooldownSeconds", cs.messageCooldownSeconds ?? 30)
-
-          // End of live (renamed from autoSendCheckoutLinks)
-          setValue("sendOnLiveEnd", cs.sendOnLiveEnd ?? false)
 
           // Expiration reminder
           setValue("sendExpirationReminder", cs.sendExpirationReminder ?? true)
@@ -218,7 +212,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
         allowEdit: data.allowEdit,
         checkoutSendMethods: ["public_link", "manual"],
         realTimeCart: data.realTimeCart,
-        sendOnLiveEnd: data.sendOnLiveEnd,
         messageCooldownSeconds: data.messageCooldownSeconds,
         sendExpirationReminder: data.sendExpirationReminder,
         expirationReminderMinutes: data.expirationReminderMinutes,

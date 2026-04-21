@@ -49,7 +49,6 @@ export default function CheckoutSettingsPage() {
   const allowEdit = watch("allowEdit")
   const reserveStock = watch("reserveStock")
   const realTimeCart = watch("realTimeCart")
-  const sendOnLiveEnd = watch("sendOnLiveEnd")
   const sendExpirationReminder = watch("sendExpirationReminder")
   const templates = watch("templates")
 
@@ -320,39 +319,6 @@ export default function CheckoutSettingsPage() {
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* End of Live */}
-          <div className="rounded-lg border bg-card">
-            <div className="flex items-start justify-between gap-4 p-4">
-              <div className="space-y-0.5">
-                <Label
-                  htmlFor="sendOnLiveEnd"
-                  className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                >
-                  <Radio className="h-4 w-4 text-red-500" />
-                  Mensagem ao fim da live
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Envia o carrinho completo quando você finalizar a live
-                </p>
-              </div>
-              <Switch
-                id="sendOnLiveEnd"
-                checked={sendOnLiveEnd}
-                onCheckedChange={(checked) =>
-                  setValue("sendOnLiveEnd", checked, { shouldDirty: true })
-                }
-              />
-            </div>
-
-            {sendOnLiveEnd && (
-              <div className="border-t px-4 pb-4 pt-3">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Usa o template de &quot;Novos itens&quot; com o resumo do carrinho
-                </p>
               </div>
             )}
           </div>

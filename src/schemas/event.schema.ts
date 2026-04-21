@@ -50,7 +50,6 @@ export const createEventSchema = z.object({
   closeCartOnEventEnd: z.boolean().optional(),
   cartExpirationMinutes: z.number().min(5).max(1440).nullable().optional(),
   cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
-  sendOnLiveEnd: z.boolean().nullable().optional(),
 })
 
 export type CreateEventFormData = z.infer<typeof createEventSchema>

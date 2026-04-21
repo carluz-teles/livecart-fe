@@ -12,7 +12,6 @@ export interface CartSettings {
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings
   realTimeCart: boolean
-  sendOnLiveEnd: boolean
   messageCooldownSeconds: number
   sendExpirationReminder: boolean
   expirationReminderMinutes: number
@@ -29,7 +28,6 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   checkoutSendMethods: ['public_link', 'manual'],
   // Automatic message settings
   realTimeCart: true,
-  sendOnLiveEnd: false,
   messageCooldownSeconds: 30,
   sendExpirationReminder: true,
   expirationReminderMinutes: 15,
@@ -83,7 +81,6 @@ export interface UpdateCartSettingsPayload {
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings
   realTimeCart: boolean
-  sendOnLiveEnd: boolean
   messageCooldownSeconds: number
   sendExpirationReminder: boolean
   expirationReminderMinutes: number
