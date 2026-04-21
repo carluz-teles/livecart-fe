@@ -293,32 +293,6 @@ export default function CheckoutSettingsPage() {
                   onPreview={handlePreview}
                 />
 
-                {/* Cooldown */}
-                <div className="rounded-lg border bg-muted/30 p-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="messageCooldownSeconds">
-                      Intervalo mínimo entre mensagens (segundos)
-                    </Label>
-                    <Input
-                      id="messageCooldownSeconds"
-                      type="number"
-                      min={0}
-                      max={300}
-                      className="max-w-[200px]"
-                      {...register("messageCooldownSeconds", {
-                        valueAsNumber: true,
-                      })}
-                    />
-                    {errors.messageCooldownSeconds && (
-                      <p className="text-sm text-destructive">
-                        {errors.messageCooldownSeconds.message}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Evita spam de mensagens. 0 = sem limite
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
           </div>

@@ -25,10 +25,6 @@ export const checkoutSettingsSchema = z.object({
 
   // Real-time cart mode (controls sendOnFirstItem + sendOnNewItems)
   realTimeCart: z.boolean(),
-  messageCooldownSeconds: z
-    .number()
-    .min(0, "Deve ser 0 ou maior")
-    .max(300, "Máximo de 5 minutos"),
 
   // Expiration reminder
   sendExpirationReminder: z.boolean(),
