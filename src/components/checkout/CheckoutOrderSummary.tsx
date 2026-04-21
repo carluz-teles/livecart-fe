@@ -203,8 +203,8 @@ export function CheckoutOrderSummary({
   // Shared content component
   const SummaryContent = () => (
     <div className="space-y-4">
-      {/* Expiration timer */}
-      {expiresAt && (
+      {/* Expiration timer - only show when live is NOT active */}
+      {expiresAt && !isLiveActive && (
         <CheckoutExpirationTimer
           expiresAt={expiresAt}
           onExpired={onExpired}
