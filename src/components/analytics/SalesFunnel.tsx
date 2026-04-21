@@ -1,12 +1,12 @@
 "use client"
 
-import { MessageCircle, ShoppingCart, CreditCard, CheckCircle, DollarSign } from "lucide-react"
+import { ShoppingCart, CreditCard, CheckCircle, DollarSign } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface SalesFunnelProps {
-  totalComments: number
+  totalComments?: number // Kept for backward compatibility but not displayed
   totalCarts: number
   checkoutCarts: number
   paidCarts: number
@@ -17,16 +17,14 @@ interface SalesFunnelProps {
 
 interface FunnelStep {
   label: string
-  sublabel: string
   value: number
   percentage: number
   icon: React.ElementType
   color: string
-  barColor: string
+  bgColor: string
 }
 
 export function SalesFunnel({
-  totalComments,
   totalCarts,
   checkoutCarts,
   paidCarts,
@@ -42,44 +40,32 @@ export function SalesFunnel({
 
   const steps: FunnelStep[] = [
     {
-      label: "Comentarios",
-      sublabel: "detectados",
-      value: totalComments,
-      percentage: 100, // Base - always 100%
-      icon: MessageCircle,
-      color: "text-blue-600",
-      barColor: "bg-blue-500",
-    },
-    {
       label: "Carrinhos",
-      sublabel: "criados",
       value: totalCarts,
-      percentage: getPercentage(totalCarts, totalComments),
+      percentage: 100, // Base - always 100%
       icon: ShoppingCart,
       color: "text-amber-600",
-      barColor: "bg-amber-500",
+      bgColor: "bg-amber-500",
     },
     {
       label: "Checkout",
-      sublabel: "iniciaram",
       value: checkoutCarts,
       percentage: getPercentage(checkoutCarts, totalCarts),
       icon: CreditCard,
       color: "text-purple-600",
-      barColor: "bg-purple-500",
+      bgColor: "bg-purple-500",
     },
     {
       label: "Pagos",
-      sublabel: "confirmados",
       value: paidCarts,
       percentage: getPercentage(paidCarts, checkoutCarts),
       icon: CheckCircle,
       color: "text-green-600",
-      barColor: "bg-green-500",
+      bgColor: "bg-green-500",
     },
   ]
 
-  const overallConversion = getPercentage(paidCarts, totalComments)
+  const overallConversion = getPercentage(paidCarts, totalCarts)
 
   return (
     <Card className={className}>
@@ -102,69 +88,48 @@ export function SalesFunnel({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="space-y-3">
+        <div className="space-y-4">
           {steps.map((step, index) => {
             const Icon = step.icon
             const isFirst = index === 0
-            const prevStep = index > 0 ? steps[index - 1] : null
-            const dropFromPrev = prevStep ? prevStep.value - step.value : 0
 
             return (
-              <div key={step.label} className="group">
-                <div className="flex items-center gap-3">
-                  {/* Icon */}
-                  <div className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                    step.value > 0 ? step.barColor + "/10" : "bg-muted"
-                  )}>
-                    <Icon className={cn("h-4 w-4", step.value > 0 ? step.color : "text-muted-foreground")} />
+              <div key={step.label}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                      step.value > 0 ? step.bgColor + "/10" : "bg-muted"
+                    )}>
+                      <Icon className={cn("h-4 w-4", step.value > 0 ? step.color : "text-muted-foreground")} />
+                    </div>
+                    <span className="font-medium">{step.label}</span>
                   </div>
-
-                  {/* Label and stats */}
-                  <div className="flex flex-1 items-center justify-between min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium">{step.label}</span>
-                      <span className="text-xs text-muted-foreground">{step.sublabel}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {/* Drop indicator */}
-                      {!isFirst && dropFromPrev > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          -{dropFromPrev}
-                        </span>
-                      )}
-                      {/* Value */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {step.value}
+                    </span>
+                    {!isFirst && (
                       <span className={cn(
-                        "text-lg font-semibold tabular-nums",
-                        step.value > 0 ? step.color : "text-muted-foreground"
+                        "text-lg font-bold tabular-nums min-w-[4rem] text-right",
+                        step.percentage >= 50 ? "text-green-600" :
+                        step.percentage >= 25 ? "text-amber-600" :
+                        step.percentage > 0 ? "text-red-500" : "text-muted-foreground"
                       )}>
-                        {step.value}
+                        {step.percentage}%
                       </span>
-                      {/* Percentage badge */}
-                      {!isFirst && (
-                        <span className={cn(
-                          "min-w-[3rem] text-right text-sm font-medium",
-                          step.percentage >= 50 ? "text-green-600" :
-                          step.percentage >= 25 ? "text-amber-600" :
-                          step.percentage > 0 ? "text-red-500" : "text-muted-foreground"
-                        )}>
-                          {step.percentage}%
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="ml-11 mt-1.5">
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full transition-all duration-500", step.barColor)}
-                      style={{
-                        width: `${isFirst ? 100 : step.percentage}%`,
-                      }}
-                    />
-                  </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all duration-500", step.bgColor)}
+                    style={{
+                      width: `${isFirst ? 100 : step.percentage}%`,
+                    }}
+                  />
                 </div>
               </div>
             )
@@ -174,10 +139,10 @@ export function SalesFunnel({
         {/* Overall conversion footer */}
         <div className="mt-4 pt-3 border-t flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            Conversao total (comentario → pagamento)
+            Conversao total (carrinho → pagamento)
           </span>
           <span className={cn(
-            "text-sm font-semibold",
+            "text-lg font-bold",
             overallConversion >= 10 ? "text-green-600" :
             overallConversion >= 5 ? "text-amber-600" :
             overallConversion > 0 ? "text-red-500" : "text-muted-foreground"
