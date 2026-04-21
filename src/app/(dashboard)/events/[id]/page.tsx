@@ -2,6 +2,8 @@
 
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import {
   ArrowLeft,
   ShoppingCart,
@@ -87,6 +89,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEvent, useEventDetailStats, useEventCarts, useEventSoldProducts, useEndEvent } from "@/hooks/event"
+import { useInstagramLives } from "@/hooks/integration"
 import type { EventCart, EventSoldProduct, Platform } from "@/types/event.types"
 import { SalesFunnel } from "@/components/analytics/SalesFunnel"
 import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
@@ -111,6 +114,10 @@ export default function EventDetailsPage() {
   const [newSessionLiveId, setNewSessionLiveId] = useState("")
 
   const endEventMutation = useEndEvent()
+
+  // Instagram lives dropdown
+  const { data: livesData, isLoading: livesLoading } = useInstagramLives()
+  const lives = livesData?.data ?? []
 
   const handleRefresh = () => {
     refetchEvent()
@@ -270,17 +277,43 @@ export default function EventDetailsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-liveId">
-                ID da Live <span className="text-destructive">*</span>
+              <Label>
+                Live Ativa <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="new-liveId"
-                placeholder="Ex: 18043029837128493"
-                value={newSessionLiveId}
-                onChange={(e) => setNewSessionLiveId(e.target.value)}
-              />
+              {newSessionPlatform === "instagram" ? (
+                <Select value={newSessionLiveId} onValueChange={setNewSessionLiveId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lives.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Nenhuma live ativa no momento
+                      </div>
+                    ) : (
+                      lives.map((live) => {
+                        const startTime = live.timestamp
+                          ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                          : null
+                        return (
+                          <SelectItem key={live.id} value={live.id}>
+                            Live @{live.username}
+                            {startTime && ` (iniciada às ${startTime})`}
+                          </SelectItem>
+                        )
+                      })
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder="Ex: 18043029837128493"
+                  value={newSessionLiveId}
+                  onChange={(e) => setNewSessionLiveId(e.target.value)}
+                />
+              )}
               <p className="text-xs text-muted-foreground">
-                Cole o ID ou URL da transmissao ao vivo
+                Selecione a live ativa do Instagram
               </p>
             </div>
           </div>

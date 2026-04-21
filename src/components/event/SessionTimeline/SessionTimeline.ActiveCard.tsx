@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import {
   MessageCircle,
   ShoppingCart,
@@ -30,6 +32,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PLATFORM_LABELS } from "@/lib/constants"
 import { useAddPlatform } from "@/hooks/event"
+import { useInstagramLives } from "@/hooks/integration"
 import type { EventSession, Platform } from "@/types/event.types"
 
 interface ActiveSessionCardProps {
@@ -51,6 +54,10 @@ export function ActiveSessionCard({
   const [elapsed, setElapsed] = useState("")
 
   const addPlatformMutation = useAddPlatform()
+
+  // Instagram lives dropdown
+  const { data: livesData, isLoading: livesLoading } = useInstagramLives()
+  const lives = livesData?.data ?? []
 
   // Calculate elapsed time since session started
   useEffect(() => {
@@ -186,15 +193,41 @@ export function ActiveSessionCard({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="recovery-liveId">
-                    ID da Nova Live <span className="text-destructive">*</span>
+                  <Label>
+                    Nova Live <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="recovery-liveId"
-                    placeholder="Ex: 18043029837128493"
-                    value={recoveryLiveId}
-                    onChange={(e) => setRecoveryLiveId(e.target.value)}
-                  />
+                  {recoveryPlatform === "instagram" ? (
+                    <Select value={recoveryLiveId} onValueChange={setRecoveryLiveId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lives.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Nenhuma live ativa no momento
+                          </div>
+                        ) : (
+                          lives.map((live) => {
+                            const startTime = live.timestamp
+                              ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                              : null
+                            return (
+                              <SelectItem key={live.id} value={live.id}>
+                                Live @{live.username}
+                                {startTime && ` (iniciada às ${startTime})`}
+                              </SelectItem>
+                            )
+                          })
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      placeholder="Ex: 18043029837128493"
+                      value={recoveryLiveId}
+                      onChange={(e) => setRecoveryLiveId(e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
               <DialogFooter>

@@ -2,11 +2,12 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { Loader2, Plus, Instagram } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createSessionSchema, type CreateSessionFormData } from "@/schemas/event.schema"
 import { useCreateSession } from "@/hooks/event"
+import { useInstagramLives } from "@/hooks/integration"
 
 interface SessionFormProps {
   eventId: string
@@ -46,6 +55,10 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
   })
 
   const isPending = createSession.isPending
+
+  // Instagram lives dropdown
+  const { data: livesData, isLoading: livesLoading } = useInstagramLives()
+  const lives = livesData?.data ?? []
 
   async function onSubmit(data: CreateSessionFormData) {
     createSession.mutate(
@@ -105,13 +118,36 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    ID da Live <span className="text-destructive">*</span>
+                    Live Ativa <span className="text-destructive">*</span>
                   </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 17841400000000000" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {lives.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Nenhuma live ativa no momento
+                        </div>
+                      ) : (
+                        lives.map((live) => {
+                          const startTime = live.timestamp
+                            ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                            : null
+                          return (
+                            <SelectItem key={live.id} value={live.id}>
+                              Live @{live.username}
+                              {startTime && ` (iniciada às ${startTime})`}
+                            </SelectItem>
+                          )
+                        })
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormDescription>
-                    ID da transmissao do Instagram
+                    Selecione a live ativa do Instagram
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
