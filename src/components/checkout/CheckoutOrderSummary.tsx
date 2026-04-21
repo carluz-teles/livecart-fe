@@ -104,8 +104,8 @@ function OrderItemCompact({
             </div>
           )}
         </div>
-        {/* Quantity badge - floating */}
-        {!allowEdit && (
+        {/* Quantity badge - always show when not using edit controls */}
+        {!(allowEdit && onUpdateQuantity) && (
           <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white shadow-md ring-2 ring-white">
             {item.quantity}
           </div>

@@ -20,7 +20,6 @@ export const checkoutSettingsSchema = z.object({
 
   // Limits
   reserveStock: z.boolean(),
-  maxItems: z.number().min(0, "Deve ser 0 ou maior"),
   maxQuantityPerItem: z.number().min(1, "Mínimo de 1 item"),
 
   // Real-time cart mode (controls sendOnFirstItem + sendOnNewItems)

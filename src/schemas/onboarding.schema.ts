@@ -68,7 +68,6 @@ export const cartStepSchema = z.object({
   enabled: z.boolean(),
   expirationMinutes: z.number().min(0, "Deve ser 0 ou maior"),
   reserveStock: z.boolean(),
-  maxItems: z.number().min(0, "Deve ser 0 ou maior"),
   maxQuantityPerItem: z.number().min(0, "Deve ser 0 ou maior"),
 })
 

@@ -59,7 +59,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
 
       // Limits
       reserveStock: true,
-      maxItems: 0,
       maxQuantityPerItem: 5,
 
       // Real-time cart mode
@@ -104,7 +103,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
           setValue("allowEdit", cs.allowEdit ?? true)
           setValue("expirationMinutes", cs.expirationMinutes)
           setValue("reserveStock", cs.reserveStock)
-          setValue("maxItems", cs.maxItems)
           setValue("maxQuantityPerItem", cs.maxQuantityPerItem)
 
           // Real-time cart (new unified field)
@@ -205,7 +203,6 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
         enabled: data.enabled,
         expirationMinutes: data.expirationMinutes,
         reserveStock: data.reserveStock,
-        maxItems: data.maxItems,
         maxQuantityPerItem: data.maxQuantityPerItem,
         allowEdit: data.allowEdit,
         checkoutSendMethods: ["public_link", "manual"],

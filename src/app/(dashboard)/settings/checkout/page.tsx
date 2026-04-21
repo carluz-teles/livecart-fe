@@ -174,39 +174,24 @@ export default function CheckoutSettingsPage() {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="maxItems">Máximo de itens no carrinho</Label>
-              <Input
-                id="maxItems"
-                type="number"
-                min={0}
-                {...register("maxItems", { valueAsNumber: true })}
-              />
-              {errors.maxItems && (
-                <p className="text-sm text-destructive">
-                  {errors.maxItems.message}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">0 = sem limite</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maxQuantityPerItem">
-                Quantidade máxima por item
-              </Label>
-              <Input
-                id="maxQuantityPerItem"
-                type="number"
-                min={1}
-                {...register("maxQuantityPerItem", { valueAsNumber: true })}
-              />
-              {errors.maxQuantityPerItem && (
-                <p className="text-sm text-destructive">
-                  {errors.maxQuantityPerItem.message}
-                </p>
-              )}
-            </div>
+          <div className="space-y-2 max-w-xs">
+            <Label htmlFor="maxQuantityPerItem">
+              Quantidade máxima por item
+            </Label>
+            <Input
+              id="maxQuantityPerItem"
+              type="number"
+              min={1}
+              {...register("maxQuantityPerItem", { valueAsNumber: true })}
+            />
+            {errors.maxQuantityPerItem && (
+              <p className="text-sm text-destructive">
+                {errors.maxQuantityPerItem.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Limite máximo que cada cliente pode comprar de um mesmo produto
+            </p>
           </div>
         </CardContent>
       </Card>
