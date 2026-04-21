@@ -338,21 +338,29 @@ function CheckoutContent({ token }: { token: string }) {
   }
 
   const isLiveActive = cart.status === "active"
-  const availableItems = cart.items.filter((item) => !item.waitlisted)
+
+  // Filter items that have available quantity (not fully waitlisted)
+  const availableItems = cart.items.filter((item) => {
+    const availableQty = item.quantity - item.waitlistedQuantity
+    return availableQty > 0
+  })
 
   if (availableItems.length === 0) {
     return <ErrorState message="Nenhum item disponível para pagamento." />
   }
 
-  // Map items for OrderSummary
-  const orderItems = availableItems.map((item) => ({
-    id: item.id,
-    name: item.name,
-    imageUrl: item.imageUrl,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    totalPrice: item.totalPrice,
-  }))
+  // Map items for OrderSummary with available quantities only
+  const orderItems = availableItems.map((item) => {
+    const availableQty = item.quantity - item.waitlistedQuantity
+    return {
+      id: item.id,
+      name: item.name,
+      imageUrl: item.imageUrl,
+      quantity: availableQty, // Only the available quantity
+      unitPrice: item.unitPrice,
+      totalPrice: item.unitPrice * availableQty,
+    }
+  })
 
   const isAddressAutoFilled = cepLookup.isSuccess
 

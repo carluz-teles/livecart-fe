@@ -116,7 +116,7 @@ export interface PublicCheckoutItem {
   quantity: number
   unitPrice: number
   totalPrice: number
-  waitlisted: boolean
+  waitlistedQuantity: number
 }
 
 export interface PublicCheckoutEvent {
