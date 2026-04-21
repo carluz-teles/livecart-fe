@@ -15,7 +15,6 @@ import {
   CreditCard,
   Package,
   Share2,
-  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -305,7 +304,6 @@ function IntegrationsContent() {
     )
   }
 
-  const connectedProviders = AVAILABLE_PROVIDERS.filter((p) => getConnectedIntegration(p.id))
   const getProvidersByType = (type: IntegrationType) =>
     AVAILABLE_PROVIDERS.filter((p) => p.type === type)
 
@@ -326,85 +324,6 @@ function IntegrationsContent() {
 
   return (
     <div className="space-y-8">
-      {/* Connected Integrations - Hero Section */}
-      {connectedProviders.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="font-semibold tracking-tight">Integrações Ativas</h2>
-              <p className="text-sm text-muted-foreground">
-                {connectedProviders.length} {connectedProviders.length === 1 ? "serviço conectado" : "serviços conectados"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {connectedProviders.map((provider) => {
-              const integration = getConnectedIntegration(provider.id)!
-              const isActive = integration.status === "active"
-
-              return (
-                <IntegrationCard key={provider.id} provider={provider.id} connected>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <IntegrationCard.Logo provider={provider.id} size="md" />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{provider.name}</h3>
-                            <IntegrationCard.Status status={isActive ? "active" : "pending"} />
-                          </div>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            Conectado em{" "}
-                            {new Date(integration.createdAt).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDetails(integration, provider)}
-                      >
-                        <Info className="mr-1.5 h-3.5 w-3.5" />
-                        Detalhes
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTestConnection(integration.id, provider.name)}
-                        disabled={testingId === integration.id}
-                      >
-                        {testingId === integration.id ? (
-                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Zap className="mr-1.5 h-3.5 w-3.5" />
-                        )}
-                        Testar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setDisconnectId(integration.id)}
-                      >
-                        <Unplug className="mr-1.5 h-3.5 w-3.5" />
-                        Desconectar
-                      </Button>
-                    </div>
-                  </div>
-                </IntegrationCard>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
       {/* Available Integrations by Category */}
       <section className="space-y-4">
         <div>
