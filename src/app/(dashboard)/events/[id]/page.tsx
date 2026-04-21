@@ -11,6 +11,7 @@ import {
   ChevronDown,
   StopCircle,
   Plus,
+  Clock,
 } from "lucide-react"
 
 import { formatCurrency, formatDateTime } from "@/lib/format"
@@ -44,6 +45,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -620,7 +627,29 @@ function CartRow({ cart, sessionNumber }: { cart: EventCart; sessionNumber: numb
       <TableCell>
         <Badge variant={displayConfig.variant}>{displayConfig.label}</Badge>
       </TableCell>
-      <TableCell className="text-center">{cart.totalItems}</TableCell>
+      <TableCell className="text-center">
+        {cart.waitlistedItems > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-flex items-center gap-1">
+                  <span>{cart.availableItems}</span>
+                  <span className="text-muted-foreground">+</span>
+                  <span className="inline-flex items-center gap-0.5 text-amber-600">
+                    {cart.waitlistedItems}
+                    <Clock className="h-3 w-3" />
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{cart.availableItems} disponíveis, {cart.waitlistedItems} em espera</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          cart.availableItems
+        )}
+      </TableCell>
       <TableCell className="text-right font-medium">
         {formatCurrency(cart.totalValue)}
       </TableCell>

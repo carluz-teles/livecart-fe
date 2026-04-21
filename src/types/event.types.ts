@@ -178,6 +178,8 @@ export interface EventCart {
   paymentStatus: string | null
   totalValue: number
   totalItems: number
+  availableItems: number
+  waitlistedItems: number
   createdAt: string
   expiresAt: string | null
 }
