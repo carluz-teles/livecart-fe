@@ -5,21 +5,23 @@ import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
 import {
   UserPlus,
-  MoreHorizontal,
   Mail,
   Shield,
   ShieldCheck,
+  Crown,
   UserX,
   Trash2,
   Search,
   Loader2,
   RefreshCw,
+  Users,
+  Clock,
+  CheckCircle2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -42,42 +44,51 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { useStoreId } from "@/hooks/useUser"
 import { memberService } from "@/services/api/member.service"
 import { invitationService } from "@/services/api/invitation.service"
 import type { Member, Invitation } from "@/types"
 
-const roleLabels = {
-  owner: { label: "Proprietario", variant: "default" as const },
-  admin: { label: "Administrador", variant: "secondary" as const },
-  member: { label: "Membro", variant: "outline" as const },
+const roleConfig = {
+  owner: {
+    label: "Proprietário",
+    icon: Crown,
+    className: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
+  admin: {
+    label: "Administrador",
+    icon: ShieldCheck,
+    className: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  },
+  member: {
+    label: "Membro",
+    icon: Shield,
+    className: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+  },
 }
 
-const statusLabels = {
-  active: { label: "Ativo", className: "bg-green-500/10 text-green-600" },
-  pending: { label: "Pendente", className: "bg-yellow-500/10 text-yellow-600" },
-  inactive: { label: "Inativo", className: "bg-gray-500/10 text-gray-600" },
+const statusConfig = {
+  active: {
+    label: "Ativo",
+    icon: CheckCircle2,
+    className: "text-green-600",
+  },
+  pending: {
+    label: "Pendente",
+    icon: Clock,
+    className: "text-yellow-600",
+  },
+  inactive: {
+    label: "Inativo",
+    icon: UserX,
+    className: "text-gray-400",
+  },
 }
 
 function getInitials(name: string | null) {
@@ -88,6 +99,14 @@ function getInitials(name: string | null) {
     .join("")
     .toUpperCase()
     .slice(0, 2)
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
 }
 
 export default function TeamPage() {
@@ -123,7 +142,7 @@ export default function TeamPage() {
     } catch (error) {
       console.error("Failed to fetch members:", error)
       toast.error("Erro ao carregar membros", {
-        description: "Nao foi possivel carregar a lista de membros.",
+        description: "Não foi possível carregar a lista de membros.",
       })
     } finally {
       setIsLoading(false)
@@ -136,15 +155,14 @@ export default function TeamPage() {
     }
   }, [storeId, fetchData])
 
-  // Filter members by search
   const filteredMembers = members.filter(
     (member) =>
       (member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Filter pending invitations (not accepted)
   const pendingInvitations = invitations.filter((inv) => inv.status === "pending")
+  const activeMembers = members.filter((m) => m.status === "active")
 
   const handleInvite = async () => {
     if (!storeId || !inviteEmail) return
@@ -166,7 +184,7 @@ export default function TeamPage() {
       console.error("Failed to invite:", error)
       const apiError = error as { error?: string }
       toast.error("Erro ao enviar convite", {
-        description: apiError.error || "Nao foi possivel enviar o convite.",
+        description: apiError.error || "Não foi possível enviar o convite.",
       })
     } finally {
       setIsInviting(false)
@@ -191,7 +209,7 @@ export default function TeamPage() {
       console.error("Failed to remove member:", error)
       const apiError = error as { error?: string }
       toast.error("Erro ao remover membro", {
-        description: apiError.error || "Nao foi possivel remover o membro.",
+        description: apiError.error || "Não foi possível remover o membro.",
       })
     } finally {
       setIsRemoving(false)
@@ -205,16 +223,16 @@ export default function TeamPage() {
       const token = await getToken()
       await memberService.updateRole(storeId, member.id, { role: newRole }, token)
 
-      toast.success("Funcao atualizada", {
-        description: `${member.name || member.email} agora e ${roleLabels[newRole].label}.`,
+      toast.success("Função atualizada", {
+        description: `${member.name || member.email} agora é ${roleConfig[newRole].label}.`,
       })
 
       fetchData()
     } catch (error: unknown) {
       console.error("Failed to update role:", error)
       const apiError = error as { error?: string }
-      toast.error("Erro ao alterar funcao", {
-        description: apiError.error || "Nao foi possivel alterar a funcao.",
+      toast.error("Erro ao alterar função", {
+        description: apiError.error || "Não foi possível alterar a função.",
       })
     }
   }
@@ -234,7 +252,7 @@ export default function TeamPage() {
       console.error("Failed to resend invite:", error)
       const apiError = error as { error?: string }
       toast.error("Erro ao reenviar convite", {
-        description: apiError.error || "Nao foi possivel reenviar o convite.",
+        description: apiError.error || "Não foi possível reenviar o convite.",
       })
     } finally {
       setIsResending(null)
@@ -257,7 +275,7 @@ export default function TeamPage() {
       console.error("Failed to revoke invite:", error)
       const apiError = error as { error?: string }
       toast.error("Erro ao revogar convite", {
-        description: apiError.error || "Nao foi possivel revogar o convite.",
+        description: apiError.error || "Não foi possível revogar o convite.",
       })
     }
   }
@@ -271,228 +289,266 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Actions */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>Membros da equipe</CardTitle>
-              <CardDescription>
-                Gerencie quem tem acesso a sua loja
-              </CardDescription>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Equipe</h1>
+          <p className="mt-1 text-muted-foreground">
+            Gerencie quem tem acesso à sua loja e suas permissões
+          </p>
+        </div>
+        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Convidar membro
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Convidar novo membro</DialogTitle>
+              <DialogDescription>
+                Envie um convite por e-mail para adicionar um novo membro à sua equipe.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Função</Label>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "member")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma função" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>Administrador</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="member">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        <span>Membro</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Administradores podem gerenciar membros e configurações.
+                  Membros podem apenas operar a loja.
+                </p>
+              </div>
             </div>
-            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Convidar membro
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Convidar novo membro</DialogTitle>
-                  <DialogDescription>
-                    Envie um convite por e-mail para adicionar um novo membro a sua equipe.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="email@exemplo.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        className="pl-9"
-                      />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleInvite} disabled={!inviteEmail || isInviting}>
+                {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enviar convite
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold">{members.length}</p>
+              <p className="text-sm text-muted-foreground">Total de membros</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold">{activeMembers.length}</p>
+              <p className="text-sm text-muted-foreground">Membros ativos</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-4 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10">
+              <Clock className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold">{pendingInvitations.length}</p>
+              <p className="text-sm text-muted-foreground">Convites pendentes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome ou e-mail..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Members Grid */}
+      <div>
+        <h2 className="mb-4 text-sm font-medium text-muted-foreground">
+          Membros ({filteredMembers.length})
+        </h2>
+        {filteredMembers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12">
+            <Users className="h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">
+              {searchQuery ? "Nenhum membro encontrado" : "Nenhum membro na equipe"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {filteredMembers.map((member) => {
+              const role = roleConfig[member.role as keyof typeof roleConfig] || roleConfig.member
+              const status = statusConfig[member.status as keyof typeof statusConfig] || statusConfig.inactive
+              const RoleIcon = role.icon
+              const StatusIcon = status.icon
+
+              return (
+                <div
+                  key={member.id}
+                  className="relative rounded-xl border bg-card p-5 transition-all hover:shadow-md"
+                >
+                  {/* Owner crown indicator */}
+                  {member.role === "owner" && (
+                    <div className="absolute -right-1 -top-1">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 shadow-sm">
+                        <Crown className="h-3.5 w-3.5 text-white" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Header with avatar and info */}
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-12 w-12 shrink-0 border-2 border-background shadow-sm">
+                      <AvatarImage src={member.avatarUrl || undefined} />
+                      <AvatarFallback className="bg-muted text-sm font-medium">
+                        {getInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{member.name || member.email}</p>
+                      {member.name && (
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Funcao</Label>
-                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "member")}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma funcao" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4" />
-                            <span>Administrador</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="member">
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            <span>Membro</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Administradores podem gerenciar membros e configuracoes.
-                      Membros podem apenas operar a loja.
-                    </p>
+
+                  {/* Role and status badges */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className={role.className}>
+                      <RoleIcon className="mr-1 h-3 w-3" />
+                      {role.label}
+                    </Badge>
+                    <div className={`flex items-center gap-1 text-xs ${status.className}`}>
+                      <StatusIcon className="h-3 w-3" />
+                      {status.label}
+                    </div>
                   </div>
+
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Membro desde {formatDate(member.joinedAt)}
+                  </p>
+
+                  {/* Actions - only for non-owners */}
+                  {member.role !== "owner" && (
+                    <div className="mt-4 flex items-center gap-2 border-t pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleRoleChange(member, member.role === "admin" ? "member" : "admin")}
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        {member.role === "admin" ? "Tornar Membro" : "Tornar Admin"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setMemberToRemove(member)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remover</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleInvite} disabled={!inviteEmail || isInviting}>
-                    {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enviar convite
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              )
+            })}
           </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou e-mail..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+        )}
+      </div>
 
-          {/* Members Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Membro</TableHead>
-                  <TableHead>Funcao</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Desde</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMembers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Nenhum membro encontrado.
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.avatarUrl || undefined} />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(member.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{member.name || member.email}</p>
-                            {member.name && (
-                              <p className="text-sm text-muted-foreground">
-                                {member.email}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={roleLabels[member.role as keyof typeof roleLabels]?.variant || "outline"}>
-                          {roleLabels[member.role as keyof typeof roleLabels]?.label || member.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusLabels[member.status as keyof typeof statusLabels]?.className || ""}
-                        >
-                          {statusLabels[member.status as keyof typeof statusLabels]?.label || member.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(member.joinedAt).toLocaleDateString("pt-BR", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {member.role !== "owner" && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Acoes</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleRoleChange(member, member.role === "admin" ? "member" : "admin")}
-                              >
-                                <Shield className="mr-2 h-4 w-4" />
-                                {member.role === "admin" ? "Tornar Membro" : "Tornar Admin"}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => setMemberToRemove(member)}
-                              >
-                                <UserX className="mr-2 h-4 w-4" />
-                                Remover acesso
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pending Invites */}
+      {/* Pending Invitations */}
       {pendingInvitations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Convites pendentes</CardTitle>
-            <CardDescription>
-              {pendingInvitations.length} convite(s) aguardando aceitacao
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pendingInvitations.map((invitation) => (
+        <div>
+          <h2 className="mb-4 text-sm font-medium text-muted-foreground">
+            Convites pendentes ({pendingInvitations.length})
+          </h2>
+          <div className="space-y-3">
+            {pendingInvitations.map((invitation) => {
+              const role = roleConfig[invitation.role as keyof typeof roleConfig] || roleConfig.member
+              const RoleIcon = role.icon
+
+              return (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
+                    <Avatar className="h-10 w-10 shrink-0 border-2 border-dashed border-muted-foreground/30">
+                      <AvatarFallback className="bg-muted/50 text-sm text-muted-foreground">
                         {invitation.email[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{invitation.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {roleLabels[invitation.role as keyof typeof roleLabels]?.label || invitation.role} -
-                        Expira em {new Date(invitation.expiresAt).toLocaleDateString("pt-BR")}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="break-all font-medium">{invitation.email}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant="outline" className={role.className}>
+                          <RoleIcon className="mr-1 h-3 w-3" />
+                          {role.label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Expira em {formatDate(invitation.expiresAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -500,26 +556,27 @@ export default function TeamPage() {
                       disabled={isResending === invitation.id}
                     >
                       {isResending === invitation.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <RefreshCw className="h-4 w-4" />
+                        <RefreshCw className="mr-2 h-4 w-4" />
                       )}
-                      <span className="ml-2 hidden sm:inline">Reenviar</span>
+                      Reenviar
                     </Button>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleRevokeInvite(invitation)}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Revogar</span>
                     </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* Remove Member Confirmation */}
@@ -528,9 +585,9 @@ export default function TeamPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover acesso do membro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Voce esta prestes a remover o acesso de{" "}
+              Você está prestes a remover o acesso de{" "}
               <span className="font-medium">{memberToRemove?.name || memberToRemove?.email}</span> da sua
-              loja. Esta acao pode ser revertida convidando o usuario novamente.
+              loja. Esta ação pode ser revertida convidando o usuário novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
