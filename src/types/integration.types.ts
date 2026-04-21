@@ -61,6 +61,18 @@ export interface ERPProductSearchResponse {
   hasMore: boolean
 }
 
+// Instagram Live
+export interface InstagramLive {
+  id: string
+  media_type: string
+  media_product_type: string
+  username: string
+}
+
+export interface InstagramLivesResponse {
+  data: InstagramLive[]
+}
+
 // Provider display info
 export interface ProviderInfo {
   id: IntegrationProvider

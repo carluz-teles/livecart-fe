@@ -8,6 +8,7 @@ import type {
   TestConnectionResponse,
   ERPProductSearchResponse,
   Product,
+  InstagramLivesResponse,
 } from "@/types"
 
 export const integrationService = {
@@ -64,6 +65,13 @@ export const integrationService = {
     apiClient.post<Product>(
       `/stores/${storeId}/integrations/${integrationId}/products/${productId}/sync`,
       {},
+      token
+    ),
+
+  // Get active Instagram lives
+  getInstagramLives: (storeId: string, token?: string | null) =>
+    apiClient.get<InstagramLivesResponse>(
+      `/stores/${storeId}/integrations/instagram/lives`,
       token
     ),
 }

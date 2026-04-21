@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select"
 import { createEventSchema, type CreateEventFormData } from "@/schemas/event.schema"
 import { useCreateEvent } from "@/hooks/event"
+import { useInstagramLives } from "@/hooks/integration"
 import type { Event, CreateEventPayload } from "@/types/event.types"
 
 interface EventFormProps {
@@ -76,6 +77,8 @@ const maxQuantityOptions = [
 export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: EventFormProps) {
   const isEditing = !!event
   const createEvent = useCreateEvent()
+  const { data: livesData, isLoading: livesLoading } = useInstagramLives()
+  const lives = livesData?.data ?? []
 
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
@@ -269,12 +272,29 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               name="platformLiveId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ID da Live</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 17841400000000000" {...field} />
-                  </FormControl>
+                  <FormLabel>Live Ativa</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {lives.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Nenhuma live ativa no momento
+                        </div>
+                      ) : (
+                        lives.map((live) => (
+                          <SelectItem key={live.id} value={live.id}>
+                            Live #{live.id.slice(-6)} (@{live.username})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormDescription>
-                    ID da live do Instagram (encontrado na URL ou API)
+                    Selecione a live ativa do Instagram para conectar
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
