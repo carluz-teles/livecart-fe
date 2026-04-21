@@ -3,7 +3,6 @@
 import {
   DollarSign,
   ShoppingCart,
-  Package,
   Radio,
   TrendingUp,
 } from "lucide-react"
@@ -34,10 +33,15 @@ import {
   useDashboardStats,
   useDashboardChart,
   useTopProducts,
+  useTopBuyers,
+  useProductSales,
   useEventsWithRevenue,
   useAggregatedFunnel,
+  useRevenueByPayment,
 } from "@/hooks/dashboard"
-import { FunnelVisualization } from "@/components/analytics/FunnelVisualization"
+import { SalesFunnel } from "@/components/analytics/SalesFunnel"
+import { ProductSalesChart } from "@/components/analytics/ProductSalesChart"
+import { PaymentMethodChart } from "@/components/analytics/PaymentMethodChart"
 import { EVENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
 
 const chartConfig = {
@@ -52,12 +56,19 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: chartData, isLoading: chartLoading } = useDashboardChart()
   const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts()
+  const { data: topBuyersData, isLoading: topBuyersLoading } = useTopBuyers()
+  const { data: productSalesData, isLoading: productSalesLoading } = useProductSales()
   const { data: eventsWithRevenue, isLoading: eventsLoading } = useEventsWithRevenue(20)
   const { data: aggregatedFunnel, isLoading: funnelLoading } = useAggregatedFunnel(30)
+  const { data: revenueByPayment, isLoading: paymentLoading } = useRevenueByPayment()
 
   const chartItems = chartData?.data ?? []
   const topProducts = topProductsData?.data ?? []
+  const topBuyers = topBuyersData?.data ?? []
+  const productSalesProducts = productSalesData?.products ?? []
+  const productSalesItems = productSalesData?.data ?? []
   const events = eventsWithRevenue?.data ?? []
+  const paymentItems = revenueByPayment?.data ?? []
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,17 +89,18 @@ export default function DashboardPage() {
           variant="success"
         />
         <StatsCard
+          title="Ticket Médio"
+          value={formatCurrency(aggregatedFunnel?.averageTicket ?? 0)}
+          description="por pedido pago"
+          icon={TrendingUp}
+          isLoading={funnelLoading}
+          variant="success"
+        />
+        <StatsCard
           title="Pedidos"
           value={stats?.totalOrders ?? 0}
           description="Total de pedidos"
           icon={ShoppingCart}
-          isLoading={statsLoading}
-        />
-        <StatsCard
-          title="Produtos Ativos"
-          value={stats?.activeProducts ?? 0}
-          description="Produtos no catálogo"
-          icon={Package}
           isLoading={statsLoading}
         />
         <StatsCard
@@ -101,13 +113,13 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Funnel Visualization */}
+      {/* Sales Funnel */}
       {funnelLoading ? (
         <Card className="p-6">
           <Skeleton className="h-48 w-full" />
         </Card>
       ) : aggregatedFunnel ? (
-        <FunnelVisualization
+        <SalesFunnel
           totalComments={aggregatedFunnel.totalComments}
           totalCarts={aggregatedFunnel.totalCarts}
           checkoutCarts={aggregatedFunnel.checkoutCarts}
@@ -116,88 +128,10 @@ export default function DashboardPage() {
         />
       ) : null}
 
-      {/* Conversion Stats */}
-      {aggregatedFunnel && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <StatsCard
-            title="Ticket Médio"
-            value={formatCurrency(aggregatedFunnel.averageTicket)}
-            description="por pedido pago"
-            icon={TrendingUp}
-            variant="success"
-          />
-          <StatsCard
-            title="Comentário → Carrinho"
-            value={`${aggregatedFunnel.commentsToCartsRate.toFixed(1)}%`}
-            description="taxa de conversão"
-            variant="info"
-          />
-          <StatsCard
-            title="Carrinho → Checkout"
-            value={`${aggregatedFunnel.cartsToCheckoutRate.toFixed(1)}%`}
-            description="taxa de conversão"
-            variant="info"
-          />
-          <StatsCard
-            title="Checkout → Pago"
-            value={`${aggregatedFunnel.checkoutToPaidRate.toFixed(1)}%`}
-            description="taxa de conversão"
-            variant="success"
-          />
-        </div>
-      )}
-
-      {/* Chart and Top Sellers */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Chart */}
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Vendas Totais</CardTitle>
-            <CardDescription>
-              Faturamento mensal ao longo do ano
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            {chartLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton className="h-[280px] w-full" />
-              </div>
-            ) : chartItems.length === 0 ? (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nenhum dado disponível
-              </div>
-            ) : (
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart accessibilityLayer data={chartItems}>
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => formatCurrency(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar
-                    dataKey="revenue"
-                    fill="var(--color-revenue)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-
+      {/* Top Sellers and Top Buyers */}
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Top Sellers */}
-        <Card className="col-span-3">
+        <Card>
           <CardHeader>
             <CardTitle>Top Sellers</CardTitle>
             <CardDescription>
@@ -246,7 +180,121 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Top Buyers */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Compradores</CardTitle>
+            <CardDescription>
+              Clientes que mais compraram
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {topBuyersLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : topBuyers.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                Nenhuma compra confirmada ainda
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topBuyers.map((buyer, index) => (
+                  <div key={buyer.id} className="flex items-center gap-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/10 text-sm font-semibold text-green-600">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {buyer.handle}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {buyer.totalOrders} {buyer.totalOrders === 1 ? "pedido" : "pedidos"}
+                      </p>
+                    </div>
+                    <div className="text-sm font-medium text-green-600">
+                      {formatCurrency(buyer.totalSpent)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Vendas Totais */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendas Totais</CardTitle>
+            <CardDescription>
+              Faturamento mensal ao longo do ano
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            {chartLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-[280px] w-full" />
+              </div>
+            ) : chartItems.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhum dado disponível
+              </div>
+            ) : (
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <BarChart accessibilityLayer data={chartItems}>
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Bar
+                    dataKey="revenue"
+                    fill="var(--color-revenue)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vendas por Produto */}
+        <ProductSalesChart
+          products={productSalesProducts}
+          data={productSalesItems}
+          isLoading={productSalesLoading}
+        />
+      </div>
+
+      {/* Payment Method Chart */}
+      <PaymentMethodChart
+        data={paymentItems}
+        isLoading={paymentLoading}
+      />
 
       {/* Events with Revenue Table */}
       <Card>

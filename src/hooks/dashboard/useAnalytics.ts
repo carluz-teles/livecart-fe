@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { dashboardService } from "@/services/api/dashboard.service"
 import { useStoreId } from "@/hooks/useUser"
-import type { EventsWithRevenueResponse, AggregatedFunnel } from "@/types"
+import type { EventsWithRevenueResponse, AggregatedFunnel, RevenueByPaymentResponse } from "@/types"
 import { dashboardKeys } from "./useDashboardStats"
 
 export const analyticsKeys = {
@@ -12,6 +12,8 @@ export const analyticsKeys = {
     [...dashboardKeys.all, "analytics", "events", storeId, limit] as const,
   aggregatedFunnel: (storeId: string, days: number) =>
     [...dashboardKeys.all, "analytics", "funnel", storeId, days] as const,
+  revenueByPayment: (storeId: string) =>
+    [...dashboardKeys.all, "analytics", "revenue-by-payment", storeId] as const,
 }
 
 export function useEventsWithRevenue(limit: number = 20) {
@@ -37,6 +39,20 @@ export function useAggregatedFunnel(days: number = 30) {
     queryFn: async (): Promise<AggregatedFunnel> => {
       const token = await getToken()
       return dashboardService.getAggregatedFunnel(storeId!, token, days)
+    },
+    enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
+  })
+}
+
+export function useRevenueByPayment() {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { storeId, isLoading: storeLoading } = useStoreId()
+
+  return useQuery({
+    queryKey: analyticsKeys.revenueByPayment(storeId ?? ""),
+    queryFn: async (): Promise<RevenueByPaymentResponse> => {
+      const token = await getToken()
+      return dashboardService.getRevenueByPayment(storeId!, token)
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
   })

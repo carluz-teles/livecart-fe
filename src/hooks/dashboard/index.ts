@@ -1,4 +1,6 @@
 export { useDashboardStats, dashboardKeys } from "./useDashboardStats"
 export { useDashboardChart } from "./useDashboardChart"
 export { useTopProducts } from "./useTopProducts"
-export { useEventsWithRevenue, useAggregatedFunnel, analyticsKeys } from "./useAnalytics"
+export { useTopBuyers } from "./useTopBuyers"
+export { useProductSales } from "./useProductSales"
+export { useEventsWithRevenue, useAggregatedFunnel, useRevenueByPayment, analyticsKeys } from "./useAnalytics"

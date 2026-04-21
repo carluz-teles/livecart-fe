@@ -59,3 +59,55 @@ export interface AggregatedFunnel {
   checkoutToPaidRate: number
   overallConversionRate: number
 }
+
+// =============================================================================
+// TOP BUYERS
+// =============================================================================
+
+export interface TopBuyerItem {
+  id: string
+  handle: string
+  totalOrders: number
+  totalSpent: number
+  lastPurchaseAt: string
+}
+
+export interface TopBuyersResponse {
+  data: TopBuyerItem[]
+}
+
+// =============================================================================
+// PRODUCT SALES (Stacked Bar Chart)
+// =============================================================================
+
+export interface ProductSalesProduct {
+  id: string
+  name: string
+  keyword: string
+}
+
+export interface ProductSalesDataPoint {
+  month: string
+  monthNum: number
+  values: Record<string, number>
+}
+
+export interface ProductSalesResponse {
+  products: ProductSalesProduct[]
+  data: ProductSalesDataPoint[]
+}
+
+// =============================================================================
+// REVENUE BY PAYMENT METHOD (Pie Chart)
+// =============================================================================
+
+export interface RevenueByPaymentItem {
+  paymentMethod: string
+  label: string
+  revenue: number
+  count: number
+}
+
+export interface RevenueByPaymentResponse {
+  data: RevenueByPaymentItem[]
+}
