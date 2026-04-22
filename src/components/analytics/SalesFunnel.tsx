@@ -67,7 +67,7 @@ export function SalesFunnel({
   ]
 
   return (
-    <Card className={className}>
+    <Card className={cn("flex flex-col", className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">Funil de Vendas</CardTitle>
@@ -86,7 +86,7 @@ export function SalesFunnel({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 flex-1 flex flex-col justify-center">
         <div className="space-y-4">
           {steps.map((step, index) => {
             const Icon = step.icon
@@ -134,7 +134,6 @@ export function SalesFunnel({
             )
           })}
         </div>
-
       </CardContent>
     </Card>
   )

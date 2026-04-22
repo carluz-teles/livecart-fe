@@ -95,16 +95,16 @@ export function QuickStats({
   ]
 
   return (
-    <Card className={className}>
+    <Card className={cn("flex flex-col", className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
           Metricas Rapidas
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 flex-1 flex flex-col justify-center">
         <div className="space-y-1">
-          {stats.map((stat, index) => (
+          {stats.map((stat) => (
             <StatItem
               key={stat.label}
               icon={stat.icon}

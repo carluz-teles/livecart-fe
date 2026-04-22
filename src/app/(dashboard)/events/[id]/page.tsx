@@ -365,11 +365,11 @@ export default function EventDetailsPage() {
           )}
 
           {/* Main Content Grid: Funnel + Stats */}
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3 items-stretch">
             {/* Sales Funnel - Takes 2 columns */}
             <div className="lg:col-span-2">
               {statsLoading ? (
-                <Card>
+                <Card className="h-full">
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       {Array.from({ length: 4 }).map((_, i) => (
@@ -386,6 +386,7 @@ export default function EventDetailsPage() {
                   paidCarts={stats.paidCarts}
                   confirmedRevenue={stats.confirmedRevenue}
                   projectedRevenue={stats.projectedRevenue}
+                  className="h-full"
                 />
               ) : null}
             </div>
@@ -397,6 +398,7 @@ export default function EventDetailsPage() {
               totalProductsSold={stats?.totalProductsSold ?? 0}
               sessionsCount={event?.sessions?.length ?? 0}
               isLoading={statsLoading || eventLoading}
+              className="h-full"
             />
           </div>
 
