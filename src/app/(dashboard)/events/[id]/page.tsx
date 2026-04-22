@@ -8,11 +8,11 @@ import {
   ArrowLeft,
   ShoppingCart,
   RefreshCw,
-  Package,
   ChevronDown,
   StopCircle,
   Plus,
   Clock,
+  RotateCcw,
 } from "lucide-react"
 
 import { formatCurrency, formatDateTime } from "@/lib/format"
@@ -41,11 +41,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Tooltip,
   TooltipContent,
@@ -89,13 +84,16 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEvent, useEventDetailStats, useEventCarts, useEventSoldProducts, useEndEvent } from "@/hooks/event"
 import { useInstagramLives } from "@/hooks/integration"
-import type { EventCart, EventSoldProduct, Platform } from "@/types/event.types"
+import type { EventCart, Platform } from "@/types/event.types"
 import { SalesFunnel } from "@/components/analytics/SalesFunnel"
-import { QuickStats } from "@/components/analytics/QuickStats"
+import { EventMetricCards } from "@/components/analytics/EventMetricCards"
+import { TopProducts } from "@/components/analytics/TopProducts"
+import { TopBuyers } from "@/components/analytics/TopBuyers"
 import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { EventUpsells } from "@/components/event/EventUpsells"
-import { SessionTimeline } from "@/components/event/SessionTimeline"
+import { SessionsTable } from "@/components/event/SessionsTable"
+import { ReconnectForm } from "@/components/event/ReconnectForm"
 import { useState } from "react"
 
 export default function EventDetailsPage() {
@@ -110,6 +108,7 @@ export default function EventDetailsPage() {
 
   const [endEventOpen, setEndEventOpen] = useState(false)
   const [createSessionOpen, setCreateSessionOpen] = useState(false)
+  const [crashRecoveryOpen, setCrashRecoveryOpen] = useState(false)
   const [newSessionPlatform, setNewSessionPlatform] = useState<Platform>("instagram")
   const [newSessionLiveId, setNewSessionLiveId] = useState("")
 
@@ -205,6 +204,10 @@ export default function EventDetailsPage() {
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Sessao
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCrashRecoveryOpen(true)}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Crash Recovery
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setEndEventOpen(true)}
@@ -248,6 +251,14 @@ export default function EventDetailsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Crash Recovery Dialog */}
+      <ReconnectForm
+        eventId={id}
+        open={crashRecoveryOpen}
+        onOpenChange={setCrashRecoveryOpen}
+        onSuccess={handleRefresh}
+      />
 
       {/* Create New Session Dialog */}
       <Dialog open={createSessionOpen} onOpenChange={setCreateSessionOpen}>
@@ -343,7 +354,7 @@ export default function EventDetailsPage() {
       {/* Tabs for different views */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="overview">Visao Geral</TabsTrigger>
           <TabsTrigger value="products">
             Produtos
             {event && event.productCount > 0 && (
@@ -364,55 +375,69 @@ export default function EventDetailsPage() {
             <LiveModeControlPanel eventId={id} enabled={isEventActive} />
           )}
 
-          {/* Main Content Grid: Funnel + Stats */}
-          <div className="grid gap-6 lg:grid-cols-3 items-stretch">
-            {/* Sales Funnel - Takes 2 columns */}
-            <div className="lg:col-span-2">
-              {statsLoading ? (
-                <Card className="h-full">
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <Skeleton key={i} className="h-10 w-full" />
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : stats ? (
-                <SalesFunnel
-                  totalComments={stats.totalComments}
-                  totalCarts={stats.totalCarts ?? 0}
-                  checkoutCarts={stats.checkoutCarts ?? 0}
-                  paidCarts={stats.paidCarts}
-                  confirmedRevenue={stats.confirmedRevenue}
-                  projectedRevenue={stats.projectedRevenue}
-                  className="h-full"
-                />
-              ) : null}
-            </div>
+          {/* Sales Funnel - Full Width */}
+          {statsLoading ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : stats ? (
+            <SalesFunnel
+              totalComments={stats.totalComments}
+              totalCarts={stats.totalCarts ?? 0}
+              checkoutCarts={stats.checkoutCarts ?? 0}
+              paidCarts={stats.paidCarts}
+              confirmedRevenue={stats.confirmedRevenue}
+              projectedRevenue={stats.projectedRevenue}
+            />
+          ) : null}
 
-            {/* Quick Stats Card */}
-            <QuickStats
-              openCarts={stats?.openCarts ?? 0}
-              projectedRevenue={stats?.projectedRevenue ?? 0}
-              totalProductsSold={stats?.totalProductsSold ?? 0}
-              sessionsCount={event?.sessions?.length ?? 0}
-              isLoading={statsLoading || eventLoading}
-              className="h-full"
+          {/* 4 KPI Cards */}
+          <EventMetricCards
+            confirmedRevenue={stats?.confirmedRevenue ?? 0}
+            projectedRevenue={stats?.projectedRevenue ?? 0}
+            paidCarts={stats?.paidCarts ?? 0}
+            totalCarts={stats?.totalCarts ?? 0}
+            totalProductsSold={stats?.totalProductsSold ?? 0}
+            isLoading={statsLoading}
+          />
+
+          {/* Top Products + Top Buyers */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <TopProducts
+              products={products ?? []}
+              isLoading={productsLoading}
+              limit={5}
+            />
+            <TopBuyers
+              carts={carts ?? []}
+              isLoading={cartsLoading}
+              limit={5}
             />
           </div>
 
-          {/* Carts Table - Full Width */}
+          {/* Sessions Table */}
+          <SessionsTable
+            sessions={event?.sessions ?? []}
+            isLoading={eventLoading}
+          />
+
+          {/* Pedidos Table - Full Width */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
-                    Pedidos do Evento
+                    Pedidos
                   </CardTitle>
                   <CardDescription>
-                    Lista de todos os carrinhos criados neste evento
+                    Todos os carrinhos do evento
                   </CardDescription>
                 </div>
                 {carts && carts.length > 0 && (
@@ -456,7 +481,6 @@ export default function EventDetailsPage() {
                       </TableRow>
                     ) : (
                       carts.map((cart) => {
-                        // Find session index for this cart
                         const sessionIndex = event?.sessions?.findIndex(s => s.id === cart.sessionId) ?? -1
                         return (
                           <CartRow key={cart.id} cart={cart} sessionNumber={sessionIndex >= 0 ? sessionIndex + 1 : null} />
@@ -467,70 +491,6 @@ export default function EventDetailsPage() {
                 </Table>
               </div>
             </CardContent>
-          </Card>
-
-          {/* Sessions Timeline */}
-          <SessionTimeline
-            sessions={event?.sessions || []}
-            eventId={id}
-            isLoading={eventLoading}
-            onNewSession={isEventActive ? () => setCreateSessionOpen(true) : undefined}
-          />
-
-          {/* Products Table - Collapsible */}
-          <Card>
-            <Collapsible defaultOpen={false}>
-              <CardHeader className="pb-3">
-                <CollapsibleTrigger className="flex w-full items-center justify-between [&[data-state=open]>svg.chevron]:rotate-180">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Produtos Vendidos
-                    </CardTitle>
-                    <CardDescription>
-                      Produtos adicionados aos carrinhos neste evento
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className="chevron h-4 w-4 text-muted-foreground transition-transform duration-200" />
-                </CollapsibleTrigger>
-              </CardHeader>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Produto</TableHead>
-                          <TableHead>Keyword</TableHead>
-                          <TableHead className="text-center">Qtd</TableHead>
-                          <TableHead className="text-right">Receita</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {productsLoading ? (
-                          Array.from({ length: 5 }).map((_, i) => (
-                            <TableRow key={i}>
-                              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                              <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                              <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                            </TableRow>
-                          ))
-                        ) : !products || products.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">
-                              Nenhum produto vendido
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          products.map((product) => <ProductRow key={product.id} product={product} />)
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
           </Card>
         </TabsContent>
 
@@ -552,10 +512,8 @@ function CartRow({ cart, sessionNumber }: { cart: EventCart; sessionNumber: numb
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null
 
-  // Determine which badge to show: payment status if paid, otherwise cart status
   const displayConfig = paymentConfig && cart.paymentStatus === "paid" ? paymentConfig : statusConfig
 
-  // Format relative time
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
     const now = new Date()
@@ -623,38 +581,3 @@ function CartRow({ cart, sessionNumber }: { cart: EventCart; sessionNumber: numb
     </TableRow>
   )
 }
-
-function ProductRow({ product }: { product: EventSoldProduct }) {
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          {product.imageUrl ? (
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="h-8 w-8 rounded object-cover"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
-          <span className="font-medium truncate max-w-[120px]" title={product.name}>
-            {product.name}
-          </span>
-        </div>
-      </TableCell>
-      <TableCell>
-        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-          {product.keyword}
-        </code>
-      </TableCell>
-      <TableCell className="text-center">{product.totalQuantity}</TableCell>
-      <TableCell className="text-right font-medium">
-        {formatCurrency(product.totalRevenue)}
-      </TableCell>
-    </TableRow>
-  )
-}
-
