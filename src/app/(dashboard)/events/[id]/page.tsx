@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   RefreshCw,
   Package,
-  Radio,
   ChevronDown,
   StopCircle,
   Plus,
@@ -92,6 +91,7 @@ import { useEvent, useEventDetailStats, useEventCarts, useEventSoldProducts, use
 import { useInstagramLives } from "@/hooks/integration"
 import type { EventCart, EventSoldProduct, Platform } from "@/types/event.types"
 import { SalesFunnel } from "@/components/analytics/SalesFunnel"
+import { QuickStats } from "@/components/analytics/QuickStats"
 import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { EventUpsells } from "@/components/event/EventUpsells"
@@ -390,85 +390,14 @@ export default function EventDetailsPage() {
               ) : null}
             </div>
 
-            {/* Stats Cards - Stacked in 1 column */}
-            <div className="space-y-4">
-              {/* Carrinhos Abertos */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                        <ShoppingCart className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Carrinhos Abertos</p>
-                        <p className="text-xs text-muted-foreground">aguardando pagamento</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {statsLoading ? (
-                        <Skeleton className="h-8 w-12" />
-                      ) : (
-                        <>
-                          <p className="text-2xl font-bold">{stats?.openCarts ?? 0}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatCurrency(stats?.projectedRevenue ?? 0)}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Produtos Vendidos */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                        <Package className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Produtos</p>
-                        <p className="text-xs text-muted-foreground">unidades vendidas</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {statsLoading ? (
-                        <Skeleton className="h-8 w-12" />
-                      ) : (
-                        <p className="text-2xl font-bold">{stats?.totalProductsSold ?? 0}</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Sessoes Ativas */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                        <Radio className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Sessoes</p>
-                        <p className="text-xs text-muted-foreground">transmissoes</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {eventLoading ? (
-                        <Skeleton className="h-8 w-12" />
-                      ) : (
-                        <p className="text-2xl font-bold">{event?.sessions?.length ?? 0}</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Quick Stats Card */}
+            <QuickStats
+              openCarts={stats?.openCarts ?? 0}
+              projectedRevenue={stats?.projectedRevenue ?? 0}
+              totalProductsSold={stats?.totalProductsSold ?? 0}
+              sessionsCount={event?.sessions?.length ?? 0}
+              isLoading={statsLoading || eventLoading}
+            />
           </div>
 
           {/* Carts Table - Full Width */}
