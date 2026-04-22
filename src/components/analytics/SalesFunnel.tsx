@@ -38,11 +38,12 @@ export function SalesFunnel({
     return Math.round((current / base) * 100)
   }
 
+  // All percentages relative to totalCarts (real funnel)
   const steps: FunnelStep[] = [
     {
       label: "Carrinhos",
       value: totalCarts,
-      percentage: 100, // Base - always 100%
+      percentage: 100,
       icon: ShoppingCart,
       color: "text-amber-600",
       bgColor: "bg-amber-500",
@@ -58,14 +59,12 @@ export function SalesFunnel({
     {
       label: "Pagos",
       value: paidCarts,
-      percentage: getPercentage(paidCarts, checkoutCarts),
+      percentage: getPercentage(paidCarts, totalCarts),
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-500",
     },
   ]
-
-  const overallConversion = getPercentage(paidCarts, totalCarts)
 
   return (
     <Card className={className}>
@@ -136,20 +135,6 @@ export function SalesFunnel({
           })}
         </div>
 
-        {/* Overall conversion footer */}
-        <div className="mt-4 pt-3 border-t flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            Conversao total (carrinho → pagamento)
-          </span>
-          <span className={cn(
-            "text-lg font-bold",
-            overallConversion >= 10 ? "text-green-600" :
-            overallConversion >= 5 ? "text-amber-600" :
-            overallConversion > 0 ? "text-red-500" : "text-muted-foreground"
-          )}>
-            {overallConversion}%
-          </span>
-        </div>
       </CardContent>
     </Card>
   )
