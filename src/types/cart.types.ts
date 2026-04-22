@@ -177,16 +177,30 @@ export interface CheckoutConfigResponse {
   currency: string
 }
 
-export interface ProcessCardPaymentRequest {
+export interface ShippingAddressPayload {
+  zipCode: string
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+}
+
+export interface CheckoutCustomerInfo {
   email: string
+  customerName: string
+  customerDocument: string
+  customerPhone?: string
+  shippingAddress: ShippingAddressPayload
+}
+
+export interface ProcessCardPaymentRequest extends CheckoutCustomerInfo {
   token: string
   installments: number
   paymentMethodId?: string // For Mercado Pago
   issuerId?: string // For Mercado Pago
   deviceId?: string
-  customerName?: string
-  customerDocument?: string
-  customerPhone?: string
 }
 
 export interface ProcessCardPaymentResponse {
@@ -200,12 +214,7 @@ export interface ProcessCardPaymentResponse {
   cardBrand?: string
 }
 
-export interface GeneratePixRequest {
-  email: string
-  customerName?: string
-  customerDocument?: string
-  customerPhone?: string
-}
+export type GeneratePixRequest = CheckoutCustomerInfo
 
 export interface GeneratePixResponse {
   paymentId: string

@@ -6,8 +6,8 @@ import { useEffect, useCallback } from "react"
 import {
   checkoutFormSchema,
   type CheckoutFormData,
-  isContactInfoComplete,
-  isAddressComplete,
+  isCustomerInfoComplete,
+  isShippingAddressComplete,
 } from "@/schemas/checkout.schema"
 import { useCepLookup } from "./useCepLookup"
 
@@ -22,8 +22,10 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions) {
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
       email: defaultEmail ?? "",
-      phone: "",
-      address: {
+      customerName: "",
+      customerDocument: "",
+      customerPhone: "",
+      shippingAddress: {
         zipCode: "",
         street: "",
         number: "",
@@ -38,24 +40,27 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions) {
 
   const cepLookup = useCepLookup()
 
-  // Update email if default changes (e.g., from cart data)
   useEffect(() => {
     if (defaultEmail && !form.getValues("email")) {
       form.setValue("email", defaultEmail)
     }
   }, [defaultEmail, form])
 
-  // Watch values for completion checks
   const email = form.watch("email")
-  const phone = form.watch("phone")
-  const address = form.watch("address")
+  const customerName = form.watch("customerName")
+  const customerDocument = form.watch("customerDocument")
+  const customerPhone = form.watch("customerPhone")
+  const shippingAddress = form.watch("shippingAddress")
 
-  // Derive completion states
-  const contactInfoComplete = isContactInfoComplete({ email, phone })
-  const addressComplete = isAddressComplete(address)
-  const canProceedToPayment = contactInfoComplete && addressComplete
+  const customerInfoComplete = isCustomerInfoComplete({
+    email,
+    customerName,
+    customerDocument,
+    customerPhone,
+  })
+  const addressComplete = isShippingAddressComplete(shippingAddress)
+  const canProceedToPayment = customerInfoComplete && addressComplete
 
-  // Format CEP as user types
   const formatCep = useCallback((value: string): string => {
     const cleaned = value.replace(/\D/g, "")
     if (cleaned.length > 5) {
@@ -64,20 +69,19 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions) {
     return cleaned
   }, [])
 
-  // Handle CEP change with auto-lookup
   const handleCepChange = useCallback(
     async (value: string) => {
       const formatted = formatCep(value)
-      form.setValue("address.zipCode", formatted, { shouldValidate: true })
+      form.setValue("shippingAddress.zipCode", formatted, { shouldValidate: true })
 
       const cleaned = value.replace(/\D/g, "")
       if (cleaned.length === 8) {
         try {
           const addressData = await cepLookup.mutateAsync(cleaned)
-          form.setValue("address.street", addressData.street, { shouldValidate: true })
-          form.setValue("address.neighborhood", addressData.neighborhood, { shouldValidate: true })
-          form.setValue("address.city", addressData.city, { shouldValidate: true })
-          form.setValue("address.state", addressData.state, { shouldValidate: true })
+          form.setValue("shippingAddress.street", addressData.street, { shouldValidate: true })
+          form.setValue("shippingAddress.neighborhood", addressData.neighborhood, { shouldValidate: true })
+          form.setValue("shippingAddress.city", addressData.city, { shouldValidate: true })
+          form.setValue("shippingAddress.state", addressData.state, { shouldValidate: true })
         } catch {
           // Error is handled by useCepLookup mutation state
         }
@@ -86,16 +90,13 @@ export function useCheckoutForm(options?: UseCheckoutFormOptions) {
     [form, formatCep, cepLookup]
   )
 
-  // Check if address fields were auto-filled from CEP
   const isAddressAutoFilled = cepLookup.isSuccess
 
   return {
     form,
-    // Derived states
-    contactInfoComplete,
+    customerInfoComplete,
     addressComplete,
     canProceedToPayment,
-    // CEP lookup
     handleCepChange,
     isAddressAutoFilled,
     cepLookupLoading: cepLookup.isPending,

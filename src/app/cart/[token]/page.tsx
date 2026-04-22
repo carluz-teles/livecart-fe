@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -44,14 +44,15 @@ import {
 import {
   checkoutFormSchema,
   type CheckoutFormData,
-  isContactInfoComplete,
-  isAddressComplete,
+  isCustomerInfoComplete,
+  isShippingAddressComplete,
 } from "@/schemas/checkout.schema"
 import { cn } from "@/lib/utils"
 import type {
   PublicCheckoutCart,
   PaymentMethod,
   ProcessCardPaymentResponse,
+  CheckoutCustomerInfo,
 } from "@/types"
 
 // Format currency in BRL
@@ -264,8 +265,10 @@ function CheckoutContent({ token }: { token: string }) {
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
       email: "",
-      phone: "",
-      address: {
+      customerName: "",
+      customerDocument: "",
+      customerPhone: "",
+      shippingAddress: {
         zipCode: "",
         street: "",
         number: "",
@@ -283,13 +286,57 @@ function CheckoutContent({ token }: { token: string }) {
 
   // Watch form values for completion checks
   const email = form.watch("email")
-  const phone = form.watch("phone")
-  const address = form.watch("address")
+  const customerName = form.watch("customerName")
+  const customerDocument = form.watch("customerDocument")
+  const customerPhone = form.watch("customerPhone")
+  const shippingAddress = form.watch("shippingAddress")
 
   // Derive completion states
-  const contactInfoComplete = isContactInfoComplete({ email, phone })
-  const addressComplete = isAddressComplete(address)
-  const canProceedToPayment = contactInfoComplete && addressComplete
+  const customerInfoComplete = isCustomerInfoComplete({
+    email,
+    customerName,
+    customerDocument,
+    customerPhone,
+  })
+  const addressComplete = isShippingAddressComplete(shippingAddress)
+  const canProceedToPayment = customerInfoComplete && addressComplete
+
+  // Serialized customer payload for downstream payment components.
+  // Memoize so re-renders on keystrokes don't trigger PIX regeneration effects.
+  const customerPayload = useMemo<CheckoutCustomerInfo | null>(() => {
+    if (!canProceedToPayment) return null
+    const phoneDigits = (customerPhone ?? "").replace(/\D/g, "")
+    const documentDigits = customerDocument.replace(/\D/g, "")
+    const zipDigits = shippingAddress.zipCode.replace(/\D/g, "")
+    return {
+      email,
+      customerName: customerName.trim(),
+      customerDocument: documentDigits,
+      customerPhone: phoneDigits || undefined,
+      shippingAddress: {
+        zipCode: zipDigits,
+        street: shippingAddress.street.trim(),
+        number: shippingAddress.number.trim(),
+        complement: shippingAddress.complement?.trim() || undefined,
+        neighborhood: shippingAddress.neighborhood.trim(),
+        city: shippingAddress.city.trim(),
+        state: shippingAddress.state.toUpperCase(),
+      },
+    }
+  }, [
+    canProceedToPayment,
+    email,
+    customerName,
+    customerDocument,
+    customerPhone,
+    shippingAddress.zipCode,
+    shippingAddress.street,
+    shippingAddress.number,
+    shippingAddress.complement,
+    shippingAddress.neighborhood,
+    shippingAddress.city,
+    shippingAddress.state,
+  ])
 
   // Checkout config - only fetch when can proceed to payment
   const {
@@ -329,19 +376,38 @@ function CheckoutContent({ token }: { token: string }) {
       ? `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`
       : cleaned
 
-    form.setValue("address.zipCode", formatted, { shouldValidate: true })
+    form.setValue("shippingAddress.zipCode", formatted, { shouldValidate: true })
 
     if (cleaned.length === 8) {
       try {
         const addressData = await cepLookup.mutateAsync(cleaned)
-        form.setValue("address.street", addressData.street, { shouldValidate: true })
-        form.setValue("address.neighborhood", addressData.neighborhood, { shouldValidate: true })
-        form.setValue("address.city", addressData.city, { shouldValidate: true })
-        form.setValue("address.state", addressData.state, { shouldValidate: true })
+        form.setValue("shippingAddress.street", addressData.street, { shouldValidate: true })
+        form.setValue("shippingAddress.neighborhood", addressData.neighborhood, { shouldValidate: true })
+        form.setValue("shippingAddress.city", addressData.city, { shouldValidate: true })
+        form.setValue("shippingAddress.state", addressData.state, { shouldValidate: true })
       } catch {
         // Error handled by mutation state
       }
     }
+  }
+
+  // Progressive CPF mask: 000.000.000-00
+  const formatCPF = (value: string): string => {
+    const v = value.replace(/\D/g, "").slice(0, 11)
+    if (v.length <= 3) return v
+    if (v.length <= 6) return `${v.slice(0, 3)}.${v.slice(3)}`
+    if (v.length <= 9) return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`
+    return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`
+  }
+
+  // Progressive phone mask: (11) 99999-9999 / (11) 9999-9999
+  const formatPhone = (value: string): string => {
+    const v = value.replace(/\D/g, "").slice(0, 11)
+    if (v.length === 0) return ""
+    if (v.length <= 2) return `(${v}`
+    if (v.length <= 6) return `(${v.slice(0, 2)}) ${v.slice(2)}`
+    if (v.length <= 10) return `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`
+    return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
   }
 
   // Payment handlers
@@ -456,15 +522,86 @@ function CheckoutContent({ token }: { token: string }) {
           {/* Left Column - Form */}
           <Form {...form}>
             <form className="space-y-6">
-              {/* Section 1: Contact Info */}
+              {/* Section 1: Customer Info */}
               <CheckoutSection
                 number={1}
-                title="Informações de Contato"
+                title="Dados do Comprador"
                 icon={User}
-                isComplete={contactInfoComplete}
+                isComplete={customerInfoComplete}
                 delay={0}
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4">
+                  <FormField
+                    control={form.control}
+                    name="customerName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nome completo <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            autoComplete="name"
+                            placeholder="Como está no documento"
+                            className="h-11 rounded-xl"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="customerDocument"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            CPF <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              inputMode="numeric"
+                              autoComplete="off"
+                              placeholder="000.000.000-00"
+                              maxLength={14}
+                              onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                              className="h-11 rounded-xl"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="customerPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Celular <span className="text-xs font-normal text-gray-400">(opcional)</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="tel"
+                              inputMode="tel"
+                              autoComplete="tel"
+                              placeholder="(11) 99999-9999"
+                              maxLength={15}
+                              onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                              className="h-11 rounded-xl"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="email"
@@ -477,27 +614,8 @@ function CheckoutContent({ token }: { token: string }) {
                           <Input
                             {...field}
                             type="email"
+                            autoComplete="email"
                             placeholder="seu@email.com"
-                            className="h-11 rounded-xl"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Telefone <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="tel"
-                            placeholder="(11) 99999-9999"
                             className="h-11 rounded-xl"
                           />
                         </FormControl>
@@ -520,7 +638,7 @@ function CheckoutContent({ token }: { token: string }) {
                   {/* CEP */}
                   <FormField
                     control={form.control}
-                    name="address.zipCode"
+                    name="shippingAddress.zipCode"
                     render={({ field }) => (
                       <FormItem className="max-w-[200px]">
                         <FormLabel>
@@ -556,7 +674,7 @@ function CheckoutContent({ token }: { token: string }) {
                   {/* Street */}
                   <FormField
                     control={form.control}
-                    name="address.street"
+                    name="shippingAddress.street"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
@@ -582,7 +700,7 @@ function CheckoutContent({ token }: { token: string }) {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
-                      name="address.number"
+                      name="shippingAddress.number"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
@@ -601,7 +719,7 @@ function CheckoutContent({ token }: { token: string }) {
                     />
                     <FormField
                       control={form.control}
-                      name="address.complement"
+                      name="shippingAddress.complement"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Complemento</FormLabel>
@@ -622,7 +740,7 @@ function CheckoutContent({ token }: { token: string }) {
                   <div className="grid gap-4 sm:grid-cols-3">
                     <FormField
                       control={form.control}
-                      name="address.neighborhood"
+                      name="shippingAddress.neighborhood"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
@@ -645,7 +763,7 @@ function CheckoutContent({ token }: { token: string }) {
                     />
                     <FormField
                       control={form.control}
-                      name="address.city"
+                      name="shippingAddress.city"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
@@ -668,7 +786,7 @@ function CheckoutContent({ token }: { token: string }) {
                     />
                     <FormField
                       control={form.control}
-                      name="address.state"
+                      name="shippingAddress.state"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
@@ -747,24 +865,24 @@ function CheckoutContent({ token }: { token: string }) {
 
                     <Separator className="bg-gray-100" />
 
-                    {selectedMethod === "card" ? (
+                    {selectedMethod === "card" && customerPayload ? (
                       <CheckoutCardForm
                         token={token}
                         provider={checkoutConfig.provider}
                         publicKey={checkoutConfig.publicKey}
                         amount={checkoutConfig.totalAmount}
-                        email={email}
+                        customer={customerPayload}
                         onSuccess={handleCardSuccess}
                         onError={handlePaymentError}
                       />
-                    ) : (
+                    ) : selectedMethod === "pix" && customerPayload ? (
                       <CheckoutPixDisplay
                         token={token}
-                        email={email}
+                        customer={customerPayload}
                         onSuccess={handlePixSuccess}
                         onError={handlePaymentError}
                       />
-                    )}
+                    ) : null}
                   </div>
                 ) : null}
 

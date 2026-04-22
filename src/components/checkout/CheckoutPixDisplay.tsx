@@ -1,18 +1,18 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Loader2, Copy, Check, Clock, QrCode, AlertCircle } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { checkoutService } from "@/services/api"
-import type { GeneratePixResponse } from "@/types"
+import { getCheckoutErrorMessage } from "@/lib/checkout-errors"
+import type { GeneratePixResponse, CheckoutCustomerInfo } from "@/types"
 
 interface CheckoutPixDisplayProps {
   token: string
-  email: string
-  customerName?: string
+  customer: CheckoutCustomerInfo
   onSuccess: () => void
   onError: (error: string) => void
 }
@@ -40,8 +40,7 @@ function formatTimeRemaining(expiresAt: Date): string {
 
 export function CheckoutPixDisplay({
   token,
-  email,
-  customerName,
+  customer,
   onSuccess,
   onError,
 }: CheckoutPixDisplayProps) {
@@ -52,27 +51,32 @@ export function CheckoutPixDisplay({
   const [timeRemaining, setTimeRemaining] = useState("")
   const [expired, setExpired] = useState(false)
 
-  // Generate PIX
+  // Snapshot customer/onError in a ref so we can re-generate with the latest
+  // values without the effect re-firing on every parent render.
+  const customerRef = useRef(customer)
+  const onErrorRef = useRef(onError)
+  useEffect(() => {
+    customerRef.current = customer
+    onErrorRef.current = onError
+  })
+
   const generatePix = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const result = await checkoutService.generatePix(token, {
-        email,
-        customerName,
-      })
+      const result = await checkoutService.generatePix(token, customerRef.current)
       setPixData(result)
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao gerar PIX"
+      const message = getCheckoutErrorMessage(err, "Erro ao gerar PIX")
       setError(message)
-      onError(message)
+      onErrorRef.current(message)
     } finally {
       setLoading(false)
     }
-  }, [token, email, customerName, onError])
+  }, [token])
 
-  // Generate PIX on mount
+  // Generate PIX once on mount (or when retrying / after expiration).
   useEffect(() => {
     generatePix()
   }, [generatePix])

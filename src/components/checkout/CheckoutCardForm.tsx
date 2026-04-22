@@ -8,7 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { checkoutService } from "@/services/api"
-import type { PaymentProvider, ProcessCardPaymentResponse } from "@/types"
+import { getCheckoutErrorMessage } from "@/lib/checkout-errors"
+import type {
+  PaymentProvider,
+  ProcessCardPaymentResponse,
+  CheckoutCustomerInfo,
+} from "@/types"
 
 // Mercado Pago SDK form data type
 interface MercadoPagoFormData {
@@ -23,12 +28,11 @@ interface CheckoutCardFormProps {
   provider: PaymentProvider
   publicKey: string
   amount: number
-  email: string
+  customer: CheckoutCustomerInfo
   onSuccess: (result: ProcessCardPaymentResponse) => void
   onError: (error: string) => void
 }
 
-// Format currency in BRL
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -41,7 +45,7 @@ export function CheckoutCardForm({
   provider,
   publicKey,
   amount,
-  email,
+  customer,
   onSuccess,
   onError,
 }: CheckoutCardFormProps) {
@@ -49,15 +53,13 @@ export function CheckoutCardForm({
   const [mpInitialized, setMpInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Pagar.me form state
+  // Pagar.me form state (card data only — customer info comes from props)
   const [cardNumber, setCardNumber] = useState("")
   const [cardName, setCardName] = useState("")
   const [cardExpiry, setCardExpiry] = useState("")
   const [cardCvv, setCardCvv] = useState("")
   const [installments, setInstallments] = useState("1")
-  const [document, setDocument] = useState("")
 
-  // Initialize Mercado Pago SDK
   useEffect(() => {
     if (provider === "mercado_pago" && publicKey) {
       try {
@@ -70,14 +72,13 @@ export function CheckoutCardForm({
     }
   }, [provider, publicKey])
 
-  // Handle Mercado Pago card submission
   const handleMercadoPagoSubmit = async (formData: MercadoPagoFormData) => {
     setLoading(true)
     setError(null)
 
     try {
       const result = await checkoutService.processCardPayment(token, {
-        email,
+        ...customer,
         token: formData.token,
         installments: formData.installments || 1,
         paymentMethodId: formData.payment_method_id,
@@ -89,11 +90,10 @@ export function CheckoutCardForm({
       } else if (result.status === "rejected") {
         setError(result.message || "Pagamento recusado. Verifique os dados do cartão.")
       } else {
-        // pending or in_process
         onSuccess(result)
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao processar pagamento"
+      const message = getCheckoutErrorMessage(err)
       setError(message)
       onError(message)
     } finally {
@@ -101,14 +101,12 @@ export function CheckoutCardForm({
     }
   }
 
-  // Handle Pagar.me card submission
   const handlePagarmeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
-      // Tokenize card with Pagar.me
       const [expMonth, expYear] = cardExpiry.split("/")
 
       const tokenResponse = await fetch("https://api.pagar.me/core/v5/tokens?appId=" + publicKey, {
@@ -118,7 +116,7 @@ export function CheckoutCardForm({
           type: "card",
           card: {
             number: cardNumber.replace(/\s/g, ""),
-            holder_name: cardName,
+            holder_name: cardName || customer.customerName,
             exp_month: parseInt(expMonth),
             exp_year: parseInt(expYear.length === 2 ? "20" + expYear : expYear),
             cvv: cardCvv,
@@ -132,13 +130,10 @@ export function CheckoutCardForm({
 
       const tokenData = await tokenResponse.json()
 
-      // Process payment
       const result = await checkoutService.processCardPayment(token, {
-        email,
+        ...customer,
         token: tokenData.id,
         installments: parseInt(installments),
-        customerDocument: document.replace(/\D/g, ""),
-        customerName: cardName,
       })
 
       if (result.status === "approved") {
@@ -149,7 +144,7 @@ export function CheckoutCardForm({
         onSuccess(result)
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao processar pagamento"
+      const message = getCheckoutErrorMessage(err)
       setError(message)
       onError(message)
     } finally {
@@ -157,7 +152,6 @@ export function CheckoutCardForm({
     }
   }
 
-  // Format card number with spaces
   const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "")
     const matches = v.match(/\d{4,16}/g)
@@ -169,7 +163,6 @@ export function CheckoutCardForm({
     return parts.length ? parts.join(" ") : value
   }
 
-  // Format expiry date
   const formatExpiry = (value: string) => {
     const v = value.replace(/\D/g, "")
     if (v.length >= 2) {
@@ -178,16 +171,6 @@ export function CheckoutCardForm({
     return v
   }
 
-  // Format CPF
-  const formatCPF = (value: string) => {
-    const v = value.replace(/\D/g, "")
-    if (v.length <= 11) {
-      return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
-    }
-    return v
-  }
-
-  // Mercado Pago CardPayment component
   if (provider === "mercado_pago") {
     if (!mpInitialized) {
       return (
@@ -209,8 +192,8 @@ export function CheckoutCardForm({
 
         <CardPayment
           initialization={{
-            amount: amount / 100, // SDK expects amount in currency units
-            payer: { email },
+            amount: amount / 100,
+            payer: { email: customer.email },
           }}
           onSubmit={handleMercadoPagoSubmit}
           onError={(err) => {
@@ -232,7 +215,6 @@ export function CheckoutCardForm({
     )
   }
 
-  // Pagar.me custom form
   return (
     <form onSubmit={handlePagarmeSubmit} className="space-y-4">
       {error && (
@@ -300,20 +282,6 @@ export function CheckoutCardForm({
             disabled={loading}
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="document">CPF</Label>
-        <Input
-          id="document"
-          type="text"
-          placeholder="000.000.000-00"
-          value={document}
-          onChange={(e) => setDocument(formatCPF(e.target.value))}
-          maxLength={14}
-          required
-          disabled={loading}
-        />
       </div>
 
       <div className="space-y-2">
