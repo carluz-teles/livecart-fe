@@ -196,6 +196,7 @@ export interface ShippingQuoteResponse {
 
 export interface SelectShippingMethodRequest {
   serviceId: number
+  zipCode: string // same CEP used in the quote; backend normalizes hyphen
 }
 
 export interface SelectShippingMethodResponse {

@@ -481,10 +481,23 @@ function CheckoutContent({ token }: { token: string }) {
     async (optionId: number) => {
       const option = shippingOptions.find((o) => o.id === optionId)
       if (!option || !option.available) return
+      // Backend needs the same CEP used on the quote to re-validate the
+      // chosen service. quotedZip is set when the quote succeeds; fall back
+      // to the current form value if for some reason it's empty.
+      const zipForSelect =
+        quotedZip ??
+        (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
+      if (!zipForSelect || zipForSelect.length !== 8) {
+        setShippingReselectNotice(
+          "Informe o CEP para confirmar o frete."
+        )
+        return
+      }
       try {
         const result = await selectShippingMethod.mutateAsync({
           token,
           serviceId: option.id,
+          zipCode: zipForSelect,
         })
         setSelectedShippingId(option.id)
         setShippingSummary(result.summary)
@@ -499,10 +512,7 @@ function CheckoutContent({ token }: { token: string }) {
           setShippingReselectNotice(
             "Essa opção não está mais disponível. Cotando novamente..."
           )
-          const zip =
-            quotedZip ??
-            (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
-          if (zip && zip.length === 8) runShippingQuote(zip)
+          runShippingQuote(zipForSelect)
           return
         }
         console.error(

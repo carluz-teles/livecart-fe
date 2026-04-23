@@ -23,13 +23,14 @@ export function useShippingQuote() {
 interface SelectShippingArgs {
   token: string
   serviceId: number
+  zipCode: string
 }
 
 export function useSelectShippingMethod() {
   const queryClient = useQueryClient()
   return useMutation<SelectShippingMethodResponse, Error, SelectShippingArgs>({
-    mutationFn: ({ token, serviceId }) =>
-      checkoutService.selectShippingMethod(token, { serviceId }),
+    mutationFn: ({ token, serviceId, zipCode }) =>
+      checkoutService.selectShippingMethod(token, { serviceId, zipCode }),
     onSuccess: (_, { token }) => {
       queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })
     },
