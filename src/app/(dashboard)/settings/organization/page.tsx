@@ -931,6 +931,33 @@ export default function OrganizationPage() {
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            {/* Actions — same wiring as the Store info card so a user who
+                scrolled past it can still edit shipping data. */}
+            <div className="flex justify-end gap-2">
+              {isEditing ? (
+                <>
+                  <Button variant="outline" type="button" onClick={handleCancel}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={updateStore.isPending || updateShippingDefaults.isPending}
+                  >
+                    {(updateStore.isPending || updateShippingDefaults.isPending) && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Salvar alterações
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" type="button" onClick={() => setIsEditing(true)}>
+                  Editar dados de envio
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
 
