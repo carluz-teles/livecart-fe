@@ -372,6 +372,14 @@ function CheckoutContent({ token }: { token: string }) {
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
 
+  // Normalized payment methods: whatever the gateway config exposes, falling
+  // back to ["card"] if the config comes back empty or missing.
+  const availableMethods = useMemo<PaymentMethod[]>(() => {
+    const list = checkoutConfig?.availableMethods ?? []
+    return list.length > 0 ? list : ["card"]
+  }, [checkoutConfig?.availableMethods])
+  const methodsCount = availableMethods.length
+
   // Set default email from cart data
   useEffect(() => {
     if (cart?.customerEmail && !form.getValues("email")) {
@@ -379,16 +387,16 @@ function CheckoutContent({ token }: { token: string }) {
     }
   }, [cart?.customerEmail, form])
 
-  // Set default payment method from config
+  // Default payment method. Prefer PIX when available (faster for shoppers);
+  // otherwise pick the first method the gateway exposes. Also correct the
+  // selection if the user is locked on a method the gateway stopped offering.
   useEffect(() => {
-    if (checkoutConfig?.availableMethods) {
-      if (checkoutConfig.availableMethods.includes("pix")) {
-        setSelectedMethod("pix")
-      } else if (checkoutConfig.availableMethods.length > 0) {
-        setSelectedMethod(checkoutConfig.availableMethods[0])
-      }
+    if (!availableMethods.includes(selectedMethod)) {
+      setSelectedMethod(
+        availableMethods.includes("pix") ? "pix" : availableMethods[0]
+      )
     }
-  }, [checkoutConfig?.availableMethods])
+  }, [availableMethods, selectedMethod])
 
   // Hydrate local selection from the cart if the user reloaded the page
   // mid-checkout and already had a method persisted server-side.
@@ -1109,14 +1117,21 @@ function CheckoutContent({ token }: { token: string }) {
                   </div>
                 ) : checkoutConfig ? (
                   <div className="space-y-6">
-                    <CheckoutExpressPayment
-                      selectedMethod={selectedMethod}
-                      onSelectMethod={setSelectedMethod}
-                      pixAvailable={checkoutConfig.availableMethods.includes("pix")}
-                      cardAvailable={checkoutConfig.availableMethods.includes("card")}
-                    />
+                    {/* Only surface the method chooser when there's an actual
+                        choice. With a single method, jumping straight to the
+                        form is cleaner. */}
+                    {methodsCount > 1 && (
+                      <>
+                        <CheckoutExpressPayment
+                          selectedMethod={selectedMethod}
+                          onSelectMethod={setSelectedMethod}
+                          pixAvailable={availableMethods.includes("pix")}
+                          cardAvailable={availableMethods.includes("card")}
+                        />
 
-                    <Separator className="bg-gray-100" />
+                        <Separator className="bg-gray-100" />
+                      </>
+                    )}
 
                     {selectedMethod === "card" && customerPayload ? (
                       <CheckoutCardForm
