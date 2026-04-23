@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -15,6 +15,7 @@ import {
   CreditCard,
   Sparkles,
   ArrowRight,
+  Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,11 +36,14 @@ import {
   CheckoutOrderSummary,
   CheckoutCardForm,
   CheckoutPixDisplay,
+  CheckoutShippingOptions,
 } from "@/components/checkout"
 import {
   useCheckoutCart,
   useCheckoutConfig,
   useCepLookup,
+  useShippingQuote,
+  useSelectShippingMethod,
 } from "@/hooks/checkout"
 import {
   checkoutFormSchema,
@@ -53,7 +57,10 @@ import type {
   PaymentMethod,
   ProcessCardPaymentResponse,
   CheckoutCustomerInfo,
+  ShippingOption,
+  PublicCheckoutSummary,
 } from "@/types"
+import type { ApiError } from "@/types/api.types"
 
 // Format currency in BRL
 function formatCurrency(cents: number): string {
@@ -284,6 +291,19 @@ function CheckoutContent({ token }: { token: string }) {
   // CEP lookup mutation
   const cepLookup = useCepLookup()
 
+  // Shipping quote + method selection
+  const shippingQuote = useShippingQuote()
+  const selectShippingMethod = useSelectShippingMethod()
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([])
+  const [shippingFreeByEvent, setShippingFreeByEvent] = useState(false)
+  const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null)
+  const [shippingReselectNotice, setShippingReselectNotice] = useState<string | null>(null)
+  const [quotedZip, setQuotedZip] = useState<string | null>(null)
+  const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null)
+  const [shippingSummary, setShippingSummary] = useState<PublicCheckoutSummary | null>(null)
+  const shippingSectionRef = useRef<HTMLDivElement>(null)
+  const quoteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Watch form values for completion checks
   const email = form.watch("email")
   const customerName = form.watch("customerName")
@@ -299,7 +319,8 @@ function CheckoutContent({ token }: { token: string }) {
     customerPhone,
   })
   const addressComplete = isShippingAddressComplete(shippingAddress)
-  const canProceedToPayment = customerInfoComplete && addressComplete
+  const shippingComplete = selectedShippingId !== null
+  const canProceedToPayment = customerInfoComplete && addressComplete && shippingComplete
 
   // Serialized customer payload for downstream payment components.
   // Memoize so re-renders on keystrokes don't trigger PIX regeneration effects.
@@ -369,7 +390,63 @@ function CheckoutContent({ token }: { token: string }) {
     }
   }, [checkoutConfig?.availableMethods])
 
-  // Format CEP and trigger lookup
+  // Hydrate local selection from the cart if the user reloaded the page
+  // mid-checkout and already had a method persisted server-side.
+  useEffect(() => {
+    if (cart?.shipping && selectedShippingId === null) {
+      setSelectedShippingId(cart.shipping.serviceId)
+    }
+  }, [cart?.shipping, selectedShippingId])
+
+  const runShippingQuote = useCallback(
+    async (cleaned: string) => {
+      if (cleaned.length !== 8) return
+      try {
+        const quote = await shippingQuote.mutateAsync({ token, zipCode: cleaned })
+        setShippingOptions(quote.options)
+        setShippingFreeByEvent(quote.freeShipping)
+        setQuotedZip(cleaned)
+        setShippingQuoteError(null)
+        setShippingReselectNotice(null)
+      } catch (err) {
+        const apiErr = err as ApiError
+        const message =
+          apiErr?.error === "quantity_above_quote_limit"
+            ? "Um dos produtos no seu carrinho tem mais de 100 unidades, o que não é suportado pela transportadora. Entre em contato com a loja."
+            : apiErr?.message ||
+              "Não foi possível cotar o frete. Tente novamente."
+        setShippingOptions([])
+        setShippingFreeByEvent(false)
+        setQuotedZip(cleaned)
+        setShippingQuoteError(message)
+      }
+    },
+    [shippingQuote, token]
+  )
+
+  // Schedule a quote after a 400ms pause. Cancels any pending invocation so
+  // typing "01310100" only fires one request once the user pauses.
+  const scheduleShippingQuote = useCallback(
+    (cleaned: string) => {
+      if (quoteDebounceRef.current) {
+        clearTimeout(quoteDebounceRef.current)
+      }
+      quoteDebounceRef.current = setTimeout(() => {
+        runShippingQuote(cleaned)
+      }, 400)
+    },
+    [runShippingQuote]
+  )
+
+  useEffect(() => {
+    return () => {
+      if (quoteDebounceRef.current) {
+        clearTimeout(quoteDebounceRef.current)
+      }
+    }
+  }, [])
+
+  // Format CEP and trigger lookup + quote
   const handleCepChange = async (value: string) => {
     const cleaned = value.replace(/\D/g, "")
     const formatted = cleaned.length > 5
@@ -377,6 +454,13 @@ function CheckoutContent({ token }: { token: string }) {
       : cleaned
 
     form.setValue("shippingAddress.zipCode", formatted, { shouldValidate: true })
+
+    // User changed CEP after selecting — invalidate any previous selection
+    if (quotedZip && cleaned !== quotedZip) {
+      setSelectedShippingId(null)
+      setShippingSummary(null)
+      setShippingReselectNotice(null)
+    }
 
     if (cleaned.length === 8) {
       try {
@@ -388,8 +472,52 @@ function CheckoutContent({ token }: { token: string }) {
       } catch {
         // Error handled by mutation state
       }
+      // Debounced quote — only fires once the user stops typing
+      scheduleShippingQuote(cleaned)
     }
   }
+
+  const handleSelectShipping = useCallback(
+    async (optionId: number) => {
+      const option = shippingOptions.find((o) => o.id === optionId)
+      if (!option || !option.available) return
+      try {
+        const result = await selectShippingMethod.mutateAsync({
+          token,
+          serviceId: option.id,
+        })
+        setSelectedShippingId(option.id)
+        setShippingSummary(result.summary)
+        setShippingReselectNotice(null)
+      } catch (err) {
+        const apiErr = err as ApiError
+        // 422 means the quote is stale — backend already rebuilt state;
+        // re-quote and ask the user to pick again.
+        if (apiErr?.status === 422) {
+          setSelectedShippingId(null)
+          setShippingSummary(null)
+          setShippingReselectNotice(
+            "Essa opção não está mais disponível. Cotando novamente..."
+          )
+          const zip =
+            quotedZip ??
+            (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
+          if (zip && zip.length === 8) runShippingQuote(zip)
+          return
+        }
+        console.error(
+          "Failed to select shipping method:",
+          apiErr?.message || apiErr
+        )
+      }
+    },
+    [form, quotedZip, runShippingQuote, selectShippingMethod, shippingOptions, token]
+  )
+
+  const handleRetryQuote = useCallback(() => {
+    const zip = (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
+    if (zip.length === 8) runShippingQuote(zip)
+  }, [form, runShippingQuote])
 
   // Progressive CPF mask: 000.000.000-00
   const formatCPF = (value: string): string => {
@@ -425,9 +553,18 @@ function CheckoutContent({ token }: { token: string }) {
     refetchCart()
   }
 
-  const handlePaymentError = (error: string) => {
+  const handlePaymentError = useCallback((error: string) => {
     console.error("Payment error:", error)
-  }
+    // If quote expired on the server, drop the selection so the user
+    // re-picks a shipping method and we re-quote automatically.
+    if (/shipping_quote_expired/i.test(error)) {
+      setSelectedShippingId(null)
+      setShippingSummary(null)
+      const zip = (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
+      if (zip.length === 8) runShippingQuote(zip)
+      shippingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+  }, [form, runShippingQuote])
 
   // Coupon handlers (placeholder)
   const handleApplyCoupon = async (): Promise<null> => null
@@ -489,6 +626,26 @@ function CheckoutContent({ token }: { token: string }) {
   })
 
   const isAddressAutoFilled = cepLookup.isSuccess
+  // Free shipping can come from the quote response (authoritative) or the cart
+  // itself if the customer refreshed mid-flow.
+  const isFreeShipping =
+    shippingFreeByEvent ||
+    cart.shipping?.freeShipping ||
+    cart.event?.freeShipping ||
+    false
+
+  // Shipping cost displayed in the summary. Prefer the authoritative summary
+  // returned by `PUT shipping-method`, then fall back to whatever the cart
+  // already has (e.g. after a page refresh).
+  const shippingCostCents =
+    shippingSummary?.shippingCost ??
+    (cart.summary.hasShippingQuote ? cart.summary.shippingCost : null)
+  const selectedOption = shippingOptions.find((o) => o.id === selectedShippingId)
+  const shippingRealCostCents =
+    selectedOption?.realPriceCents ?? cart.shipping?.realCostCents ?? null
+  const effectiveTotal =
+    shippingSummary?.total ??
+    (cart.summary.hasShippingQuote ? cart.summary.total : cart.summary.subtotal)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -505,7 +662,10 @@ function CheckoutContent({ token }: { token: string }) {
             items={orderItems}
             subtotal={cart.summary.subtotal}
             totalItems={cart.summary.totalItems}
-            total={cart.summary.subtotal}
+            shippingCostCents={shippingCostCents}
+            shippingRealCostCents={shippingRealCostCents}
+            isFreeShipping={isFreeShipping}
+            total={effectiveTotal}
             platformHandle={cart.platformHandle}
             isLiveActive={isLiveActive}
             allowEdit={cart.allowEdit}
@@ -815,9 +975,68 @@ function CheckoutContent({ token }: { token: string }) {
                 </div>
               </CheckoutSection>
 
-              {/* Section 3: Payment */}
+              {/* Section 3: Shipping */}
+              <div ref={shippingSectionRef}>
+                <CheckoutSection
+                  number={3}
+                  title="Frete"
+                  icon={Truck}
+                  isComplete={shippingComplete}
+                  isActive={addressComplete}
+                  delay={150}
+                >
+                  {!addressComplete ? (
+                    <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                          <Truck className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Preencha o endereço acima para calcularmos o frete.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {isFreeShipping && (
+                        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-800">
+                          <Sparkles className="h-4 w-4 text-emerald-600" />
+                          <span>
+                            <strong>Frete grátis neste evento.</strong>{" "}
+                            Escolha uma transportadora — você paga R$ 0,00.
+                          </span>
+                        </div>
+                      )}
+                      {shippingReselectNotice && (
+                        <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800">
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                          <span>{shippingReselectNotice}</span>
+                        </div>
+                      )}
+                      <CheckoutShippingOptions
+                        options={shippingOptions}
+                        selectedId={selectedShippingId}
+                        onSelect={handleSelectShipping}
+                        isLoading={shippingQuote.isPending && !shippingOptions.length}
+                        isSelecting={selectShippingMethod.isPending}
+                        selectingId={
+                          selectShippingMethod.isPending
+                            ? selectedShippingId ?? null
+                            : null
+                        }
+                        error={shippingQuoteError}
+                        onRetry={handleRetryQuote}
+                        freeShipping={isFreeShipping}
+                        formatCurrency={formatCurrency}
+                      />
+                    </>
+                  )}
+                </CheckoutSection>
+              </div>
+
+              {/* Section 4: Payment */}
               <CheckoutSection
-                number={3}
+                number={4}
                 title="Pagamento"
                 icon={CreditCard}
                 isComplete={false}
@@ -870,7 +1089,7 @@ function CheckoutContent({ token }: { token: string }) {
                         token={token}
                         provider={checkoutConfig.provider}
                         publicKey={checkoutConfig.publicKey}
-                        amount={checkoutConfig.totalAmount}
+                        amount={effectiveTotal}
                         customer={customerPayload}
                         onSuccess={handleCardSuccess}
                         onError={handlePaymentError}
@@ -908,7 +1127,10 @@ function CheckoutContent({ token }: { token: string }) {
               items={orderItems}
               subtotal={cart.summary.subtotal}
               totalItems={cart.summary.totalItems}
-              total={cart.summary.subtotal}
+              shippingCostCents={shippingCostCents}
+              shippingRealCostCents={shippingRealCostCents}
+              isFreeShipping={isFreeShipping}
+              total={effectiveTotal}
               platformHandle={cart.platformHandle}
               isLiveActive={isLiveActive}
               allowEdit={cart.allowEdit}

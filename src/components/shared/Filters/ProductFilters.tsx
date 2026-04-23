@@ -35,6 +35,7 @@ export function ProductFilters({ filters, onChange }: ProductFiltersProps) {
     if (filters.priceMin !== undefined || filters.priceMax !== undefined) count++
     if (filters.stockMin !== undefined || filters.stockMax !== undefined) count++
     if (filters.hasLowStock) count++
+    if (filters.shippable) count++
     return count
   }, [filters])
 
@@ -125,6 +126,16 @@ export function ProductFilters({ filters, onChange }: ProductFiltersProps) {
             }
           />
         </div>
+      </FilterSection>
+
+      <FilterSection title="Frete">
+        <FilterToggle
+          label="Apenas cotáveis (com peso e dimensões)"
+          checked={filters.shippable || false}
+          onChange={(checked) =>
+            onChange({ ...filters, shippable: checked || undefined })
+          }
+        />
       </FilterSection>
     </FilterPanel>
   )

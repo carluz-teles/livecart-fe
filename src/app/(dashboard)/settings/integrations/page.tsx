@@ -15,6 +15,7 @@ import {
   CreditCard,
   Package,
   Share2,
+  Truck,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -120,6 +121,11 @@ const categoryConfig: Record<IntegrationType, { label: string; icon: React.React
     label: "Redes Sociais",
     icon: <Share2 className="h-4 w-4" />,
     description: "Conecte suas lives e capture pedidos",
+  },
+  shipping: {
+    label: "Frete",
+    icon: <Truck className="h-4 w-4" />,
+    description: "Cote frete com transportadoras no checkout",
   },
 }
 

@@ -9,6 +9,10 @@ import type {
   GeneratePixRequest,
   GeneratePixResponse,
   PaymentStatusResponse,
+  ShippingQuoteRequest,
+  ShippingQuoteResponse,
+  SelectShippingMethodRequest,
+  SelectShippingMethodResponse,
 } from "@/types"
 
 /**
@@ -66,5 +70,27 @@ export const checkoutService = {
   getPaymentStatus: (token: string) =>
     apiClient.publicGet<PaymentStatusResponse>(
       `/api/public/checkout/${token}/status`
+    ),
+
+  // ==========================================================================
+  // SHIPPING (Melhor Envio)
+  // ==========================================================================
+
+  /**
+   * Request shipping quote for a CEP
+   */
+  quoteShipping: (token: string, data: ShippingQuoteRequest) =>
+    apiClient.publicPost<ShippingQuoteResponse>(
+      `/api/public/checkout/${token}/shipping-quote`,
+      data
+    ),
+
+  /**
+   * Persist selected shipping method for the cart
+   */
+  selectShippingMethod: (token: string, data: SelectShippingMethodRequest) =>
+    apiClient.publicPut<SelectShippingMethodResponse>(
+      `/api/public/checkout/${token}/shipping-method`,
+      data
     ),
 }

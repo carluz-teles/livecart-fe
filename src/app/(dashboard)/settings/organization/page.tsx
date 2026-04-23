@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@clerk/nextjs"
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera } from "lucide-react"
+import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera, Truck, Package } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,8 +16,22 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,29 +40,92 @@ import {
 import { toast } from "sonner"
 import { useStore, storeKeys } from "@/hooks/store/useStore"
 import { useUpdateStore } from "@/hooks/store/useUpdateStore"
+import { useUpdateShippingDefaults } from "@/hooks/store/useUpdateShippingDefaults"
+import { useIntegrations } from "@/hooks/integration/useIntegrations"
+import { useConnectOAuth } from "@/hooks/integration/useConnectIntegration"
+import { useDisconnectIntegration } from "@/hooks/integration/useDisconnectIntegration"
 import { uploadService } from "@/services/api/upload.service"
+import { DEFAULT_SHIPPING_DEFAULTS } from "@/types/store.types"
+import { formatDateTime } from "@/lib/format"
+
+const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
+const cepRegex = /^\d{5}-?\d{3}$/
 
 const organizationSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
   emailAddress: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
+  cnpj: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine(
+      (v) => !v || cnpjRegex.test(v),
+      "CNPJ inválido. Use o formato XX.XXX.XXX/XXXX-XX."
+    ),
   address: z.object({
     street: z.string().optional(),
+    number: z.string().optional(),
+    complement: z.string().optional(),
+    district: z.string().optional(),
     city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
+    state: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || /^[A-Za-z]{2}$/.test(v),
+        "UF deve ter 2 letras"
+      ),
+    zip: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || cepRegex.test(v),
+        "CEP inválido. Use 8 dígitos."
+      ),
     country: z.string().optional(),
+    stateRegister: z.string().optional(),
+  }),
+  shippingDefaults: z.object({
+    packageWeightGrams: z
+      .number({ message: "Peso deve ser um número" })
+      .int("Use um número inteiro")
+      .nonnegative("Peso não pode ser negativo"),
+    packageFormat: z.enum(["box", "roll", "letter"]),
   }),
 })
 
 type OrganizationFormData = z.infer<typeof organizationSchema>
 
+function formatCepInput(raw: string) {
+  const digits = raw.replace(/\D/g, "").slice(0, 8)
+  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
+}
+
+function formatCnpjInput(raw: string) {
+  const d = raw.replace(/\D/g, "").slice(0, 14)
+  if (d.length <= 2) return d
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`
+  if (d.length <= 12)
+    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+}
+
 export default function OrganizationPage() {
   const { data: store, isLoading } = useStore()
   const updateStore = useUpdateStore()
+  const updateShippingDefaults = useUpdateShippingDefaults()
+  const { data: integrationsData } = useIntegrations()
+  const connectOAuth = useConnectOAuth()
+  const disconnectIntegration = useDisconnectIntegration()
   const { getToken } = useAuth()
   const queryClient = useQueryClient()
+
+  const melhorEnvio = (integrationsData?.data ?? []).find(
+    (i) => i.provider === "melhor_envio"
+  )
   const [isEditing, setIsEditing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
@@ -61,13 +138,19 @@ export default function OrganizationPage() {
       emailAddress: "",
       phone: "",
       website: "",
+      cnpj: "",
       address: {
         street: "",
+        number: "",
+        complement: "",
+        district: "",
         city: "",
         state: "",
         zip: "",
-        country: "Brasil",
+        country: "BR",
+        stateRegister: "",
       },
+      shippingDefaults: DEFAULT_SHIPPING_DEFAULTS,
     },
   })
 
@@ -79,13 +162,19 @@ export default function OrganizationPage() {
         emailAddress: store.emailAddress || "",
         phone: store.whatsappNumber || "",
         website: store.website || "",
+        cnpj: store.cnpj || "",
         address: {
           street: store.address?.street || "",
+          number: store.address?.number || "",
+          complement: store.address?.complement || "",
+          district: store.address?.district || "",
           city: store.address?.city || "",
           state: store.address?.state || "",
           zip: store.address?.zip || "",
-          country: store.address?.country || "Brasil",
+          country: store.address?.country || "BR",
+          stateRegister: store.address?.stateRegister || "",
         },
+        shippingDefaults: store.shippingDefaults ?? DEFAULT_SHIPPING_DEFAULTS,
       })
     }
   }, [store, form])
@@ -100,19 +189,30 @@ export default function OrganizationPage() {
 
   const onSubmit = async (data: OrganizationFormData) => {
     try {
-      await updateStore.mutateAsync({
-        name: data.name,
-        emailAddress: data.emailAddress,
-        whatsappNumber: data.phone,
-        website: data.website,
-        address: {
-          street: data.address.street || "",
-          city: data.address.city || "",
-          state: data.address.state || "",
-          zip: data.address.zip || "",
-          country: data.address.country || "Brasil",
-        },
-      })
+      // Store info + address go to PUT /stores/me. Shipping defaults have
+      // their own dedicated endpoint — hit both in parallel when the form
+      // saves.
+      await Promise.all([
+        updateStore.mutateAsync({
+          name: data.name,
+          emailAddress: data.emailAddress,
+          whatsappNumber: data.phone,
+          website: data.website,
+          cnpj: data.cnpj,
+          address: {
+            street: data.address.street || "",
+            number: data.address.number || "",
+            complement: data.address.complement || "",
+            district: data.address.district || "",
+            city: data.address.city || "",
+            state: (data.address.state || "").toUpperCase(),
+            zip: data.address.zip || "",
+            country: data.address.country || "BR",
+            stateRegister: data.address.stateRegister || "",
+          },
+        }),
+        updateShippingDefaults.mutateAsync(data.shippingDefaults),
+      ])
       setIsEditing(false)
       toast.success("Alterações salvas", {
         description: "As informações da loja foram atualizadas.",
@@ -131,13 +231,19 @@ export default function OrganizationPage() {
         emailAddress: store.emailAddress || "",
         phone: store.whatsappNumber || "",
         website: store.website || "",
+        cnpj: store.cnpj || "",
         address: {
           street: store.address?.street || "",
+          number: store.address?.number || "",
+          complement: store.address?.complement || "",
+          district: store.address?.district || "",
           city: store.address?.city || "",
           state: store.address?.state || "",
           zip: store.address?.zip || "",
-          country: store.address?.country || "Brasil",
+          country: store.address?.country || "BR",
+          stateRegister: store.address?.stateRegister || "",
         },
+        shippingDefaults: store.shippingDefaults ?? DEFAULT_SHIPPING_DEFAULTS,
       })
     }
     setIsEditing(false)
@@ -405,8 +511,11 @@ export default function OrganizationPage() {
                   <Button variant="outline" type="button" onClick={handleCancel}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={updateStore.isPending}>
-                    {updateStore.isPending && (
+                  <Button
+                    type="submit"
+                    disabled={updateStore.isPending || updateShippingDefaults.isPending}
+                  >
+                    {(updateStore.isPending || updateShippingDefaults.isPending) && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Salvar alterações
@@ -421,89 +530,406 @@ export default function OrganizationPage() {
           </CardContent>
         </Card>
 
-        {/* Address */}
+        {/* Shipping — sender address + CNPJ + package defaults */}
         <Card>
           <CardHeader>
-            <CardTitle>Endereço</CardTitle>
+            <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4 text-muted-foreground" />
+              <CardTitle>Envio</CardTitle>
+            </div>
             <CardDescription>
-              Localização física da sua loja
+              Este é o endereço de onde seus produtos saem. Usado pelas
+              transportadoras e obrigatório para emitir etiquetas.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="address.street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        {...field}
-                        disabled={!isEditing}
-                        className="pl-9"
-                        placeholder="Rua das Flores, 123"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Endereço do remetente</h3>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="address.city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
+              <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">
+                <FormField
+                  control={form.control}
+                  name="address.zip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        CEP <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(formatCepInput(e.target.value))
+                          }
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          disabled={!isEditing}
+                          placeholder="01234-567"
+                          maxLength={9}
+                          inputMode="numeric"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cnpj"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>CNPJ</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(formatCnpjInput(e.target.value))
+                          }
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          disabled={!isEditing}
+                          placeholder="00.000.000/0000-00"
+                          maxLength={18}
+                          inputMode="numeric"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
+                <FormField
+                  control={form.control}
+                  name="address.street"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Rua / Avenida{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            disabled={!isEditing}
+                            className="pl-9"
+                            placeholder="Rua das Flores"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address.number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Número <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="123"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="address.complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="Apto, bloco, sala..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address.district"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Bairro <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="Centro"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-[1fr_120px_1fr]">
+                <FormField
+                  control={form.control}
+                  name="address.city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Cidade <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="São Paulo"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address.state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        UF <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="SP"
+                          maxLength={2}
+                          className="uppercase"
+                          onChange={(e) =>
+                            field.onChange(e.target.value.toUpperCase())
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address.stateRegister"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Inscrição estadual</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={!isEditing}
+                          placeholder="ISENTO"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Use &quot;ISENTO&quot; se não possuir.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium">Embalagem padrão</h3>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="shippingDefaults.packageWeightGrams"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5">
+                        Peso da embalagem (g)
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help text-muted-foreground">
+                                ⓘ
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              Somamos isso ao peso dos produtos na hora de
+                              cotar. Se você envia em saco simples, deixe 0.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="0"
+                          value={field.value ?? 0}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            field.onChange(raw === "" ? 0 : parseInt(raw, 10) || 0)
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          disabled={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="shippingDefaults.packageFormat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Formato padrão</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                         disabled={!isEditing}
-                        placeholder="São Paulo"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address.state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={!isEditing}
-                        placeholder="SP"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address.zip"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CEP</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled={!isEditing}
-                        placeholder="01234-567"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="box">Caixa</SelectItem>
+                          <SelectItem value="roll">Rolo / tubo</SelectItem>
+                          <SelectItem value="letter">Envelope</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Conta Melhor Envio</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Conecte sua conta do Melhor Envio para cotar frete no
+                  checkout com Correios, Jadlog e outras transportadoras.
+                </p>
+              </div>
+
+              {melhorEnvio && melhorEnvio.status === "active" ? (
+                <div className="flex items-start justify-between gap-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+                        Conectado
+                      </Badge>
+                      {typeof melhorEnvio.metadata?.environment === "string" && (
+                        <Badge variant="outline" className="uppercase">
+                          {melhorEnvio.metadata.environment as string}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Conectado em {formatDateTime(melhorEnvio.createdAt)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      disconnectIntegration.mutate(melhorEnvio.id, {
+                        onSuccess: () =>
+                          toast.success("Conta Melhor Envio desconectada"),
+                        onError: () =>
+                          toast.error("Erro ao desconectar", {
+                            description: "Tente novamente mais tarde.",
+                          }),
+                      })
+                    }}
+                    disabled={disconnectIntegration.isPending}
+                  >
+                    {disconnectIntegration.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Desconectando...
+                      </>
+                    ) : (
+                      "Desconectar"
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {melhorEnvio?.status === "pending_auth"
+                          ? "Aguardando autorização"
+                          : melhorEnvio?.status === "error"
+                            ? "Erro na conexão"
+                            : "Não conectado"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Você será redirecionado para autorizar o LiveCart a cotar
+                      fretes usando sua conta.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      connectOAuth.mutate("melhor_envio", {
+                        onError: () =>
+                          toast.error("Erro ao conectar", {
+                            description:
+                              "Não foi possível iniciar a conexão. Tente novamente.",
+                          }),
+                      })
+                    }}
+                    disabled={connectOAuth.isPending}
+                  >
+                    {connectOAuth.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Conectando...
+                      </>
+                    ) : (
+                      "Conectar conta"
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

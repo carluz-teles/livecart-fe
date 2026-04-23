@@ -335,7 +335,7 @@ export default function ProductsPage() {
                       {product.stock === 0 ? "Esgotado" : `${product.stock} un.`}
                     </span>
 
-                    <span className="hidden md:block">
+                    <span className="hidden md:flex md:flex-col md:items-start md:gap-1">
                       <Badge
                         variant={product.active ? "outline" : "secondary"}
                         className={`h-5 text-[10px] font-medium ${
@@ -345,6 +345,16 @@ export default function ProductsPage() {
                         }`}
                       >
                         {product.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`h-5 text-[10px] font-medium ${
+                          product.shippable
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"
+                        }`}
+                      >
+                        {product.shippable ? "Cotável" : "Faltam medidas"}
                       </Badge>
                     </span>
 

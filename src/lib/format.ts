@@ -68,6 +68,30 @@ export function parseCurrency(value: string): number {
 }
 
 /**
+ * Formats grams with automatic kg conversion when >= 1000
+ * @param grams - weight in grams
+ * @returns e.g. "150 g" or "1,5 kg"
+ */
+export function formatWeight(grams: number): string {
+  if (grams >= 1000) {
+    const kg = grams / 1000
+    return `${kg.toString().replace(".", ",")} kg`
+  }
+  return `${grams} g`
+}
+
+/**
+ * Formats package dimensions as "H × W × L cm"
+ */
+export function formatDimensions(
+  heightCm: number,
+  widthCm: number,
+  lengthCm: number
+): string {
+  return `${heightCm} × ${widthCm} × ${lengthCm} cm`
+}
+
+/**
  * Formats a relative time (e.g., "2 hours ago")
  * @param dateString - ISO date string
  * @returns Relative time string

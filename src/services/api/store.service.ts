@@ -5,6 +5,7 @@ import type {
   UpdateCartSettingsPayload,
   CreateStorePayload,
   CreateStoreResponse,
+  ShippingDefaults,
 } from "@/types/store.types"
 
 export const storeService = {
@@ -18,4 +19,7 @@ export const storeService = {
 
   updateCartSettings: (payload: UpdateCartSettingsPayload, token?: string | null, storeId?: string) =>
     apiClient.put<Store>(storeId ? `/stores/${storeId}/cart-settings` : "/stores/me/cart-settings", payload, token),
+
+  updateShippingDefaults: (payload: ShippingDefaults, token?: string | null) =>
+    apiClient.put<Store>("/stores/me/shipping-defaults", payload, token),
 }

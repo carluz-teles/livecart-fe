@@ -36,7 +36,21 @@ interface CheckoutOrderSummaryProps {
   items: OrderItem[]
   subtotal: number
   totalItems: number
-  shipping?: number | "free"
+  /**
+   * Shipping cost in cents. `null` = not selected yet (shows "A calcular"),
+   * 0 = free (shows "Grátis").
+   */
+  shippingCostCents?: number | null
+  /**
+   * Real shipping cost in cents, displayed crossed out when the charged
+   * cost is 0 due to an event-level free shipping override.
+   */
+  shippingRealCostCents?: number | null
+  /**
+   * Whether the event is flagged as free shipping. Controls the
+   * "Frete grátis aplicado pelo evento" note.
+   */
+  isFreeShipping?: boolean
   discount?: number
   total: number
   platformHandle?: string
@@ -174,7 +188,9 @@ export function CheckoutOrderSummary({
   items,
   subtotal,
   totalItems,
-  shipping = "free",
+  shippingCostCents = null,
+  shippingRealCostCents = null,
+  isFreeShipping = false,
   discount = 0,
   total,
   platformHandle,
@@ -198,7 +214,8 @@ export function CheckoutOrderSummary({
     setMounted(true)
   }, [])
 
-  const shippingDisplay = shipping === "free" ? "Grátis" : formatCurrency(shipping)
+  const shippingPending = shippingCostCents === null
+  const shippingFreeNow = shippingCostCents === 0
 
   // Shared content component
   const SummaryContent = () => (
@@ -270,13 +287,31 @@ export function CheckoutOrderSummary({
 
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Frete</span>
-          <span className={cn(
-            "font-medium",
-            shipping === "free" ? "text-emerald-600" : "text-gray-700"
-          )}>
-            {shippingDisplay}
-          </span>
+          {shippingPending ? (
+            <span className="text-sm text-gray-400">A calcular</span>
+          ) : shippingFreeNow ? (
+            <span className="flex items-baseline gap-1.5 font-medium">
+              {isFreeShipping &&
+                shippingRealCostCents !== null &&
+                shippingRealCostCents > 0 && (
+                  <span className="text-xs text-gray-400 line-through">
+                    {formatCurrency(shippingRealCostCents)}
+                  </span>
+                )}
+              <span className="text-emerald-600">Grátis</span>
+            </span>
+          ) : (
+            <span className="font-medium text-gray-700">
+              {formatCurrency(shippingCostCents!)}
+            </span>
+          )}
         </div>
+
+        {isFreeShipping && shippingFreeNow && (
+          <p className="text-xs text-emerald-600">
+            Frete grátis aplicado pelo evento
+          </p>
+        )}
 
         <Separator className="bg-gray-200" />
 

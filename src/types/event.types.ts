@@ -58,6 +58,7 @@ export interface Event {
   closeCartOnEventEnd: boolean
   cartExpirationMinutes: number | null
   cartMaxQuantityPerItem: number | null
+  freeShipping: boolean
   scheduledAt: string | null
   description: string | null
   productCount: number
@@ -84,6 +85,7 @@ export interface CreateEventPayload {
   closeCartOnEventEnd?: boolean
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
+  freeShipping?: boolean
 }
 
 export interface CreateEventResponse {

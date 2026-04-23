@@ -104,6 +104,7 @@ export const apiClient = {
   // Public routes (without /api/v1 prefix)
   publicGet: <T>(url: string) => publicRequest<T>("GET", url),
   publicPost: <T>(url: string, body: unknown) => publicRequest<T>("POST", url, body),
+  publicPut: <T>(url: string, body: unknown) => publicRequest<T>("PUT", url, body),
 }
 
 // For use in React components with Clerk context

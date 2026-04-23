@@ -32,10 +32,27 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
 // Address structure
 export interface StoreAddress {
   street: string
+  number: string
+  complement: string
+  district: string
   city: string
   state: string
   zip: string
   country: string
+  stateRegister: string
+}
+
+// Default package used to consolidate items on shipping quotes
+import type { PackageFormat } from "./product.types"
+
+export interface ShippingDefaults {
+  packageWeightGrams: number
+  packageFormat: PackageFormat
+}
+
+export const DEFAULT_SHIPPING_DEFAULTS: ShippingDefaults = {
+  packageWeightGrams: 0,
+  packageFormat: "box",
 }
 
 export interface Store {
@@ -52,6 +69,7 @@ export interface Store {
   address: StoreAddress | null
   cnpj: string | null
   cartSettings: CartSettings
+  shippingDefaults: ShippingDefaults
   createdAt: string
 }
 

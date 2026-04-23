@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   createProductSchema,
   updateProductSchema,
+  defaultShippingProfile,
   type CreateProductFormData,
   type UpdateProductFormData,
 } from "@/schemas/product.schema"
@@ -44,6 +45,7 @@ import { useCreateProduct } from "@/hooks/product/useCreateProduct"
 import { useUpdateProduct } from "@/hooks/product/useUpdateProduct"
 import { useIntegrations } from "@/hooks/integration"
 import { ProductFormERPSearch } from "./ProductForm.ERPSearch"
+import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
 import type { Product, CreateProductPayload, UpdateProductPayload, ProductSource } from "@/types/product.types"
 import type { ERPProduct, Integration } from "@/types"
 
@@ -96,6 +98,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
       imageUrl: "",
       externalSource: "manual",
       externalId: "",
+      shipping: defaultShippingProfile,
       ...(isEditing && { active: true }),
     },
   })
@@ -111,6 +114,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         externalSource: product.externalSource,
         externalId: product.externalId || "",
         active: product.active,
+        shipping: product.shipping ?? defaultShippingProfile,
       })
     }
   }, [product, form])
@@ -128,6 +132,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         imageUrl: "",
         externalSource: "manual",
         externalId: "",
+        shipping: defaultShippingProfile,
       })
     }
   }, [open, isEditing, form])
@@ -163,6 +168,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         imageUrl: erpProduct.imageUrl || "",
         externalSource: selectedSource,
         externalId: erpProduct.id,
+        shipping: defaultShippingProfile,
       })
       setStep("form")
     },
@@ -178,6 +184,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
       imageUrl: "",
       externalSource: selectedSource,
       externalId: "",
+      shipping: defaultShippingProfile,
     })
   }, [form, selectedSource])
 
@@ -189,6 +196,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         stock: data.stock,
         imageUrl: data.imageUrl || undefined,
         active: (data as UpdateProductFormData).active,
+        shipping: data.shipping,
       }
 
       updateProduct.mutate(
@@ -214,6 +222,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         externalSource: data.externalSource,
         imageUrl: data.imageUrl || undefined,
         externalId: data.externalId || undefined,
+        shipping: data.shipping,
       }
 
       createProduct.mutate(payload, {
@@ -557,6 +566,8 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
           </FormItem>
         )}
       />
+
+      <ProductFormShippingFields form={form} />
     </>
   )
 }

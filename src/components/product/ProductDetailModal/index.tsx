@@ -1,7 +1,19 @@
 "use client"
 
 import Image from "next/image"
-import { Package, Tag, Hash, Layers, Calendar, Box, RefreshCw } from "lucide-react"
+import {
+  Package,
+  Tag,
+  Hash,
+  Layers,
+  Calendar,
+  Box,
+  RefreshCw,
+  Truck,
+  Scale,
+  Ruler,
+  Shield,
+} from "lucide-react"
 
 import {
   Dialog,
@@ -13,8 +25,19 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { formatCurrency, formatDateTime } from "@/lib/format"
+import {
+  formatCurrency,
+  formatDateTime,
+  formatDimensions,
+  formatWeight,
+} from "@/lib/format"
 import type { Product } from "@/types/product.types"
+
+const packageFormatLabels: Record<string, string> = {
+  box: "Caixa",
+  roll: "Rolo / tubo",
+  letter: "Envelope",
+}
 
 interface ProductDetailModalProps {
   product: Product | null
@@ -83,12 +106,22 @@ export function ProductDetailModal({
             )}
 
             {/* Status badge overlay */}
-            <div className="absolute left-4 top-4">
+            <div className="absolute left-4 top-4 flex gap-2">
               <Badge
                 variant={product.active ? "default" : "secondary"}
                 className="text-sm shadow-md"
               >
                 {product.active ? "Ativo" : "Inativo"}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`text-sm shadow-md ${
+                  product.shippable
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                    : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"
+                }`}
+              >
+                {product.shippable ? "Cotável" : "Faltam medidas"}
               </Badge>
             </div>
           </div>
@@ -187,6 +220,8 @@ export function ProductDetailModal({
 
             <Separator className="my-4" />
 
+            <ShippingSection product={product} />
+
             {/* Timestamps */}
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
@@ -202,6 +237,81 @@ export function ProductDetailModal({
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ShippingSection({ product }: { product: Product }) {
+  const s = product.shipping
+  const hasDims =
+    s.weightGrams !== null &&
+    s.heightCm !== null &&
+    s.widthCm !== null &&
+    s.lengthCm !== null
+
+  return (
+    <div className="mb-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Truck className="h-4 w-4 text-muted-foreground" />
+        <h3 className="text-sm font-medium">Dados para frete</h3>
+      </div>
+
+      {!hasDims ? (
+        <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+          Nenhuma medida cadastrada. Edite o produto para habilitar cotação
+          automática no checkout.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <InfoItem
+            icon={<Scale className="h-4 w-4" />}
+            label="Peso"
+            value={
+              <span className="font-medium">
+                {formatWeight(s.weightGrams!)}
+              </span>
+            }
+          />
+          <InfoItem
+            icon={<Ruler className="h-4 w-4" />}
+            label="Dimensões"
+            value={
+              <span className="font-medium">
+                {formatDimensions(s.heightCm!, s.widthCm!, s.lengthCm!)}
+              </span>
+            }
+          />
+          <InfoItem
+            icon={<Box className="h-4 w-4" />}
+            label="Formato"
+            value={
+              <span className="font-medium">
+                {packageFormatLabels[s.packageFormat] ?? s.packageFormat}
+              </span>
+            }
+          />
+          {s.sku && (
+            <InfoItem
+              icon={<Hash className="h-4 w-4" />}
+              label="SKU"
+              value={<span className="font-mono text-sm">{s.sku}</span>}
+            />
+          )}
+          {s.insuranceValueCents !== null && (
+            <InfoItem
+              icon={<Shield className="h-4 w-4" />}
+              label="Valor declarado"
+              value={
+                <span className="font-medium">
+                  {formatCurrency(s.insuranceValueCents)}
+                </span>
+              }
+            />
+          )}
+        </div>
+      )}
+
+      <Separator className="mt-4" />
+    </div>
   )
 }
 

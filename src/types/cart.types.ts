@@ -122,6 +122,17 @@ export interface PublicCheckoutItem {
 export interface PublicCheckoutEvent {
   id: string
   title: string
+  freeShipping: boolean
+}
+
+export interface PublicCheckoutSelectedShipping {
+  serviceId: number
+  serviceName: string
+  carrier: string
+  costCents: number
+  realCostCents: number
+  deadlineDays: number
+  freeShipping: boolean
 }
 
 export interface PublicCheckoutStore {
@@ -132,7 +143,10 @@ export interface PublicCheckoutStore {
 
 export interface PublicCheckoutSummary {
   subtotal: number
+  shippingCost: number
+  total: number
   totalItems: number
+  hasShippingQuote: boolean
 }
 
 export interface PublicCheckoutCart {
@@ -150,6 +164,42 @@ export interface PublicCheckoutCart {
   event: PublicCheckoutEvent
   store: PublicCheckoutStore
   items: PublicCheckoutItem[]
+  summary: PublicCheckoutSummary
+  shipping?: PublicCheckoutSelectedShipping | null
+}
+
+// =============================================================================
+// SHIPPING QUOTE (public checkout)
+// =============================================================================
+
+export interface ShippingQuoteRequest {
+  zipCode: string // digits; backend normalizes
+}
+
+export interface ShippingOption {
+  id: number // Melhor Envio service_id
+  service: string
+  carrier: string
+  carrierLogoUrl?: string | null
+  priceCents: number // what the customer pays (0 when freeShipping=true)
+  realPriceCents: number // actual cost (always populated)
+  deadlineDays: number
+  available: boolean
+  error?: string
+}
+
+export interface ShippingQuoteResponse {
+  quotedAt: string
+  freeShipping: boolean
+  options: ShippingOption[]
+}
+
+export interface SelectShippingMethodRequest {
+  serviceId: number
+}
+
+export interface SelectShippingMethodResponse {
+  shipping: PublicCheckoutSelectedShipping
   summary: PublicCheckoutSummary
 }
 

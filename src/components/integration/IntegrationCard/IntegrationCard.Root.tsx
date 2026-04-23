@@ -33,6 +33,11 @@ const brandStyles: Record<IntegrationProvider, { gradient: string; ring: string;
     ring: "ring-[#E1306C]/30",
     glow: "group-hover:shadow-[#E1306C]/20",
   },
+  melhor_envio: {
+    gradient: "from-[#0FBF61] to-[#14D67A]",
+    ring: "ring-[#0FBF61]/30",
+    glow: "group-hover:shadow-[#0FBF61]/20",
+  },
 }
 
 export function IntegrationCardRoot({

@@ -100,6 +100,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       closeCartOnEventEnd: true,
       cartExpirationMinutes: null,
       cartMaxQuantityPerItem: null,
+      freeShipping: false,
     },
   })
 
@@ -116,6 +117,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
         cartExpirationMinutes: event.cartExpirationMinutes,
         cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
+        freeShipping: event.freeShipping ?? false,
       })
     } else {
       form.reset({
@@ -128,6 +130,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         closeCartOnEventEnd: true,
         cartExpirationMinutes: null,
         cartMaxQuantityPerItem: null,
+        freeShipping: false,
       })
     }
   }, [event, form])
@@ -149,6 +152,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       closeCartOnEventEnd: data.closeCartOnEventEnd,
       cartExpirationMinutes: data.cartExpirationMinutes,
       cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
+      freeShipping: data.freeShipping,
     }
 
     createEvent.mutate(payload, {
@@ -336,6 +340,31 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                   <FormControl>
                     <Switch
                       checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="freeShipping"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm font-medium">
+                      Frete grátis neste evento
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      O cliente vê as opções de transportadora e prazo, mas paga
+                      R$ 0,00 pelo frete. Você ainda vê o custo real no painel
+                      do pedido.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value ?? false}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>

@@ -1,5 +1,10 @@
-export type IntegrationType = "payment" | "erp" | "social"
-export type IntegrationProvider = "mercado_pago" | "pagarme" | "tiny" | "instagram"
+export type IntegrationType = "payment" | "erp" | "social" | "shipping"
+export type IntegrationProvider =
+  | "mercado_pago"
+  | "pagarme"
+  | "tiny"
+  | "instagram"
+  | "melhor_envio"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
 export interface Integration {
@@ -115,6 +120,14 @@ export const PROVIDERS: ProviderInfo[] = [
     type: "social",
     description: "Receba comentários e mensagens de lives do Instagram",
     icon: "/icons/instagram.svg",
+    supportsOAuth: true,
+  },
+  {
+    id: "melhor_envio",
+    name: "Melhor Envio",
+    type: "shipping",
+    description: "Cote frete no checkout com Correios, Jadlog e outras transportadoras",
+    icon: "/icons/melhor-envio.svg",
     supportsOAuth: true,
   },
 ]
