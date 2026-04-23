@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@clerk/nextjs"
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera, Truck, Package } from "lucide-react"
+import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera, Truck, Package, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,12 +41,14 @@ import { toast } from "sonner"
 import { useStore, storeKeys } from "@/hooks/store/useStore"
 import { useUpdateStore } from "@/hooks/store/useUpdateStore"
 import { useUpdateShippingDefaults } from "@/hooks/store/useUpdateShippingDefaults"
+import { useCepLookup } from "@/hooks/checkout/useCepLookup"
 import { useIntegrations } from "@/hooks/integration/useIntegrations"
 import { useConnectOAuth } from "@/hooks/integration/useConnectIntegration"
 import { useDisconnectIntegration } from "@/hooks/integration/useDisconnectIntegration"
 import { uploadService } from "@/services/api/upload.service"
 import { DEFAULT_SHIPPING_DEFAULTS } from "@/types/store.types"
 import { formatDateTime } from "@/lib/format"
+import type { ApiError } from "@/types/api.types"
 
 const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
 const cepRegex = /^\d{5}-?\d{3}$/
@@ -117,6 +119,7 @@ export default function OrganizationPage() {
   const { data: store, isLoading } = useStore()
   const updateStore = useUpdateStore()
   const updateShippingDefaults = useUpdateShippingDefaults()
+  const cepLookup = useCepLookup()
   const { data: integrationsData } = useIntegrations()
   const connectOAuth = useConnectOAuth()
   const disconnectIntegration = useDisconnectIntegration()
@@ -125,6 +128,16 @@ export default function OrganizationPage() {
 
   const melhorEnvio = (integrationsData?.data ?? []).find(
     (i) => i.provider === "melhor_envio"
+  )
+
+  // Heuristic from backend spec: enough fields filled to originate a
+  // shipment. Shown as a banner to nudge the user to complete setup.
+  const shippingConfigIncomplete = !!store && (
+    !store.cnpj ||
+    !store.address?.zip ||
+    !store.address?.street ||
+    !store.address?.number ||
+    !store.address?.district
   )
   const [isEditing, setIsEditing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -187,6 +200,54 @@ export default function OrganizationPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Handle CEP typing: format, then query ViaCEP when 8 digits are reached
+  // and auto-fill the address fields. Preserves any value the user already
+  // typed in number/complement.
+  const handleCepChange = async (value: string) => {
+    const formatted = formatCepInput(value)
+    form.setValue("address.zip", formatted, { shouldValidate: true })
+
+    const digits = formatted.replace(/\D/g, "")
+    if (digits.length === 8) {
+      try {
+        const addr = await cepLookup.mutateAsync(digits)
+        if (addr.street)
+          form.setValue("address.street", addr.street, { shouldValidate: true })
+        if (addr.neighborhood)
+          form.setValue("address.district", addr.neighborhood, { shouldValidate: true })
+        if (addr.city)
+          form.setValue("address.city", addr.city, { shouldValidate: true })
+        if (addr.state)
+          form.setValue("address.state", addr.state.toUpperCase(), { shouldValidate: true })
+      } catch {
+        // Silent — user can still fill fields manually
+      }
+    }
+  }
+
+  // Map a backend 400 error message to the relevant field path.
+  // The backend returns messages like "state must be a 2-letter UF code",
+  // "zip must have 8 digits", "cnpj must have 14 digits". Pattern-match on
+  // the keyword so users see errors inline.
+  const applyBackendError = (err: ApiError): boolean => {
+    const msg = (err.message || err.error || "").toLowerCase()
+    if (!msg) return false
+
+    if (msg.includes("state") && msg.includes("uf")) {
+      form.setError("address.state", { message: "UF deve ter 2 letras (ex: SP)" })
+      return true
+    }
+    if (msg.includes("zip")) {
+      form.setError("address.zip", { message: "CEP deve ter 8 dígitos" })
+      return true
+    }
+    if (msg.includes("cnpj")) {
+      form.setError("cnpj", { message: "CNPJ deve ter 14 dígitos" })
+      return true
+    }
+    return false
+  }
+
   const onSubmit = async (data: OrganizationFormData) => {
     try {
       // Store info + address go to PUT /stores/me. Shipping defaults have
@@ -217,9 +278,14 @@ export default function OrganizationPage() {
       toast.success("Alterações salvas", {
         description: "As informações da loja foram atualizadas.",
       })
-    } catch {
+    } catch (err) {
+      const apiErr = err as ApiError
+      const mapped = applyBackendError(apiErr)
       toast.error("Erro ao salvar", {
-        description: "Não foi possível salvar as alterações. Tente novamente.",
+        description: mapped
+          ? "Revise os campos destacados em vermelho."
+          : apiErr?.message ||
+            "Não foi possível salvar as alterações. Tente novamente.",
       })
     }
   }
@@ -538,13 +604,26 @@ export default function OrganizationPage() {
               <CardTitle>Envio</CardTitle>
             </div>
             <CardDescription>
-              Este é o endereço de onde seus produtos saem. Usado pelas
-              transportadoras e obrigatório para emitir etiquetas.
+              Esses dados são usados como endereço de remetente nas etiquetas
+              e na cotação de frete com transportadoras.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {shippingConfigIncomplete && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div>
+                  <strong className="font-medium">
+                    Configuração incompleta para emitir frete.
+                  </strong>{" "}
+                  Preencha CNPJ, CEP, rua, número e bairro para que as
+                  transportadoras consigam retirar os pacotes.
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
-              <h3 className="text-sm font-medium">Endereço do remetente</h3>
+              <h3 className="text-sm font-medium">Dados da empresa</h3>
 
               <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">
                 <FormField
@@ -556,19 +635,24 @@ export default function OrganizationPage() {
                         CEP <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          value={field.value ?? ""}
-                          onChange={(e) =>
-                            field.onChange(formatCepInput(e.target.value))
-                          }
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                          disabled={!isEditing}
-                          placeholder="01234-567"
-                          maxLength={9}
-                          inputMode="numeric"
-                        />
+                        <div className="relative">
+                          <Input
+                            value={field.value ?? ""}
+                            onChange={(e) => handleCepChange(e.target.value)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            disabled={!isEditing}
+                            placeholder="01234-567"
+                            maxLength={9}
+                            inputMode="numeric"
+                          />
+                          {cepLookup.isPending && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
