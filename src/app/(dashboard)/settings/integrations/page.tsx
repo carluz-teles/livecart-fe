@@ -104,6 +104,14 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     type: "social",
     authType: "oauth",
   },
+  {
+    id: "melhor_envio",
+    name: "Melhor Envio",
+    description: "Cote frete no checkout com Correios, Jadlog e outras transportadoras",
+    features: ["Cotação em tempo real", "Múltiplas transportadoras", "Prazo e preço reais"],
+    type: "shipping",
+    authType: "oauth",
+  },
 ]
 
 const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
@@ -177,6 +185,11 @@ function IntegrationsContent() {
 
     if (success === "instagram_connected") {
       toast.success("Instagram conectado com sucesso!")
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+
+    if (success === "melhor_envio_connected") {
+      toast.success("Melhor Envio conectado com sucesso!")
       window.history.replaceState({}, "", "/settings/integrations")
     }
 

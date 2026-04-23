@@ -217,8 +217,10 @@ export function CheckoutOrderSummary({
   const shippingPending = shippingCostCents === null
   const shippingFreeNow = shippingCostCents === 0
 
-  // Shared content component
-  const SummaryContent = () => (
+  // Shared content as a JSX variable so it's reused (not re-declared as a
+  // component on every render, which would remount children — and flicker
+  // product images — on every parent keystroke).
+  const summaryContent = (
     <div className="space-y-4">
       {/* Expiration timer - only show when live is NOT active */}
       {expiresAt && !isLiveActive && (
@@ -345,78 +347,69 @@ export function CheckoutOrderSummary({
     </div>
   )
 
-  // Mobile collapsible version
-  const MobileVersion = () => (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="lg:hidden">
-      <CollapsibleTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "flex w-full items-center justify-between rounded-xl border bg-white px-4 py-4 shadow-sm transition-all duration-300",
-            isOpen ? "border-gray-300 shadow-md" : "border-gray-200 hover:border-gray-300 hover:shadow-md",
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-              <ShoppingBag className="h-5 w-5 text-gray-600" />
-            </div>
-            <div className="text-left">
-              <span className="text-sm font-medium text-gray-900">
-                Ver pedido
-              </span>
-              <span className="ml-2 text-xs text-gray-500">
-                ({totalItems} {totalItems === 1 ? "item" : "itens"})
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
-            <div className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-transform duration-300",
-              isOpen && "rotate-180"
-            )}>
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            </div>
-          </div>
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <SummaryContent />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  )
-
-  // Desktop sticky version
-  const DesktopVersion = () => (
-    <Card
-      className={cn(
-        "hidden lg:block border-gray-100 shadow-lg shadow-gray-100/50 transition-all duration-700",
-        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      )}
-    >
-      <CardHeader className="pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900">
-            <ShoppingBag className="h-5 w-5 text-white" />
-          </div>
-          <CardTitle className="text-lg font-semibold tracking-tight">
-            Resumo do Pedido
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4">
-        <SummaryContent />
-      </CardContent>
-    </Card>
-  )
-
   return (
     <div className={className}>
-      <MobileVersion />
-      <DesktopVersion />
+      {/* Mobile collapsible version */}
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="lg:hidden">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl border bg-white px-4 py-4 shadow-sm transition-all duration-300",
+              isOpen ? "border-gray-300 shadow-md" : "border-gray-200 hover:border-gray-300 hover:shadow-md",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                <ShoppingBag className="h-5 w-5 text-gray-600" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium text-gray-900">
+                  Ver pedido
+                </span>
+                <span className="ml-2 text-xs text-gray-500">
+                  ({totalItems} {totalItems === 1 ? "item" : "itens"})
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
+              <div className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-transform duration-300",
+                isOpen && "rotate-180"
+              )}>
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              </div>
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            {summaryContent}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Desktop sticky version */}
+      <Card
+        className={cn(
+          "hidden lg:block border-gray-100 shadow-lg shadow-gray-100/50 transition-all duration-700",
+          mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        )}
+      >
+        <CardHeader className="pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900">
+              <ShoppingBag className="h-5 w-5 text-white" />
+            </div>
+            <CardTitle className="text-lg font-semibold tracking-tight">
+              Resumo do Pedido
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">{summaryContent}</CardContent>
+      </Card>
     </div>
   )
 }

@@ -835,25 +835,32 @@ function CheckoutContent({ token }: { token: string }) {
                   <FormField
                     control={form.control}
                     name="shippingAddress.street"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Rua <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={isAddressAutoFilled ? "" : "Preencha o CEP"}
-                            readOnly={isAddressAutoFilled}
-                            className={cn(
-                              "h-11 rounded-xl",
-                              isAddressAutoFilled && "bg-gray-50"
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const autoFilled = isAddressAutoFilled && !!field.value
+                      return (
+                        <FormItem>
+                          <FormLabel>
+                            Rua <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder={
+                                isAddressAutoFilled
+                                  ? "Informe a rua"
+                                  : "Preencha o CEP"
+                              }
+                              readOnly={autoFilled}
+                              className={cn(
+                                "h-11 rounded-xl",
+                                autoFilled && "bg-gray-50"
+                              )}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
                   />
 
                   {/* Number and Complement */}
@@ -901,75 +908,92 @@ function CheckoutContent({ token }: { token: string }) {
                     <FormField
                       control={form.control}
                       name="shippingAddress.neighborhood"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Bairro <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={isAddressAutoFilled ? "" : "Preencha o CEP"}
-                              readOnly={isAddressAutoFilled}
-                              className={cn(
-                                "h-11 rounded-xl",
-                                isAddressAutoFilled && "bg-gray-50"
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const autoFilled = isAddressAutoFilled && !!field.value
+                        return (
+                          <FormItem>
+                            <FormLabel>
+                              Bairro <span className="text-destructive">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={
+                                  isAddressAutoFilled
+                                    ? "Informe o bairro"
+                                    : "Preencha o CEP"
+                                }
+                                readOnly={autoFilled}
+                                className={cn(
+                                  "h-11 rounded-xl",
+                                  autoFilled && "bg-gray-50"
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
                     <FormField
                       control={form.control}
                       name="shippingAddress.city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Cidade <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={isAddressAutoFilled ? "" : "Preencha o CEP"}
-                              readOnly={isAddressAutoFilled}
-                              className={cn(
-                                "h-11 rounded-xl",
-                                isAddressAutoFilled && "bg-gray-50"
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const autoFilled = isAddressAutoFilled && !!field.value
+                        return (
+                          <FormItem>
+                            <FormLabel>
+                              Cidade <span className="text-destructive">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={
+                                  isAddressAutoFilled
+                                    ? "Informe a cidade"
+                                    : "Preencha o CEP"
+                                }
+                                readOnly={autoFilled}
+                                className={cn(
+                                  "h-11 rounded-xl",
+                                  autoFilled && "bg-gray-50"
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
                     <FormField
                       control={form.control}
                       name="shippingAddress.state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Estado <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={isAddressAutoFilled ? "" : "UF"}
-                              maxLength={2}
-                              readOnly={isAddressAutoFilled}
-                              onChange={(e) => {
-                                field.onChange(e.target.value.toUpperCase())
-                              }}
-                              className={cn(
-                                "h-11 rounded-xl",
-                                isAddressAutoFilled && "bg-gray-50"
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const autoFilled = isAddressAutoFilled && !!field.value
+                        return (
+                          <FormItem>
+                            <FormLabel>
+                              Estado <span className="text-destructive">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="UF"
+                                maxLength={2}
+                                readOnly={autoFilled}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value.toUpperCase())
+                                }}
+                                className={cn(
+                                  "h-11 rounded-xl",
+                                  autoFilled && "bg-gray-50"
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
                   </div>
                 </div>
