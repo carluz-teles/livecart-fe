@@ -84,6 +84,34 @@
   }
 }
 
+/*
+ * Public checkout always renders in light theme regardless of the user's
+ * system / saved preference. Re-declare the light-theme CSS variables on
+ * the wrapper so the cascade wins over the `.dark` class on <html>.
+ */
+.force-light-theme {
+  color-scheme: light;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 14.9020%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 14.9020%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 14.9020%;
+  --primary: 37.6923 92.1260% 50.1961%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 220.0000 14.2857% 95.8824%;
+  --secondary-foreground: 215 13.7931% 34.1176%;
+  --muted: 210 20.0000% 98.0392%;
+  --muted-foreground: 220 8.9362% 46.0784%;
+  --accent: 48.0000 100.0000% 96.0784%;
+  --accent-foreground: 22.7273 82.5000% 31.3725%;
+  --destructive: 0 84.2365% 60.1961%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13.0435% 90.9804%;
+  --input: 220 13.0435% 90.9804%;
+  --ring: 37.6923 92.1260% 50.1961%;
+}
+
 /* Clerk theme overrides */
 .cl-rootBox {
   width: 100%;
