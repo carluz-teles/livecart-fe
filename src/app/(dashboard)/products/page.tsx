@@ -231,7 +231,7 @@ export default function ProductsPage() {
 
           {isLoading ? (
             <div className="overflow-hidden rounded-lg border">
-              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]">
+              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_130px_40px]">
                 <span></span>
                 <span>Produto</span>
                 <span>Origem</span>
@@ -244,7 +244,7 @@ export default function ProductsPage() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]"
+                    className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_130px_40px]"
                   >
                     <Skeleton className="h-10 w-10 rounded-md" />
                     <div className="space-y-1.5">
@@ -271,7 +271,7 @@ export default function ProductsPage() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border bg-card">
-              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]">
+              <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_130px_40px]">
                 <span></span>
                 <span>Produto</span>
                 <span>Origem</span>
@@ -285,7 +285,7 @@ export default function ProductsPage() {
                   <div
                     key={product.id}
                     onClick={() => setViewingProduct(product)}
-                    className="group grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 text-sm transition-colors hover:bg-muted/50 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_90px_40px]"
+                    className="group grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-4 px-4 py-3 text-sm transition-colors hover:bg-muted/50 md:grid-cols-[40px_minmax(0,1fr)_120px_110px_110px_130px_40px]"
                   >
                     <div className="relative h-10 w-10 overflow-hidden rounded-md border bg-muted">
                       {product.imageUrl ? (
@@ -348,7 +348,7 @@ export default function ProductsPage() {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`h-5 text-[10px] font-medium ${
+                        className={`h-5 whitespace-nowrap text-[10px] font-medium ${
                           product.shippable
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
                             : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"

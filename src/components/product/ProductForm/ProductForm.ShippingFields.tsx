@@ -136,13 +136,13 @@ export function ProductFormShippingFields({
               name="shipping.packageFormat"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Formato da embalagem</FormLabel>
+                  <FormLabel>Embalagem</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                     </FormControl>
