@@ -855,7 +855,6 @@ function CheckoutContent({ token }: { token: string }) {
                     control={form.control}
                     name="shippingAddress.street"
                     render={({ field }) => {
-                      const autoFilled = isAddressAutoFilled && !!field.value
                       return (
                         <FormItem>
                           <FormLabel>
@@ -869,10 +868,9 @@ function CheckoutContent({ token }: { token: string }) {
                                   ? "Informe a rua"
                                   : "Preencha o CEP"
                               }
-                              readOnly={autoFilled}
                               className={cn(
                                 "h-11 rounded-xl",
-                                autoFilled && "bg-gray-50"
+                                isAddressAutoFilled && "bg-gray-50"
                               )}
                             />
                           </FormControl>
@@ -928,7 +926,6 @@ function CheckoutContent({ token }: { token: string }) {
                       control={form.control}
                       name="shippingAddress.neighborhood"
                       render={({ field }) => {
-                        const autoFilled = isAddressAutoFilled && !!field.value
                         return (
                           <FormItem>
                             <FormLabel>
@@ -942,10 +939,9 @@ function CheckoutContent({ token }: { token: string }) {
                                     ? "Informe o bairro"
                                     : "Preencha o CEP"
                                 }
-                                readOnly={autoFilled}
-                                className={cn(
+                                  className={cn(
                                   "h-11 rounded-xl",
-                                  autoFilled && "bg-gray-50"
+                                  isAddressAutoFilled && "bg-gray-50"
                                 )}
                               />
                             </FormControl>
@@ -958,7 +954,6 @@ function CheckoutContent({ token }: { token: string }) {
                       control={form.control}
                       name="shippingAddress.city"
                       render={({ field }) => {
-                        const autoFilled = isAddressAutoFilled && !!field.value
                         return (
                           <FormItem>
                             <FormLabel>
@@ -972,10 +967,9 @@ function CheckoutContent({ token }: { token: string }) {
                                     ? "Informe a cidade"
                                     : "Preencha o CEP"
                                 }
-                                readOnly={autoFilled}
-                                className={cn(
+                                  className={cn(
                                   "h-11 rounded-xl",
-                                  autoFilled && "bg-gray-50"
+                                  isAddressAutoFilled && "bg-gray-50"
                                 )}
                               />
                             </FormControl>
@@ -988,7 +982,6 @@ function CheckoutContent({ token }: { token: string }) {
                       control={form.control}
                       name="shippingAddress.state"
                       render={({ field }) => {
-                        const autoFilled = isAddressAutoFilled && !!field.value
                         return (
                           <FormItem>
                             <FormLabel>
@@ -999,13 +992,12 @@ function CheckoutContent({ token }: { token: string }) {
                                 {...field}
                                 placeholder="UF"
                                 maxLength={2}
-                                readOnly={autoFilled}
-                                onChange={(e) => {
+                                  onChange={(e) => {
                                   field.onChange(e.target.value.toUpperCase())
                                 }}
                                 className={cn(
                                   "h-11 rounded-xl",
-                                  autoFilled && "bg-gray-50"
+                                  isAddressAutoFilled && "bg-gray-50"
                                 )}
                               />
                             </FormControl>
