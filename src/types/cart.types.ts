@@ -1,4 +1,5 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
+import type { Shipment } from "./shipment.types"
 
 export type CartStatus = "active" | "checkout" | "completed" | "expired"
 export type OrderStatus = "active" | "checkout" | "completed" | "expired"
@@ -55,8 +56,22 @@ export interface OrderComment {
   createdAt: string
 }
 
+export interface OrderCustomer {
+  name: string
+  email: string
+  document: string
+  phone?: string
+}
+
 export interface OrderDetail extends Order {
   comments: OrderComment[]
+  // Contact and address the buyer filled during checkout; needed to seed the
+  // shipment creation form on the admin side.
+  customer?: OrderCustomer | null
+  shippingAddress?: ShippingAddressPayload | null
+  shipping?: PublicCheckoutSelectedShipping | null
+  // Populated by the backend once a shipment has been created for this order.
+  shipment?: Shipment | null
 }
 
 export interface OrderStats {

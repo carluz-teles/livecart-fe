@@ -21,6 +21,8 @@ import { useState } from "react"
 import { useParams } from "next/navigation"
 
 import { useOrder } from "@/hooks/order"
+import { useStore } from "@/hooks/store"
+import { OrderLogistics } from "@/components/order/OrderLogistics"
 import { formatCurrency, formatDateTime } from "@/lib/format"
 import { ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
@@ -48,6 +50,7 @@ export default function OrderDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
   const { data: order, isLoading, error } = useOrder(id)
+  const { data: store } = useStore()
   const [copiedAddress, setCopiedAddress] = useState(false)
 
   const handleCopyAddress = () => {
@@ -112,9 +115,6 @@ export default function OrderDetailPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {order.status === "active" && (
-            <Button>Marcar como Enviado</Button>
-          )}
           <Button variant="outline" size="icon" onClick={handleOpenInstagramDM}>
             <Instagram className="h-4 w-4" />
           </Button>
@@ -218,6 +218,9 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Logistics panel — renders only for paid orders */}
+      <OrderLogistics order={order} store={store} />
 
       {/* Items and Comments */}
       <div className="grid gap-4 lg:grid-cols-3">
