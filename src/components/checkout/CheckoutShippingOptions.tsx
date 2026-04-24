@@ -8,13 +8,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import type { ShippingOption } from "@/types"
 
+const PROVIDER_LABELS: Record<string, string> = {
+  melhor_envio: "Melhor Envio",
+  smartenvios: "SmartEnvios",
+}
+
+function providerLabel(provider: string): string {
+  return PROVIDER_LABELS[provider] ?? provider
+}
+
 interface CheckoutShippingOptionsProps {
   options: ShippingOption[]
-  selectedId: number | null
-  onSelect: (id: number) => void
+  selectedId: string | null
+  onSelect: (id: string) => void
   isLoading: boolean
   isSelecting: boolean
-  selectingId?: number | null
+  selectingId?: string | null
   error: string | null
   onRetry: () => void
   freeShipping: boolean
@@ -82,11 +91,19 @@ export function CheckoutShippingOptions({
     )
   }
 
+  // Disambiguate with a subtle "via X" badge only when two or more options
+  // share the same service name (e.g. "PAC" from both providers). With a
+  // unique name there's nothing to disambiguate, so we skip the extra chrome.
+  const serviceNameCounts = options.reduce<Record<string, number>>((acc, o) => {
+    acc[o.service] = (acc[o.service] ?? 0) + 1
+    return acc
+  }, {})
+
   return (
     <div className="space-y-3">
       {options.map((option) => (
         <ShippingOptionCard
-          key={option.id}
+          key={`${option.provider}:${option.id}`}
           option={option}
           selected={selectedId === option.id}
           selecting={isSelecting && selectingId === option.id}
@@ -94,6 +111,7 @@ export function CheckoutShippingOptions({
           freeShipping={freeShipping}
           onSelect={() => onSelect(option.id)}
           formatCurrency={formatCurrency}
+          showProviderBadge={(serviceNameCounts[option.service] ?? 0) > 1}
         />
       ))}
     </div>
@@ -108,6 +126,7 @@ interface ShippingOptionCardProps {
   freeShipping: boolean
   onSelect: () => void
   formatCurrency: (cents: number) => string
+  showProviderBadge: boolean
 }
 
 function ShippingOptionCard({
@@ -118,6 +137,7 @@ function ShippingOptionCard({
   freeShipping,
   onSelect,
   formatCurrency,
+  showProviderBadge,
 }: ShippingOptionCardProps) {
   const unavailable = !option.available
   // priceCents is already 0 when the event applies free shipping; realPriceCents
@@ -171,6 +191,11 @@ function ShippingOptionCard({
           <p className="mt-0.5 text-xs text-gray-500">
             chega em até <strong className="text-gray-700">{option.deadlineDays}</strong>{" "}
             {option.deadlineDays === 1 ? "dia útil" : "dias úteis"}
+          </p>
+        )}
+        {showProviderBadge && (
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            via {providerLabel(option.provider)}
           </p>
         )}
       </div>

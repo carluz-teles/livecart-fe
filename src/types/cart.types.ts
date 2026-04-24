@@ -126,7 +126,8 @@ export interface PublicCheckoutEvent {
 }
 
 export interface PublicCheckoutSelectedShipping {
-  serviceId: number
+  provider: string // "melhor_envio" | "smartenvios" | future providers
+  serviceId: string // opaque — Melhor Envio returns int-as-string, SmartEnvios returns ObjectId
   serviceName: string
   carrier: string
   costCents: number
@@ -177,7 +178,8 @@ export interface ShippingQuoteRequest {
 }
 
 export interface ShippingOption {
-  id: number // Melhor Envio service_id
+  id: string // opaque service id; never parseInt this — SmartEnvios returns hex ObjectIds
+  provider: string // "melhor_envio" | "smartenvios" | future providers
   service: string
   carrier: string
   carrierLogoUrl?: string | null
@@ -195,8 +197,11 @@ export interface ShippingQuoteResponse {
 }
 
 export interface SelectShippingMethodRequest {
-  serviceId: number
+  serviceId: string
   zipCode: string // same CEP used in the quote; backend normalizes hyphen
+  // Optional when only one shipping provider is active — backend infers. Always
+  // send it when the quote carries provider info so multi-provider stores work.
+  provider?: string
 }
 
 export interface SelectShippingMethodResponse {

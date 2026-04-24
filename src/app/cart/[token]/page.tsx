@@ -299,7 +299,7 @@ function CheckoutContent({ token }: { token: string }) {
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null)
   const [shippingReselectNotice, setShippingReselectNotice] = useState<string | null>(null)
   const [quotedZip, setQuotedZip] = useState<string | null>(null)
-  const [selectedShippingId, setSelectedShippingId] = useState<number | null>(null)
+  const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null)
   const [shippingSummary, setShippingSummary] = useState<PublicCheckoutSummary | null>(null)
   const shippingSectionRef = useRef<HTMLDivElement>(null)
   const quoteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -486,7 +486,7 @@ function CheckoutContent({ token }: { token: string }) {
   }
 
   const handleSelectShipping = useCallback(
-    async (optionId: number) => {
+    async (optionId: string) => {
       const option = shippingOptions.find((o) => o.id === optionId)
       if (!option || !option.available) return
       // Backend needs the same CEP used on the quote to re-validate the
@@ -506,6 +506,7 @@ function CheckoutContent({ token }: { token: string }) {
           token,
           serviceId: option.id,
           zipCode: zipForSelect,
+          provider: option.provider,
         })
         setSelectedShippingId(option.id)
         setShippingSummary(result.summary)
