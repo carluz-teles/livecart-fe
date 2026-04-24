@@ -1,4 +1,5 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
+import type { PackageFormat } from "./product.types"
 import type { Shipment } from "./shipment.types"
 
 export type CartStatus = "active" | "checkout" | "completed" | "expired"
@@ -15,6 +16,13 @@ export interface OrderItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  // Per-item physical dimensions. Backend always sends these; 0 means the
+  // product has no dimensions registered (NOT "zero grams" / "zero cm").
+  weightGrams: number
+  heightCm: number
+  widthCm: number
+  lengthCm: number
+  packageFormat: PackageFormat
 }
 
 export interface Cart {
@@ -63,15 +71,43 @@ export interface OrderCustomer {
   phone?: string
 }
 
+// Snapshot of the store on the order — shape is distinct from the global
+// Store type because this one always carries CNPJ/address non-null.
+export interface OrderStoreAddress {
+  zipCode: string
+  street: string
+  number: string
+  complement: string
+  neighborhood: string
+  city: string
+  state: string
+}
+
+export interface OrderStore {
+  id: string
+  name: string
+  logoUrl: string | null
+  document: string
+  email: string
+  phone: string
+  address: OrderStoreAddress
+  shippingDefaults: {
+    packageWeightGrams: number
+    packageFormat: PackageFormat
+  }
+}
+
 export interface OrderDetail extends Order {
   comments: OrderComment[]
-  // Contact and address the buyer filled during checkout; needed to seed the
-  // shipment creation form on the admin side.
-  customer?: OrderCustomer | null
-  shippingAddress?: ShippingAddressPayload | null
-  shipping?: PublicCheckoutSelectedShipping | null
-  // Populated by the backend once a shipment has been created for this order.
-  shipment?: Shipment | null
+  // Contact + address are null until the buyer fills them at checkout.
+  customer: OrderCustomer | null
+  shippingAddress: ShippingAddressPayload | null
+  // Null until the buyer picks a freight option.
+  shipping: PublicCheckoutSelectedShipping | null
+  // Null until POST /shipments is called for this order.
+  shipment: Shipment | null
+  // Always present — backend snapshots the store onto the order.
+  store: OrderStore
 }
 
 export interface OrderStats {

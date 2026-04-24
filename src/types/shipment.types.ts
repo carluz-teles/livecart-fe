@@ -71,16 +71,40 @@ export interface CreateShipmentPayload {
   observation?: string
 }
 
+// Event cached on the order's shipment. The backend persists new events after
+// each POST /tracking pull (source: "poll") or webhook callback.
+export interface ShipmentEvent {
+  status: ShipmentStatus
+  rawCode: number
+  rawName: string
+  observation: string
+  eventAt: string
+  source: "poll" | "webhook"
+}
+
 export interface Shipment {
+  // Internal LiveCart id — this is what the admin endpoints consume as
+  // :shipmentId. NOT the providerOrderId.
+  id: string
+  provider: string
   providerOrderId: string
   providerOrderNumber: string
   trackingCode: string
-  invoiceId?: string
+  // "" until POST /labels has been called.
+  publicTrackingUrl: string
+  // "" until NFe is attached.
+  invoiceKey: string
+  invoiceKind: "nfe" | "dce" | ""
+  // "" until POST /labels has been called.
+  labelUrl: string
   status: ShipmentStatus
-  statusRawCode?: number
-  statusRawName?: string
-  publicTrackingUrl?: string
+  // 0 + "" until the first tracking pull populates them.
+  statusRawCode: number
+  statusRawName: string
   createdAt: string
+  updatedAt: string
+  // Never null — [] before the first tracking pull.
+  events: ShipmentEvent[]
 }
 
 export interface AttachInvoicePayload {

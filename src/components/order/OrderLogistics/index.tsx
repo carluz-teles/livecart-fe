@@ -22,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
@@ -57,13 +56,12 @@ import type {
   CreateShipmentPayload,
   IntegrationProvider,
   OrderDetail,
+  OrderItem,
   Shipment,
   ShipmentAddress,
+  ShipmentEvent,
   ShipmentItemPayload,
   ShipmentStatusBucket,
-  Store,
-  TrackingEvent,
-  TrackingResponse,
 } from "@/types"
 
 const BUCKET_STYLE: Record<
@@ -103,10 +101,9 @@ const PROVIDER_LABEL: Record<string, string> = {
 
 interface OrderLogisticsProps {
   order: OrderDetail
-  store: Store | null | undefined
 }
 
-export function OrderLogistics({ order, store }: OrderLogisticsProps) {
+export function OrderLogistics({ order }: OrderLogisticsProps) {
   // Only render for paid orders — a shipment can't exist otherwise.
   if (order.paymentStatus !== "paid") return null
 
@@ -122,7 +119,7 @@ export function OrderLogistics({ order, store }: OrderLogisticsProps) {
         {order.shipment ? (
           <ShipmentView order={order} shipment={order.shipment} />
         ) : (
-          <NoShipmentView order={order} store={store ?? null} />
+          <NoShipmentView order={order} />
         )}
       </CardContent>
     </Card>
@@ -132,14 +129,9 @@ export function OrderLogistics({ order, store }: OrderLogisticsProps) {
 // --------------------------------------------------------------------------
 // No-shipment state: either shows the blockers or lets admin create.
 // --------------------------------------------------------------------------
-interface NoShipmentViewProps {
-  order: OrderDetail
-  store: Store | null
-}
-
-function NoShipmentView({ order, store }: NoShipmentViewProps) {
+function NoShipmentView({ order }: { order: OrderDetail }) {
   const [sheetOpen, setSheetOpen] = useState(false)
-  const blockers = collectBlockers(order, store)
+  const blockers = collectBlockers(order)
   const canCreate = blockers.length === 0
 
   return (
@@ -170,7 +162,7 @@ function NoShipmentView({ order, store }: NoShipmentViewProps) {
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
           <div>
             <p className="font-medium">
-              Faltam dados para criar o envio automaticamente:
+              Faltam dados para criar o envio:
             </p>
             <ul className="mt-1 list-disc pl-4 text-xs">
               {blockers.map((b) => (
@@ -195,22 +187,39 @@ function NoShipmentView({ order, store }: NoShipmentViewProps) {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           order={order}
-          store={store!}
         />
       )}
     </div>
   )
 }
 
-function collectBlockers(order: OrderDetail, store: Store | null): string[] {
-  const missing: string[] = []
-  if (!order.shipping) missing.push("Frete não foi selecionado pelo cliente")
-  if (!order.customer) missing.push("Dados de contato do cliente")
-  if (!order.shippingAddress) missing.push("Endereço de entrega")
-  if (!store) missing.push("Dados da loja")
-  if (store && !store.address) missing.push("Endereço da loja (remetente)")
-  if (store && !store.cnpj) missing.push("CNPJ da loja (remetente)")
-  return missing
+// Two conceptual buckets: (1) buyer didn't finish checkout, (2) a product
+// has no dimensions registered (backend sends 0, meaning "missing", not
+// literally zero). Store data is always present so it never surfaces here.
+function collectBlockers(order: OrderDetail): string[] {
+  const messages: string[] = []
+
+  if (!order.customer || !order.shippingAddress || !order.shipping) {
+    messages.push("Cliente não concluiu o checkout")
+  }
+
+  const missingDims = order.items.filter(hasMissingDimensions)
+  for (const item of missingDims) {
+    messages.push(
+      `Produto "${item.productName}" sem dimensões (cadastre em Produtos antes de criar o envio)`
+    )
+  }
+
+  return messages
+}
+
+function hasMissingDimensions(item: OrderItem): boolean {
+  return (
+    item.weightGrams === 0 ||
+    item.heightCm === 0 ||
+    item.widthCm === 0 ||
+    item.lengthCm === 0
+  )
 }
 
 // --------------------------------------------------------------------------
@@ -221,20 +230,18 @@ interface CreateShipmentSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order: OrderDetail
-  store: Store
 }
 
 function CreateShipmentSheet({
   open,
   onOpenChange,
   order,
-  store,
 }: CreateShipmentSheetProps) {
   const [invoiceKey, setInvoiceKey] = useState("")
   const [observation, setObservation] = useState("")
   const createShipment = useCreateShipment(order.id)
 
-  const payload = useMemo(() => buildCreatePayload(order, store), [order, store])
+  const payload = useMemo(() => buildCreatePayload(order), [order])
 
   const handleSubmit = async () => {
     if (!payload) return
@@ -370,26 +377,22 @@ function AddressPreview({
   )
 }
 
-// Build the full POST /shipments payload from the order + store. Items use
-// defaults when the backend's source of truth (products) doesn't echo
-// dimensions onto the order row — admins should see clearly what's going on.
-function buildCreatePayload(
-  order: OrderDetail,
-  store: Store
-): CreateShipmentPayload | null {
+// Build the full POST /shipments payload. collectBlockers is run upstream,
+// so any null guard here is only to satisfy the type checker.
+function buildCreatePayload(order: OrderDetail): CreateShipmentPayload | null {
   if (!order.shipping || !order.customer || !order.shippingAddress) return null
-  if (!store.address || !store.cnpj) return null
+  const { store } = order
 
   const sender: ShipmentAddress = {
     name: store.name,
-    document: store.cnpj,
-    zipCode: store.address.zip,
+    document: store.document,
+    zipCode: store.address.zipCode,
     street: store.address.street,
     number: store.address.number,
-    neighborhood: store.address.district,
+    neighborhood: store.address.neighborhood,
     complement: store.address.complement || undefined,
-    phone: store.whatsappNumber || undefined,
-    email: store.emailAddress || undefined,
+    phone: store.phone || undefined,
+    email: store.email || undefined,
   }
 
   const destiny: Omit<ShipmentAddress, "observation"> = {
@@ -404,21 +407,15 @@ function buildCreatePayload(
     email: order.customer.email,
   }
 
-  const perItemWeight = Math.max(
-    Math.round((store.shippingDefaults.packageWeightGrams || 500) /
-      Math.max(order.items.length, 1)),
-    100
-  )
-
   const items: ShipmentItemPayload[] = order.items.map((item) => ({
     id: item.id,
     name: item.productName,
     quantity: item.quantity,
     unitPriceCents: item.unitPrice,
-    weightGrams: perItemWeight,
-    heightCm: 15,
-    widthCm: 15,
-    lengthCm: 15,
+    weightGrams: item.weightGrams,
+    heightCm: item.heightCm,
+    widthCm: item.widthCm,
+    lengthCm: item.lengthCm,
   }))
 
   return {
@@ -440,18 +437,15 @@ interface ShipmentViewProps {
 }
 
 function ShipmentView({ order, shipment }: ShipmentViewProps) {
-  const provider = (order.shipping?.provider ??
-    "melhor_envio") as IntegrationProvider
-
+  const provider = shipment.provider as IntegrationProvider
   const [invoiceDialog, setInvoiceDialog] = useState(false)
   const [invoiceKey, setInvoiceKey] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [tracking, setTracking] = useState<TrackingResponse | null>(null)
 
   const attachInvoice = useAttachInvoice(order.id)
   const uploadInvoiceXml = useUploadInvoiceXml(order.id)
   const generateLabels = useGenerateLabels()
-  const fetchTracking = useFetchTracking()
+  const fetchTracking = useFetchTracking(order.id)
 
   const bucket = shipmentStatusBucket(shipment.status)
   const styles = BUCKET_STYLE[bucket]
@@ -468,7 +462,7 @@ function ShipmentView({ order, shipment }: ShipmentViewProps) {
     try {
       await attachInvoice.mutateAsync({
         provider,
-        shipmentId: shipment.providerOrderId,
+        shipmentId: shipment.id,
         payload: { invoiceKey: invoiceKey.trim() },
       })
       toast.success("NFe anexada")
@@ -483,7 +477,7 @@ function ShipmentView({ order, shipment }: ShipmentViewProps) {
     try {
       await uploadInvoiceXml.mutateAsync({
         provider,
-        shipmentId: shipment.providerOrderId,
+        shipmentId: shipment.id,
         file,
       })
       toast.success("XML da NFe enviado")
@@ -521,18 +515,20 @@ function ShipmentView({ order, shipment }: ShipmentViewProps) {
 
   const handleRefreshTracking = async () => {
     try {
-      // Prefer providerOrderId (already persisted); others are fallback.
-      const result = await fetchTracking.mutateAsync({
+      // Prefer providerOrderId (always persisted); others are fallback for
+      // cases where we lost the provider id.
+      await fetchTracking.mutateAsync({
         provider,
         payload: { providerOrderId: shipment.providerOrderId },
       })
-      setTracking(result)
     } catch (err) {
       toast.error(
         (err as { message?: string })?.message || "Falha ao atualizar rastreio"
       )
     }
   }
+
+  const hasPublicTracking = shipment.publicTrackingUrl.length > 0
 
   return (
     <div className="space-y-5">
@@ -589,7 +585,7 @@ function ShipmentView({ order, shipment }: ShipmentViewProps) {
           </Button>
         </IdentifierRow>
         <IdentifierRow label="Pedido no provedor">
-          {shipment.publicTrackingUrl ? (
+          {hasPublicTracking ? (
             <a
               href={shipment.publicTrackingUrl}
               target="_blank"
@@ -657,8 +653,9 @@ function ShipmentView({ order, shipment }: ShipmentViewProps) {
 
       {/* Timeline */}
       <TrackingTimeline
-        isLoading={fetchTracking.isPending}
-        tracking={tracking}
+        events={shipment.events}
+        currentStatus={shipmentStatusLabel(shipment.status)}
+        currentBucket={bucket}
       />
 
       {/* Attach NFe dialog */}
@@ -723,38 +720,27 @@ function IdentifierRow({
 }
 
 interface TrackingTimelineProps {
-  isLoading: boolean
-  tracking: TrackingResponse | null
+  events: ShipmentEvent[]
+  currentStatus: string
+  currentBucket: ShipmentStatusBucket
 }
 
-function TrackingTimeline({ isLoading, tracking }: TrackingTimelineProps) {
-  if (isLoading && !tracking) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    )
-  }
-
-  if (!tracking) {
+function TrackingTimeline({
+  events,
+  currentStatus,
+  currentBucket,
+}: TrackingTimelineProps) {
+  if (events.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        Clique em <strong>Atualizar rastreio</strong> para ver a linha do tempo.
+        Ainda sem eventos de rastreio. Clique em{" "}
+        <strong>Atualizar rastreio</strong> para sincronizar com o provedor.
       </p>
     )
   }
 
-  if (tracking.events.length === 0) {
-    return (
-      <div className="rounded-md border bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-        Ainda sem eventos de rastreio para esse envio.
-      </div>
-    )
-  }
-
   // Most recent event first — easiest to scan.
-  const ordered = [...tracking.events].sort(
+  const ordered = [...events].sort(
     (a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime()
   )
 
@@ -767,14 +753,14 @@ function TrackingTimeline({ isLoading, tracking }: TrackingTimelineProps) {
         ))}
       </ol>
       <p className="text-xs text-muted-foreground">
-        Bucket atual:{" "}
-        {SHIPMENT_BUCKET_LABEL[shipmentStatusBucket(tracking.currentStatus)]}
+        Status atual: <strong>{currentStatus}</strong> ·{" "}
+        {SHIPMENT_BUCKET_LABEL[currentBucket]}
       </p>
     </div>
   )
 }
 
-function TimelineItem({ event }: { event: TrackingEvent }) {
+function TimelineItem({ event }: { event: ShipmentEvent }) {
   const bucket = shipmentStatusBucket(event.status)
   const styles = BUCKET_STYLE[bucket]
   return (

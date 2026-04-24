@@ -21,7 +21,6 @@ import { useState } from "react"
 import { useParams } from "next/navigation"
 
 import { useOrder } from "@/hooks/order"
-import { useStore } from "@/hooks/store"
 import { OrderLogistics } from "@/components/order/OrderLogistics"
 import { formatCurrency, formatDateTime } from "@/lib/format"
 import { ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
@@ -50,7 +49,6 @@ export default function OrderDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
   const { data: order, isLoading, error } = useOrder(id)
-  const { data: store } = useStore()
   const [copiedAddress, setCopiedAddress] = useState(false)
 
   const handleCopyAddress = () => {
@@ -220,7 +218,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Logistics panel — renders only for paid orders */}
-      <OrderLogistics order={order} store={store} />
+      <OrderLogistics order={order} />
 
       {/* Items and Comments */}
       <div className="grid gap-4 lg:grid-cols-3">

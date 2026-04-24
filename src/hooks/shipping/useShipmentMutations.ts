@@ -118,15 +118,25 @@ export function useGenerateLabels() {
   })
 }
 
-export function useFetchTracking() {
+export function useFetchTracking(orderId?: string) {
   const { getToken } = useAuth()
   const { storeId } = useStoreId()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ provider, payload }: WithProvider<TrackingLookupPayload>) => {
       if (!storeId) throw new Error("Store ID not found")
       const token = await getToken()
       return shippingService.getTracking(storeId, provider, payload, token)
+    },
+    onSuccess: () => {
+      // Backend persists new events; invalidate so the timeline rehydrates
+      // from shipment.events on the next OrderDetail fetch.
+      if (orderId && storeId) {
+        queryClient.invalidateQueries({
+          queryKey: orderKeys.detail(storeId, orderId),
+        })
+      }
     },
   })
 }
