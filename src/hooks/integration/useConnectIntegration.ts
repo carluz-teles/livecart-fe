@@ -5,7 +5,11 @@ import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
 import { integrationKeys } from "./useIntegrations"
-import type { IntegrationProvider, CreateIntegrationPayload } from "@/types"
+import type {
+  IntegrationProvider,
+  CreateIntegrationPayload,
+  ConnectSmartEnviosPayload,
+} from "@/types"
 
 // Hook for OAuth-based connections (Mercado Pago)
 export function useConnectOAuth() {
@@ -37,6 +41,27 @@ export function useConnectApiKey() {
       if (!storeId) throw new Error("Store ID not found")
       const token = await getToken()
       return integrationService.create(storeId, payload, token)
+    },
+    onSuccess: () => {
+      if (storeId) {
+        queryClient.invalidateQueries({ queryKey: integrationKeys.list(storeId) })
+      }
+    },
+  })
+}
+
+// Hook for SmartEnvios token + env connection. Same endpoint handles both
+// initial connect and token rotation — just resend.
+export function useConnectSmartEnvios() {
+  const { getToken } = useAuth()
+  const { storeId } = useStoreId()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: ConnectSmartEnviosPayload) => {
+      if (!storeId) throw new Error("Store ID not found")
+      const token = await getToken()
+      return integrationService.connectSmartEnvios(storeId, payload, token)
     },
     onSuccess: () => {
       if (storeId) {

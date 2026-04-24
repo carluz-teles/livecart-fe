@@ -38,6 +38,11 @@ const brandStyles: Record<IntegrationProvider, { gradient: string; ring: string;
     ring: "ring-[#0FBF61]/30",
     glow: "group-hover:shadow-[#0FBF61]/20",
   },
+  smartenvios: {
+    gradient: "from-[#1D4ED8] to-[#3B82F6]",
+    ring: "ring-[#1D4ED8]/30",
+    glow: "group-hover:shadow-[#1D4ED8]/20",
+  },
 }
 
 export function IntegrationCardRoot({

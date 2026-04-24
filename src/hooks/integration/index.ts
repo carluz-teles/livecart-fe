@@ -1,5 +1,9 @@
 export { useIntegrations, integrationKeys } from "./useIntegrations"
-export { useConnectOAuth, useConnectApiKey } from "./useConnectIntegration"
+export {
+  useConnectOAuth,
+  useConnectApiKey,
+  useConnectSmartEnvios,
+} from "./useConnectIntegration"
 export { useConnectTiny } from "./useConnectTiny"
 export { useDisconnectIntegration } from "./useDisconnectIntegration"
 export { useTestConnection } from "./useTestConnection"

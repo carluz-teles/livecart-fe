@@ -9,6 +9,7 @@ import type {
   ERPProductSearchResponse,
   Product,
   InstagramLivesResponse,
+  ConnectSmartEnviosPayload,
 } from "@/types"
 
 export const integrationService = {
@@ -72,6 +73,19 @@ export const integrationService = {
   getInstagramLives: (storeId: string, token?: string | null) =>
     apiClient.get<InstagramLivesResponse>(
       `/stores/${storeId}/integrations/instagram/lives`,
+      token
+    ),
+
+  // Connect or rotate SmartEnvios token. Backend validates the token against
+  // the provider in real time — 422 means the token is invalid.
+  connectSmartEnvios: (
+    storeId: string,
+    payload: ConnectSmartEnviosPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<Integration>(
+      `/stores/${storeId}/integrations/shipping/smartenvios/connect`,
+      payload,
       token
     ),
 }

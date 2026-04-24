@@ -16,6 +16,7 @@ const brandColors: Record<IntegrationProvider, { bg: string; text: string }> = {
   tiny: { bg: "bg-[#FF6B35]/10", text: "text-[#FF6B35]" },
   instagram: { bg: "bg-gradient-to-br from-[#833AB4]/10 via-[#E1306C]/10 to-[#F77737]/10", text: "text-[#E1306C]" },
   melhor_envio: { bg: "bg-[#0FBF61]/10", text: "text-[#0FBF61]" },
+  smartenvios: { bg: "bg-[#1D4ED8]/10", text: "text-[#1D4ED8]" },
 }
 
 const sizes = {
@@ -72,12 +73,21 @@ function MelhorEnvioLogo({ className }: { className?: string }) {
   )
 }
 
+function SmartEnviosLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4 6a2 2 0 012-2h10l4 4v6h-2v-5h-3V6H6v12h7v2H6a2 2 0 01-2-2V6zm12 10l4 4-4 4v-3h-5v-2h5v-3z" />
+    </svg>
+  )
+}
+
 const logos: Record<IntegrationProvider, React.FC<{ className?: string }>> = {
   mercado_pago: MercadoPagoLogo,
   pagarme: PagarmeLogo,
   tiny: TinyLogo,
   instagram: InstagramLogo,
   melhor_envio: MelhorEnvioLogo,
+  smartenvios: SmartEnviosLogo,
 }
 
 export function IntegrationCardLogo({ provider, size = "md", className }: IntegrationCardLogoProps) {

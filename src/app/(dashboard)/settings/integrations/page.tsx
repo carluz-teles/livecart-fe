@@ -16,6 +16,8 @@ import {
   Package,
   Share2,
   Truck,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -24,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,10 +59,17 @@ import {
   useConnectOAuth,
   useConnectApiKey,
   useConnectTiny,
+  useConnectSmartEnvios,
   useDisconnectIntegration,
   useTestConnection,
 } from "@/hooks/integration"
-import type { Integration, IntegrationProvider, IntegrationType } from "@/types"
+import type {
+  Integration,
+  IntegrationProvider,
+  IntegrationType,
+  SmartEnviosEnv,
+} from "@/types"
+import type { ApiError } from "@/types/api.types"
 import { cn } from "@/lib/utils"
 
 interface ProviderConfig {
@@ -112,6 +122,14 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     type: "shipping",
     authType: "oauth",
   },
+  {
+    id: "smartenvios",
+    name: "SmartEnvios",
+    description: "Cote frete e gerencie envios com Jadlog, Total Express e outras",
+    features: ["Cotação em tempo real", "Criação de envio", "Etiquetas e rastreio"],
+    type: "shipping",
+    authType: "api_key",
+  },
 ]
 
 const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
@@ -143,12 +161,17 @@ function IntegrationsContent() {
   const connectOAuth = useConnectOAuth()
   const connectApiKey = useConnectApiKey()
   const connectTiny = useConnectTiny()
+  const connectSmartEnvios = useConnectSmartEnvios()
   const disconnectIntegration = useDisconnectIntegration()
   const testConnection = useTestConnection()
 
   const [disconnectId, setDisconnectId] = useState<string | null>(null)
   const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(null)
   const [apiKey, setApiKey] = useState("")
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null)
+  const [smartEnviosEnv, setSmartEnviosEnv] =
+    useState<SmartEnviosEnv>("production")
+  const [smartEnviosRotating, setSmartEnviosRotating] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
@@ -221,11 +244,48 @@ function IntegrationsContent() {
     }
   }
 
+  const closeApiKeyDialog = () => {
+    setApiKeyDialog(null)
+    setApiKey("")
+    setApiKeyError(null)
+    setSmartEnviosEnv("production")
+    setSmartEnviosRotating(false)
+  }
+
   const handleConnectApiKey = () => {
     if (!apiKeyDialog || !apiKey.trim()) return
 
     const provider = AVAILABLE_PROVIDERS.find((p) => p.id === apiKeyDialog)
     if (!provider) return
+
+    setApiKeyError(null)
+
+    // SmartEnvios uses a dedicated endpoint that validates the token in real
+    // time (422 means the token is invalid) and also serves rotation.
+    if (apiKeyDialog === "smartenvios") {
+      connectSmartEnvios.mutate(
+        { token: apiKey.trim(), env: smartEnviosEnv },
+        {
+          onSuccess: () => {
+            toast.success(
+              smartEnviosRotating
+                ? "Token da SmartEnvios atualizado."
+                : "SmartEnvios conectado com sucesso!"
+            )
+            closeApiKeyDialog()
+          },
+          onError: (err) => {
+            const apiErr = err as unknown as ApiError
+            const fallback =
+              apiErr?.status === 422
+                ? "Token inválido. Confira o valor e tente novamente."
+                : "Falha ao conectar SmartEnvios. Tente novamente."
+            setApiKeyError(apiErr?.message || fallback)
+          },
+        }
+      )
+      return
+    }
 
     connectApiKey.mutate(
       {
@@ -236,14 +296,21 @@ function IntegrationsContent() {
       {
         onSuccess: () => {
           toast.success(`${provider.name} conectado com sucesso!`)
-          setApiKeyDialog(null)
-          setApiKey("")
+          closeApiKeyDialog()
         },
         onError: () => {
-          toast.error("Falha ao conectar. Verifique a chave de API.")
+          setApiKeyError("Falha ao conectar. Verifique a chave de API.")
         },
       }
     )
+  }
+
+  const handleRotateSmartEnvios = () => {
+    setApiKey("")
+    setApiKeyError(null)
+    setSmartEnviosEnv("production")
+    setSmartEnviosRotating(true)
+    setApiKeyDialog("smartenvios")
   }
 
   const handleConnectTiny = () => {
@@ -446,6 +513,16 @@ function IntegrationsContent() {
                                   <Info className="mr-1.5 h-3.5 w-3.5" />
                                   Ver detalhes
                                 </Button>
+                                {provider.id === "smartenvios" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRotateSmartEnvios}
+                                  >
+                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                                    Rotacionar token
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -508,37 +585,107 @@ function IntegrationsContent() {
       </AlertDialog>
 
       {/* API Key Dialog */}
-      <Dialog open={!!apiKeyDialog} onOpenChange={() => setApiKeyDialog(null)}>
+      <Dialog
+        open={!!apiKeyDialog}
+        onOpenChange={(open) => {
+          if (!open) closeApiKeyDialog()
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Conectar {AVAILABLE_PROVIDERS.find((p) => p.id === apiKeyDialog)?.name}
+              {apiKeyDialog === "smartenvios" && smartEnviosRotating
+                ? "Rotacionar token da SmartEnvios"
+                : `Conectar ${AVAILABLE_PROVIDERS.find((p) => p.id === apiKeyDialog)?.name ?? ""}`}
             </DialogTitle>
             <DialogDescription>
-              Insira a chave de API para conectar esta integração
+              {apiKeyDialog === "smartenvios"
+                ? "Cole o token do embarcador e escolha o ambiente. O token é validado em tempo real."
+                : "Insira a chave de API para conectar esta integração"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="api-key">Chave de API</Label>
+              <Label htmlFor="api-key">
+                {apiKeyDialog === "smartenvios" ? "Token do embarcador" : "Chave de API"}{" "}
+                <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="api-key"
                 type="password"
-                placeholder="Insira sua chave de API"
+                placeholder={
+                  apiKeyDialog === "smartenvios"
+                    ? "Cole o token fornecido pela SmartEnvios"
+                    : "Insira sua chave de API"
+                }
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => {
+                  setApiKey(e.target.value)
+                  if (apiKeyError) setApiKeyError(null)
+                }}
+                aria-invalid={!!apiKeyError}
               />
             </div>
+
+            {apiKeyDialog === "smartenvios" && (
+              <div className="space-y-2">
+                <Label>
+                  Ambiente <span className="text-destructive">*</span>
+                </Label>
+                <RadioGroup
+                  value={smartEnviosEnv}
+                  onValueChange={(v) => setSmartEnviosEnv(v as SmartEnviosEnv)}
+                  className="grid grid-cols-2 gap-2"
+                >
+                  <Label
+                    htmlFor="smartenvios-env-prod"
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm",
+                      smartEnviosEnv === "production" && "border-primary bg-primary/5"
+                    )}
+                  >
+                    <RadioGroupItem id="smartenvios-env-prod" value="production" />
+                    Produção
+                  </Label>
+                  <Label
+                    htmlFor="smartenvios-env-sandbox"
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm",
+                      smartEnviosEnv === "sandbox" && "border-primary bg-primary/5"
+                    )}
+                  >
+                    <RadioGroupItem id="smartenvios-env-sandbox" value="sandbox" />
+                    Sandbox
+                  </Label>
+                </RadioGroup>
+              </div>
+            )}
+
+            {apiKeyError && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>{apiKeyError}</span>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setApiKeyDialog(null)}>
+            <Button variant="outline" onClick={closeApiKeyDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleConnectApiKey} disabled={connectApiKey.isPending || !apiKey}>
-              {connectApiKey.isPending ? (
+            <Button
+              onClick={handleConnectApiKey}
+              disabled={
+                !apiKey.trim() ||
+                connectApiKey.isPending ||
+                connectSmartEnvios.isPending
+              }
+            >
+              {connectApiKey.isPending || connectSmartEnvios.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Conectar
+              {apiKeyDialog === "smartenvios" && smartEnviosRotating
+                ? "Atualizar token"
+                : "Conectar"}
             </Button>
           </DialogFooter>
         </DialogContent>

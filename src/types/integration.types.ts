@@ -5,6 +5,7 @@ export type IntegrationProvider =
   | "tiny"
   | "instagram"
   | "melhor_envio"
+  | "smartenvios"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
 export interface Integration {
@@ -130,4 +131,19 @@ export const PROVIDERS: ProviderInfo[] = [
     icon: "/icons/melhor-envio.svg",
     supportsOAuth: true,
   },
+  {
+    id: "smartenvios",
+    name: "SmartEnvios",
+    type: "shipping",
+    description: "Cote frete e gerencie envios com Jadlog, Total Express e outras transportadoras",
+    icon: "/icons/smartenvios.svg",
+    supportsOAuth: false,
+  },
 ]
+
+export type SmartEnviosEnv = "production" | "sandbox"
+
+export interface ConnectSmartEnviosPayload {
+  token: string
+  env: SmartEnviosEnv
+}
