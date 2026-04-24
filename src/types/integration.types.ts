@@ -147,3 +147,13 @@ export interface ConnectSmartEnviosPayload {
   token: string
   env: SmartEnviosEnv
 }
+
+// A carrier service that the store's shipping embarcador has enabled for use.
+// Returned by GET /integrations/shipping/:provider/carriers.
+export interface ShippingCarrier {
+  serviceId: string
+  service: string
+  carrier: string
+  carrierLogoUrl?: string | null
+  insuranceMaxCents: number
+}
