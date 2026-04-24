@@ -26,6 +26,7 @@ import {
   useDisconnectIntegration,
 } from "@/hooks/integration"
 import { useShippingCarriers } from "@/hooks/shipping"
+import { resolveCarrierLogo } from "@/lib/carriers"
 import { PROVIDERS } from "@/types/integration.types"
 import type { Integration, IntegrationProvider, ProviderInfo } from "@/types"
 
@@ -302,25 +303,28 @@ function ShippingCarriersList({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {data.map((c) => (
-        <span
-          key={c.serviceId}
-          className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs"
-        >
-          {c.carrierLogoUrl ? (
-            <Image
-              src={c.carrierLogoUrl}
-              alt={c.carrier}
-              width={14}
-              height={14}
-              unoptimized
-              className="h-3.5 w-3.5 object-contain"
-            />
-          ) : null}
-          <span className="font-medium">{c.service}</span>
-          <span className="text-muted-foreground">· {c.carrier}</span>
-        </span>
-      ))}
+      {data.map((c) => {
+        const logoSrc = resolveCarrierLogo(c.carrier, c.carrierLogoUrl)
+        return (
+          <span
+            key={c.serviceId}
+            className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs"
+          >
+            {logoSrc ? (
+              <Image
+                src={logoSrc}
+                alt={c.carrier}
+                width={14}
+                height={14}
+                unoptimized
+                className="h-3.5 w-3.5 object-contain"
+              />
+            ) : null}
+            <span className="font-medium">{c.service}</span>
+            <span className="text-muted-foreground">· {c.carrier}</span>
+          </span>
+        )
+      })}
     </div>
   )
 }

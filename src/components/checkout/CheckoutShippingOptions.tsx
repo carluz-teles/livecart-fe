@@ -5,6 +5,7 @@ import { AlertCircle, Check, Loader2, Truck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { resolveCarrierLogo } from "@/lib/carriers"
 import { cn } from "@/lib/utils"
 import type { ShippingOption } from "@/types"
 
@@ -144,6 +145,7 @@ function ShippingOptionCard({
   // keeps the authoritative value for the strikethrough.
   const chargedCents = option.priceCents
   const realCents = option.realPriceCents
+  const logoSrc = resolveCarrierLogo(option.carrier, option.carrierLogoUrl)
 
   return (
     <button
@@ -162,9 +164,9 @@ function ShippingOptionCard({
       aria-pressed={selected}
     >
       <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
-        {option.carrierLogoUrl ? (
+        {logoSrc ? (
           <Image
-            src={option.carrierLogoUrl}
+            src={logoSrc}
             alt={option.carrier}
             fill
             unoptimized
