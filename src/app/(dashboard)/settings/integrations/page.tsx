@@ -26,7 +26,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +66,6 @@ import type {
   Integration,
   IntegrationProvider,
   IntegrationType,
-  SmartEnviosEnv,
 } from "@/types"
 import type { ApiError } from "@/types/api.types"
 import { cn } from "@/lib/utils"
@@ -169,8 +167,6 @@ function IntegrationsContent() {
   const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(null)
   const [apiKey, setApiKey] = useState("")
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
-  const [smartEnviosEnv, setSmartEnviosEnv] =
-    useState<SmartEnviosEnv>("production")
   const [smartEnviosRotating, setSmartEnviosRotating] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [tinyDialog, setTinyDialog] = useState(false)
@@ -248,7 +244,6 @@ function IntegrationsContent() {
     setApiKeyDialog(null)
     setApiKey("")
     setApiKeyError(null)
-    setSmartEnviosEnv("production")
     setSmartEnviosRotating(false)
   }
 
@@ -264,7 +259,7 @@ function IntegrationsContent() {
     // time (422 means the token is invalid) and also serves rotation.
     if (apiKeyDialog === "smartenvios") {
       connectSmartEnvios.mutate(
-        { token: apiKey.trim(), env: smartEnviosEnv },
+        { token: apiKey.trim(), env: "production" },
         {
           onSuccess: () => {
             toast.success(
@@ -308,7 +303,6 @@ function IntegrationsContent() {
   const handleRotateSmartEnvios = () => {
     setApiKey("")
     setApiKeyError(null)
-    setSmartEnviosEnv("production")
     setSmartEnviosRotating(true)
     setApiKeyDialog("smartenvios")
   }
@@ -600,7 +594,7 @@ function IntegrationsContent() {
             </DialogTitle>
             <DialogDescription>
               {apiKeyDialog === "smartenvios"
-                ? "Cole o token do embarcador e escolha o ambiente. O token é validado em tempo real."
+                ? "Cole o token do embarcador. O token é validado em tempo real."
                 : "Insira a chave de API para conectar esta integração"}
             </DialogDescription>
           </DialogHeader>
@@ -626,40 +620,6 @@ function IntegrationsContent() {
                 aria-invalid={!!apiKeyError}
               />
             </div>
-
-            {apiKeyDialog === "smartenvios" && (
-              <div className="space-y-2">
-                <Label>
-                  Ambiente <span className="text-destructive">*</span>
-                </Label>
-                <RadioGroup
-                  value={smartEnviosEnv}
-                  onValueChange={(v) => setSmartEnviosEnv(v as SmartEnviosEnv)}
-                  className="grid grid-cols-2 gap-2"
-                >
-                  <Label
-                    htmlFor="smartenvios-env-prod"
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm",
-                      smartEnviosEnv === "production" && "border-primary bg-primary/5"
-                    )}
-                  >
-                    <RadioGroupItem id="smartenvios-env-prod" value="production" />
-                    Produção
-                  </Label>
-                  <Label
-                    htmlFor="smartenvios-env-sandbox"
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm",
-                      smartEnviosEnv === "sandbox" && "border-primary bg-primary/5"
-                    )}
-                  >
-                    <RadioGroupItem id="smartenvios-env-sandbox" value="sandbox" />
-                    Sandbox
-                  </Label>
-                </RadioGroup>
-              </div>
-            )}
 
             {apiKeyError && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">

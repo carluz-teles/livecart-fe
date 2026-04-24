@@ -141,11 +141,11 @@ export const PROVIDERS: ProviderInfo[] = [
   },
 ]
 
-export type SmartEnviosEnv = "production" | "sandbox"
-
 export interface ConnectSmartEnviosPayload {
   token: string
-  env: SmartEnviosEnv
+  // Backend still requires the field, but the LiveCart UI only supports
+  // production — there's no sandbox account to connect to.
+  env: "production"
 }
 
 // A carrier service that the store's shipping embarcador has enabled for use.
