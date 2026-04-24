@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Fragment, Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Check,
@@ -151,6 +151,50 @@ const categoryConfig: Record<IntegrationType, { label: string; icon: React.React
     icon: <Truck className="h-4 w-4" />,
     description: "Cote frete com transportadoras no checkout",
   },
+}
+
+type AccountFieldIcon = React.ComponentType<{ className?: string }>
+
+interface AccountField {
+  label: string
+  value: string
+  icon: AccountFieldIcon
+  mono?: boolean
+}
+
+// Pulls the presentable fields out of whatever the provider returned in
+// accountInfo. Missing / empty values are skipped so the caller can omit
+// the whole card when the result is empty.
+function buildAccountFields(
+  info: Record<string, unknown> | undefined
+): AccountField[] {
+  if (!info) return []
+
+  const str = (k: string): string | null => {
+    const v = info[k]
+    if (typeof v !== "string") return null
+    const trimmed = v.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+
+  const fields: AccountField[] = []
+
+  const username = str("username")
+  if (username) fields.push({ label: "Usuário", value: `@${username}`, icon: User })
+
+  const name = str("name")
+  if (name) fields.push({ label: "Nome", value: name, icon: User })
+
+  const id = str("id")
+  if (id) fields.push({ label: "ID da Conta", value: id, icon: Activity, mono: true })
+
+  const email = str("email")
+  if (email) fields.push({ label: "Email", value: email, icon: User })
+
+  const nickname = str("nickname")
+  if (nickname) fields.push({ label: "Apelido", value: nickname, icon: User })
+
+  return fields
 }
 
 function IntegrationsContent() {
@@ -754,93 +798,51 @@ function IntegrationsContent() {
               </div>
             </div>
 
-            {/* Account Info Section */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Informações da Conta</h4>
-              <div className="rounded-lg border p-4">
-                {detailsLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : detailsData?.accountInfo ? (
-                  <div className="space-y-3">
-                    {"username" in detailsData.accountInfo && detailsData.accountInfo.username ? (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Usuário</p>
-                            <p className="font-medium">
-                              @{String(detailsData.accountInfo.username)}
-                            </p>
-                          </div>
-                        </div>
-                        <Separator />
-                      </>
-                    ) : null}
-                    {"name" in detailsData.accountInfo && detailsData.accountInfo.name ? (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Nome</p>
-                            <p className="font-medium">{String(detailsData.accountInfo.name)}</p>
-                          </div>
-                        </div>
-                        <Separator />
-                      </>
-                    ) : null}
-                    {"id" in detailsData.accountInfo && detailsData.accountInfo.id ? (
-                      <div className="flex items-center gap-3">
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">ID da Conta</p>
-                          <p className="font-mono text-sm">
-                            {String(detailsData.accountInfo.id)}
-                          </p>
-                        </div>
+            {/* Account Info — omitted entirely when the provider returns no
+                usable fields. Failures are already surfaced by the "Último
+                Teste" card below, so no fallback copy is needed here. */}
+            {(() => {
+              const fields = buildAccountFields(detailsData?.accountInfo)
+              if (!detailsLoading && fields.length === 0) return null
+              return (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Informações da Conta
+                  </h4>
+                  <div className="rounded-lg border p-4">
+                    {detailsLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
-                    ) : null}
-                    {"email" in detailsData.accountInfo && detailsData.accountInfo.email ? (
-                      <>
-                        <Separator />
-                        <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Email</p>
-                            <p className="font-medium">{String(detailsData.accountInfo.email)}</p>
-                          </div>
-                        </div>
-                      </>
-                    ) : null}
-                    {"nickname" in detailsData.accountInfo && detailsData.accountInfo.nickname ? (
-                      <>
-                        <Separator />
-                        <div className="flex items-center gap-3">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Apelido</p>
-                            <p className="font-medium">
-                              {String(detailsData.accountInfo.nickname)}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    ) : null}
+                    ) : (
+                      <div className="space-y-3">
+                        {fields.map((f, i) => (
+                          <Fragment key={f.label}>
+                            {i > 0 && <Separator />}
+                            <div className="flex items-start gap-3">
+                              <f.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs text-muted-foreground">
+                                  {f.label}
+                                </p>
+                                <p
+                                  className={cn(
+                                    "font-medium break-words",
+                                    f.mono && "font-mono text-sm break-all"
+                                  )}
+                                >
+                                  {f.value}
+                                </p>
+                              </div>
+                            </div>
+                          </Fragment>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ) : detailsData?.success === false ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-destructive">{detailsData.message}</p>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Não foi possível carregar as informações
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )
+            })()}
 
             {/* Connection Test Section */}
             {detailsData && (
