@@ -25,26 +25,6 @@ export function CheckoutHeader({ storeName, logoUrl, isLiveActive }: CheckoutHea
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 to-transparent pointer-events-none" />
 
       <div className="relative mx-auto max-w-6xl px-4 py-8">
-        {/* Live badge - floating top right with glow effect */}
-        {isLiveActive && (
-          <div
-            className={cn(
-              "absolute right-4 top-4 transition-all duration-700",
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-            )}
-          >
-            <Badge
-              variant="destructive"
-              className="relative gap-1.5 px-3 py-1.5 shadow-lg shadow-red-500/20"
-            >
-              {/* Pulse ring effect */}
-              <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-20" />
-              <Radio className="h-3 w-3 animate-pulse" />
-              <span className="font-medium">Live em andamento</span>
-            </Badge>
-          </div>
-        )}
-
         {/* Logo and store info - centered with entrance animation */}
         <div
           className={cn(
@@ -52,6 +32,25 @@ export function CheckoutHeader({ storeName, logoUrl, isLiveActive }: CheckoutHea
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
+          {/* Live badge - stacked on mobile, absolute on desktop */}
+          {isLiveActive && (
+            <div
+              className={cn(
+                "md:absolute md:right-4 md:top-4 transition-all duration-700",
+                mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+              )}
+            >
+              <Badge
+                variant="destructive"
+                className="relative gap-1.5 px-3 py-1.5 shadow-lg shadow-red-500/20"
+              >
+                {/* Pulse ring effect */}
+                <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-20" />
+                <Radio className="h-3 w-3 animate-pulse" />
+                <span className="font-medium">Live em andamento</span>
+              </Badge>
+            </div>
+          )}
           {/* Logo with premium border */}
           <div className="relative">
             {/* Outer glow ring */}
@@ -63,7 +62,7 @@ export function CheckoutHeader({ storeName, logoUrl, isLiveActive }: CheckoutHea
                   src={logoUrl}
                   alt={storeName}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   priority
                 />
               </div>

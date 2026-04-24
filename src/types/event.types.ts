@@ -173,6 +173,7 @@ export interface EventDetailStats {
 // Cart with total value for event details page
 export interface EventCart {
   id: string
+  token: string
   sessionId: string | null
   platformUserId: string
   platformHandle: string

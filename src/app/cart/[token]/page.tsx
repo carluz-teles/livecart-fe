@@ -44,6 +44,7 @@ import {
   useCepLookup,
   useShippingQuote,
   useSelectShippingMethod,
+  usePaymentStatus,
 } from "@/hooks/checkout"
 import {
   checkoutFormSchema,
@@ -371,6 +372,27 @@ function CheckoutContent({ token }: { token: string }) {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("pix")
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [paymentFailed, setPaymentFailed] = useState(false)
+
+  // Poll for payment status when processing (card payment pending)
+  const { data: paymentStatusData } = usePaymentStatus(token, {
+    enabled: isProcessing,
+    refetchInterval: isProcessing ? 5000 : false,
+  })
+
+  // React to payment status changes during polling
+  useEffect(() => {
+    if (!paymentStatusData || !isProcessing) return
+
+    if (paymentStatusData.paymentStatus === "paid") {
+      setIsProcessing(false)
+      setPaymentSuccess(true)
+      refetchCart()
+    } else if (paymentStatusData.paymentStatus === "failed") {
+      setIsProcessing(false)
+      setPaymentFailed(true)
+    }
+  }, [paymentStatusData, isProcessing, refetchCart])
 
   // Normalized payment methods: whatever the gateway config exposes, falling
   // back to ["card"] if the config comes back empty or missing.
@@ -609,6 +631,18 @@ function CheckoutContent({ token }: { token: string }) {
     return <SuccessState cart={cart} />
   }
 
+  // Failed state (from polling)
+  if (paymentFailed) {
+    return (
+      <FailedState
+        onRetry={() => {
+          setPaymentFailed(false)
+          setIsProcessing(false)
+        }}
+      />
+    )
+  }
+
   // Expired state
   if (cart.status === "expired") {
     return <ExpiredState cart={cart} />
@@ -819,7 +853,7 @@ function CheckoutContent({ token }: { token: string }) {
                     control={form.control}
                     name="shippingAddress.zipCode"
                     render={({ field }) => (
-                      <FormItem className="max-w-[200px]">
+                      <FormItem className="w-full sm:max-w-[200px]">
                         <FormLabel>
                           CEP <span className="text-destructive">*</span>
                         </FormLabel>

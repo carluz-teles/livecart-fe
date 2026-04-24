@@ -13,7 +13,9 @@ import {
   Plus,
   Clock,
   RotateCcw,
+  Copy,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { formatCurrency, formatDateTime } from "@/lib/format"
 import {
@@ -456,6 +458,7 @@ export default function EventDetailsPage() {
                       <TableHead className="text-center">Itens</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                       <TableHead className="text-right">Criado</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -468,11 +471,12 @@ export default function EventDetailsPage() {
                           <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                         </TableRow>
                       ))
                     ) : !carts || carts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           <div className="flex flex-col items-center gap-2">
                             <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
                             <p className="text-muted-foreground">Nenhum carrinho encontrado</p>
@@ -527,6 +531,18 @@ function CartRow({ cart, sessionNumber }: { cart: EventCart; sessionNumber: numb
     return formatDateTime(dateStr).split(" ")[0]
   }
 
+  const handleCopyCheckoutLink = async () => {
+    const checkoutUrl = `${window.location.origin}/cart/${cart.token}`
+    try {
+      await navigator.clipboard.writeText(checkoutUrl)
+      toast.success("Link copiado!", {
+        description: `Checkout de @${cart.platformHandle}`,
+      })
+    } catch {
+      toast.error("Erro ao copiar link")
+    }
+  }
+
   return (
     <TableRow className="group">
       <TableCell>
@@ -577,6 +593,26 @@ function CartRow({ cart, sessionNumber }: { cart: EventCart; sessionNumber: numb
       </TableCell>
       <TableCell className="text-right text-sm text-muted-foreground">
         {getRelativeTime(cart.createdAt)}
+      </TableCell>
+      <TableCell>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleCopyCheckoutLink}
+              >
+                <Copy className="h-4 w-4" />
+                <span className="sr-only">Copiar link do checkout</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copiar link do checkout</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </TableCell>
     </TableRow>
   )
