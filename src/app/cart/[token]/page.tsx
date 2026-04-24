@@ -219,6 +219,23 @@ function SuccessState({ cart }: { cart: PublicCheckoutCart }) {
                     {formatCurrency(cart.summary.subtotal)}
                   </span>
                 </div>
+                {cart.paidAt && (
+                  <>
+                    <Separator className="bg-gray-200" />
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Pago em</span>
+                      <span className="font-medium text-gray-900">
+                        {new Date(cart.paidAt).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -321,7 +338,8 @@ function CheckoutContent({ token }: { token: string }) {
   })
   const addressComplete = isShippingAddressComplete(shippingAddress)
   const shippingComplete = selectedShippingId !== null
-  const canProceedToPayment = customerInfoComplete && addressComplete && shippingComplete
+  // TODO: Remove this bypass when Melhor Envio is configured
+  const canProceedToPayment = customerInfoComplete && addressComplete // && shippingComplete
 
   // Serialized customer payload for downstream payment components.
   // Memoize so re-renders on keystrokes don't trigger PIX regeneration effects.

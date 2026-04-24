@@ -207,6 +207,7 @@ export interface PublicCheckoutCart {
   status: CartStatus
   customerEmail: string | null
   paymentStatus: PaymentStatus | null
+  paidAt: string | null
   checkoutUrl: string | null
   platformHandle: string
   allowEdit: boolean
