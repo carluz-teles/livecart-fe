@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Loader2, CreditCard, AlertCircle } from "lucide-react"
 import { initMercadoPago, CardPayment } from "@mercadopago/sdk-react"
 import { Button } from "@/components/ui/button"
@@ -52,6 +52,22 @@ export function CheckoutCardForm({
   const [loading, setLoading] = useState(false)
   const [mpInitialized, setMpInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // The Mercado Pago Brick re-initializes the iframe every time `initialization`
+  // or `customization` get a new reference, so memoize them. Without this,
+  // every parent re-render (e.g. after the cart refetches on shipping change)
+  // remounts the brick and the card form flickers in and out.
+  const mpInitialization = useMemo(
+    () => ({ amount: amount / 100, payer: { email: customer.email } }),
+    [amount, customer.email]
+  )
+  const mpCustomization = useMemo(
+    () => ({
+      paymentMethods: { maxInstallments: 12 },
+      visual: { style: { theme: "default" as const } },
+    }),
+    []
+  )
 
   // Pagar.me form state (card data only — customer info comes from props)
   const [cardNumber, setCardNumber] = useState("")
@@ -191,25 +207,13 @@ export function CheckoutCardForm({
         )}
 
         <CardPayment
-          initialization={{
-            amount: amount / 100,
-            payer: { email: customer.email },
-          }}
+          initialization={mpInitialization}
           onSubmit={handleMercadoPagoSubmit}
           onError={(err) => {
             console.error("MP Card Error:", err)
             setError("Erro ao processar cartão. Verifique os dados.")
           }}
-          customization={{
-            paymentMethods: {
-              maxInstallments: 12,
-            },
-            visual: {
-              style: {
-                theme: "default",
-              },
-            },
-          }}
+          customization={mpCustomization}
         />
       </div>
     )
