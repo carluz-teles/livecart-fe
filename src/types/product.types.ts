@@ -214,3 +214,10 @@ export interface UpdateProductGroupPayload {
   name?: string
   description?: string
 }
+
+// Body for POST /product-groups/:id/images. Position defaults on the backend
+// to "append at the end" when omitted.
+export interface AddProductGroupImagePayload {
+  url: string
+  position?: number
+}

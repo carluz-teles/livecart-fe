@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Layers, MoreHorizontal, Search, Trash2 } from "lucide-react"
+import { Layers, MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -33,10 +33,13 @@ import {
 import { formatDateTime } from "@/lib/format"
 import type { ProductGroupListItem } from "@/types"
 import { ProductGroupDetailSheet } from "./ProductGroupDetailSheet"
+import { EditProductGroupDialog } from "./EditProductGroupDialog"
 
 export function ProductGroupList() {
   const [search, setSearch] = useState("")
   const [viewingId, setViewingId] = useState<string | null>(null)
+  const [editingGroup, setEditingGroup] =
+    useState<ProductGroupListItem | null>(null)
   const [deletingGroup, setDeletingGroup] = useState<ProductGroupListItem | null>(
     null
   )
@@ -152,6 +155,10 @@ export function ProductGroupList() {
                       <DropdownMenuItem onClick={() => setViewingId(group.id)}>
                         Ver detalhes
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditingGroup(group)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Editar nome e descrição
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -174,6 +181,14 @@ export function ProductGroupList() {
         open={!!viewingId}
         onOpenChange={(open) => {
           if (!open) setViewingId(null)
+        }}
+      />
+
+      <EditProductGroupDialog
+        group={editingGroup}
+        open={!!editingGroup}
+        onOpenChange={(open) => {
+          if (!open) setEditingGroup(null)
         }}
       />
 

@@ -3,9 +3,11 @@ import type {
   ProductGroupListResponse,
   ProductGroupDetail,
   ProductGroupListParams,
+  ProductGroupImage,
   CreateProductGroupPayload,
   CreateProductGroupResponse,
   UpdateProductGroupPayload,
+  AddProductGroupImagePayload,
 } from "@/types"
 
 function toQueryString(params?: ProductGroupListParams): string {
@@ -68,6 +70,29 @@ export const productGroupService = {
   delete: (storeId: string, id: string, token?: string | null) =>
     apiClient.delete<void>(
       `/stores/${storeId}/product-groups/${id}`,
+      token
+    ),
+
+  addImage: (
+    storeId: string,
+    groupId: string,
+    payload: AddProductGroupImagePayload,
+    token?: string | null
+  ) =>
+    apiClient.post<ProductGroupImage>(
+      `/stores/${storeId}/product-groups/${groupId}/images`,
+      payload,
+      token
+    ),
+
+  removeImage: (
+    storeId: string,
+    groupId: string,
+    imageId: string,
+    token?: string | null
+  ) =>
+    apiClient.delete<void>(
+      `/stores/${storeId}/product-groups/${groupId}/images/${imageId}`,
       token
     ),
 }

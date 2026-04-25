@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { Loader2, Layers } from "lucide-react"
+import { Loader2, Layers, X } from "lucide-react"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
@@ -21,8 +25,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useProductGroup } from "@/hooks/product-group"
+import {
+  useAddProductGroupImage,
+  useProductGroup,
+  useRemoveProductGroupImage,
+} from "@/hooks/product-group"
 import { formatCurrency, formatDateTime } from "@/lib/format"
+import type { ProductGroupImage } from "@/types"
 
 interface ProductGroupDetailSheetProps {
   groupId: string | null
@@ -84,31 +93,7 @@ export function ProductGroupDetailSheet({
               </ul>
             </section>
 
-            {/* Group images */}
-            {data.groupImages.length > 0 && (
-              <section className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Galeria
-                </h4>
-                <ul className="grid grid-cols-3 gap-2">
-                  {data.groupImages.map((img) => (
-                    <li
-                      key={img.id}
-                      className="relative aspect-square overflow-hidden rounded-md border bg-muted"
-                    >
-                      <Image
-                        src={img.url}
-                        alt=""
-                        fill
-                        unoptimized
-                        className="object-cover"
-                        sizes="120px"
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <GroupGallerySection groupId={data.id} images={data.groupImages} />
 
             <Separator />
 
@@ -177,5 +162,134 @@ export function ProductGroupDetailSheet({
         )}
       </SheetContent>
     </Sheet>
+  )
+}
+
+// =============================================================================
+// Gallery section — adds, lists, and removes group images. Uses optimistic
+// invalidation rather than optimistic update because the backend sets
+// position server-side; the round trip is cheap.
+// =============================================================================
+
+interface GroupGallerySectionProps {
+  groupId: string
+  images: ProductGroupImage[]
+}
+
+function GroupGallerySection({ groupId, images }: GroupGallerySectionProps) {
+  const [draftUrl, setDraftUrl] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const addImage = useAddProductGroupImage()
+  const removeImage = useRemoveProductGroupImage()
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault()
+    const url = draftUrl.trim()
+    if (!url) return
+    setError(null)
+    addImage.mutate(
+      { groupId, payload: { url } },
+      {
+        onSuccess: () => {
+          toast.success("Imagem adicionada")
+          setDraftUrl("")
+        },
+        onError: (err) => {
+          setError(err.message || "Falha ao adicionar imagem")
+        },
+      }
+    )
+  }
+
+  const handleRemove = (imageId: string) => {
+    setRemovingId(imageId)
+    removeImage.mutate(
+      { groupId, imageId },
+      {
+        onSuccess: () => {
+          toast.success("Imagem removida")
+        },
+        onError: (err) =>
+          toast.error("Falha ao remover", {
+            description: err.message || "Tente novamente.",
+          }),
+        onSettled: () => setRemovingId(null),
+      }
+    )
+  }
+
+  return (
+    <section className="space-y-3">
+      <h4 className="text-sm font-medium text-muted-foreground">Galeria</h4>
+
+      {images.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Nenhuma imagem adicionada ainda.
+        </p>
+      ) : (
+        <ul className="grid grid-cols-3 gap-2">
+          {images.map((img) => {
+            const removing = removingId === img.id && removeImage.isPending
+            return (
+              <li
+                key={img.id}
+                className="group relative aspect-square overflow-hidden rounded-md border bg-muted"
+              >
+                <Image
+                  src={img.url}
+                  alt=""
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="120px"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(img.id)}
+                  disabled={removing}
+                  aria-label="Remover imagem"
+                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100 focus:opacity-100 disabled:cursor-wait"
+                >
+                  {removing ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <X className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <form onSubmit={handleAdd} className="flex gap-2">
+        <Input
+          type="url"
+          placeholder="https://... (URL da imagem)"
+          value={draftUrl}
+          onChange={(e) => {
+            setDraftUrl(e.target.value)
+            if (error) setError(null)
+          }}
+          className="h-9 text-sm"
+          aria-invalid={!!error}
+          disabled={addImage.isPending}
+        />
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={!draftUrl.trim() || addImage.isPending}
+        >
+          {addImage.isPending && (
+            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          )}
+          Adicionar
+        </Button>
+      </form>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </section>
   )
 }
