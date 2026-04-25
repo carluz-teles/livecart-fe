@@ -212,6 +212,7 @@ function IntegrationsContent() {
   const [apiKey, setApiKey] = useState("")
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [smartEnviosRotating, setSmartEnviosRotating] = useState(false)
+  const [rotateConfirmOpen, setRotateConfirmOpen] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
@@ -349,6 +350,14 @@ function IntegrationsContent() {
     setApiKeyError(null)
     setSmartEnviosRotating(true)
     setApiKeyDialog("smartenvios")
+  }
+
+  // Confirmation flow: closes the details sheet and opens the rotation form
+  // dialog with the current state cleared.
+  const handleConfirmRotate = () => {
+    setRotateConfirmOpen(false)
+    handleCloseDetails()
+    handleRotateSmartEnvios()
   }
 
   const handleConnectTiny = () => {
@@ -551,16 +560,6 @@ function IntegrationsContent() {
                                   <Info className="mr-1.5 h-3.5 w-3.5" />
                                   Ver detalhes
                                 </Button>
-                                {provider.id === "smartenvios" && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleRotateSmartEnvios}
-                                  >
-                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                                    Rotacionar token
-                                  </Button>
-                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -844,6 +843,32 @@ function IntegrationsContent() {
               )
             })()}
 
+            {/* Token rotation — only for static-token providers (SmartEnvios).
+                Lives inside Ver detalhes (not on the card) and gates the form
+                behind a confirmation alert so it's not a one-click footgun. */}
+            {detailsSheet?.provider.id === "smartenvios" && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Token de acesso
+                </h4>
+                <div className="rounded-lg border p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Use apenas se você gerou um novo token no painel da
+                    SmartEnvios ou suspeita que o atual foi comprometido. O
+                    token salvo será substituído.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRotateConfirmOpen(true)}
+                  >
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                    Rotacionar token
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Connection Test Section */}
             {detailsData && (
               <div className="space-y-3">
@@ -895,6 +920,35 @@ function IntegrationsContent() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Rotate Token Confirmation */}
+      <AlertDialog
+        open={rotateConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) setRotateConfirmOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Rotacionar token da SmartEnvios?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A rotação substitui o token atualmente salvo pelo que você
+              informar a seguir. Use só quando você já tem o novo token em
+              mãos — gerado no painel da SmartEnvios — ou se suspeita que o
+              atual foi comprometido. Enquanto você não confirmar o novo
+              token, o atual continua valendo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRotate}>
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
