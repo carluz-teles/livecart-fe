@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, forwardRef } from "react"
+import { useEffect, useRef, useState, useCallback, forwardRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, ArrowLeft, Package, Layers } from "lucide-react"
@@ -143,6 +143,29 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
       })
     }
   }, [open, isEditing, form])
+
+  // Auto-progress past the origin step when "manual" is the default. Radix's
+  // Select doesn't fire onValueChange when the user re-picks the value that's
+  // already selected, so without this the form fields never appear for the
+  // most common path. We auto-skip only once per sheet-open so users with ERP
+  // integrations can use the "Trocar origem" action in ManualFormStep to go
+  // back without immediately bouncing to form again.
+  const autoSkippedRef = useRef(false)
+  useEffect(() => {
+    if (!open) {
+      autoSkippedRef.current = false
+      return
+    }
+    if (
+      !isEditing &&
+      step === "origin" &&
+      selectedSource === "manual" &&
+      !autoSkippedRef.current
+    ) {
+      autoSkippedRef.current = true
+      setStep("form")
+    }
+  }, [open, isEditing, step, selectedSource])
 
   const isPending = createProduct.isPending || updateProduct.isPending
 
@@ -304,6 +327,8 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
             productType={productType}
             onProductTypeChange={setProductType}
             isPending={isPending}
+            canChangeOrigin={availableSourceOptions.length > 1}
+            onChangeOrigin={() => setStep("origin")}
             onSubmit={onSubmit}
             onCancel={() => onOpenChange?.(false)}
             onSuccess={() => {
@@ -409,6 +434,8 @@ interface ManualFormStepProps {
   productType: ProductType
   onProductTypeChange: (type: ProductType) => void
   isPending: boolean
+  canChangeOrigin: boolean
+  onChangeOrigin: () => void
   onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
   onCancel: () => void
   onSuccess: () => void
@@ -419,6 +446,8 @@ function ManualFormStep({
   productType,
   onProductTypeChange,
   isPending,
+  canChangeOrigin,
+  onChangeOrigin,
   onSubmit,
   onCancel,
   onSuccess,
@@ -435,6 +464,24 @@ function ManualFormStep({
       </SheetHeader>
 
       <div className="mt-6 space-y-6">
+        {canChangeOrigin && (
+          <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">
+              Origem: <strong className="text-foreground">Manual</strong>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={onChangeOrigin}
+            >
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+              Trocar origem
+            </Button>
+          </div>
+        )}
+
         <ProductTypeSelector value={productType} onChange={onProductTypeChange} />
 
         {productType === "simple" ? (
