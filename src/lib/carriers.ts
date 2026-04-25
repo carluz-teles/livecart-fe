@@ -5,6 +5,10 @@ const LOCAL_CARRIER_LOGOS: Record<string, string> = {
   azul: "/carriers/azul.png",
   carriers: "/carriers/carriers.png",
   correios: "/carriers/correios.png",
+  // SmartEnvios returns Correios services (PAC / Sedex) under `carrier`,
+  // so alias them to the Correios logo.
+  pac: "/carriers/correios.png",
+  sedex: "/carriers/correios.png",
   dba: "/carriers/dba.jpg",
   gollog: "/carriers/gollog.png",
   hdl: "/carriers/hdl.jpg",
