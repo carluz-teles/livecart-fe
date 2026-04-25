@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, forwardRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, ArrowLeft } from "lucide-react"
+import { Plus, Loader2, ArrowLeft, Package, Layers } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -46,6 +46,8 @@ import { useUpdateProduct } from "@/hooks/product/useUpdateProduct"
 import { useIntegrations } from "@/hooks/integration"
 import { ProductFormERPSearch } from "./ProductForm.ERPSearch"
 import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
+import { ProductFormGroup } from "./ProductForm.GroupForm"
+import { cn } from "@/lib/utils"
 import type { Product, CreateProductPayload, UpdateProductPayload, ProductSource } from "@/types/product.types"
 import type { ERPProduct, Integration } from "@/types"
 
@@ -58,6 +60,7 @@ interface ProductFormProps {
 }
 
 type Step = "origin" | "form"
+type ProductType = "simple" | "variants"
 
 const ERP_SOURCES: ProductSource[] = ["tiny", "bling", "shopify"]
 
@@ -77,6 +80,9 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
   const [step, setStep] = useState<Step>(isEditing ? "form" : "origin")
   const [selectedSource, setSelectedSource] = useState<ProductSource>("manual")
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
+  // Only meaningful when source is "manual" — ERP imports always go through
+  // the simple flow because the backend models the variants on its end.
+  const [productType, setProductType] = useState<ProductType>("simple")
 
   // Get active ERP integrations
   const activeERPIntegrations = (integrationsData?.data ?? []).filter(
@@ -125,6 +131,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
       setStep("origin")
       setSelectedSource("manual")
       setSelectedIntegration(null)
+      setProductType("simple")
       form.reset({
         name: "",
         price: 0,
@@ -267,7 +274,14 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
           {trigger || defaultTrigger}
         </SheetTrigger>
       )}
-      <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+      <SheetContent
+        className={cn(
+          "overflow-y-auto",
+          productType === "variants" && step === "form" && !isEditing
+            ? "w-full sm:max-w-3xl"
+            : "w-[400px] sm:w-[540px]"
+        )}
+      >
         {isEditing ? (
           <EditView
             form={form}
@@ -284,13 +298,26 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
             onERPProductSelect={handleERPProductSelect}
             onCancel={() => onOpenChange?.(false)}
           />
+        ) : selectedSource === "manual" ? (
+          <ManualFormStep
+            form={form}
+            productType={productType}
+            onProductTypeChange={setProductType}
+            isPending={isPending}
+            onSubmit={onSubmit}
+            onCancel={() => onOpenChange?.(false)}
+            onSuccess={() => {
+              onOpenChange?.(false)
+              onSuccess?.()
+            }}
+          />
         ) : (
           <FormStep
             form={form}
             selectedSource={selectedSource}
             isPending={isPending}
             onSubmit={onSubmit}
-            onBack={selectedSource !== "manual" ? handleBack : undefined}
+            onBack={handleBack}
             onCancel={() => onOpenChange?.(false)}
           />
         )}
@@ -370,6 +397,137 @@ function OriginStep({
         </div>
       </div>
     </>
+  )
+}
+
+// =============================================================================
+// MANUAL FORM STEP (with type selector at top)
+// =============================================================================
+
+interface ManualFormStepProps {
+  form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
+  productType: ProductType
+  onProductTypeChange: (type: ProductType) => void
+  isPending: boolean
+  onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
+  onCancel: () => void
+  onSuccess: () => void
+}
+
+function ManualFormStep({
+  form,
+  productType,
+  onProductTypeChange,
+  isPending,
+  onSubmit,
+  onCancel,
+  onSuccess,
+}: ManualFormStepProps) {
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>Novo Produto</SheetTitle>
+        <SheetDescription>
+          {productType === "simple"
+            ? "Preencha os dados do produto. A keyword será gerada automaticamente."
+            : "Defina as opções (cor, tamanho, etc.) e gere as variantes em uma só tela."}
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="mt-6 space-y-6">
+        <ProductTypeSelector value={productType} onChange={onProductTypeChange} />
+
+        {productType === "simple" ? (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6"
+            >
+              <ProductFormFields form={form} />
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isPending ? "Criando..." : "Criar Produto"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <ProductFormGroup onCancel={onCancel} onSuccess={onSuccess} />
+        )}
+      </div>
+    </>
+  )
+}
+
+interface ProductTypeSelectorProps {
+  value: ProductType
+  onChange: (type: ProductType) => void
+}
+
+function ProductTypeSelector({ value, onChange }: ProductTypeSelectorProps) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <TypeOption
+        active={value === "simple"}
+        icon={<Package className="h-4 w-4" />}
+        title="Simples"
+        description="Um único SKU vendável"
+        onClick={() => onChange("simple")}
+      />
+      <TypeOption
+        active={value === "variants"}
+        icon={<Layers className="h-4 w-4" />}
+        title="Com variações"
+        description="Cor, tamanho, etc."
+        onClick={() => onChange("variants")}
+      />
+    </div>
+  )
+}
+
+interface TypeOptionProps {
+  active: boolean
+  icon: React.ReactNode
+  title: string
+  description: string
+  onClick: () => void
+}
+
+function TypeOption({ active, icon, title, description, onClick }: TypeOptionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
+        active
+          ? "border-primary bg-primary/5"
+          : "hover:border-foreground/20 hover:bg-muted/40"
+      )}
+    >
+      <span
+        className={cn(
+          "mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md",
+          active ? "bg-primary text-primary-foreground" : "bg-muted"
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-xs text-muted-foreground">{description}</span>
+      </span>
+    </button>
   )
 }
 
