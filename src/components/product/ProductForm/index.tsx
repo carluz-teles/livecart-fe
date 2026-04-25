@@ -189,6 +189,15 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
   }, [form, selectedSource])
 
   async function onSubmit(data: CreateProductFormData | UpdateProductFormData) {
+    // Backend treats shipping as all-or-nothing — sending dims as null mixed
+    // with packageFormat returns 400. Omit the whole object when no dimension
+    // was filled in. The schema already forbids partial dimensions.
+    const hasShippingDims =
+      data.shipping.weightGrams != null ||
+      data.shipping.heightCm != null ||
+      data.shipping.widthCm != null ||
+      data.shipping.lengthCm != null
+
     if (isEditing) {
       const payload: UpdateProductPayload = {
         name: data.name,
@@ -196,7 +205,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         stock: data.stock,
         imageUrl: data.imageUrl || undefined,
         active: (data as UpdateProductFormData).active,
-        shipping: data.shipping,
+        ...(hasShippingDims ? { shipping: data.shipping } : {}),
       }
 
       updateProduct.mutate(
@@ -222,7 +231,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         externalSource: data.externalSource,
         imageUrl: data.imageUrl || undefined,
         externalId: data.externalId || undefined,
-        shipping: data.shipping,
+        ...(hasShippingDims ? { shipping: data.shipping } : {}),
       }
 
       createProduct.mutate(payload, {
