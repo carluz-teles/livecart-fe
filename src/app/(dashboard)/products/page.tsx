@@ -9,20 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductForm } from "@/components/product/ProductForm"
 import { ProductDetailModal } from "@/components/product/ProductDetailModal"
+import { ProductGroupList } from "@/components/product/ProductGroupList"
 import { ProductFilters } from "@/components/shared/Filters"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct, useSyncProduct } from "@/hooks/product"
+import { useProductGroups } from "@/hooks/product-group"
 import { formatCurrency } from "@/lib/format"
 import type { Product, ProductFilters as ProductFiltersType } from "@/types/product.types"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +74,11 @@ export default function ProductsPage() {
 
   const { data, isLoading, error } = useProducts(params)
   const { data: stats, isLoading: statsLoading } = useProductStats()
+  // Fetch only the count for the tab badge — page-1 limit-1 is enough.
+  const { data: groupsCount } = useProductGroups({
+    pagination: { page: 1, limit: 1 },
+  })
+  const totalGroups = groupsCount?.pagination.total ?? 0
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
   const { mutate: syncProduct, isPending: isSyncing, canSync } = useSyncProduct()
@@ -209,13 +211,23 @@ export default function ProductsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Produtos</CardTitle>
-          <CardDescription>
-            Visualize e gerencie todos os produtos do seu catálogo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">
+                Todos os SKUs
+              </TabsTrigger>
+              <TabsTrigger value="groups">
+                Grupos
+                {totalGroups > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                    {totalGroups}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-0">
           <div className="flex items-center gap-2 pb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -409,6 +421,12 @@ export default function ProductsPage() {
               </div>
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="groups" className="mt-0">
+              <ProductGroupList />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
