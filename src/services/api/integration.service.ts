@@ -69,6 +69,22 @@ export const integrationService = {
       token
     ),
 
+  // Import a Tiny product (or a subset of its variants) into the LiveCart
+  // catalog. The backend creates a product_group + N products atomically
+  // when there are variants, or a single product for flat items.
+  importProduct: (
+    storeId: string,
+    integrationId: string,
+    tinyProductId: string,
+    variantIds: string[] | undefined,
+    token?: string | null
+  ) =>
+    apiClient.post<unknown>(
+      `/stores/${storeId}/integrations/${integrationId}/products/${tinyProductId}/import`,
+      variantIds && variantIds.length > 0 ? { variantIds } : {},
+      token
+    ),
+
   // Get active Instagram lives
   getInstagramLives: (storeId: string, token?: string | null) =>
     apiClient.get<InstagramLivesResponse>(

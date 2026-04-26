@@ -411,6 +411,7 @@ function OriginStep({
             <ProductFormERPSearch
               integrationId={selectedIntegration.id}
               onSelect={onERPProductSelect}
+              onImported={onCancel}
             />
           </>
         )}

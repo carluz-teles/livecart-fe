@@ -4,6 +4,7 @@ export {
   useConnectApiKey,
   useConnectSmartEnvios,
 } from "./useConnectIntegration"
+export { useImportERPProduct } from "./useImportERPProduct"
 export { useConnectTiny } from "./useConnectTiny"
 export { useDisconnectIntegration } from "./useDisconnectIntegration"
 export { useTestConnection } from "./useTestConnection"

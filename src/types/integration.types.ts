@@ -50,21 +50,46 @@ export interface CreateIntegrationPayload {
   metadata?: Record<string, unknown>
 }
 
-// ERP Product from search
+// One variant of a parent product as returned by the ERP search. Attributes
+// is a free-form dict (e.g. { Cor: "Preto", Tamanho: "P" }) — the keys come
+// from the ERP's grade definition, so the frontend just renders them as
+// labelled pills without assuming specific names.
+export interface ERPVariant {
+  id: string
+  sku?: string
+  price: number // cents
+  stock: number
+  active: boolean
+  imageUrl?: string
+  attributes: Record<string, string>
+}
+
+// ERP Product from search. When the underlying ERP product is a variant
+// parent, isParent is true and variants[] is populated; the parent itself
+// is not directly importable — the user must pick which variants to bring
+// in via /integrations/:id/products/:tinyProductId/import.
 export interface ERPProduct {
   id: string
   sku?: string
   name: string
-  price: number // in cents
+  price: number // cents
   stock: number
   imageUrl?: string
   active: boolean
+  isParent?: boolean
+  variants?: ERPVariant[]
 }
 
 export interface ERPProductSearchResponse {
   products: ERPProduct[]
   totalCount: number
   hasMore: boolean
+}
+
+export interface ImportERPProductPayload {
+  // Omitted or empty array imports every variant. Pass a subset when the
+  // user only wants specific Tiny variant ids.
+  variantIds?: string[]
 }
 
 // Instagram Live

@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Search, Package, AlertCircle } from "lucide-react"
+import { Search, Package, AlertCircle, Layers } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -10,22 +11,42 @@ import { useSearchERPProducts } from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
 import { getERPSearchErrorMessage } from "@/lib/api-errors"
 import type { ERPProduct } from "@/types"
+import { ProductFormERPVariantPicker } from "./ProductFormERPVariantPicker"
 
 interface ProductFormERPSearchProps {
   integrationId: string
   onSelect: (product: ERPProduct) => void
+  // Called after a parent (variant-bearing) product is imported via the
+  // dedicated /import endpoint. The flat-product path continues to use
+  // onSelect to pre-fill the form for review.
+  onImported?: () => void
 }
 
-export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERPSearchProps) {
+export function ProductFormERPSearch({
+  integrationId,
+  onSelect,
+  onImported,
+}: ProductFormERPSearchProps) {
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pickerParent, setPickerParent] = useState<ERPProduct | null>(null)
   const { data, isLoading, isError, error } = useSearchERPProducts(integrationId, search)
 
   const products = data?.products ?? []
   const selectedProduct = products.find((p) => p.id === selectedId)
   const showResults = search.length >= 2
 
+  const isVariantParent = (p: ERPProduct) =>
+    p.isParent === true && (p.variants?.length ?? 0) > 0
+
   function handleSelect(product: ERPProduct) {
+    if (isVariantParent(product)) {
+      // Parents skip the form pre-fill flow — they need a separate picker
+      // to choose which variants to bring in.
+      setPickerParent(product)
+      setSelectedId(null)
+      return
+    }
     setSelectedId(product.id === selectedId ? null : product.id)
   }
 
@@ -72,46 +93,58 @@ export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERP
 
           {!isLoading && !isError && products.length > 0 && (
             <ul className="max-h-[320px] overflow-y-auto divide-y">
-              {products.map((product) => (
-                <li key={product.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(product)}
-                    className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent ${selectedId === product.id
-                        ? "bg-accent ring-1 ring-inset ring-primary"
-                        : ""
+              {products.map((product) => {
+                const parent = isVariantParent(product)
+                return (
+                  <li key={product.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(product)}
+                      className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent ${
+                        selectedId === product.id && !parent
+                          ? "bg-accent ring-1 ring-inset ring-primary"
+                          : ""
                       }`}
-                  >
-                    {product.imageUrl ? (
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        width={40}
-                        height={40}
-                        unoptimized
-                        className="h-10 w-10 shrink-0 rounded-md object-cover bg-muted"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{product.name}</p>
-                      {product.sku && (
-                        <p className="text-xs text-muted-foreground font-mono">
-                          SKU: {product.sku}
-                        </p>
+                    >
+                      {product.imageUrl ? (
+                        <Image
+                          src={product.imageUrl}
+                          alt={product.name}
+                          width={40}
+                          height={40}
+                          unoptimized
+                          className="h-10 w-10 shrink-0 rounded-md object-cover bg-muted"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
                       )}
-                    </div>
 
-                    <span className="shrink-0 text-sm font-semibold">
-                      {formatCurrency(product.price)}
-                    </span>
-                  </button>
-                </li>
-              ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium">{product.name}</p>
+                          {parent && (
+                            <Badge variant="secondary" className="h-5 shrink-0 gap-1 text-[10px]">
+                              <Layers className="h-3 w-3" />
+                              {product.variants?.length} variantes
+                            </Badge>
+                          )}
+                        </div>
+                        {product.sku && (
+                          <p className="text-xs text-muted-foreground font-mono">
+                            SKU: {product.sku}
+                          </p>
+                        )}
+                      </div>
+
+                      <span className="shrink-0 text-sm font-semibold">
+                        {formatCurrency(product.price)}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
 
@@ -128,6 +161,19 @@ export function ProductFormERPSearch({ integrationId, onSelect }: ProductFormERP
           Criar Produto
         </Button>
       )}
+
+      <ProductFormERPVariantPicker
+        open={!!pickerParent}
+        onOpenChange={(open) => {
+          if (!open) setPickerParent(null)
+        }}
+        parent={pickerParent}
+        integrationId={integrationId}
+        onImported={() => {
+          setPickerParent(null)
+          onImported?.()
+        }}
+      />
     </div>
   )
 }
