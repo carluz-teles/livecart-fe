@@ -48,11 +48,21 @@ import type { PackageFormat } from "./product.types"
 export interface ShippingDefaults {
   packageWeightGrams: number
   packageFormat: PackageFormat
+  // Default package dimensions used as a fallback when ERP imports come in
+  // with weight only (common for clothing stores). All three are persisted
+  // together — backend treats partial input as "fallback off" and stores
+  // null for all of them.
+  heightCm: number | null
+  widthCm: number | null
+  lengthCm: number | null
 }
 
 export const DEFAULT_SHIPPING_DEFAULTS: ShippingDefaults = {
   packageWeightGrams: 0,
   packageFormat: "box",
+  heightCm: null,
+  widthCm: null,
+  lengthCm: null,
 }
 
 export interface Store {

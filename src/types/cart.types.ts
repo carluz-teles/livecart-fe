@@ -94,6 +94,9 @@ export interface OrderStore {
   shippingDefaults: {
     packageWeightGrams: number
     packageFormat: PackageFormat
+    heightCm: number | null
+    widthCm: number | null
+    lengthCm: number | null
   }
 }
 

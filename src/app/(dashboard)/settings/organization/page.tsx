@@ -89,13 +89,51 @@ const organizationSchema = z.object({
     country: z.string().optional(),
     stateRegister: z.string().optional(),
   }),
-  shippingDefaults: z.object({
-    packageWeightGrams: z
-      .number({ message: "Peso deve ser um número" })
-      .int("Use um número inteiro")
-      .nonnegative("Peso não pode ser negativo"),
-    packageFormat: z.enum(["box", "roll", "letter"]),
-  }),
+  shippingDefaults: z
+    .object({
+      packageWeightGrams: z
+        .number({ message: "Peso deve ser um número" })
+        .int("Use um número inteiro")
+        .nonnegative("Peso não pode ser negativo"),
+      packageFormat: z.enum(["box", "roll", "letter"]),
+      heightCm: z
+        .number({ message: "Use um número inteiro positivo" })
+        .int()
+        .positive()
+        .nullable(),
+      widthCm: z
+        .number({ message: "Use um número inteiro positivo" })
+        .int()
+        .positive()
+        .nullable(),
+      lengthCm: z
+        .number({ message: "Use um número inteiro positivo" })
+        .int()
+        .positive()
+        .nullable(),
+    })
+    .superRefine((data, ctx) => {
+      // Backend persists the three import-fallback dims as a unit — partial
+      // input gets stored as nulls anyway. Surface that contract in the
+      // form so the user fixes it before saving instead of silently losing
+      // their data on the server side.
+      const dims = [data.heightCm, data.widthCm, data.lengthCm]
+      const filled = dims.filter((v) => v !== null && v !== undefined).length
+      if (filled !== 0 && filled !== 3) {
+        const message =
+          "Preencha os três (altura, largura e comprimento) ou deixe os três em branco."
+        const fields: Array<keyof typeof data> = ["heightCm", "widthCm", "lengthCm"]
+        for (const field of fields) {
+          if (data[field] === null || data[field] === undefined) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [field],
+              message,
+            })
+          }
+        }
+      }
+    }),
 })
 
 type OrganizationFormData = z.infer<typeof organizationSchema>
@@ -187,7 +225,10 @@ export default function OrganizationPage() {
           country: store.address?.country || "BR",
           stateRegister: store.address?.stateRegister || "",
         },
-        shippingDefaults: store.shippingDefaults ?? DEFAULT_SHIPPING_DEFAULTS,
+        shippingDefaults: {
+          ...DEFAULT_SHIPPING_DEFAULTS,
+          ...(store.shippingDefaults ?? {}),
+        },
       })
     }
   }, [store, form])
@@ -309,7 +350,10 @@ export default function OrganizationPage() {
           country: store.address?.country || "BR",
           stateRegister: store.address?.stateRegister || "",
         },
-        shippingDefaults: store.shippingDefaults ?? DEFAULT_SHIPPING_DEFAULTS,
+        shippingDefaults: {
+          ...DEFAULT_SHIPPING_DEFAULTS,
+          ...(store.shippingDefaults ?? {}),
+        },
       })
     }
     setIsEditing(false)
@@ -917,6 +961,11 @@ export default function OrganizationPage() {
                   )}
                 />
               </div>
+
+              <ImportFallbackDimensionsFields
+                form={form}
+                isEditing={isEditing}
+              />
             </div>
 
             <Separator />
@@ -1101,5 +1150,136 @@ export default function OrganizationPage() {
         </Card>
       </form>
     </Form>
+  )
+}
+
+// =============================================================================
+// IMPORT FALLBACK DIMENSIONS — H/W/L used when ERP imports come weight-only
+// =============================================================================
+
+interface ImportFallbackDimensionsFieldsProps {
+  form: ReturnType<typeof useForm<OrganizationFormData>>
+  isEditing: boolean
+}
+
+function ImportFallbackDimensionsFields({
+  form,
+  isEditing,
+}: ImportFallbackDimensionsFieldsProps) {
+  const dims = form.watch("shippingDefaults")
+  const hasAnyDim =
+    dims?.heightCm !== null ||
+    dims?.widthCm !== null ||
+    dims?.lengthCm !== null
+
+  const clearDims = () => {
+    form.setValue("shippingDefaults.heightCm", null, { shouldValidate: true })
+    form.setValue("shippingDefaults.widthCm", null, { shouldValidate: true })
+    form.setValue("shippingDefaults.lengthCm", null, { shouldValidate: true })
+  }
+
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">
+            Caixa padrão para importações automáticas
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Quando você importa produtos do ERP que vêm só com peso, usamos
+            estas dimensões pra completar o frete sem precisar editar cada
+            produto. Para camisetas dobradas, algo como 5×25×30 cm é comum.
+          </p>
+        </div>
+        {hasAnyDim && isEditing && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 px-2 text-xs"
+            onClick={clearDims}
+          >
+            Limpar
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <FallbackDimField
+          control={form.control}
+          name="shippingDefaults.heightCm"
+          label="Altura (cm)"
+          placeholder="5"
+          disabled={!isEditing}
+        />
+        <FallbackDimField
+          control={form.control}
+          name="shippingDefaults.widthCm"
+          label="Largura (cm)"
+          placeholder="25"
+          disabled={!isEditing}
+        />
+        <FallbackDimField
+          control={form.control}
+          name="shippingDefaults.lengthCm"
+          label="Comprimento (cm)"
+          placeholder="30"
+          disabled={!isEditing}
+        />
+      </div>
+    </div>
+  )
+}
+
+interface FallbackDimFieldProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: any
+  name: string
+  label: string
+  placeholder: string
+  disabled: boolean
+}
+
+function FallbackDimField({
+  control,
+  name,
+  label,
+  placeholder,
+  disabled,
+}: FallbackDimFieldProps) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-xs">{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              placeholder={placeholder}
+              value={field.value ?? ""}
+              onChange={(e) => {
+                const raw = e.target.value
+                if (raw === "") {
+                  field.onChange(null)
+                  return
+                }
+                const n = parseInt(raw, 10)
+                field.onChange(Number.isNaN(n) ? null : n)
+              }}
+              onBlur={field.onBlur}
+              name={field.name}
+              ref={field.ref}
+              disabled={disabled}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   )
 }
