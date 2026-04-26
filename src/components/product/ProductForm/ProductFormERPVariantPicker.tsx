@@ -77,9 +77,12 @@ export function ProductFormERPVariantPicker({
         variantIds: someSelected ? Array.from(selected) : undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          // Trust the server's count over what we asked for — it accounts
+          // for any backend-side filtering (e.g. variants already present).
+          const count = result.imported.length
           toast.success("Produto importado", {
-            description: `${importingCount} ${importingCount === 1 ? "variante adicionada" : "variantes adicionadas"} ao catálogo.`,
+            description: `${count} ${count === 1 ? "variante adicionada" : "variantes adicionadas"} ao catálogo.`,
           })
           setSelected(new Set())
           onOpenChange(false)

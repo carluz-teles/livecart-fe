@@ -7,6 +7,7 @@ import type {
   IntegrationProvider,
   TestConnectionResponse,
   ERPProductSearchResponse,
+  ImportERPProductResponse,
   Product,
   InstagramLivesResponse,
   ConnectSmartEnviosPayload,
@@ -79,7 +80,7 @@ export const integrationService = {
     variantIds: string[] | undefined,
     token?: string | null
   ) =>
-    apiClient.post<unknown>(
+    apiClient.post<ImportERPProductResponse>(
       `/stores/${storeId}/integrations/${integrationId}/products/${tinyProductId}/import`,
       variantIds && variantIds.length > 0 ? { variantIds } : {},
       token

@@ -92,6 +92,25 @@ export interface ImportERPProductPayload {
   variantIds?: string[]
 }
 
+// One row in the response's imported[] — echoes what the backend actually
+// persisted (useful when the server imports fewer than we asked for).
+export interface ImportedERPVariant {
+  externalId: string
+  sku: string
+  attributes: Record<string, string>
+}
+
+export interface ImportERPProductResponse {
+  // Set when the imported Tiny product is a variant parent.
+  groupId?: string
+  // Set when the imported Tiny product is simple (no variants).
+  productId?: string
+  isParent: boolean
+  // Always present — empty array for simple products (the simple path
+  // returns productId only).
+  imported: ImportedERPVariant[]
+}
+
 // Instagram Live
 export interface InstagramLive {
   id: string
