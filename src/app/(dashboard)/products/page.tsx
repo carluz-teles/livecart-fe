@@ -40,6 +40,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 function getProductInitials(name: string) {
   return name
@@ -358,16 +364,29 @@ export default function ProductsPage() {
                       >
                         {product.active ? "Ativo" : "Inativo"}
                       </Badge>
-                      <Badge
-                        variant="outline"
-                        className={`h-5 whitespace-nowrap text-[10px] font-medium ${
-                          product.shippable
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
-                            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"
-                        }`}
-                      >
-                        {product.shippable ? "Cotável" : "Faltam medidas"}
-                      </Badge>
+                      {!product.shippable && (
+                        <TooltipProvider delayDuration={150}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="outline"
+                                className="h-5 cursor-help whitespace-nowrap border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"
+                              >
+                                Faltam medidas
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              className="max-w-xs text-xs leading-relaxed"
+                            >
+                              Esse produto não tem peso ou dimensões cadastradas,
+                              então o frete não consegue ser calculado no
+                              checkout. Edite o produto e preencha peso, altura,
+                              largura e comprimento da embalagem.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </span>
 
                     <div
