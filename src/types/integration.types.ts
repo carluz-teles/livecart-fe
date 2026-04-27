@@ -1,3 +1,5 @@
+import type { PackageFormat } from "./product.types"
+
 export type IntegrationType = "payment" | "erp" | "social" | "shipping"
 export type IntegrationProvider =
   | "mercado_pago"
@@ -50,6 +52,18 @@ export interface CreateIntegrationPayload {
   metadata?: Record<string, unknown>
 }
 
+// Shipping profile slice the ERP search exposes per product / variant.
+// Narrower than the catalog's ShippingProfile — backend doesn't echo
+// LiveCart-only fields (sku, insurance) on this surface. May be missing
+// or partial when the ERP itself doesn't have all four dims registered.
+export interface ERPShippingProfile {
+  weightGrams: number
+  heightCm: number
+  widthCm: number
+  lengthCm: number
+  packageFormat: PackageFormat
+}
+
 // One variant of a parent product as returned by the ERP search. Attributes
 // is a free-form dict (e.g. { Cor: "Preto", Tamanho: "P" }) — the keys come
 // from the ERP's grade definition, so the frontend just renders them as
@@ -62,6 +76,7 @@ export interface ERPVariant {
   active: boolean
   imageUrl?: string
   attributes: Record<string, string>
+  shipping?: ERPShippingProfile
 }
 
 // ERP Product from search. When the underlying ERP product is a variant
@@ -78,6 +93,7 @@ export interface ERPProduct {
   active: boolean
   isParent?: boolean
   variants?: ERPVariant[]
+  shipping?: ERPShippingProfile
 }
 
 export interface ERPProductSearchResponse {

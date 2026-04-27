@@ -191,6 +191,15 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
 
   const handleERPProductSelect = useCallback(
     (erpProduct: ERPProduct) => {
+      // Spread ERP shipping over the defaults so anything the ERP didn't send
+      // (sku, insurance) keeps its empty default — but weight + dimensions
+      // come pre-filled when present. Partial ERP shipping (e.g. weight only)
+      // still falls under the schema's all-or-nothing rule, so the user is
+      // prompted to complete it before saving.
+      const shipping = erpProduct.shipping
+        ? { ...defaultShippingProfile, ...erpProduct.shipping }
+        : defaultShippingProfile
+
       form.reset({
         name: erpProduct.name,
         price: erpProduct.price,
@@ -198,7 +207,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         imageUrl: erpProduct.imageUrl || "",
         externalSource: selectedSource,
         externalId: erpProduct.id,
-        shipping: defaultShippingProfile,
+        shipping,
       })
       setStep("form")
     },
