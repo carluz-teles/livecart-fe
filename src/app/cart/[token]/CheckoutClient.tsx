@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -32,10 +33,32 @@ import {
   CheckoutSection,
   CheckoutExpressPayment,
   CheckoutOrderSummary,
-  CheckoutCardForm,
-  CheckoutPixDisplay,
   CheckoutShippingOptions,
 } from "@/components/checkout"
+
+// Heavy payment widgets only render after the shopper completes the
+// customer/address forms and picks a method. Lazy-loading keeps the
+// Mercado Pago SDK (~bundle-heavy) and the PIX widget out of the initial
+// /cart payload — both are pulled on demand.
+function PaymentWidgetFallback() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+    </div>
+  )
+}
+
+const CheckoutCardForm = dynamic(
+  () =>
+    import("@/components/checkout/CheckoutCardForm").then((m) => m.CheckoutCardForm),
+  { loading: () => <PaymentWidgetFallback />, ssr: false }
+)
+
+const CheckoutPixDisplay = dynamic(
+  () =>
+    import("@/components/checkout/CheckoutPixDisplay").then((m) => m.CheckoutPixDisplay),
+  { loading: () => <PaymentWidgetFallback />, ssr: false }
+)
 import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
