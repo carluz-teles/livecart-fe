@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { FigureImage } from "@/components/docs/FigureImage"
 
 export default function SmartEnviosDocPage() {
   return (
@@ -279,37 +279,6 @@ function Highlight({ children }: { children: React.ReactNode }) {
     <span className="rounded-md border bg-muted/60 px-1.5 py-0.5 text-[13px] font-medium text-foreground">
       {children}
     </span>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Image figure with caption — used for screenshots
-// ----------------------------------------------------------------------------
-interface FigureImageProps {
-  src: string
-  alt: string
-  caption?: string
-}
-
-function FigureImage({ src, alt, caption }: FigureImageProps) {
-  return (
-    <figure className="space-y-2">
-      <div className="overflow-hidden rounded-lg border bg-muted/30">
-        <Image
-          src={src}
-          alt={alt}
-          width={1600}
-          height={900}
-          className="h-auto w-full"
-          unoptimized
-        />
-      </div>
-      {caption && (
-        <figcaption className="px-1 text-xs italic text-muted-foreground">
-          {caption}
-        </figcaption>
-      )}
-    </figure>
   )
 }
 
