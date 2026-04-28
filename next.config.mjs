@@ -12,8 +12,8 @@ const nextConfig = {
   outputFileTracingRoot: __dirname,
   experimental: {
     // Split the CSS bundle per route so the public checkout doesn't ship
-    // dashboard-only utility classes (e.g. Clerk overrides). Strict mode
-    // prevents Next from merging chunks across navigations.
+    // dashboard-only utility classes. Strict mode prevents Next from
+    // merging chunks across navigations.
     cssChunking: "strict",
   },
   images: {
