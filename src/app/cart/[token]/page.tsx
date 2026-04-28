@@ -1,8 +1,16 @@
+import dynamic from "next/dynamic"
 import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
 import { getPublicCheckoutCart } from "@/lib/checkout-server"
-import { CheckoutClient } from "./CheckoutClient"
+
+// CheckoutClient pulls in react-hook-form, zod, Radix Label and the
+// payment widgets (~40 KiB). Lazy-loading it means shoppers returning to
+// a paid/expired cart never download that bundle — only the active
+// checkout path pays for it.
+const CheckoutClient = dynamic(
+  () => import("./CheckoutClient").then((m) => m.CheckoutClient)
+)
 
 interface PageProps {
   params: Promise<{ token: string }>

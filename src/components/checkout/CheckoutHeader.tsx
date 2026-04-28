@@ -37,8 +37,10 @@ export function CheckoutHeader({ storeName, logoUrl, isLiveActive }: CheckoutHea
                   src={logoUrl}
                   alt={storeName}
                   fill
+                  sizes="80px"
                   className="object-contain"
                   priority
+                  fetchPriority="high"
                 />
               </div>
             ) : (
