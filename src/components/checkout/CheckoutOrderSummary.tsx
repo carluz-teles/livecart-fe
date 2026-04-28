@@ -290,13 +290,13 @@ export function CheckoutOrderSummary({
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Frete</span>
           {shippingPending ? (
-            <span className="text-sm text-gray-400">A calcular</span>
+            <span className="text-sm text-gray-500">A calcular</span>
           ) : shippingFreeNow ? (
             <span className="flex items-baseline gap-1.5 font-medium">
               {isFreeShipping &&
                 shippingRealCostCents !== null &&
                 shippingRealCostCents > 0 && (
-                  <span className="text-xs text-gray-400 line-through">
+                  <span className="text-xs text-gray-500 line-through">
                     {formatCurrency(shippingRealCostCents)}
                   </span>
                 )}
@@ -337,7 +337,7 @@ export function CheckoutOrderSummary({
 
       {/* Max quantity info */}
       {allowEdit && maxQuantityPerItem && maxQuantityPerItem > 0 && (
-        <p className="text-xs text-center text-gray-400">
+        <p className="text-xs text-center text-gray-600">
           Limite de {maxQuantityPerItem} unidades por item
         </p>
       )}

@@ -59,7 +59,7 @@ export function CheckoutSection({
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
               : isActive
               ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white shadow-lg shadow-gray-400/30"
-              : "bg-gray-100 text-gray-400"
+              : "bg-gray-100 text-gray-600"
           )}
         >
           <span
@@ -98,7 +98,7 @@ export function CheckoutSection({
               ? "text-emerald-700"
               : isActive
               ? "text-gray-900"
-              : "text-gray-400"
+              : "text-gray-500"
           )}
         >
           {title}

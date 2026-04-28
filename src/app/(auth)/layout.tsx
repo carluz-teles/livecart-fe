@@ -10,6 +10,7 @@ import {
   Shield,
   BarChart3,
 } from "lucide-react"
+import { AppProviders } from "@/components/providers/app-providers"
 
 const features = [
   {
@@ -38,6 +39,7 @@ export default function AuthLayout({
   const isLogin = pathname?.includes("login")
 
   return (
+    <AppProviders>
     <div className="flex min-h-screen">
       {/* Left Panel - Branding */}
       <div className="relative hidden w-1/2 overflow-hidden lg:block">
@@ -191,5 +193,6 @@ export default function AuthLayout({
         </div>
       </div>
     </div>
+    </AppProviders>
   )
 }

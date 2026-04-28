@@ -11,11 +11,15 @@ export const checkoutKeys = {
   status: (token: string) => [...checkoutKeys.all, "status", token] as const,
 }
 
-export function useCheckoutCart(token: string) {
+export function useCheckoutCart(
+  token: string,
+  initialData?: PublicCheckoutCart
+) {
   return useQuery({
     queryKey: checkoutKeys.cart(token),
     queryFn: (): Promise<PublicCheckoutCart> => checkoutService.getCart(token),
     enabled: !!token,
+    initialData,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnWindowFocus: true, // Refetch when user returns to tab
   })

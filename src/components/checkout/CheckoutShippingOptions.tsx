@@ -196,7 +196,7 @@ function ShippingOptionCard({
           </p>
         )}
         {showProviderBadge && (
-          <p className="mt-0.5 text-[11px] text-gray-400">
+          <p className="mt-0.5 text-[11px] text-gray-600">
             via {providerLabel(option.provider)}
           </p>
         )}
@@ -204,10 +204,10 @@ function ShippingOptionCard({
 
       <div className="flex flex-col items-end">
         {unavailable ? (
-          <span className="text-sm font-medium text-gray-400">—</span>
+          <span className="text-sm font-medium text-gray-500">—</span>
         ) : freeShipping && realCents > 0 ? (
           <>
-            <span className="text-xs text-gray-400 line-through">
+            <span className="text-xs text-gray-500 line-through">
               {formatCurrency(realCents)}
             </span>
             <span className="text-sm font-semibold text-emerald-600">

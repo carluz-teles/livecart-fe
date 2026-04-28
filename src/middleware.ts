@@ -71,8 +71,11 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and static files
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Skip Next.js internals, static files, and fully-public routes that
+    // never touch Clerk (cart checkout, marketing pages). Excluding them
+    // here avoids the Clerk handshake redirect on first visit, which is
+    // critical for shopper-facing checkout LCP.
+    "/((?!_next|cart|privacy|terms|robots\\.txt|sitemap\\.xml|favicon\\.ico|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],
