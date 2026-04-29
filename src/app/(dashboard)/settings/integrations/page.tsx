@@ -18,7 +18,11 @@ import {
   Truck,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
+  Webhook,
 } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -52,15 +56,20 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import { useQueryClient } from "@tanstack/react-query"
+
 import { IntegrationCard } from "@/components/integration/IntegrationCard"
+import { CopyableURL } from "@/components/integration/CopyableURL"
 import {
   useIntegrations,
+  integrationKeys,
   useConnectOAuth,
   useConnectApiKey,
   useConnectTiny,
   useConnectSmartEnvios,
   useDisconnectIntegration,
   useTestConnection,
+  useProviderURLs,
 } from "@/hooks/integration"
 import type {
   Integration,
@@ -199,6 +208,7 @@ function buildAccountFields(
 
 function IntegrationsContent() {
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
   const { data, isLoading } = useIntegrations()
   const connectOAuth = useConnectOAuth()
   const connectApiKey = useConnectApiKey()
@@ -217,6 +227,7 @@ function IntegrationsContent() {
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
+  const tinyProviderURLs = useProviderURLs("tiny", tinyDialog)
   const [detailsSheet, setDetailsSheet] = useState<{
     integration: Integration
     provider: ProviderConfig
@@ -231,6 +242,15 @@ function IntegrationsContent() {
   } | null>(null)
 
   const integrations = data?.data ?? []
+
+  // Read the live integration from the list so the details sheet picks up
+  // refetched fields (e.g. webhookLastPingAt) without having to be reopened.
+  // Falls back to the snapshot captured when the sheet was opened in case
+  // the list is mid-refetch.
+  const currentDetailsIntegration =
+    (detailsSheet &&
+      integrations.find((i) => i.id === detailsSheet.integration.id)) ||
+    detailsSheet?.integration
 
   // Handle OAuth callback results
   useEffect(() => {
@@ -413,6 +433,10 @@ function IntegrationsContent() {
     setDetailsSheet({ integration, provider })
     setDetailsLoading(true)
     setDetailsData(null)
+
+    // Refetch the integrations list so webhookLastPingAt reflects the
+    // latest ping (Tiny pings the URL as soon as the merchant saves it).
+    queryClient.invalidateQueries({ queryKey: integrationKeys.lists() })
 
     testConnection.mutate(integration.id, {
       onSuccess: (result) => {
@@ -696,11 +720,11 @@ function IntegrationsContent() {
 
       {/* Tiny OAuth Credentials Dialog */}
       <Dialog open={tinyDialog} onOpenChange={() => setTinyDialog(false)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Conectar Tiny ERP</DialogTitle>
             <DialogDescription>
-              Insira as credenciais do seu aplicativo Tiny. Você pode criar um aplicativo em{" "}
+              Cadastre seu aplicativo em{" "}
               <a
                 href="https://erp.tiny.com.br/configuracoes#checks=gestao_aplicativos"
                 target="_blank"
@@ -708,12 +732,65 @@ function IntegrationsContent() {
                 className="text-primary underline"
               >
                 Configurações → Aplicativos
-              </a>
+              </a>{" "}
+              da Tiny e cole as URLs abaixo nos campos correspondentes antes
+              de continuar.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-2">
+            {/* URLs to register in the Tiny app */}
+            <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                    URLs para configurar no app da Tiny
+                  </p>
+                  <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                    Cole estas URLs nos campos correspondentes do app na Tiny
+                    e salve antes de continuar. Sem isso, o OAuth falha e os
+                    webhooks de estoque/produto não chegam na Livecart.
+                  </p>
+                </div>
+              </div>
+
+              {tinyProviderURLs.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando URLs...
+                </div>
+              ) : tinyProviderURLs.isError ? (
+                <div className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>
+                    Não foi possível carregar as URLs. Recarregue a página e
+                    tente novamente.
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tinyProviderURLs.data?.redirectUrl && (
+                    <CopyableURL
+                      label="URL de Redirecionamento (OAuth)"
+                      value={tinyProviderURLs.data.redirectUrl}
+                    />
+                  )}
+                  {tinyProviderURLs.data?.webhookUrl && (
+                    <CopyableURL
+                      label="URL de Webhooks"
+                      value={tinyProviderURLs.data.webhookUrl}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
             <div className="space-y-2">
-              <Label htmlFor="tiny-client-id">Client ID</Label>
+              <Label htmlFor="tiny-client-id">
+                Client ID <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="tiny-client-id"
                 placeholder="tiny-api-..."
@@ -722,7 +799,9 @@ function IntegrationsContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tiny-client-secret">Client Secret</Label>
+              <Label htmlFor="tiny-client-secret">
+                Client Secret <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="tiny-client-secret"
                 type="password"
@@ -773,7 +852,7 @@ function IntegrationsContent() {
               <div className="rounded-lg border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Status</span>
-                  {detailsSheet?.integration.status === "active" ? (
+                  {currentDetailsIntegration?.status === "active" ? (
                     <IntegrationCard.Status status="active" />
                   ) : (
                     <IntegrationCard.Status status="pending" />
@@ -783,8 +862,8 @@ function IntegrationsContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Conectado em</span>
                   <span className="text-sm text-muted-foreground">
-                    {detailsSheet?.integration.createdAt
-                      ? new Date(detailsSheet.integration.createdAt).toLocaleDateString("pt-BR", {
+                    {currentDetailsIntegration?.createdAt
+                      ? new Date(currentDetailsIntegration.createdAt).toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",
@@ -796,6 +875,76 @@ function IntegrationsContent() {
                 </div>
               </div>
             </div>
+
+            {/* Webhook + setup URLs — only providers that need them (Tiny)
+                ship redirectUrl / webhookUrl on the integration record, so
+                this whole block stays hidden for everyone else. */}
+            {currentDetailsIntegration && (() => {
+              const { redirectUrl, webhookUrl, webhookLastPingAt } =
+                currentDetailsIntegration
+              const hasAny = !!(redirectUrl || webhookUrl)
+              if (!hasAny) return null
+
+              const hasPing = !!webhookLastPingAt
+              const lastPingLabel = webhookLastPingAt
+                ? formatDistanceToNow(new Date(webhookLastPingAt), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })
+                : null
+
+              return (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Webhook
+                  </h4>
+                  <div className="space-y-3 rounded-lg border p-4">
+                    {/* Webhook health */}
+                    {hasPing ? (
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
+                          <Webhook className="h-3 w-3 text-emerald-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">Webhook ativo</p>
+                          <p className="text-xs text-muted-foreground">
+                            Último sinal {lastPingLabel}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                            Webhook não confirmado
+                          </p>
+                          <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                            Confira se a URL abaixo está cadastrada no app da
+                            Tiny. Assim que ela for salva, a Tiny envia um
+                            ping de validação e este status fica verde.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    {webhookUrl && (
+                      <CopyableURL label="URL de Webhook" value={webhookUrl} />
+                    )}
+
+                    {redirectUrl && (
+                      <CopyableURL
+                        label="URL de Redirecionamento (OAuth)"
+                        value={redirectUrl}
+                        description="Use para reconfigurar o callback no painel da Tiny."
+                      />
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Account Info — omitted entirely when the provider returns no
                 usable fields. Failures are already surfaced by the "Último

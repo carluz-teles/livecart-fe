@@ -19,6 +19,25 @@ export interface Integration {
   metadata?: Record<string, unknown>
   lastSyncedAt?: string
   createdAt: string
+  // Setup URLs the merchant must paste into the provider's app to complete
+  // OAuth and receive webhooks. Only populated for providers that require
+  // them (currently Tiny).
+  redirectUrl?: string
+  webhookUrl?: string
+  // ISO-8601 of the last webhook ping received from the provider. Tiny pings
+  // the URL for validation as soon as it's saved on their side, so absence
+  // signals the merchant hasn't pasted the URL into the Tiny app yet.
+  webhookLastPingAt?: string
+}
+
+// Response from GET /stores/:storeId/integrations/providers/:provider/urls.
+// Use this BEFORE creating the integration to display the URLs the merchant
+// must register in the provider's app. Backend returns 422 for providers
+// that don't expose setup URLs.
+export interface ProviderURLs {
+  provider: IntegrationProvider
+  redirectUrl?: string
+  webhookUrl?: string
 }
 
 // List response now follows the standard paginated pattern
