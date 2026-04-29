@@ -56,6 +56,22 @@ const CATEGORIES: DocCategory[] = [
         estimatedTime: "2 minutos",
       },
       {
+        slug: "instagram",
+        title: "Integrar com o Instagram",
+        description:
+          "Capture comentários e DMs das suas lives em tempo real para detectar pedidos automaticamente.",
+        href: "/docs/integrations/instagram",
+        estimatedTime: "2 minutos",
+      },
+      {
+        slug: "melhor-envio",
+        title: "Integrar com o Melhor Envio",
+        description:
+          "Cote fretes com Correios, Jadlog, Loggi e outras transportadoras pelos preços negociados na sua conta.",
+        href: "/docs/integrations/melhor-envio",
+        estimatedTime: "2 minutos",
+      },
+      {
         slug: "smartenvios",
         title: "Integrar com a SmartEnvios",
         description:

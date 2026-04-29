@@ -99,7 +99,7 @@ export default function MercadoPagoDocPage() {
       <Step
         number={2}
         title="Faça login no Mercado Pago"
-        location="livecart"
+        location="mercadopago"
       >
         <p>
           O LiveCart abre o Mercado Pago em uma nova aba. Se você ainda não
@@ -121,7 +121,7 @@ export default function MercadoPagoDocPage() {
       <Step
         number={3}
         title="Autorize as permissões"
-        location="livecart"
+        location="mercadopago"
       >
         <p>
           O Mercado Pago vai mostrar uma tela listando o que o LiveCart está

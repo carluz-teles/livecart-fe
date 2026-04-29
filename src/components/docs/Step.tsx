@@ -2,7 +2,13 @@ import { cn } from "@/lib/utils"
 
 // Locations are predefined so the doc author can't introduce arbitrary
 // pill colours; new providers just need a new entry here.
-type StepLocation = "tiny" | "livecart" | "smartenvios"
+type StepLocation =
+  | "tiny"
+  | "livecart"
+  | "smartenvios"
+  | "mercadopago"
+  | "instagram"
+  | "melhor_envio"
 
 interface StepProps {
   number: number
@@ -32,6 +38,21 @@ const LOCATION_STYLES: Record<
     label: "Na SmartEnvios",
     className:
       "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300",
+  },
+  mercadopago: {
+    label: "No Mercado Pago",
+    className:
+      "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300",
+  },
+  instagram: {
+    label: "No Instagram",
+    className:
+      "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-900 dark:bg-pink-950/40 dark:text-pink-300",
+  },
+  melhor_envio: {
+    label: "No Melhor Envio",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
 }
 
