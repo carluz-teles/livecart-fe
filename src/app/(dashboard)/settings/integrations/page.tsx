@@ -102,6 +102,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Pix", "Cartão de crédito"],
     type: "payment",
     authType: "oauth",
+    docHref: "/docs/integrations/mercado-pago",
   },
   {
     id: "pagarme",
@@ -110,6 +111,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Pix", "Cartão de crédito"],
     type: "payment",
     authType: "api_key",
+    docHref: "/docs/integrations/pagarme",
   },
   {
     id: "tiny",
@@ -127,6 +129,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Comentários em tempo real", "Detecção de pedidos", "DMs automáticas"],
     type: "social",
     authType: "oauth",
+    docHref: "/docs/integrations/instagram",
   },
   {
     id: "melhor_envio",
@@ -135,6 +138,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Cotação em tempo real", "Múltiplas transportadoras", "Prazo e preço reais"],
     type: "shipping",
     authType: "oauth",
+    docHref: "/docs/integrations/melhor-envio",
   },
   {
     id: "smartenvios",
