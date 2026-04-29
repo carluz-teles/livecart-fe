@@ -203,7 +203,9 @@ function ImageZoomDialog({ src, alt, open, onOpenChange }: ImageZoomDialogProps)
           </ToolbarButton>
         </div>
 
-        {/* Pannable image area */}
+        {/* Pannable image area. Clicks on the dark backdrop (not on the
+            image itself) close the dialog when at 100% zoom — when zoomed in
+            the user is examining details, so we keep the dialog open. */}
         <div
           className="flex h-full w-full items-center justify-center overflow-hidden"
           style={{ cursor }}
@@ -212,6 +214,11 @@ function ImageZoomDialog({ src, alt, open, onOpenChange }: ImageZoomDialogProps)
           onMouseUp={stopDrag}
           onMouseLeave={stopDrag}
           onWheel={handleWheel}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && scale === 1) {
+              onOpenChange(false)
+            }
+          }}
         >
           {/* Plain <img> here — Next/Image with transform is finicky and the
               whole point is to render the original-resolution asset. */}
@@ -233,7 +240,7 @@ function ImageZoomDialog({ src, alt, open, onOpenChange }: ImageZoomDialogProps)
 
         {/* Hint at the bottom */}
         <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-black/70 px-3 py-1 text-[11px] text-white/70 backdrop-blur">
-          Use a roda do mouse para dar zoom · arraste para mover quando ampliado
+          Roda do mouse: zoom · arraste: mover · clique fora da imagem: fechar
         </p>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

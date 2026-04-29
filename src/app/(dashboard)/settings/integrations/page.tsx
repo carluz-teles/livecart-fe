@@ -1,6 +1,7 @@
 "use client"
 
 import { Fragment, Suspense, useEffect, useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import {
   Check,
@@ -19,6 +20,7 @@ import {
   RefreshCw,
   AlertCircle,
   AlertTriangle,
+  BookOpen,
   Webhook,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
@@ -86,6 +88,10 @@ interface ProviderConfig {
   features: string[]
   type: IntegrationType
   authType: "oauth" | "api_key" | "oauth_with_credentials"
+  // Optional path to the step-by-step doc for this integration. When set, a
+  // "Ver tutorial passo a passo" link appears on the card so admins can read
+  // the guide before / while connecting.
+  docHref?: string
 }
 
 const AVAILABLE_PROVIDERS: ProviderConfig[] = [
@@ -112,6 +118,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Importar produtos", "Sincronizar estoque"],
     type: "erp",
     authType: "oauth_with_credentials",
+    docHref: "/docs/integrations/tiny",
   },
   {
     id: "instagram",
@@ -136,6 +143,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     features: ["Cotação em tempo real", "Criação de envio", "Etiquetas e rastreio"],
     type: "shipping",
     authType: "api_key",
+    docHref: "/docs/integrations/smartenvios",
   },
 ]
 
@@ -594,18 +602,29 @@ function IntegrationsContent() {
                                 </Button>
                               </div>
                             ) : (
-                              <Button
-                                className="w-full"
-                                onClick={() => handleConnect(provider)}
-                                disabled={connectOAuth.isPending}
-                              >
-                                {connectOAuth.isPending ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <ExternalLink className="mr-2 h-4 w-4" />
+                              <div className="space-y-2">
+                                <Button
+                                  className="w-full"
+                                  onClick={() => handleConnect(provider)}
+                                  disabled={connectOAuth.isPending}
+                                >
+                                  {connectOAuth.isPending ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                  )}
+                                  Conectar {provider.name}
+                                </Button>
+                                {provider.docHref && (
+                                  <Link
+                                    href={provider.docHref}
+                                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                  >
+                                    <BookOpen className="h-3.5 w-3.5" />
+                                    Ver tutorial passo a passo
+                                  </Link>
                                 )}
-                                Conectar {provider.name}
-                              </Button>
+                              </div>
                             )}
                           </div>
                         </div>
