@@ -18,9 +18,20 @@ const fontMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://livecart.app"),
   title: "LiveCart - Venda mais nas suas lives",
   description:
     "Plataforma de vendas ao vivo que detecta pedidos automaticamente nos comentários das suas lives.",
+  icons: {
+    icon: [
+      { url: "/livecart/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/livecart/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/livecart/favicon/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/livecart/favicon/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/livecart/favicon/favicon.ico",
+    apple: { url: "/livecart/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+  },
 }
 
 export default function RootLayout({
