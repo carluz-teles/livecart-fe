@@ -880,12 +880,12 @@ function IntegrationsContent() {
                 ship redirectUrl / webhookUrl on the integration record, so
                 this whole block stays hidden for everyone else. */}
             {currentDetailsIntegration && (() => {
-              const { redirectUrl, webhookUrl, webhookLastPingAt } =
+              const { redirectUrl, webhookUrl, webhookStatus, webhookLastPingAt } =
                 currentDetailsIntegration
               const hasAny = !!(redirectUrl || webhookUrl)
               if (!hasAny) return null
 
-              const hasPing = !!webhookLastPingAt
+              const isActive = webhookStatus === "active"
               const lastPingLabel = webhookLastPingAt
                 ? formatDistanceToNow(new Date(webhookLastPingAt), {
                     addSuffix: true,
@@ -900,16 +900,18 @@ function IntegrationsContent() {
                   </h4>
                   <div className="space-y-3 rounded-lg border p-4">
                     {/* Webhook health */}
-                    {hasPing ? (
+                    {isActive ? (
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
                           <Webhook className="h-3 w-3 text-emerald-600" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium">Webhook ativo</p>
-                          <p className="text-xs text-muted-foreground">
-                            Último sinal {lastPingLabel}
-                          </p>
+                          {lastPingLabel && (
+                            <p className="text-xs text-muted-foreground">
+                              Último sinal {lastPingLabel}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ) : (

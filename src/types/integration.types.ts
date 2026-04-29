@@ -24,10 +24,13 @@ export interface Integration {
   // them (currently Tiny).
   redirectUrl?: string
   webhookUrl?: string
-  // ISO-8601 of the last webhook ping received from the provider. Tiny pings
-  // the URL for validation as soon as it's saved on their side, so absence
-  // signals the merchant hasn't pasted the URL into the Tiny app yet.
-  webhookLastPingAt?: string
+  // Webhook health. "pending" until the provider hits the URL for the first
+  // time (Tiny sends a validation ping as soon as the URL is saved in their
+  // app). Always present whenever webhookUrl is set.
+  webhookStatus?: "active" | "pending"
+  // ISO-8601 of the last webhook ping received from the provider. Null
+  // until the first ping arrives. Always emitted whenever webhookUrl is set.
+  webhookLastPingAt?: string | null
 }
 
 // Response from GET /stores/:storeId/integrations/providers/:provider/urls.
