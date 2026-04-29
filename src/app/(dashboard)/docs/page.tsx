@@ -41,6 +41,14 @@ const CATEGORIES: DocCategory[] = [
     iconColor: "text-blue-600 dark:text-blue-400",
     articles: [
       {
+        slug: "tiny",
+        title: "Integrar com a Tiny (Olist)",
+        description:
+          "Conecte o Tiny — agora Olist — pra importar produtos, sincronizar estoque e enviar pedidos automaticamente.",
+        href: "/docs/integrations/tiny",
+        estimatedTime: "10 a 15 minutos",
+      },
+      {
         slug: "smartenvios",
         title: "Integrar com a SmartEnvios",
         description:

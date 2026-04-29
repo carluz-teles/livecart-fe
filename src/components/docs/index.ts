@@ -1,0 +1,5 @@
+export { FigureImage } from "./FigureImage"
+export { Step } from "./Step"
+export { Highlight } from "./Highlight"
+export { Callout } from "./Callout"
+export { FaqItem } from "./FaqItem"

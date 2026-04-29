@@ -108,7 +108,7 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   {
     id: "tiny",
     name: "Tiny ERP",
-    description: "Sincronize produtos e pedidos automaticamente",
+    description: "Tiny (atual Olist) — sincronize produtos e pedidos automaticamente",
     features: ["Importar produtos", "Sincronizar estoque"],
     type: "erp",
     authType: "oauth_with_credentials",

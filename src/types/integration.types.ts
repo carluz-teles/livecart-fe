@@ -193,7 +193,7 @@ export const PROVIDERS: ProviderInfo[] = [
     id: "tiny",
     name: "Tiny ERP",
     type: "erp",
-    description: "Sincronize produtos e pedidos com seu ERP",
+    description: "Sincronize produtos e pedidos do Tiny (atual Olist)",
     icon: "/icons/tiny.svg",
     supportsOAuth: false,
   },
