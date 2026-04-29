@@ -48,6 +48,14 @@ const CATEGORIES: DocCategory[] = [
         estimatedTime: "10 a 15 minutos",
       },
       {
+        slug: "mercado-pago",
+        title: "Integrar com o Mercado Pago",
+        description:
+          "Aceite Pix e cartão de crédito no checkout autorizando o LiveCart pelo próprio Mercado Pago.",
+        href: "/docs/integrations/mercado-pago",
+        estimatedTime: "2 minutos",
+      },
+      {
         slug: "smartenvios",
         title: "Integrar com a SmartEnvios",
         description:
