@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useUser, useClerk } from "@clerk/nextjs"
@@ -42,24 +41,7 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-6">
-      <Link href="/" className="flex items-center" aria-label="LiveCart">
-        <Image
-          src="/livecart/logotipo-whitemode.png"
-          alt="LiveCart"
-          width={1536}
-          height={1024}
-          className="h-8 w-auto dark:hidden"
-          priority
-        />
-        <Image
-          src="/livecart/logotipo-darkmode.png"
-          alt="LiveCart"
-          width={2172}
-          height={724}
-          className="hidden h-8 w-auto dark:block"
-          priority
-        />
-      </Link>
+      <div />
 
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
