@@ -20,9 +20,11 @@ export default function OrderDetailPage() {
           <OrderDetail.Main>
             <OrderDetail.Items />
             <OrderDetail.Logistics />
+            <OrderDetail.Timeline />
           </OrderDetail.Main>
           <OrderDetail.Sidebar>
             <OrderDetail.Payment />
+            <OrderDetail.Insights />
             <OrderDetail.Customer />
             <OrderDetail.Shipping />
             <OrderDetail.LiveContext />
