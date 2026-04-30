@@ -149,8 +149,10 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
             <div className="space-y-4">
               {customer && (
                 <div className="space-y-2">
-                  <Field icon={User} value={customer.name} />
-                  <Field icon={FileText} value={formatCpf(customer.document)} />
+                  {customer.name && <Field icon={User} value={customer.name} />}
+                  {customer.document && (
+                    <Field icon={FileText} value={formatCpf(customer.document)} />
+                  )}
                   {customer.phone && (
                     <Field icon={Phone} value={formatPhone(customer.phone)} />
                   )}
@@ -237,32 +239,53 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
 
         {payment && (
           <Section icon={CreditCard} title="Pagamento">
-            {payment.method === "pix" ? (
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-gray-900">PIX</span>
-                <span className="text-gray-500">Pagamento à vista</span>
-              </div>
-            ) : (
-              <div className="space-y-2">
+            <div className="space-y-3">
+              {payment.method === "pix" ? (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-gray-900">
-                    {brandLabel(payment.cardBrand)}
-                  </span>
-                  {payment.lastFourDigits && (
-                    <span className="font-mono text-gray-500">
-                      •••• {payment.lastFourDigits}
+                  <span className="font-medium text-gray-900">PIX</span>
+                  <span className="text-gray-500">Pagamento à vista</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-gray-900">
+                      {brandLabel(payment.cardBrand)}
                     </span>
+                    {payment.lastFourDigits && (
+                      <span className="font-mono text-gray-500">
+                        •••• {payment.lastFourDigits}
+                      </span>
+                    )}
+                  </div>
+                  {payment.installments && payment.installments > 0 && (
+                    <p className="text-xs text-gray-500">
+                      {payment.installments}x de{" "}
+                      {formatCurrency(Math.round(total / payment.installments))}
+                      {payment.installments === 1 ? " à vista" : ""}
+                    </p>
                   )}
                 </div>
-                {payment.installments && payment.installments > 0 && (
-                  <p className="text-xs text-gray-500">
-                    {payment.installments}x de{" "}
-                    {formatCurrency(Math.round(total / payment.installments))}
-                    {payment.installments === 1 ? " à vista" : ""}
-                  </p>
+              )}
+
+              <Separator className="bg-gray-100" />
+
+              <dl className="space-y-1.5 text-xs">
+                {payment.authorizationCode && (
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-gray-500">Código de autorização</dt>
+                    <dd className="truncate font-mono text-gray-700">
+                      {payment.authorizationCode}
+                    </dd>
+                  </div>
                 )}
-              </div>
-            )}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-gray-500">ID da transação</dt>
+                  <dd className="truncate font-mono text-gray-700">
+                    {payment.paymentId}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </Section>
         )}
 

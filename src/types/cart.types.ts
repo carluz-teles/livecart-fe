@@ -214,10 +214,15 @@ export interface PublicCheckoutCustomer {
 export interface PublicCheckoutPayment {
   method: PaymentMethod
   paidAt: string
+  // Gateway transaction id. Populated for every paid cart (PIX and card).
+  paymentId: string
   // Card-only fields. Older paid carts may not have these even when method==="card".
   installments?: number
   cardBrand?: string
   lastFourDigits?: string
+  // Acquirer authorization code / NSU. Card only; absent on PIX. Some
+  // acquirers return neither auth code nor NSU — backend omits in that case.
+  authorizationCode?: string
 }
 
 export interface PublicCheckoutCart {
