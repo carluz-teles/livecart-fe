@@ -8,6 +8,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -84,28 +85,37 @@ export function OrderDetailItems() {
                 </TableRow>
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="text-right font-normal text-muted-foreground">
+                  Subtotal
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatCurrency(itemsTotal)}
+                </TableCell>
+              </TableRow>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="text-right font-normal text-muted-foreground">
+                  Frete
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {order.shipping
+                    ? order.shipping.freeShipping
+                      ? "Grátis"
+                      : formatCurrency(shippingCents)
+                    : "—"}
+                </TableCell>
+              </TableRow>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="text-right text-base">
+                  Total
+                </TableCell>
+                <TableCell className="text-right text-base font-semibold tabular-nums">
+                  {formatCurrency(order.totalAmount)}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
-        </div>
-
-        <div className="mt-4 flex flex-col items-end gap-1 text-sm">
-          <div className="flex w-48 justify-between">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="tabular-nums">{formatCurrency(itemsTotal)}</span>
-          </div>
-          <div className="flex w-48 justify-between">
-            <span className="text-muted-foreground">Frete</span>
-            <span className="tabular-nums">
-              {order.shipping
-                ? order.shipping.freeShipping
-                  ? "Grátis"
-                  : formatCurrency(shippingCents)
-                : "—"}
-            </span>
-          </div>
-          <div className="flex w-48 justify-between border-t pt-1 font-medium">
-            <span>Total</span>
-            <span className="tabular-nums">{formatCurrency(order.totalAmount)}</span>
-          </div>
         </div>
       </CardContent>
     </Card>
