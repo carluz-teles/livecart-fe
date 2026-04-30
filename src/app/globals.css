@@ -112,3 +112,9 @@
   --ring: 37.6923 92.1260% 50.1961%;
 }
 
+
+@media print {
+  html, body {
+    background: white !important;
+  }
+}
