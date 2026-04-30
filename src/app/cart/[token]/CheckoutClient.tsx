@@ -178,8 +178,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   })
   const addressComplete = isShippingAddressComplete(shippingAddress)
   const shippingComplete = selectedShippingId !== null
-  // TODO: Remove this bypass when Melhor Envio is configured
-  const canProceedToPayment = customerInfoComplete && addressComplete // && shippingComplete
+  const canProceedToPayment = customerInfoComplete && addressComplete && shippingComplete
 
   const customerPayload = useMemo<CheckoutCustomerInfo | null>(() => {
     if (!canProceedToPayment) return null
@@ -265,12 +264,6 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       )
     }
   }, [availableMethods, selectedMethod])
-
-  useEffect(() => {
-    if (cart?.shipping && selectedShippingId === null) {
-      setSelectedShippingId(cart.shipping.serviceId)
-    }
-  }, [cart?.shipping, selectedShippingId])
 
   const runShippingQuote = useCallback(
     async (cleaned: string) => {
@@ -497,19 +490,13 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const isAddressAutoFilled = cepLookup.isSuccess
   const isFreeShipping =
     shippingFreeByEvent ||
-    cart.shipping?.freeShipping ||
     cart.event?.freeShipping ||
     false
 
-  const shippingCostCents =
-    shippingSummary?.shippingCost ??
-    (cart.summary.hasShippingQuote ? cart.summary.shippingCost : null)
+  const shippingCostCents = shippingSummary?.shippingCost ?? null
   const selectedOption = shippingOptions.find((o) => o.id === selectedShippingId)
-  const shippingRealCostCents =
-    selectedOption?.realPriceCents ?? cart.shipping?.realCostCents ?? null
-  const effectiveTotal =
-    shippingSummary?.total ??
-    (cart.summary.hasShippingQuote ? cart.summary.total : cart.summary.subtotal)
+  const shippingRealCostCents = selectedOption?.realPriceCents ?? null
+  const effectiveTotal = shippingSummary?.total ?? cart.summary.subtotal
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
