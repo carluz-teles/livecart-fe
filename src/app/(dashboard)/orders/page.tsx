@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Search, MoreHorizontal, ShoppingCart, Clock, DollarSign, TrendingUp } from "lucide-react"
 
 import { formatCurrency, formatDate } from "@/lib/format"
@@ -40,6 +41,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function OrdersPage() {
+  const router = useRouter()
   const {
     search,
     setSearch,
@@ -164,7 +166,7 @@ export default function OrdersPage() {
                       <TableRow
                         key={order.id}
                         className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => window.location.href = `/orders/${order.id}`}
+                        onClick={() => router.push(`/orders/${order.id}`)}
                       >
                         <TableCell className="font-medium">
                           @{order.customerHandle}
@@ -187,7 +189,7 @@ export default function OrdersPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -201,8 +203,6 @@ export default function OrdersPage() {
                               <DropdownMenuItem asChild>
                                 <Link href={`/orders/${order.id}`}>Ver detalhes</Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem>Atualizar status</DropdownMenuItem>
-                              <DropdownMenuItem>Enviar notificação</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
