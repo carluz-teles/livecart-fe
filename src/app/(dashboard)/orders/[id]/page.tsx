@@ -16,20 +16,14 @@ export default function OrderDetailPage() {
     <OrderDetail.Provider order={order}>
       <OrderDetail.Frame>
         <OrderDetail.Header />
-        <OrderDetail.Body>
-          <OrderDetail.Main>
-            <OrderDetail.Items />
-            <OrderDetail.Logistics />
-            <OrderDetail.Timeline />
-          </OrderDetail.Main>
-          <OrderDetail.Sidebar>
-            <OrderDetail.Payment />
-            <OrderDetail.Insights />
-            <OrderDetail.Customer />
-            <OrderDetail.Shipping />
-            <OrderDetail.LiveContext />
-          </OrderDetail.Sidebar>
-        </OrderDetail.Body>
+        <OrderDetail.Cards>
+          <OrderDetail.Customer />
+          <OrderDetail.Shipping />
+          <OrderDetail.Payment />
+        </OrderDetail.Cards>
+        <OrderDetail.Items />
+        <OrderDetail.Timeline />
+        <OrderDetail.Logistics />
       </OrderDetail.Frame>
     </OrderDetail.Provider>
   )

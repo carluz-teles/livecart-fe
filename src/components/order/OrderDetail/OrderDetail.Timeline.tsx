@@ -3,6 +3,7 @@
 import { use } from "react"
 import {
   Activity,
+  AlertTriangle,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -18,9 +19,12 @@ type TimelineKind =
   | "created"
   | "comment"
   | "paid"
+  | "issue"
   | "shipment_created"
   | "shipment_event"
   | "delivered"
+
+const ERP_STUCK_THRESHOLD_MS = 5 * 60 * 1000
 
 interface TimelineEntry {
   kind: TimelineKind
@@ -33,6 +37,7 @@ const ICON: Record<TimelineKind, React.ComponentType<{ className?: string }>> = 
   created: Activity,
   comment: MessageCircle,
   paid: CreditCard,
+  issue: AlertTriangle,
   shipment_created: Package,
   shipment_event: Truck,
   delivered: CheckCircle2,
@@ -42,6 +47,7 @@ const TONE: Record<TimelineKind, string> = {
   created: "bg-muted text-muted-foreground",
   comment: "bg-muted text-muted-foreground",
   paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  issue: "bg-destructive/15 text-destructive",
   shipment_created: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   shipment_event: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400",
   delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
@@ -78,6 +84,23 @@ export function OrderDetailTimeline() {
       description: order.shipping
         ? `${order.shipping.serviceName} contratado`
         : undefined,
+    })
+  }
+
+  if (
+    order.paidAt &&
+    order.paymentStatus === "paid" &&
+    order.status !== "completed" &&
+    Date.now() - new Date(order.paidAt).getTime() > ERP_STUCK_THRESHOLD_MS
+  ) {
+    const stuckSince = new Date(
+      new Date(order.paidAt).getTime() + ERP_STUCK_THRESHOLD_MS,
+    ).toISOString()
+    entries.push({
+      kind: "issue",
+      date: stuckSince,
+      title: "ERP não finalizou o pedido",
+      description: "Pagamento confirmado, mas a integração com o ERP não fechou o pedido. Verifique a configuração da integração.",
     })
   }
 

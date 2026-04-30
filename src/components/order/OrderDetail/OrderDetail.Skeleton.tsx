@@ -23,8 +23,8 @@ export function OrderDetailSkeleton() {
         <div className="flex items-center gap-4">
           <Skeleton className="h-9 w-9 rounded-lg" />
           <div className="space-y-1.5">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-7 w-72" />
+            <Skeleton className="h-4 w-56" />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -33,25 +33,29 @@ export function OrderDetailSkeleton() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <section className="space-y-4 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-24" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-56 w-full" />
-            </CardContent>
-          </Card>
-          <CardSkeleton rows={4} />
-        </section>
-        <aside className="space-y-4">
-          <CardSkeleton rows={2} />
-          <CardSkeleton rows={3} />
-          <CardSkeleton rows={3} />
-          <CardSkeleton rows={4} />
-        </aside>
+      <div className="grid gap-4 md:grid-cols-3">
+        <CardSkeleton rows={4} />
+        <CardSkeleton rows={4} />
+        <CardSkeleton rows={3} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-56 w-full" />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-32" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
     </div>
   )
 }
