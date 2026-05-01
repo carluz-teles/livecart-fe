@@ -8,7 +8,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -20,9 +19,6 @@ export function OrderDetailItems() {
   const ctx = use(OrderDetailContext)
   if (!ctx) return null
   const { order } = ctx.state
-
-  const shippingCents = order.shipping?.costCents ?? 0
-  const itemsTotal = order.totalAmount - shippingCents
 
   return (
     <Card>
@@ -85,36 +81,6 @@ export function OrderDetailItems() {
                 </TableRow>
               ))}
             </TableBody>
-            <TableFooter>
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="text-right font-normal text-muted-foreground">
-                  Subtotal
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatCurrency(itemsTotal)}
-                </TableCell>
-              </TableRow>
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="text-right font-normal text-muted-foreground">
-                  Frete
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {order.shipping
-                    ? order.shipping.freeShipping
-                      ? "Grátis"
-                      : formatCurrency(shippingCents)
-                    : "—"}
-                </TableCell>
-              </TableRow>
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="text-right text-base">
-                  Total
-                </TableCell>
-                <TableCell className="text-right text-base font-semibold tabular-nums">
-                  {formatCurrency(order.totalAmount)}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
           </Table>
         </div>
       </CardContent>
