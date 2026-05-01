@@ -19,6 +19,28 @@ export interface Integration {
   metadata?: Record<string, unknown>
   lastSyncedAt?: string
   createdAt: string
+  // Setup URLs the merchant must paste into the provider's app to complete
+  // OAuth and receive webhooks. Only populated for providers that require
+  // them (currently Tiny).
+  redirectUrl?: string
+  webhookUrl?: string
+  // Webhook health. "pending" until the provider hits the URL for the first
+  // time (Tiny sends a validation ping as soon as the URL is saved in their
+  // app). Always present whenever webhookUrl is set.
+  webhookStatus?: "active" | "pending"
+  // ISO-8601 of the last webhook ping received from the provider. Null
+  // until the first ping arrives. Always emitted whenever webhookUrl is set.
+  webhookLastPingAt?: string | null
+}
+
+// Response from GET /stores/:storeId/integrations/providers/:provider/urls.
+// Use this BEFORE creating the integration to display the URLs the merchant
+// must register in the provider's app. Backend returns 422 for providers
+// that don't expose setup URLs.
+export interface ProviderURLs {
+  provider: IntegrationProvider
+  redirectUrl?: string
+  webhookUrl?: string
 }
 
 // List response now follows the standard paginated pattern
@@ -171,7 +193,7 @@ export const PROVIDERS: ProviderInfo[] = [
     id: "tiny",
     name: "Tiny ERP",
     type: "erp",
-    description: "Sincronize produtos e pedidos com seu ERP",
+    description: "Sincronize produtos e pedidos do Tiny (atual Olist)",
     icon: "/icons/tiny.svg",
     supportsOAuth: false,
   },

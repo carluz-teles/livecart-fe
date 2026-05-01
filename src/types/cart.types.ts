@@ -204,6 +204,27 @@ export interface PublicCheckoutSummary {
   hasShippingQuote: boolean
 }
 
+export interface PublicCheckoutCustomer {
+  name: string
+  document: string // CPF, digits only
+  phone?: string
+  email: string
+}
+
+export interface PublicCheckoutPayment {
+  method: PaymentMethod
+  paidAt: string
+  // Gateway transaction id. Populated for every paid cart (PIX and card).
+  paymentId: string
+  // Card-only fields. Older paid carts may not have these even when method==="card".
+  installments?: number
+  cardBrand?: string
+  lastFourDigits?: string
+  // Acquirer authorization code / NSU. Card only; absent on PIX. Some
+  // acquirers return neither auth code nor NSU — backend omits in that case.
+  authorizationCode?: string
+}
+
 export interface PublicCheckoutCart {
   id: string
   token: string
@@ -222,6 +243,11 @@ export interface PublicCheckoutCart {
   items: PublicCheckoutItem[]
   summary: PublicCheckoutSummary
   shipping?: PublicCheckoutSelectedShipping | null
+  // Populated only when paymentStatus === "paid". Backend omits otherwise to
+  // avoid leaking PII over the public checkout token.
+  customer?: PublicCheckoutCustomer | null
+  shippingAddress?: ShippingAddressPayload | null
+  payment?: PublicCheckoutPayment | null
 }
 
 // =============================================================================

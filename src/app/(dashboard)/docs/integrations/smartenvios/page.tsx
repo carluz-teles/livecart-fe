@@ -1,7 +1,6 @@
 import Link from "next/link"
 import {
   ArrowLeft,
-  Check,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -11,7 +10,13 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { FigureImage } from "@/components/docs/FigureImage"
+import {
+  Callout,
+  FaqItem,
+  FigureImage,
+  Highlight,
+  Step,
+} from "@/components/docs"
 
 export default function SmartEnviosDocPage() {
   return (
@@ -76,7 +81,11 @@ export default function SmartEnviosDocPage() {
       </Callout>
 
       {/* Step 1 */}
-      <Step number={1} title="Acesse o portal da SmartEnvios">
+      <Step
+        number={1}
+        title="Acesse o portal da SmartEnvios"
+        location="smartenvios"
+      >
         <p>
           Abra o portal da SmartEnvios em uma nova aba e faça login com a sua
           conta:
@@ -97,7 +106,11 @@ export default function SmartEnviosDocPage() {
       </Step>
 
       {/* Step 2 */}
-      <Step number={2} title="Vá até as configurações de integração">
+      <Step
+        number={2}
+        title="Vá até as configurações de integração"
+        location="smartenvios"
+      >
         <p>
           Já dentro do portal, no menu, clique em{" "}
           <Highlight>Configurações</Highlight> e depois em{" "}
@@ -109,6 +122,7 @@ export default function SmartEnviosDocPage() {
       <Step
         number={3}
         title='Encontre o card "SmartEnvios API" e copie o Token'
+        location="smartenvios"
       >
         <p>
           Na lista de integrações, procure pelo card{" "}
@@ -134,7 +148,7 @@ export default function SmartEnviosDocPage() {
       </Step>
 
       {/* Step 4 */}
-      <Step number={4} title="Cole o Token aqui no LiveCart">
+      <Step number={4} title="Cole o Token aqui no LiveCart" location="livecart">
         <p>
           Volte para o LiveCart. No menu lateral, clique em{" "}
           <Highlight>Configurações</Highlight>, depois{" "}
@@ -177,7 +191,7 @@ export default function SmartEnviosDocPage() {
         </div>
       </div>
 
-      {/* FAQ-style additional info */}
+      {/* FAQ */}
       <section className="space-y-5">
         <h2 className="text-xl font-semibold tracking-tight">
           Perguntas frequentes
@@ -242,96 +256,5 @@ export default function SmartEnviosDocPage() {
         </Link>
       </div>
     </article>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Step blocks — numbered, indented, with content
-// ----------------------------------------------------------------------------
-interface StepProps {
-  number: number
-  title: string
-  children: React.ReactNode
-}
-
-function Step({ number, title, children }: StepProps) {
-  return (
-    <section className="relative pl-12">
-      {/* Numbered marker */}
-      <span className="absolute left-0 top-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary bg-background text-sm font-semibold text-primary">
-        {number}
-      </span>
-      <div className="space-y-4">
-        <h2 className="pt-1 text-lg font-semibold tracking-tight">{title}</h2>
-        <div className="space-y-3 text-sm leading-relaxed text-muted-foreground [&_p]:text-foreground/90">
-          {children}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Inline highlight for UI labels (menu items, buttons, fields)
-// ----------------------------------------------------------------------------
-function Highlight({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-md border bg-muted/60 px-1.5 py-0.5 text-[13px] font-medium text-foreground">
-      {children}
-    </span>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Callout box for tips, warnings, and side notes
-// ----------------------------------------------------------------------------
-interface CalloutProps {
-  icon: React.ReactNode
-  title: string
-  tone: "neutral" | "warning" | "success"
-  children: React.ReactNode
-}
-
-function Callout({ icon, title, tone, children }: CalloutProps) {
-  const styles = {
-    neutral:
-      "border-blue-200 bg-blue-50/60 text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100",
-    warning:
-      "border-amber-200 bg-amber-50/70 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100",
-    success:
-      "border-emerald-200 bg-emerald-50/60 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100",
-  }
-  return (
-    <div className={`rounded-lg border p-4 ${styles[tone]}`}>
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex-shrink-0">{icon}</div>
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="text-sm leading-relaxed opacity-90">{children}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// FAQ accordion-less item (just a styled Q/A pair, simpler than a dropdown)
-// ----------------------------------------------------------------------------
-interface FaqItemProps {
-  question: string
-  answer: React.ReactNode
-}
-
-function FaqItem({ question, answer }: FaqItemProps) {
-  return (
-    <div className="rounded-lg border bg-muted/20 p-4">
-      <p className="flex items-start gap-2 text-sm font-medium">
-        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-        {question}
-      </p>
-      <p className="mt-2 pl-6 text-sm leading-relaxed text-muted-foreground">
-        {answer}
-      </p>
-    </div>
   )
 }

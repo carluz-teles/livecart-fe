@@ -3,6 +3,7 @@
 // entries fall through to the generic Truck icon in the UI.
 const LOCAL_CARRIER_LOGOS: Record<string, string> = {
   azul: "/carriers/azul.png",
+  buslog: "/carriers/buslog.png",
   carriers: "/carriers/carriers.png",
   correios: "/carriers/correios.png",
   // SmartEnvios returns Correios services (PAC / Sedex) under `carrier`,
@@ -14,10 +15,12 @@ const LOCAL_CARRIER_LOGOS: Record<string, string> = {
   hdl: "/carriers/hdl.jpg",
   jadlog: "/carriers/jadlog.png",
   jamef: "/carriers/jamef.png",
+  "j-t": "/carriers/j-t.jpg",
   leofran: "/carriers/leofran.png",
   loggi: "/carriers/loggi.png",
   movimente: "/carriers/movimente.png",
   redesul: "/carriers/redesul.png",
+  total: "/carriers/total-express.png",
   "total-express": "/carriers/total-express.png",
   "trans-wells": "/carriers/trans-wells.png",
 }

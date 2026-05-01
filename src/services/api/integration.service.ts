@@ -11,6 +11,7 @@ import type {
   Product,
   InstagramLivesResponse,
   ConnectSmartEnviosPayload,
+  ProviderURLs,
 } from "@/types"
 
 export const integrationService = {
@@ -34,6 +35,15 @@ export const integrationService = {
   getOAuthURL: (storeId: string, provider: IntegrationProvider, token?: string | null) =>
     apiClient.get<OAuthConnectResponse>(
       `/stores/${storeId}/integrations/oauth/${provider}/connect`,
+      token
+    ),
+
+  // Setup URLs that the merchant must register inside the provider's app
+  // (OAuth callback + webhook). Backend returns 422 for providers that
+  // don't expose these — call only for providers that need them (Tiny).
+  getProviderURLs: (storeId: string, provider: IntegrationProvider, token?: string | null) =>
+    apiClient.get<ProviderURLs>(
+      `/stores/${storeId}/integrations/providers/${provider}/urls`,
       token
     ),
 
