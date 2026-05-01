@@ -22,6 +22,10 @@ export function OrderDetailPayment() {
     "pending",
   )
 
+  const shippingCents = order.shipping?.costCents ?? 0
+  const itemsTotal = order.totalAmount - shippingCents
+  const discountCents = 0
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -30,23 +34,46 @@ export function OrderDetailPayment() {
           Pagamento
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>
-          <p className="text-2xl font-semibold tabular-nums">
-            {formatCurrency(order.totalAmount)}
-          </p>
+          {order.paidAt ? (
+            <p className="text-xs text-muted-foreground">
+              Pago em {formatDateTime(order.paidAt)}
+            </p>
+          ) : order.expiresAt ? (
+            <p className="text-xs text-muted-foreground">
+              Expira em {formatDateTime(order.expiresAt)}
+            </p>
+          ) : null}
         </div>
-        {order.paidAt && (
-          <p className="text-xs text-muted-foreground">
-            Pago em {formatDateTime(order.paidAt)}
-          </p>
-        )}
-        {!order.paidAt && order.expiresAt && (
-          <p className="text-xs text-muted-foreground">
-            Expira em {formatDateTime(order.expiresAt)}
-          </p>
-        )}
+
+        <dl className="space-y-1.5 text-sm">
+          <div className="flex items-baseline justify-between">
+            <dt className="text-muted-foreground">Valor pago</dt>
+            <dd className="tabular-nums">{formatCurrency(itemsTotal)}</dd>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <dt className="text-muted-foreground">Frete</dt>
+            <dd className="tabular-nums">
+              {order.shipping
+                ? order.shipping.freeShipping
+                  ? "Grátis"
+                  : formatCurrency(shippingCents)
+                : "—"}
+            </dd>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <dt className="text-muted-foreground">Desconto</dt>
+            <dd className="tabular-nums">
+              {discountCents > 0 ? `-${formatCurrency(discountCents)}` : "—"}
+            </dd>
+          </div>
+          <div className="mt-2 flex items-baseline justify-between border-t pt-2 text-base font-semibold">
+            <dt>Valor total</dt>
+            <dd className="tabular-nums">{formatCurrency(order.totalAmount)}</dd>
+          </div>
+        </dl>
       </CardContent>
     </Card>
   )
