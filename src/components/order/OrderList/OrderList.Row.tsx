@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  FIRST_PURCHASE_BADGE,
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
   getStatusConfig,
@@ -73,7 +74,14 @@ export function OrderListRow({ order }: RowProps) {
         <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>
+          {order.isFirstPurchase && (
+            <Badge variant={FIRST_PURCHASE_BADGE.variant}>
+              {FIRST_PURCHASE_BADGE.label}
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-muted-foreground">
         {formatDate(order.createdAt)}

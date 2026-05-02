@@ -66,6 +66,15 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, StatusConfig> = {
   refunded: { label: "Reembolsado", variant: "secondary" },
 }
 
+/**
+ * One-off badge for the buyer's first paid order on this store.
+ * Variant `default` picks up the brand amber.
+ */
+export const FIRST_PURCHASE_BADGE: StatusConfig = {
+  label: "Primeira venda",
+  variant: "default",
+}
+
 // =============================================================================
 // PLATFORM LABELS
 // =============================================================================

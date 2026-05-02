@@ -6,6 +6,7 @@ import { ArrowLeft, Instagram } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
+  FIRST_PURCHASE_BADGE,
   ORDER_STATUS_CONFIG,
   PAYMENT_STATUS_CONFIG,
   getStatusConfig,
@@ -45,6 +46,11 @@ export function OrderDetailHeader() {
             </h1>
             <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
             <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>
+            {order.isFirstPurchase && (
+              <Badge variant={FIRST_PURCHASE_BADGE.variant}>
+                {FIRST_PURCHASE_BADGE.label}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             {order.liveTitle && <span>{order.liveTitle} · </span>}
