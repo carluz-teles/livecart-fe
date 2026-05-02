@@ -56,6 +56,8 @@ export interface Order {
   paidAt: string | null
   createdAt: string
   expiresAt: string | null
+  // True only for the buyer's earliest paid order in this store.
+  isFirstPurchase: boolean
 }
 
 export interface OrderComment {
@@ -243,10 +245,12 @@ export interface PublicCheckoutCart {
   items: PublicCheckoutItem[]
   summary: PublicCheckoutSummary
   shipping?: PublicCheckoutSelectedShipping | null
-  // Populated only when paymentStatus === "paid". Backend omits otherwise to
-  // avoid leaking PII over the public checkout token.
+  // Populated when paymentStatus === "paid" (post-payment receipt) OR when the
+  // backend prefills from the buyer's last paid order on this store
+  // (returning-buyer flow). `isReturningCustomer` distinguishes the second case.
   customer?: PublicCheckoutCustomer | null
   shippingAddress?: ShippingAddressPayload | null
+  isReturningCustomer?: boolean
   payment?: PublicCheckoutPayment | null
 }
 

@@ -161,8 +161,13 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const [quotedZip, setQuotedZip] = useState<string | null>(null)
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null)
   const [shippingSummary, setShippingSummary] = useState<PublicCheckoutSummary | null>(null)
+  // Locked while ViaCEP (or returning-buyer prefill) holds a known city/state
+  // for this CEP. Street and neighborhood stay editable so single-CEP cities
+  // (where ViaCEP returns empty logradouro/bairro) still work.
+  const [isAddressLockedByCep, setIsAddressLockedByCep] = useState(false)
   const shippingSectionRef = useRef<HTMLDivElement>(null)
   const quoteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prefilledRef = useRef(false)
 
   const email = form.watch("email")
   const customerName = form.watch("customerName")
@@ -252,12 +257,6 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const methodsCount = availableMethods.length
 
   useEffect(() => {
-    if (cart?.customerEmail && !form.getValues("email")) {
-      form.setValue("email", cart.customerEmail)
-    }
-  }, [cart?.customerEmail, form])
-
-  useEffect(() => {
     if (!availableMethods.includes(selectedMethod)) {
       setSelectedMethod(
         availableMethods.includes("pix") ? "pix" : availableMethods[0]
@@ -319,6 +318,10 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
 
     form.setValue("shippingAddress.zipCode", formatted, { shouldValidate: true })
 
+    // Any keystroke on CEP unlocks city/state until the next successful
+    // lookup confirms a new pair.
+    setIsAddressLockedByCep(false)
+
     if (quotedZip && cleaned !== quotedZip) {
       setSelectedShippingId(null)
       setShippingSummary(null)
@@ -332,6 +335,10 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         form.setValue("shippingAddress.neighborhood", addressData.neighborhood, { shouldValidate: true })
         form.setValue("shippingAddress.city", addressData.city, { shouldValidate: true })
         form.setValue("shippingAddress.state", addressData.state, { shouldValidate: true })
+        // Lock city/state — these are authoritative for a CEP. Street and
+        // neighborhood stay editable so single-CEP cities (where ViaCEP
+        // returns empty logradouro/bairro) still work.
+        setIsAddressLockedByCep(true)
       } catch {
         // Error handled by mutation state
       }
@@ -403,6 +410,58 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     if (v.length <= 10) return `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`
     return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
   }
+
+  // One-shot prefill from the cart payload. Seeds email (legacy field) and the
+  // returning-buyer block (customer + shippingAddress) when present, but never
+  // clobbers what the user is already typing. We bypass handleCepChange on
+  // purpose so we don't trigger a redundant ViaCEP fetch — the address is
+  // already authoritative from the prior paid order. We do trigger a single
+  // shipping quote so options appear without the buyer having to retouch the
+  // CEP field.
+  useEffect(() => {
+    if (prefilledRef.current || !cart) return
+
+    if (cart.customerEmail && !form.getValues("email")) {
+      form.setValue("email", cart.customerEmail)
+    }
+
+    if (cart.customer && !form.getValues("customerName")) {
+      form.setValue("customerName", cart.customer.name, { shouldValidate: true })
+      if (cart.customer.document) {
+        form.setValue("customerDocument", formatCPF(cart.customer.document), { shouldValidate: true })
+      }
+      if (cart.customer.phone) {
+        form.setValue("customerPhone", formatPhone(cart.customer.phone), { shouldValidate: true })
+      }
+      if (cart.customer.email && !form.getValues("email")) {
+        form.setValue("email", cart.customer.email)
+      }
+    }
+
+    if (cart.shippingAddress && !form.getValues("shippingAddress.zipCode")) {
+      const addr = cart.shippingAddress
+      const cleanedZip = addr.zipCode.replace(/\D/g, "")
+      const formattedZip = cleanedZip.length > 5
+        ? `${cleanedZip.slice(0, 5)}-${cleanedZip.slice(5, 8)}`
+        : cleanedZip
+      form.setValue("shippingAddress", {
+        zipCode: formattedZip,
+        street: addr.street,
+        number: addr.number,
+        complement: addr.complement ?? "",
+        neighborhood: addr.neighborhood,
+        city: addr.city,
+        state: addr.state,
+      }, { shouldValidate: true })
+
+      if (cleanedZip.length === 8) {
+        setIsAddressLockedByCep(true)
+        runShippingQuote(cleanedZip)
+      }
+    }
+
+    prefilledRef.current = true
+  }, [cart, form, runShippingQuote])
 
   const handleCardSuccess = (result: ProcessCardPaymentResponse) => {
     if (result.status === "approved") {
@@ -531,6 +590,18 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         <div className="grid gap-8 lg:grid-cols-[1fr,400px]">
           <Form {...form}>
             <form className="space-y-6">
+              {cart.isReturningCustomer && (
+                <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="font-medium">Olá de novo, @{cart.platformHandle} 👋</p>
+                    <p className="mt-0.5 text-emerald-800/90">
+                      Preenchemos seus dados do último pedido. Confira, escolha o frete e pague.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <CheckoutSection
                 number={1}
                 title="Dados do Comprador"
@@ -791,9 +862,11 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                                     ? "Informe a cidade"
                                     : "Preencha o CEP"
                                 }
-                                  className={cn(
+                                disabled={isAddressLockedByCep}
+                                aria-readonly={isAddressLockedByCep}
+                                className={cn(
                                   "h-11 rounded-xl",
-                                  isAddressAutoFilled && "bg-gray-50"
+                                  isAddressLockedByCep && "bg-gray-50 cursor-not-allowed"
                                 )}
                               />
                             </FormControl>
@@ -816,12 +889,14 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                                 {...field}
                                 placeholder="UF"
                                 maxLength={2}
-                                  onChange={(e) => {
+                                onChange={(e) => {
                                   field.onChange(e.target.value.toUpperCase())
                                 }}
+                                disabled={isAddressLockedByCep}
+                                aria-readonly={isAddressLockedByCep}
                                 className={cn(
                                   "h-11 rounded-xl",
-                                  isAddressAutoFilled && "bg-gray-50"
+                                  isAddressLockedByCep && "bg-gray-50 cursor-not-allowed"
                                 )}
                               />
                             </FormControl>
