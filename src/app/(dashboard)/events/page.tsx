@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { formatDate, formatRelativeDate } from "@/lib/format"
+import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
 import { EVENT_STATUS_CONFIG, getStatusConfig, type EventStatusConfig } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -190,10 +190,11 @@ export default function EventsPage() {
         />
         <StatsCard
           title="Receita Total"
-          value="-"
+          value={formatCurrency(stats?.totalRevenue ?? 0)}
           description="em vendas"
           icon={DollarSign}
           isLoading={statsLoading}
+          variant="success"
         />
       </div>
 

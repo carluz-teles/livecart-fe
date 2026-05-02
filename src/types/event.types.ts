@@ -129,6 +129,7 @@ export interface EventStats {
   totalLives: number   // totalEvents
   activeLives: number  // activeEvents
   totalOrders: number
+  totalRevenue: number // cents
 }
 
 // =============================================================================
