@@ -16,6 +16,20 @@ export function formatCurrency(cents: number): string {
 }
 
 /**
+ * Compact currency for axes / chips (e.g., "R$ 1,2k", "R$ 350").
+ */
+export function formatCompactCurrency(cents: number): string {
+  const reais = cents / 100
+  if (Math.abs(reais) >= 1_000_000) {
+    return `R$ ${(reais / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}M`
+  }
+  if (Math.abs(reais) >= 1_000) {
+    return `R$ ${(reais / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`
+  }
+  return `R$ ${reais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`
+}
+
+/**
  * Formats a date string to localized format
  * @param dateString - ISO date string or null
  * @returns Formatted date string or "-" if null
