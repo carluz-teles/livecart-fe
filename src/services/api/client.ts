@@ -146,6 +146,8 @@ export const apiClient = {
   publicGet: <T>(url: string) => publicRequest<T>("GET", url),
   publicPost: <T>(url: string, body: unknown) => publicRequest<T>("POST", url, body),
   publicPut: <T>(url: string, body: unknown) => publicRequest<T>("PUT", url, body),
+  publicPatch: <T>(url: string, body: unknown) => publicRequest<T>("PATCH", url, body),
+  publicDelete: <T>(url: string) => publicRequest<T>("DELETE", url),
 }
 
 // For use in React components with Clerk context

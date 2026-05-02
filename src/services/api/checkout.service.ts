@@ -93,4 +93,27 @@ export const checkoutService = {
       `/api/public/checkout/${token}/shipping-method`,
       data
     ),
+
+  // ==========================================================================
+  // CART EDITS (buyer-driven mutations at checkout)
+  // All three return the freshly-loaded PublicCheckoutCart so the React Query
+  // cache can be swapped in one call.
+  // ==========================================================================
+
+  updateItemQuantity: (token: string, itemId: string, quantity: number) =>
+    apiClient.publicPatch<PublicCheckoutCart>(
+      `/api/public/checkout/${token}/items/${itemId}`,
+      { quantity }
+    ),
+
+  removeItem: (token: string, itemId: string) =>
+    apiClient.publicDelete<PublicCheckoutCart>(
+      `/api/public/checkout/${token}/items/${itemId}`
+    ),
+
+  addItem: (token: string, productId: string, quantity: number) =>
+    apiClient.publicPost<PublicCheckoutCart>(
+      `/api/public/checkout/${token}/items`,
+      { productId, quantity }
+    ),
 }

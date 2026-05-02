@@ -94,6 +94,8 @@ import { TopBuyers } from "@/components/analytics/TopBuyers"
 import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { EventUpsells } from "@/components/event/EventUpsells"
+import { EventActiveCheckouts } from "@/components/event/EventActiveCheckouts"
+import { EventCheckoutUpsell } from "@/components/event/EventCheckoutUpsell"
 import { SessionsTable } from "@/components/event/SessionsTable"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
 import { useState } from "react"
@@ -422,6 +424,12 @@ export default function EventDetailsPage() {
               limit={5}
             />
           </div>
+
+          {/* Active checkouts (real-time merchant view) — only while live is on. */}
+          {isEventActive && <EventActiveCheckouts eventId={id} enabled />}
+
+          {/* Aggregated upsell / downsell metric for paid carts of this event. */}
+          <EventCheckoutUpsell eventId={id} />
 
           {/* Sessions Table */}
           <SessionsTable

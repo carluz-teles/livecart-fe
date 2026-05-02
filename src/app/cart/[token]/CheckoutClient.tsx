@@ -69,6 +69,8 @@ import {
   useShippingQuote,
   useSelectShippingMethod,
   usePaymentStatus,
+  useUpdateCartItemQuantity,
+  useRemoveCartItem,
 } from "@/hooks/checkout"
 import {
   checkoutFormSchema,
@@ -151,6 +153,24 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   })
 
   const cepLookup = useCepLookup()
+
+  const updateItemQuantity = useUpdateCartItemQuantity()
+  const removeItem = useRemoveCartItem()
+
+  const handleUpdateQuantity = useCallback(
+    (itemId: string, quantity: number) => {
+      if (quantity < 1) return
+      updateItemQuantity.mutate({ token, itemId, quantity })
+    },
+    [updateItemQuantity, token]
+  )
+
+  const handleRemoveItem = useCallback(
+    (itemId: string) => {
+      removeItem.mutate({ token, itemId })
+    },
+    [removeItem, token]
+  )
 
   const shippingQuote = useShippingQuote()
   const selectShippingMethod = useSelectShippingMethod()
@@ -543,6 +563,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       quantity: availableQty,
       unitPrice: item.unitPrice,
       totalPrice: item.unitPrice * availableQty,
+      availableStock: item.availableStock,
     }
   })
 
@@ -582,6 +603,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             expiresAt={cart.expiresAt}
             onApplyCoupon={handleApplyCoupon}
             onRemoveCoupon={handleRemoveCoupon}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
             onExpired={() => refetchCart()}
             formatCurrency={formatCurrency}
           />
@@ -1073,6 +1096,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               expiresAt={cart.expiresAt}
               onApplyCoupon={handleApplyCoupon}
               onRemoveCoupon={handleRemoveCoupon}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
               onExpired={() => refetchCart()}
               formatCurrency={formatCurrency}
             />

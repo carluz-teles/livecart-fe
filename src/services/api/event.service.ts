@@ -28,6 +28,7 @@ import type {
   LiveModeState,
   SetActiveProductPayload,
   SetProcessingPausedPayload,
+  ActiveCheckout,
 } from "@/types"
 
 export const eventService = {
@@ -81,6 +82,13 @@ export const eventService = {
   // Event Details - List carts for an event
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
+
+  // Event Details - List carts currently in checkout phase (live merchant view)
+  listActiveCheckouts: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<{ data: ActiveCheckout[] }>(
+      `/stores/${storeId}/lives/${eventId}/active-checkouts`,
+      token
+    ),
 
   // Event Details - List products sold in an event (sales report)
   listSoldProducts: (storeId: string, eventId: string, token?: string | null) =>

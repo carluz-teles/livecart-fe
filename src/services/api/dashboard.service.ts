@@ -8,6 +8,7 @@ import type {
   EventsWithRevenueResponse,
   AggregatedFunnel,
   RevenueByPaymentResponse,
+  CheckoutUpsellResponse,
 } from "@/types"
 
 export const dashboardService = {
@@ -36,4 +37,21 @@ export const dashboardService = {
   // Revenue by Payment Method
   getRevenueByPayment: (storeId: string, token?: string | null) =>
     apiClient.get<RevenueByPaymentResponse>(`/stores/${storeId}/dashboard/revenue-by-payment`, token),
+
+  // Checkout upsell / downsell — net change between initial cart and paid cart
+  getCheckoutUpsell: (
+    storeId: string,
+    token?: string | null,
+    eventId?: string,
+    topN: number = 5
+  ) => {
+    const params = new URLSearchParams()
+    if (eventId) params.set("eventId", eventId)
+    if (topN) params.set("topN", String(topN))
+    const qs = params.toString() ? `?${params.toString()}` : ""
+    return apiClient.get<CheckoutUpsellResponse>(
+      `/stores/${storeId}/dashboard/checkout-upsell${qs}`,
+      token
+    )
+  },
 }

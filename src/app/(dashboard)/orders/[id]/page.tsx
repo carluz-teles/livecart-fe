@@ -21,6 +21,7 @@ export default function OrderDetailPage() {
           <OrderDetail.Shipping />
           <OrderDetail.Payment />
         </OrderDetail.Cards>
+        <OrderDetail.Upsell />
         <OrderDetail.Items />
         <OrderDetail.Timeline />
         <OrderDetail.Logistics />

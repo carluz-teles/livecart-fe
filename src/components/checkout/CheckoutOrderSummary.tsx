@@ -11,6 +11,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { CheckoutCouponField } from "./CheckoutCouponField"
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges"
 import { CheckoutExpirationTimer } from "./CheckoutExpirationTimer"
@@ -23,6 +39,9 @@ interface OrderItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  /** Stock available for this SKU; combined with maxQuantityPerItem to gate
+   *  the "+" button. Undefined means stock is unconstrained (legacy data). */
+  availableStock?: number
 }
 
 interface AppliedCoupon {
@@ -74,6 +93,7 @@ function OrderItemCompact({
   formatCurrency,
   allowEdit,
   maxQuantityPerItem,
+  isLastItem,
   onUpdateQuantity,
   onRemoveItem,
   index,
@@ -82,18 +102,40 @@ function OrderItemCompact({
   formatCurrency: (cents: number) => string
   allowEdit?: boolean
   maxQuantityPerItem?: number
+  isLastItem?: boolean
   onUpdateQuantity?: (itemId: string, quantity: number) => void
   onRemoveItem?: (itemId: string) => void
   index: number
 }) {
   const [mounted, setMounted] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
+
+  const cap = maxQuantityPerItem && maxQuantityPerItem > 0 ? maxQuantityPerItem : Infinity
+  const stock = item.availableStock && item.availableStock > 0 ? item.availableStock : Infinity
+  const effectiveLimit = Math.min(cap, stock)
   const canDecrease = item.quantity > 1
-  const canIncrease = !maxQuantityPerItem || maxQuantityPerItem === 0 || item.quantity < maxQuantityPerItem
+  const canIncrease = item.quantity < effectiveLimit
+
+  // Choose the most informative reason — stock cap usually beats per-item cap
+  // because it changes more often and surprises buyers more.
+  const limitReason = !canIncrease
+    ? stock <= cap
+      ? `Apenas ${item.availableStock} em estoque`
+      : `Limite de ${maxQuantityPerItem} por item`
+    : null
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), index * 50)
     return () => clearTimeout(timer)
   }, [index])
+
+  const handleRemoveClick = () => {
+    if (isLastItem) {
+      setConfirmRemove(true)
+      return
+    }
+    onRemoveItem?.(item.id)
+  }
 
   return (
     <div
@@ -144,35 +186,74 @@ function OrderItemCompact({
               className="h-8 w-8 rounded-r-none hover:bg-gray-100"
               onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
               disabled={!canDecrease}
+              aria-label="Diminuir quantidade"
             >
               <Minus className="h-3 w-3" />
             </Button>
             <span className="w-8 text-center text-sm font-semibold tabular-nums">
               {item.quantity}
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-l-none hover:bg-gray-100"
-              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-              disabled={!canIncrease}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* Span wrapper keeps the tooltip mounted on a disabled button. */}
+                  <span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-l-none hover:bg-gray-100"
+                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                      disabled={!canIncrease}
+                      aria-label="Aumentar quantidade"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {limitReason && (
+                  <TooltipContent>{limitReason}</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
-          {/* Remove button */}
+          {/* Remove button (with last-item confirmation guard) */}
           {onRemoveItem && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-              onClick={() => onRemoveItem(item.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                onClick={handleRemoveClick}
+                aria-label="Remover item"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Esvaziar carrinho?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Removendo este item seu carrinho ficará vazio e você não
+                      conseguirá finalizar a compra.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Manter</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setConfirmRemove(false)
+                        onRemoveItem(item.id)
+                      }}
+                    >
+                      Remover
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       ) : (
@@ -263,6 +344,7 @@ export function CheckoutOrderSummary({
             formatCurrency={formatCurrency}
             allowEdit={allowEdit}
             maxQuantityPerItem={maxQuantityPerItem}
+            isLastItem={items.length === 1}
             onUpdateQuantity={onUpdateQuantity}
             onRemoveItem={onRemoveItem}
           />

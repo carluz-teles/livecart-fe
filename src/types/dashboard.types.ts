@@ -111,3 +111,25 @@ export interface RevenueByPaymentItem {
 export interface RevenueByPaymentResponse {
   data: RevenueByPaymentItem[]
 }
+
+// =============================================================================
+// CHECKOUT UPSELL — buyer-driven mutations between initial cart and paid cart
+// =============================================================================
+
+export interface CheckoutUpsellProduct {
+  productId: string
+  productName: string
+  imageUrl?: string | null
+  units: number
+  revenueCents: number
+}
+
+export interface CheckoutUpsellResponse {
+  cartsWithMutations: number
+  totalPaidCarts: number
+  upsellCents: number
+  downsellCents: number
+  netCents: number
+  topAdded: CheckoutUpsellProduct[]
+  topRemoved: CheckoutUpsellProduct[]
+}

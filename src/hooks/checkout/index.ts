@@ -5,3 +5,8 @@ export { useProcessCardPayment, useGeneratePix } from "./useProcessPayment"
 export { useCepLookup } from "./useCepLookup"
 export { useCheckoutForm } from "./useCheckoutForm"
 export { useShippingQuote, useSelectShippingMethod } from "./useShippingQuote"
+export {
+  useUpdateCartItemQuantity,
+  useRemoveCartItem,
+  useAddCartItem,
+} from "./useCartMutations"

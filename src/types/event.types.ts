@@ -204,6 +204,24 @@ export interface EventCartsResponse {
   data: EventCart[]
 }
 
+/** A cart currently in checkout phase (status='checkout', not yet paid).
+ *  Surfaced live on the merchant dashboard so the operator can see buyer
+ *  edits in real time before the payment lands. */
+export interface ActiveCheckout {
+  id: string
+  platformHandle: string
+  token: string
+  status: string
+  paymentStatus?: string
+  createdAt: string
+  expiresAt?: string | null
+  initialSubtotalCents: number
+  currentSubtotalCents: number
+  deltaCents: number
+  mutationCount: number
+  lastMutationAt?: string | null
+}
+
 // Product sold in an event (sales report)
 export interface EventSoldProduct {
   id: string

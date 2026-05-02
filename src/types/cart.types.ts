@@ -160,6 +160,52 @@ export interface OrderListParams {
 export type OrderListResponse = PaginatedResponse<Order>
 
 // =============================================================================
+// CART MUTATIONS / UPSELL (dashboard)
+// =============================================================================
+
+export type CartMutationType =
+  | "item_added"
+  | "item_removed"
+  | "quantity_increased"
+  | "quantity_decreased"
+
+export type CartMutationSource = "buyer_checkout" | "live_add" | "merchant"
+
+export interface OrderUpsellItem {
+  productId: string
+  name: string
+  keyword?: string
+  imageUrl?: string | null
+  quantity: number
+  unitPrice: number
+}
+
+export interface OrderUpsellMutation {
+  id: string
+  productId: string
+  productName: string
+  keyword?: string
+  imageUrl?: string | null
+  mutationType: CartMutationType
+  quantityBefore: number
+  quantityAfter: number
+  unitPrice: number
+  source: CartMutationSource
+  createdAt: string
+}
+
+export interface OrderUpsellSummary {
+  hasSnapshot: boolean
+  snapshotTakenAt?: string
+  initialSubtotalCents: number
+  finalSubtotalCents: number
+  deltaCents: number
+  mutationCount: number
+  initialItems: OrderUpsellItem[]
+  mutations: OrderUpsellMutation[]
+}
+
+// =============================================================================
 // PUBLIC CHECKOUT TYPES
 // =============================================================================
 
@@ -173,6 +219,10 @@ export interface PublicCheckoutItem {
   unitPrice: number
   totalPrice: number
   waitlistedQuantity: number
+  /** Available stock for the SKU (product.stock at read time). The UI uses
+   *  this together with maxQuantityPerItem to disable the "+" button when the
+   *  buyer would exceed either limit. */
+  availableStock: number
 }
 
 export interface PublicCheckoutEvent {
