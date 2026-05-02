@@ -21,6 +21,9 @@ export function useCheckoutCart(
     enabled: !!token,
     initialData,
     staleTime: 30 * 1000, // 30 seconds
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    // Expiration is detected client-side by CheckoutExpirationTimer's
+    // 1s interval reading Date.now() — refetching on focus would churn
+    // the cart object and remount the Mercado Pago Secure Fields iframes.
+    refetchOnWindowFocus: false,
   })
 }
