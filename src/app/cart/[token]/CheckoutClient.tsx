@@ -589,7 +589,12 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const shippingCostCents = shippingSummary?.shippingCost ?? null
   const selectedOption = shippingOptions.find((o) => o.id === selectedShippingId)
   const shippingRealCostCents = selectedOption?.realPriceCents ?? null
-  const effectiveTotal = shippingSummary?.total ?? cart.summary.subtotal
+  // Always derive the total from the live cart subtotal so quantity edits and
+  // item removals reflect immediately. shippingSummary caches the chosen
+  // carrier's cost; weight-tier re-quoting happens via the existing cart
+  // mutation flow.
+  const effectiveTotal =
+    cart.summary.subtotal + (shippingCostCents ?? 0)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
