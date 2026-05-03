@@ -14,6 +14,7 @@ import {
   Building2,
   Users,
   FileText,
+  Lightbulb,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/hooks/useUser"
@@ -40,6 +41,12 @@ const navSections: NavSection[] = [
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
       { name: "Clientes", href: "/customers", icon: Users },
+    ],
+  },
+  {
+    title: "Comunidade",
+    items: [
+      { name: "Ideias", href: "/ideas", icon: Lightbulb },
     ],
   },
   {

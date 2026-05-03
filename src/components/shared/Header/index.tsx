@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useUser, useClerk } from "@clerk/nextjs"
-import { Bell, Moon, Sun, LogOut, User, Settings, ChevronsUpDown } from "lucide-react"
+import { Moon, Sun, LogOut, User, Settings, ChevronsUpDown } from "lucide-react"
+import { NotificationsBell } from "@/components/notification/NotificationsBell"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -57,10 +58,7 @@ export function Header() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notificações</span>
-        </Button>
+        <NotificationsBell />
 
         {/* Onboarding Checklist */}
         <OnboardingChecklist.Trigger />
