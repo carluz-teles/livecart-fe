@@ -480,8 +480,21 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       }
     }
 
+    // Restore a previously selected shipping method straight from the cart.
+    // The buyer reloaded mid-checkout, so we shouldn't force them to re-pick.
+    if (cart.shipping && !selectedShippingId) {
+      setSelectedShippingId(cart.shipping.serviceId)
+      setShippingSummary({
+        subtotal: cart.summary.subtotal,
+        shippingCost: cart.shipping.costCents,
+        total: cart.summary.subtotal + cart.shipping.costCents,
+        totalItems: cart.summary.totalItems,
+        hasShippingQuote: true,
+      })
+    }
+
     prefilledRef.current = true
-  }, [cart, form, runShippingQuote])
+  }, [cart, form, runShippingQuote, selectedShippingId])
 
   const handleCardSuccess = (result: ProcessCardPaymentResponse) => {
     if (result.status === "approved") {
