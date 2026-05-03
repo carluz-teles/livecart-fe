@@ -18,19 +18,18 @@ export function IdeaFeed({ ideas, isLoading, isError, onRetry }: IdeaFeedProps) 
     return (
       <div className="grid gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="p-5">
-            <div className="flex items-start justify-between gap-3">
+          <Card key={i} className="p-4">
+            <div className="flex items-start gap-4">
+              <Skeleton className="h-14 w-12 shrink-0 rounded-lg" />
               <div className="flex flex-col gap-2 flex-1">
-                <Skeleton className="h-3 w-40" />
                 <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-full mt-2" />
+                <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-5/6" />
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-1">
                   <Skeleton className="h-5 w-20" />
                   <Skeleton className="h-5 w-24" />
                 </div>
               </div>
-              <Skeleton className="h-9 w-14" />
             </div>
           </Card>
         ))}

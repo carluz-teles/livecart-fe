@@ -1,7 +1,6 @@
 "use client"
 
-import { ArrowUp } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ChevronUp } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +19,10 @@ interface VoteButtonProps {
   size?: "sm" | "lg"
 }
 
+// Vertical, tile-shaped vote button (Canny / ProductHunt style): an upward
+// chevron above a large count, with a clear filled state when the user has
+// voted. The whole tile is the click target so the affordance reads as
+// "click here to upvote" rather than "this is just a counter".
 export function VoteButton({
   ideaId,
   ideaNumber,
@@ -30,11 +33,13 @@ export function VoteButton({
 }: VoteButtonProps) {
   const toggle = useToggleVote(ideaId)
 
+  const dims = size === "lg"
+    ? "h-16 w-16 text-base"
+    : "h-14 w-12 text-sm"
+
   const button = (
-    <Button
+    <button
       type="button"
-      variant={votedByMe ? "default" : "outline"}
-      size={size === "lg" ? "default" : "sm"}
       disabled={isAuthor || toggle.isPending}
       onClick={(e) => {
         e.preventDefault()
@@ -44,16 +49,30 @@ export function VoteButton({
       aria-pressed={votedByMe}
       aria-label={`Votar na ideia número ${ideaNumber}`}
       className={cn(
-        "gap-1.5 transition-colors",
-        size === "lg" && "h-12 min-w-[88px] flex-col gap-0.5 px-4 py-2",
-        votedByMe && "shadow-sm",
+        "group/vote inline-flex flex-col items-center justify-center gap-0.5 rounded-lg border transition-all",
+        "select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        dims,
+        votedByMe
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary",
+        isAuthor && "cursor-not-allowed opacity-60 hover:border-border hover:bg-background hover:text-muted-foreground",
+        toggle.isPending && "opacity-70",
       )}
     >
-      <ArrowUp className={cn("h-4 w-4", size === "lg" && "h-5 w-5")} />
-      <span className={cn("tabular-nums", size === "lg" && "text-base font-semibold")}>
+      <ChevronUp
+        className={cn(
+          "h-4 w-4 transition-transform",
+          size === "lg" && "h-5 w-5",
+          !isAuthor && "group-hover/vote:-translate-y-0.5",
+          votedByMe && "translate-y-0",
+        )}
+        strokeWidth={2.5}
+        aria-hidden="true"
+      />
+      <span className={cn("font-semibold tabular-nums leading-none", size === "lg" && "text-lg")}>
         {voteCount}
       </span>
-    </Button>
+    </button>
   )
 
   if (!isAuthor) return button
@@ -62,8 +81,7 @@ export function VoteButton({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          {/* span wrapper so the disabled button still triggers the tooltip */}
-          <span tabIndex={0}>{button}</span>
+          <span tabIndex={0} className="inline-block">{button}</span>
         </TooltipTrigger>
         <TooltipContent>Não é possível votar na própria ideia</TooltipContent>
       </Tooltip>
