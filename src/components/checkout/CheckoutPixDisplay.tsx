@@ -213,7 +213,15 @@ export function CheckoutPixDisplay({
   }
 
   // Active
-  const qrSrc = pixData.qrCode
+  // MP returns the QR Code as raw base64 (no `data:` prefix). Normalize so
+  // <img> can render it directly without falling into next/image, which
+  // expects a URL.
+  const rawQr = pixData.qrCode
+  const qrSrc = rawQr
+    ? rawQr.startsWith("data:") || rawQr.startsWith("http")
+      ? rawQr
+      : `data:image/png;base64,${rawQr}`
+    : ""
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-5 sm:p-6">
