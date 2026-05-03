@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { Suspense, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -21,7 +21,18 @@ function asSort(v: string | null): IdeaSort {
   return VALID_SORTS.includes(v as IdeaSort) ? (v as IdeaSort) : "trending"
 }
 
+// Next 15 forces useSearchParams() readers to be wrapped in <Suspense> so the
+// page can statically pre-render the shell while the URL params resolve on
+// the client. The inner component owns the param-dependent state.
 export default function IdeasPage() {
+  return (
+    <Suspense fallback={<IdeasPageFallback />}>
+      <IdeasPageContent />
+    </Suspense>
+  )
+}
+
+function IdeasPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -80,6 +91,20 @@ export default function IdeasPage() {
         isError={isError}
         onRetry={() => refetch()}
       />
+    </div>
+  )
+}
+
+function IdeasPageFallback() {
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Canal de Ideias"
+        description="Compartilhe sugestões, vote nas que importam e acompanhe o que entra no roadmap."
+      >
+        <CreateIdeaSheet />
+      </PageHeader>
+      <IdeaFeed ideas={[]} isLoading isError={false} />
     </div>
   )
 }
