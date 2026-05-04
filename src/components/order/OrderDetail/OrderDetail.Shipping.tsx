@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/format"
 import type { ShippingAddressPayload } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
+import { OrderDetailEditAddress } from "./OrderDetail.EditAddress"
 
 function formatAddress(address: ShippingAddressPayload): string {
   const line1 = [address.street, address.number, address.complement]
@@ -78,25 +79,28 @@ export function OrderDetailShipping() {
             Endereço ainda não informado
           </p>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2 w-full print:hidden"
-          onClick={handleCopy}
-          disabled={!order.shippingAddress}
-        >
-          {copied ? (
-            <>
-              <Check className="mr-2 h-3 w-3" />
-              Copiado
-            </>
-          ) : (
-            <>
-              <Copy className="mr-2 h-3 w-3" />
-              Copiar Endereço
-            </>
-          )}
-        </Button>
+        <div className="mt-2 flex flex-col gap-2 print:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={handleCopy}
+            disabled={!order.shippingAddress}
+          >
+            {copied ? (
+              <>
+                <Check className="mr-2 h-3 w-3" />
+                Copiado
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-3 w-3" />
+                Copiar Endereço
+              </>
+            )}
+          </Button>
+          <OrderDetailEditAddress />
+        </div>
       </CardContent>
     </Card>
   )

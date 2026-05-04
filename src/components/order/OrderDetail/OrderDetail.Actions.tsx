@@ -1,7 +1,8 @@
 "use client"
 
 import { use, useState } from "react"
-import { MoreHorizontal, Printer } from "lucide-react"
+import { Link2, MoreHorizontal, Printer } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -20,11 +21,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useRegenerateCheckout } from "@/hooks/order"
 import { OrderDetailContext } from "./OrderDetailContext"
 
 export function OrderDetailActions() {
   const ctx = use(OrderDetailContext)
   const [refundOpen, setRefundOpen] = useState(false)
+  const [resendOpen, setResendOpen] = useState(false)
+  const regenerate = useRegenerateCheckout()
   if (!ctx) return null
   const { order } = ctx.state
   const { refund, isRefunding, print } = ctx.actions
@@ -32,6 +36,33 @@ export function OrderDetailActions() {
   const handleRefundConfirm = () => {
     refund()
     setRefundOpen(false)
+  }
+
+  // Resend is only meaningful when the buyer hasn't paid yet AND no shipment
+  // has been created (which the backend also enforces with 409 conflicts).
+  const canResend =
+    order.paymentStatus !== "paid" && !order.shipment
+
+  const handleResendConfirm = () => {
+    regenerate.mutate(
+      { id: order.id },
+      {
+        onSuccess: async (data) => {
+          const url = `${window.location.origin}/cart/${data.token}`
+          // Best effort copy to clipboard so the merchant can paste straight
+          // into WhatsApp / Instagram. We tolerate the failure path because
+          // some browsers refuse clipboard writes outside trusted handlers.
+          try {
+            await navigator.clipboard.writeText(url)
+            toast.success("Novo link copiado", { description: url })
+          } catch {
+            toast.success("Checkout reaberto", { description: url })
+          }
+          setResendOpen(false)
+        },
+        onError: () => toast.error("Falha ao reenviar checkout"),
+      },
+    )
   }
 
   return (
@@ -47,6 +78,12 @@ export function OrderDetailActions() {
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </DropdownMenuItem>
+          {canResend && (
+            <DropdownMenuItem onSelect={() => setResendOpen(true)}>
+              <Link2 className="mr-2 h-4 w-4" />
+              Reenviar checkout
+            </DropdownMenuItem>
+          )}
           {order.paymentStatus === "paid" && (
             <>
               <DropdownMenuSeparator />
@@ -78,6 +115,28 @@ export function OrderDetailActions() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isRefunding ? "Reembolsando..." : "Reembolsar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={resendOpen} onOpenChange={setResendOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reenviar checkout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vamos gerar um novo prazo para o cliente concluir o pagamento.
+              O link público será copiado para sua área de transferência —
+              cole onde quiser (WhatsApp, Instagram, e-mail).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResendConfirm}
+              disabled={regenerate.isPending}
+            >
+              {regenerate.isPending ? "Gerando…" : "Gerar e copiar link"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

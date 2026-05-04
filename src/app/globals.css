@@ -114,7 +114,27 @@
 
 
 @media print {
-  html, body {
+  html,
+  body {
     background: white !important;
+  }
+  /* Print color fidelity — keeps badge/dot tones visible on paper. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Strip the depth tricks: shadows muddy the page and the hover bg gradients
+     never trigger on paper anyway. */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+  /* Keep cards from being split mid-table or mid-list across page breaks. */
+  [data-slot="card"],
+  .print-keep-together {
+    break-inside: avoid;
   }
 }

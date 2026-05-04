@@ -1,10 +1,15 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useOrders, useOrderStats } from "@/hooks/order"
+import {
+  persistOrderListSnapshot,
+  useOrders,
+  useOrderStats,
+} from "@/hooks/order"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useStoreId } from "@/hooks/useUser"
 import type { OrderFilters } from "@/types/cart.types"
 import {
   OrderListContext,
@@ -73,6 +78,19 @@ export function OrderListProvider({ children }: ProviderProps) {
     search: debouncedSearch || undefined,
     filters: effectiveFilters,
   })
+
+  const { storeId } = useStoreId()
+
+  // Snapshot the page of order ids the merchant is currently browsing so the
+  // detail screen can offer prev/next navigation that respects the active
+  // filter / sort / page. Refreshes whenever the listing data changes.
+  useEffect(() => {
+    if (!storeId || !data?.data) return
+    persistOrderListSnapshot(
+      storeId,
+      data.data.map((o) => ({ id: o.id, shortId: o.shortId })),
+    )
+  }, [data, storeId])
 
   const openOrder = useCallback(
     (id: string) => router.push(`/orders/${id}`),

@@ -64,33 +64,42 @@ import type {
   ShipmentStatusBucket,
 } from "@/types"
 
+// Shipment status bucket → visual style.
+//
+// `issue` and `canceled` route through design-system tokens (destructive/muted)
+// because they map cleanly. The other four buckets rely on Tailwind palettes
+// because the design system has no semantic warning/info/success tokens yet —
+// we keep them centralized here so introducing those tokens later is a single
+// edit. Same trade-off documented in the order list "Frete grátis" chip.
 const BUCKET_STYLE: Record<
   ShipmentStatusBucket,
   { dot: string; badge: string }
 > = {
   awaiting: {
     dot: "bg-amber-500",
-    badge: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+    badge: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   },
   in_transit: {
     dot: "bg-blue-500",
-    badge: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+    badge: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
   },
   delivered: {
     dot: "bg-emerald-500",
-    badge: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+    badge:
+      "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   issue: {
-    dot: "bg-red-500",
-    badge: "bg-red-500/10 text-red-700 border-red-500/20",
+    dot: "bg-destructive",
+    badge: "border-destructive/20 bg-destructive/10 text-destructive",
   },
   returning: {
     dot: "bg-orange-500",
-    badge: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+    badge:
+      "border-orange-500/20 bg-orange-500/10 text-orange-700 dark:text-orange-400",
   },
   canceled: {
-    dot: "bg-gray-400",
-    badge: "bg-gray-200 text-gray-700 border-gray-300",
+    dot: "bg-muted-foreground/60",
+    badge: "border-border bg-muted text-muted-foreground",
   },
 }
 
