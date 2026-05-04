@@ -67,6 +67,10 @@ export interface Order {
   paymentStatus: PaymentStatus
   // Latest shipment status, "" when no shipment has been created yet.
   shipmentStatus: ShipmentStatus | ""
+  // True when the buyer picked a shipping service at checkout — even when no
+  // shipment row was created yet. Lets the list show "Aguardando emissão"
+  // instead of "Sem envio" between checkout and shipment creation.
+  hasShipping: boolean
   items: OrderItem[]
   // Lightweight preview for the list page (avatar stack); empty when full
   // items are loaded (detail).
@@ -123,6 +127,9 @@ export interface OrderStore {
 }
 
 export interface OrderDetail extends Order {
+  // Cart token; the public buyer link is `${origin}/cart/${token}`. Used by
+  // the admin "copiar link do checkout" action.
+  token: string
   comments: OrderComment[]
   // Contact + address are null until the buyer fills them at checkout.
   customer: OrderCustomer | null

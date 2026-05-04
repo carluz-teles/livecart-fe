@@ -1,47 +1,44 @@
 "use client"
 
 import { use } from "react"
-import Image from "next/image"
-import { Facebook, Instagram, MessageCircle, Package, Radio } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Facebook, Instagram, MessageCircle, Radio } from "lucide-react"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { formatCurrency, formatTime } from "@/lib/format"
+import { formatTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
+import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailPayment } from "./OrderDetail.Payment"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
-
-const PREVIEW_LIMIT = 5
+import { OrderDetailUpsell } from "./OrderDetail.Upsell"
 
 const PLATFORM_ICON: Record<string, typeof Instagram> = {
   instagram: Instagram,
   facebook: Facebook,
 }
 
+// "Pedido" tab — single landing for everything operational about the order:
+// payment / customer / shipping address / origin live on the right rail, and
+// the full items table (with the upsell log right below) on the left.
 export function OrderDetailSummaryTab() {
   const ctx = use(OrderDetailContext)
   if (!ctx) return null
   const { order } = ctx.state
-  const { setActiveTab } = ctx.actions
 
   return (
-    // Mobile: sidebar (Pagamento/Cliente/Entrega/Live) sobe pro topo because
-    // those cards carry the highest-signal info post-live ("entrou dinheiro?
-    // quem é? pra onde vai?"). Desktop reverts to natural left-main / right-
-    // aside flow.
+    // Mobile stacks the rail above the items because those cards carry the
+    // highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
+    // Desktop reverts to natural main / aside flow.
     <div className="grid gap-4 lg:grid-cols-12">
       <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
-        <SummaryItemsPreview
-          order={order}
-          onSeeAll={() => setActiveTab("items")}
-        />
+        <OrderDetailItems />
+        <OrderDetailUpsell />
       </main>
       <aside className="order-1 flex flex-col gap-4 lg:col-span-4 lg:order-none">
         <OrderDetailPayment />
@@ -50,93 +47,6 @@ export function OrderDetailSummaryTab() {
         <SummaryLiveCard order={order} />
       </aside>
     </div>
-  )
-}
-
-interface ItemsPreviewProps {
-  order: OrderDetail
-  onSeeAll: () => void
-}
-
-function SummaryItemsPreview({ order, onSeeAll }: ItemsPreviewProps) {
-  const visible = order.items.slice(0, PREVIEW_LIMIT)
-  const remaining = Math.max(0, order.items.length - PREVIEW_LIMIT)
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          <Package className="h-4 w-4" />
-          Itens ({order.totalItems})
-        </CardTitle>
-        {order.items.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={onSeeAll}
-          >
-            Ver todos →
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        {order.items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Pedido sem itens.
-          </p>
-        ) : (
-          <ul className="divide-y">
-            {visible.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 py-3">
-                {item.productImage ? (
-                  <Image
-                    src={item.productImage}
-                    alt={item.productName}
-                    width={40}
-                    height={40}
-                    className="rounded-md object-cover"
-                  />
-                ) : (
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {item.productName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.size ? `${item.size} · ` : ""}
-                    <span className="font-mono">{item.keyword}</span>
-                    {" · ×"}
-                    {item.quantity}
-                  </p>
-                </div>
-                <span className="shrink-0 text-sm font-medium tabular-nums">
-                  {formatCurrency(item.totalPrice)}
-                </span>
-              </li>
-            ))}
-            {remaining > 0 && (
-              <li className="flex items-center justify-between py-3">
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                  +{remaining} {remaining === 1 ? "item" : "itens"}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={onSeeAll}
-                >
-                  Ver todos →
-                </Button>
-              </li>
-            )}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
   )
 }
 

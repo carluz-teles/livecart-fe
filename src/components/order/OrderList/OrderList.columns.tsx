@@ -201,7 +201,12 @@ export const orderColumns: ColumnDef<Order>[] = [
   {
     id: "shipment",
     header: () => "Envio",
-    cell: ({ row }) => <ShipmentCell status={row.original.shipmentStatus} />,
+    cell: ({ row }) => (
+      <ShipmentCell
+        status={row.original.shipmentStatus}
+        hasShipping={row.original.hasShipping}
+      />
+    ),
   },
   {
     id: "createdAt",
@@ -289,18 +294,29 @@ function SortHeader({ column, align = "left", children }: SortHeaderProps) {
 
 interface ShipmentCellProps {
   status: Order["shipmentStatus"]
+  hasShipping: boolean
 }
 
-function ShipmentCell({ status }: ShipmentCellProps) {
-  if (!status) {
-    return <span className="text-xs text-muted-foreground">Sem envio</span>
+// Three states: shipment created (status badge from carrier), buyer chose a
+// shipping service but no shipment row yet (generic "Aguardando emissão"),
+// or buyer never picked anything (muted "Sem envio").
+function ShipmentCell({ status, hasShipping }: ShipmentCellProps) {
+  if (status) {
+    const bucket = shipmentStatusBucket(status)
+    return (
+      <Badge variant={SHIPMENT_BUCKET_BADGE[bucket]} className="gap-1">
+        {shipmentStatusLabel(status)}
+      </Badge>
+    )
   }
-  const bucket = shipmentStatusBucket(status)
-  return (
-    <Badge variant={SHIPMENT_BUCKET_BADGE[bucket]} className="gap-1">
-      {shipmentStatusLabel(status)}
-    </Badge>
-  )
+  if (hasShipping) {
+    return (
+      <Badge variant="outline" className="gap-1 text-muted-foreground">
+        Aguardando emissão
+      </Badge>
+    )
+  }
+  return <span className="text-xs text-muted-foreground">Sem envio</span>
 }
 
 interface ProductsPreviewProps {

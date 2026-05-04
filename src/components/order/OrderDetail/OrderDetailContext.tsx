@@ -3,12 +3,7 @@
 import { createContext } from "react"
 import type { OrderDetail } from "@/types/cart.types"
 
-export type OrderDetailTabId =
-  | "summary"
-  | "items"
-  | "logistics"
-  | "events"
-  | "notes"
+export type OrderDetailTabId = "summary" | "logistics" | "events"
 
 export interface OrderDetailState {
   order: OrderDetail

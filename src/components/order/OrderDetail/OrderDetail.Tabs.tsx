@@ -23,15 +23,9 @@ interface DetailTab {
 const TABS: DetailTab[] = [
   {
     id: "summary",
-    label: "Resumo",
+    label: "Pedido",
     description:
-      "Cliente, pagamento, endereço e itens principais do pedido.",
-  },
-  {
-    id: "items",
-    label: "Itens",
-    description:
-      "Lista completa de produtos e mudanças do carrinho durante o checkout.",
+      "Cliente, pagamento, endereço de entrega e os itens vendidos.",
   },
   {
     id: "logistics",
@@ -41,15 +35,9 @@ const TABS: DetailTab[] = [
   },
   {
     id: "events",
-    label: "Eventos",
+    label: "Histórico",
     description:
       "Linha do tempo unificada com tudo que aconteceu com este pedido.",
-  },
-  {
-    id: "notes",
-    label: "Notas",
-    description:
-      "Observações internas privadas — recurso em breve.",
   },
 ]
 

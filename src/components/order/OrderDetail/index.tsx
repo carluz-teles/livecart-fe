@@ -15,10 +15,8 @@ import { OrderDetailNotFound } from "./OrderDetail.NotFound"
 import { OrderDetailTabs } from "./OrderDetail.Tabs"
 import { OrderDetailTabContent } from "./OrderDetail.TabContent"
 import { OrderDetailSummaryTab } from "./OrderDetail.SummaryTab"
-import { OrderDetailItemsTab } from "./OrderDetail.ItemsTab"
 import { OrderDetailLogisticsTab } from "./OrderDetail.LogisticsTab"
 import { OrderDetailEventsTab } from "./OrderDetail.EventsTab"
-import { OrderDetailNotesTab } from "./OrderDetail.NotesTab"
 
 interface FrameProps {
   children: React.ReactNode
@@ -42,10 +40,8 @@ export const OrderDetail = {
   TabContent: OrderDetailTabContent,
   // Tab panels (usually rendered via TabContent based on activeTab).
   SummaryTab: OrderDetailSummaryTab,
-  ItemsTab: OrderDetailItemsTab,
   LogisticsTab: OrderDetailLogisticsTab,
   EventsTab: OrderDetailEventsTab,
-  NotesTab: OrderDetailNotesTab,
   // Building blocks reused by tabs and any future surface.
   Customer: OrderDetailCustomer,
   Payment: OrderDetailPayment,
