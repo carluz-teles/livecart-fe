@@ -1,6 +1,7 @@
 "use client"
 
 import { OrderListProvider } from "./OrderList.Provider"
+import { OrderListHeader } from "./OrderList.Header"
 import { OrderListStats } from "./OrderList.Stats"
 import { OrderListFilters } from "./OrderList.Filters"
 import { OrderListTable } from "./OrderList.Table"
@@ -20,6 +21,7 @@ function OrderListFrame({ children }: FrameProps) {
 export const OrderList = {
   Provider: OrderListProvider,
   Frame: OrderListFrame,
+  Header: OrderListHeader,
   Stats: OrderListStats,
   Tabs: OrderListTabs,
   Filters: OrderListFilters,

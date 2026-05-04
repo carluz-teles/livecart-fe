@@ -8,6 +8,12 @@ import { orderService } from "@/services/api/order.service"
 import { orderKeys } from "@/hooks/order/useOrders"
 import { cn } from "@/lib/utils"
 import type { OrderFilters } from "@/types/cart.types"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { OrderListContext } from "./OrderListContext"
 
 export type OrderTabId =
@@ -21,6 +27,9 @@ export type OrderTabId =
 export interface OrderTab {
   id: OrderTabId
   label: string
+  // Plain-language explanation surfaced as a tooltip so the merchant can
+  // confirm what each tab includes without opening docs.
+  description: string
   // Pre-set filters for this tab. Combined with user-applied filters at the
   // Provider level (tab filters take precedence on overlapping keys).
   filters: OrderFilters
@@ -33,6 +42,8 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "needs_action",
     label: "Precisam ação",
+    description:
+      "Envios com problema (NFe pendente, recusa, bloqueio fiscal/logístico, dano, falha na entrega). Pedidos sem envio criado ainda não aparecem aqui.",
     filters: {
       shipmentStatus: [
         "awaiting_invoice",
@@ -50,6 +61,8 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "awaiting_payment",
     label: "Aguardando pagto",
+    description:
+      "Cliente está no checkout ou recebeu o PIX e ainda não pagou. Sai daqui assim que o pagamento é confirmado.",
     filters: {
       status: ["active", "checkout"],
       paymentStatus: ["pending"],
@@ -58,6 +71,8 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "to_ship",
     label: "Para despachar",
+    description:
+      "Pedidos pagos sem envio criado. Próximo passo é gerar o envio no Melhor Envio ou SmartEnvios.",
     filters: {
       paymentStatus: ["paid"],
       hasShipment: false,
@@ -66,6 +81,8 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "in_transit",
     label: "Em trânsito",
+    description:
+      "Envios já criados que estão coletados, em trânsito ou saíram para entrega. Sem ação imediata do lojista.",
     filters: {
       shipmentStatus: [
         "pending",
@@ -80,6 +97,7 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "completed",
     label: "Concluídos",
+    description: "Envios entregues ao destinatário pela transportadora.",
     filters: {
       shipmentStatus: ["delivered"],
     },
@@ -87,6 +105,8 @@ export const ORDER_TABS: OrderTab[] = [
   {
     id: "issues",
     label: "Problemas",
+    description:
+      "Pagamentos que falharam ou foram reembolsados. Pode ser cartão recusado, chargeback ou estorno manual.",
     filters: {
       paymentStatus: ["failed", "refunded"],
     },
@@ -129,42 +149,67 @@ export function OrderListTabs() {
   const { setActiveTab } = ctx.actions
 
   return (
-    <div className="border-b border-border">
-      <nav className="-mb-px flex gap-6 overflow-x-auto" aria-label="Filtros rápidos">
-        {ORDER_TABS.map((tab, index) => {
-          const isActive = activeTab === tab.id
-          const count = queries[index].data?.pagination.total
-          const isLoading = queries[index].isLoading
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isActive
-                  ? "border-foreground text-foreground"
-                  : "border-transparent text-muted-foreground hover:border-muted hover:text-foreground",
-              )}
-            >
-              <span>{tab.label}</span>
-              {!isLoading && count !== undefined && count > 0 ? (
-                <span
-                  className={cn(
-                    "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-medium",
-                    isActive
-                      ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground",
-                  )}
+    <TooltipProvider delayDuration={200}>
+      <div className="relative border-b border-border">
+        <nav
+          className="-mb-px flex gap-1 overflow-x-auto"
+          aria-label="Filtros rápidos"
+        >
+          {ORDER_TABS.map((tab, index) => {
+            const isActive = activeTab === tab.id
+            const count = queries[index].data?.pagination.total
+            const isLoading = queries[index].isLoading
+            return (
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "group relative flex items-center gap-2 whitespace-nowrap rounded-t-md px-3 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                  >
+                    <span className="tracking-tight">{tab.label}</span>
+                    {!isLoading && count !== undefined && count > 0 ? (
+                      <span
+                        className={cn(
+                          "inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums leading-none transition-colors",
+                          isActive
+                            ? "bg-primary/15 text-primary ring-1 ring-inset ring-primary/30"
+                            : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/15",
+                        )}
+                      >
+                        {count}
+                      </span>
+                    ) : null}
+                    {/* Brand accent line — animated underline that signals
+                        the active triage bucket without competing with the
+                        page header. 3px is intentional: thicker than a
+                        default border so the brand color reads. */}
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-primary transition-all duration-200",
+                        isActive ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0",
+                      )}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="max-w-xs text-xs leading-relaxed"
                 >
-                  {count}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
-      </nav>
-    </div>
+                  {tab.description}
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
+        </nav>
+      </div>
+    </TooltipProvider>
   )
 }

@@ -18,6 +18,10 @@ interface StatsCardProps {
   isLoading?: boolean
   variant?: "default" | "success" | "warning" | "danger" | "info"
   className?: string
+  // Override the value's typography (size, tracking, family). Useful when a
+  // dashboard wants display-style numbers without changing the shared
+  // component default for every caller.
+  valueClassName?: string
 }
 
 const variantStyles = {
@@ -62,6 +66,7 @@ export function StatsCard({
   isLoading = false,
   variant = "default",
   className,
+  valueClassName,
 }: StatsCardProps) {
   const styles = variantStyles[variant]
 
@@ -99,7 +104,14 @@ export function StatsCard({
           {isLoading ? (
             <Skeleton className="h-8 w-24" />
           ) : (
-            <span className="text-2xl font-bold tracking-tight">{value}</span>
+            <span
+              className={cn(
+                "text-2xl font-bold tracking-tight",
+                valueClassName,
+              )}
+            >
+              {value}
+            </span>
           )}
           {trend && !isLoading && (
             <span

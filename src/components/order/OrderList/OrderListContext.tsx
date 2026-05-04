@@ -6,7 +6,7 @@ import type {
   OrderFilters,
   OrderStats,
 } from "@/types/cart.types"
-import type { Pagination } from "@/types/api.types"
+import type { Pagination, Sorting } from "@/types/api.types"
 import type { OrderTabId } from "./OrderList.Tabs"
 
 export interface OrderListState {
@@ -21,6 +21,7 @@ export interface OrderListState {
   // backend sees but is not stored here.
   filters: OrderFilters
   pagination: Pagination
+  sorting: Sorting
   stats: OrderStats | undefined
   isStatsLoading: boolean
   activeTab: OrderTabId
@@ -30,6 +31,9 @@ export interface OrderListActions {
   setSearch: (search: string) => void
   setFilters: (filters: OrderFilters) => void
   setPage: (page: number) => void
+  // Toggles the sort. If clicking the active column, flips asc/desc; otherwise
+  // sets the new column with desc as default.
+  toggleSort: (column: string) => void
   openOrder: (id: string) => void
   setActiveTab: (tab: OrderTabId) => void
 }

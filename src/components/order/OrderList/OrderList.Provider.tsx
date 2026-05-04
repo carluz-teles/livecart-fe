@@ -42,8 +42,19 @@ export function OrderListProvider({ children }: ProviderProps) {
   const debouncedSearch = useDebounce(searchInput, 300)
   const [activeTab, setActiveTabState] = useState<OrderTabId>(DEFAULT_TAB)
 
-  const { filters, setFilters, pagination, setPage, sorting } =
+  const { filters, setFilters, pagination, setPage, sorting, setSorting } =
     useListParams<OrderFilters>()
+
+  const toggleSort = useCallback(
+    (column: string) => {
+      if (sorting.sortBy === column) {
+        setSorting({ sortBy: column, sortOrder: sorting.sortOrder === "asc" ? "desc" : "asc" })
+      } else {
+        setSorting({ sortBy: column, sortOrder: "desc" })
+      }
+    },
+    [sorting.sortBy, sorting.sortOrder, setSorting],
+  )
 
   const effectiveFilters = useMemo(
     () => mergeFilters(getOrderTabFilters(activeTab), filters),
@@ -86,6 +97,7 @@ export function OrderListProvider({ children }: ProviderProps) {
       search: searchInput,
       filters,
       pagination,
+      sorting,
       stats,
       isStatsLoading,
       activeTab,
@@ -94,6 +106,7 @@ export function OrderListProvider({ children }: ProviderProps) {
       setSearch: setSearchInput,
       setFilters,
       setPage,
+      toggleSort,
       openOrder,
       setActiveTab,
     },

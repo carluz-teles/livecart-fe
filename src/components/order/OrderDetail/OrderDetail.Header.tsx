@@ -42,7 +42,7 @@ export function OrderDetailHeader() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Pedido #{order.id.slice(0, 8).toUpperCase()}
+              Pedido #{order.shortId}
             </h1>
             <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
             <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>

@@ -209,6 +209,7 @@ export function OrderListStats() {
           icon={kpi.icon}
           isLoading={isStatsLoading}
           variant={kpi.variant}
+          valueClassName="text-3xl font-semibold tracking-tighter tabular-nums"
         />
       ))}
     </div>

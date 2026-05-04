@@ -1,14 +1,18 @@
-import { ShoppingCart } from "lucide-react"
-
 export function OrderListEmpty() {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <ShoppingCart className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <p className="font-medium">Nenhum pedido por aqui ainda</p>
-      <p className="text-sm text-muted-foreground">
-        Quando seus clientes finalizarem compras na live, eles aparecem aqui.
+    <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+      <span
+        aria-hidden="true"
+        className="font-mono text-7xl font-light leading-none tracking-tighter text-muted-foreground/30"
+      >
+        0
+      </span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+        Sem pedidos nesta visão
+      </span>
+      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+        Ajuste a aba ou os filtros — ou aguarde a próxima live. Pedidos
+        finalizados pelos clientes aparecem aqui em tempo real.
       </p>
     </div>
   )

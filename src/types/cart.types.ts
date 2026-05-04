@@ -41,16 +41,36 @@ export interface Cart {
   updatedAt: string
 }
 
+export interface OrderItemPreview {
+  productName: string
+  productImage: string | null
+  quantity: number
+}
+
 export interface Order {
   id: string
+  // Per-store sequential order number (starts at 1000 for each store). UI
+  // surfaces it as "#{shortId}". The UUID still owns the URL key — short_id is
+  // only the human-friendly handle.
+  shortId: number
   liveSessionId: string
   liveTitle: string
   livePlatform: string
   customerHandle: string
   customerId: string
+  // Empty until the buyer fills the checkout form.
+  customerName: string
+  customerEmail: string
+  // Mirrors the live event's freeShipping flag.
+  freeShipping: boolean
   status: OrderStatus
   paymentStatus: PaymentStatus
+  // Latest shipment status, "" when no shipment has been created yet.
+  shipmentStatus: ShipmentStatus | ""
   items: OrderItem[]
+  // Lightweight preview for the list page (avatar stack); empty when full
+  // items are loaded (detail).
+  itemsPreview: OrderItemPreview[]
   totalItems: number
   totalAmount: number
   paidAt: string | null
@@ -144,8 +164,6 @@ export interface OrderFilters {
   liveSessionId?: string
   dateFrom?: string
   dateTo?: string
-  totalMin?: number
-  totalMax?: number
   // Tri-state: undefined = ignore; true = only orders with at least one shipment;
   // false = only orders without any shipment. Service layer serializes as
   // "true"/"false" strings because buildQueryString omits boolean false.

@@ -17,7 +17,7 @@ export function OrderListFilters() {
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por cliente ou número do pedido..."
+          placeholder="Buscar por @cliente ou #1247..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8"
