@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
+import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
+import { OrderDetailLogistics } from "./OrderDetail.Logistics"
 import { OrderDetailPayment } from "./OrderDetail.Payment"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
 import { OrderDetailUpsell } from "./OrderDetail.Upsell"
@@ -23,10 +25,11 @@ const PLATFORM_ICON: Record<string, typeof Instagram> = {
   facebook: Facebook,
 }
 
-// "Pedido" tab — single landing for everything operational about the order:
-// payment / customer / shipping address / origin live on the right rail, and
-// the full items table (with the upsell log right below) on the left.
-export function OrderDetailSummaryTab() {
+// Single-page layout — the previous tabs split (Pedido / Logística / Histórico)
+// fragmented operations that the merchant scans together. Right rail keeps the
+// post-live summary cards (Pagamento / Cliente / Entrega / Live), the main
+// column unfolds vertically: items → checkout deltas → logística → histórico.
+export function OrderDetailBody() {
   const ctx = use(OrderDetailContext)
   if (!ctx) return null
   const { order } = ctx.state
@@ -39,6 +42,8 @@ export function OrderDetailSummaryTab() {
       <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
         <OrderDetailItems />
         <OrderDetailUpsell />
+        <OrderDetailLogistics />
+        <OrderDetailHistory />
       </main>
       <aside className="order-1 flex flex-col gap-4 lg:col-span-4 lg:order-none">
         <OrderDetailPayment />
