@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 
 import { ideaService } from "@/services/api/idea.service"
-import { ideaKeys } from "./useIdeas"
+import { ideaKeys } from "./keys"
 
 // Prefetches the idea detail behind the staleTime gate set on useIdea, so
 // repeat hovers over the same card don't fan out to the API.

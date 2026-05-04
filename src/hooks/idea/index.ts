@@ -1,4 +1,5 @@
-export { useIdeas, ideaKeys } from "./useIdeas"
+export { ideaKeys } from "./keys"
+export { useIdeas } from "./useIdeas"
 export { useIdea } from "./useIdea"
 export { useCreateIdea } from "./useCreateIdea"
 export { useToggleVote } from "./useToggleVote"

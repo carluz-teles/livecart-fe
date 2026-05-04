@@ -5,7 +5,7 @@ import { useAuth, useUser } from "@clerk/nextjs"
 
 import { ideaService } from "@/services/api/idea.service"
 import { insertCommentInTree } from "@/lib/idea-comments"
-import { ideaKeys } from "./useIdeas"
+import { ideaKeys } from "./keys"
 import type {
   CreateCommentPayload,
   IdeaCommentNode,

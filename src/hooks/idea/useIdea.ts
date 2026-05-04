@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { ideaService } from "@/services/api/idea.service"
-import { ideaKeys } from "./useIdeas"
+import { ideaKeys } from "./keys"
 import type { IdeaDetail } from "@/types/idea.types"
 
 export function useIdea(id: string | undefined) {
