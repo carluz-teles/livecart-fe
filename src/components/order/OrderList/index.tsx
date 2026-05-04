@@ -7,7 +7,6 @@ import { OrderListFilters } from "./OrderList.Filters"
 import { OrderListTable } from "./OrderList.Table"
 import { OrderListPagination } from "./OrderList.Pagination"
 import { OrderListEmpty } from "./OrderList.Empty"
-import { OrderListRow } from "./OrderList.Row"
 import { OrderListTabs } from "./OrderList.Tabs"
 
 interface FrameProps {
@@ -18,6 +17,9 @@ function OrderListFrame({ children }: FrameProps) {
   return <div className="flex flex-col gap-6">{children}</div>
 }
 
+// Row was removed in the TanStack Table migration — cell rendering moved into
+// per-column ColumnDef.cell functions. The few row-level concerns (click to
+// open, stuck-row visual) live in OrderList.Table now.
 export const OrderList = {
   Provider: OrderListProvider,
   Frame: OrderListFrame,
@@ -26,7 +28,6 @@ export const OrderList = {
   Tabs: OrderListTabs,
   Filters: OrderListFilters,
   Table: OrderListTable,
-  Row: OrderListRow,
   Pagination: OrderListPagination,
   Empty: OrderListEmpty,
 }

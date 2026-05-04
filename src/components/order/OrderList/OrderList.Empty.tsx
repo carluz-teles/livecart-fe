@@ -7,7 +7,7 @@ export function OrderListEmpty() {
       >
         0
       </span>
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
         Sem pedidos nesta visão
       </span>
       <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">

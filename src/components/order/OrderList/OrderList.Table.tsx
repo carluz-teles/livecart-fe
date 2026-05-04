@@ -1,7 +1,11 @@
 "use client"
 
 import { use } from "react"
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
 import {
   Table,
   TableBody,
@@ -11,115 +15,148 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { OrderListContext } from "./OrderListContext"
-import { OrderListRow } from "./OrderList.Row"
+import { isOrderStuck, orderColumns } from "./OrderList.columns"
 import { OrderListEmpty } from "./OrderList.Empty"
 
-const COLUMNS = 9
-
-interface SortHeaderProps {
-  column: string
-  align?: "left" | "right"
-  children: React.ReactNode
-}
-
-function SortHeader({ column, align = "left", children }: SortHeaderProps) {
-  const ctx = use(OrderListContext)
-  if (!ctx) return <span>{children}</span>
-  const { sorting } = ctx.state
-  const { toggleSort } = ctx.actions
-  const isActive = sorting.sortBy === column
-  const Icon = !isActive ? ArrowUpDown : sorting.sortOrder === "asc" ? ArrowUp : ArrowDown
-  return (
-    <button
-      type="button"
-      onClick={() => toggleSort(column)}
-      className={cn(
-        "-mx-2 -my-1 flex items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/60",
-        align === "right" && "ml-auto",
-        isActive && "text-foreground",
-      )}
-    >
-      <span>{children}</span>
-      <Icon
-        className={cn(
-          "h-3 w-3 transition-opacity",
-          isActive ? "opacity-100" : "opacity-40",
-        )}
-      />
-    </button>
-  )
+// Skeleton widths mapped to each column id. Kept here (not in columns.tsx)
+// because they're a Table-rendering concern, not a column definition.
+const SKELETON_WIDTH: Record<string, string> = {
+  shortId: "w-16",
+  customer: "w-32",
+  live: "w-32",
+  items: "w-24",
+  totalAmount: "ml-auto w-20",
+  payment: "w-20",
+  shipment: "w-20",
+  createdAt: "w-20",
+  actions: "w-8",
 }
 
 export function OrderListTable() {
   const ctx = use(OrderListContext)
+
+  // useReactTable is configured for fully server-side data: manual sorting and
+  // pagination, no row-model transforms. Sort state still lives in the page
+  // context (read by SortHeader), so we don't pass state.sorting here — the
+  // table is purely a structural renderer.
+  const table = useReactTable({
+    data: ctx?.state.orders ?? [],
+    columns: orderColumns,
+    manualSorting: true,
+    manualPagination: true,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
   if (!ctx) return null
-  const { orders, isLoading, error } = ctx.state
+  const { isLoading, error, orders } = ctx.state
+  const colCount = orderColumns.length
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>
-              <SortHeader column="short_id">Pedido</SortHeader>
-            </TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead>Live</TableHead>
-            <TableHead>Itens</TableHead>
-            <TableHead className="text-right">
-              <SortHeader column="total_amount" align="right">Total</SortHeader>
-            </TableHead>
-            <TableHead>Pagamento</TableHead>
-            <TableHead>Envio</TableHead>
-            <TableHead>
-              <SortHeader column="created_at">Data</SortHeader>
-            </TableHead>
-            <TableHead className="w-[50px]" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => {
-              // Cascading reveal: each row's shimmer starts ~60ms after the
-              // previous one. Reads as one fluid motion instead of five
-              // independent skeletons firing at the same beat.
-              const delay = { animationDelay: `${i * 60}ms` }
-              return (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-16" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-32" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-32" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-24" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="ml-auto h-4 w-20" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" style={delay} /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-8" style={delay} /></TableCell>
-                </TableRow>
-              )
-            })
-          ) : error ? (
-            <TableRow>
-              <TableCell
-                colSpan={COLUMNS}
-                className="h-24 text-center text-destructive"
-              >
-                Erro ao carregar pedidos. Tente novamente.
-              </TableCell>
-            </TableRow>
-          ) : orders.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={COLUMNS} className="p-0">
-                <OrderListEmpty />
-              </TableCell>
-            </TableRow>
-          ) : (
-            orders.map((order) => <OrderListRow key={order.id} order={order} />)
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      header.column.id === "actions" && "w-[50px]",
+                      header.column.columnDef.meta?.align === "right" &&
+                        "text-right",
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => {
+                // Cascading reveal: each row's shimmer starts ~60ms after the
+                // previous one. Reads as one fluid motion instead of five
+                // independent skeletons firing at the same beat.
+                const delay = { animationDelay: `${i * 60}ms` }
+                return (
+                  <TableRow key={i}>
+                    {orderColumns.map((col) => (
+                      <TableCell key={col.id}>
+                        <Skeleton
+                          className={cn(
+                            "h-4",
+                            SKELETON_WIDTH[col.id ?? ""] ?? "w-20",
+                          )}
+                          style={delay}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={colCount}
+                  className="h-24 text-center text-destructive"
+                >
+                  Erro ao carregar pedidos. Tente novamente.
+                </TableCell>
+              </TableRow>
+            ) : orders.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={colCount} className="p-0">
+                  <OrderListEmpty />
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => {
+                const stuck = isOrderStuck(row.original)
+                return (
+                  <TableRow
+                    key={row.id}
+                    onClick={() => ctx.actions.openOrder(row.original.id)}
+                    data-state={stuck ? "stuck" : undefined}
+                    className={cn(
+                      "group/row cursor-pointer transition-colors duration-150 hover:bg-muted/40",
+                      // Stuck rows wear a 3px destructive bar inset on the
+                      // left edge. Subtle bg amplifies the cue on hover
+                      // without competing with the bar.
+                      stuck &&
+                        "bg-destructive/[0.025] shadow-[inset_3px_0_0_0_hsl(var(--destructive))] hover:bg-destructive/[0.05]",
+                    )}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          cell.column.columnDef.meta?.align === "right" &&
+                            "text-right",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </TooltipProvider>
   )
 }
