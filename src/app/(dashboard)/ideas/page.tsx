@@ -20,11 +20,23 @@ export default function IdeasPage() {
 }
 
 function IdeasPageContent() {
-  const { tab, sort, category, q, params, setTab, setSort, setCategory, setSearch } =
-    useIdeaListUrlState()
+  const {
+    tab,
+    sort,
+    category,
+    q,
+    page,
+    params,
+    setTab,
+    setSort,
+    setCategory,
+    setSearch,
+    setPage,
+  } = useIdeaListUrlState()
 
   const { data, isLoading, isError, refetch } = useIdeas(params)
   const ideas = data?.data ?? []
+  const totalPages = data?.pagination.totalPages ?? 1
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,6 +64,14 @@ function IdeasPageContent() {
         isError={isError}
         onRetry={() => refetch()}
       />
+
+      {!isLoading && !isError && ideas.length > 0 && (
+        <IdeaFeed.Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   )
 }

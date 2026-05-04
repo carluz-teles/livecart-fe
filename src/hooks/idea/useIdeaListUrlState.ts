@@ -28,11 +28,18 @@ interface UseIdeaListUrlStateReturn {
   sort: IdeaSort
   category: string | undefined
   q: string | undefined
+  page: number
   params: ListIdeasParams
   setTab: (tab: IdeaTab) => void
   setSort: (sort: IdeaSort) => void
   setCategory: (category: string | undefined) => void
   setSearch: (q: string) => void
+  setPage: (page: number) => void
+}
+
+function asPage(v: string | null): number {
+  const n = Number.parseInt(v ?? "", 10)
+  return Number.isFinite(n) && n >= 1 ? n : 1
 }
 
 export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
@@ -43,10 +50,17 @@ export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
   const sort = asSort(searchParams.get("sort"))
   const category = searchParams.get("category") ?? undefined
   const q = searchParams.get("q") ?? undefined
+  const page = asPage(searchParams.get("page"))
 
   const params: ListIdeasParams = useMemo(
-    () => ({ tab, sort, category, q, pagination: DEFAULT_PAGINATION }),
-    [tab, sort, category, q],
+    () => ({
+      tab,
+      sort,
+      category,
+      q,
+      pagination: { page, limit: DEFAULT_PAGINATION.limit },
+    }),
+    [tab, sort, category, q, page],
   )
 
   const updateParam = useCallback(
@@ -65,24 +79,32 @@ export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
     [router, searchParams],
   )
 
+  // Filter changes reset pagination — staying on page 5 after switching tab
+  // would otherwise show the wrong page of a different list.
   const setTab = useCallback(
-    (t: IdeaTab) => updateParam({ tab: t === "all" ? undefined : t }),
+    (t: IdeaTab) =>
+      updateParam({ tab: t === "all" ? undefined : t, page: undefined }),
     [updateParam],
   )
 
   const setSort = useCallback(
     (s: IdeaSort) =>
-      updateParam({ sort: s === "trending" ? undefined : s }),
+      updateParam({ sort: s === "trending" ? undefined : s, page: undefined }),
     [updateParam],
   )
 
   const setCategory = useCallback(
-    (c: string | undefined) => updateParam({ category: c }),
+    (c: string | undefined) => updateParam({ category: c, page: undefined }),
     [updateParam],
   )
 
   const setSearch = useCallback(
-    (s: string) => updateParam({ q: s || undefined }),
+    (s: string) => updateParam({ q: s || undefined, page: undefined }),
+    [updateParam],
+  )
+
+  const setPage = useCallback(
+    (p: number) => updateParam({ page: p <= 1 ? undefined : String(p) }),
     [updateParam],
   )
 
@@ -91,10 +113,12 @@ export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
     sort,
     category,
     q,
+    page,
     params,
     setTab,
     setSort,
     setCategory,
     setSearch,
+    setPage,
   }
 }

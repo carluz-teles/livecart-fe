@@ -16,5 +16,6 @@ export function useIdea(id: string | undefined) {
       return ideaService.getById(id!, token)
     },
     enabled: !!id && isLoaded && isSignedIn,
+    staleTime: 30_000,
   })
 }

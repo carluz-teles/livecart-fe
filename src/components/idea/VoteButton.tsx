@@ -1,6 +1,8 @@
 "use client"
 
 import { ChevronUp } from "lucide-react"
+import { toast } from "sonner"
+
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +19,24 @@ interface VoteButtonProps {
   votedByMe: boolean
   isAuthor: boolean
   size?: "sm" | "lg"
+}
+
+const AUTHOR_HINT = "Não é possível votar na própria ideia."
+const AUTHOR_HINT_KEY = "ideas:authorVoteHintShown"
+
+// Tooltip is hover/focus-only on touch devices, so the hint never lands on
+// mobile. We surface a one-shot toast instead the first time an author taps
+// their own tile in a session, and keep the desktop tooltip for sighted
+// pointer users.
+function showAuthorHintOnce() {
+  if (typeof window === "undefined") return
+  try {
+    if (window.sessionStorage.getItem(AUTHOR_HINT_KEY) === "1") return
+    window.sessionStorage.setItem(AUTHOR_HINT_KEY, "1")
+  } catch {
+    // sessionStorage unavailable (private mode, etc.) — fall through and toast every time.
+  }
+  toast.info(AUTHOR_HINT)
 }
 
 // Vertical, tile-shaped vote button (Canny / ProductHunt style): an upward
@@ -40,11 +60,16 @@ export function VoteButton({
   const button = (
     <button
       type="button"
-      disabled={isAuthor || toggle.isPending}
+      disabled={toggle.isPending}
+      aria-disabled={isAuthor}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!isAuthor) toggle.mutate()
+        if (isAuthor) {
+          showAuthorHintOnce()
+          return
+        }
+        toggle.mutate()
       }}
       aria-pressed={votedByMe}
       aria-label={`Votar na ideia número ${ideaNumber}`}
@@ -83,7 +108,7 @@ export function VoteButton({
         <TooltipTrigger asChild>
           <span tabIndex={0} className="inline-block">{button}</span>
         </TooltipTrigger>
-        <TooltipContent>Não é possível votar na própria ideia</TooltipContent>
+        <TooltipContent>{AUTHOR_HINT}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

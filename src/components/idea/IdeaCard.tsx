@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { StatusBadge } from "./StatusBadge"
 import { CategoryBadge } from "./CategoryBadge"
 import { VoteButton } from "./VoteButton"
+import { usePrefetchIdea } from "@/hooks/idea"
 import { formatRelativeTime } from "@/lib/format"
 import type { IdeaListItem } from "@/types/idea.types"
 
@@ -17,6 +18,9 @@ interface IdeaCardProps {
 // title + meta on the right. The whole surface is a link so clicks anywhere
 // (except the vote button itself) navigate to the detail page.
 export function IdeaCard({ idea }: IdeaCardProps) {
+  const prefetchIdea = usePrefetchIdea()
+  const handlePrefetch = () => prefetchIdea(idea.id)
+
   return (
     <Card className="group relative overflow-hidden p-4 transition-all hover:border-primary/30 hover:shadow-sm">
       <div className="flex items-start gap-4">
@@ -32,6 +36,9 @@ export function IdeaCard({ idea }: IdeaCardProps) {
 
         <Link
           href={`/ideas/${idea.id}`}
+          onMouseEnter={handlePrefetch}
+          onFocus={handlePrefetch}
+          onTouchStart={handlePrefetch}
           className="flex flex-1 flex-col gap-2 min-w-0 focus-visible:outline-none"
           aria-label={`Abrir ideia número ${idea.number}: ${idea.title}`}
         >
