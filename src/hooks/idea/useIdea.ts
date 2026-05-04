@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { ideaService } from "@/services/api/idea.service"
 import { ideaKeys } from "./keys"
@@ -17,5 +17,6 @@ export function useIdea(id: string | undefined) {
     },
     enabled: !!id && isLoaded && isSignedIn,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   })
 }

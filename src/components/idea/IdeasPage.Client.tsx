@@ -34,9 +34,14 @@ function IdeasPageBody() {
     setPage,
   } = useIdeaListUrlState()
 
-  const { data, isLoading, isError, refetch } = useIdeas(params)
+  const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } =
+    useIdeas(params)
   const ideas = data?.data ?? []
   const totalPages = data?.pagination.totalPages ?? 1
+  // Show the dim only when we're swapping filters/pages (placeholder data
+  // on screen + a fresh fetch in flight). A normal background revalidation
+  // shouldn't dim the cards.
+  const isSwapping = isFetching && isPlaceholderData
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +67,7 @@ function IdeasPageBody() {
         ideas={ideas}
         isLoading={isLoading}
         isError={isError}
+        isSwapping={isSwapping}
         onRetry={() => refetch()}
       />
 

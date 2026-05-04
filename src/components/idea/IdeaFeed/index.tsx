@@ -1,6 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import type { IdeaListItem } from "@/types/idea.types"
 
 import { IdeaCard } from "../IdeaCard"
@@ -12,10 +13,20 @@ interface IdeaFeedProps {
   ideas: IdeaListItem[]
   isLoading: boolean
   isError: boolean
+  // True while a filter/page switch is in flight and we're still showing
+  // the previous list as placeholder data. Lets the feed fade slightly so
+  // the click feels acknowledged without yanking the cards offscreen.
+  isSwapping?: boolean
   onRetry?: () => void
 }
 
-function IdeaFeedRoot({ ideas, isLoading, isError, onRetry }: IdeaFeedProps) {
+function IdeaFeedRoot({
+  ideas,
+  isLoading,
+  isError,
+  isSwapping,
+  onRetry,
+}: IdeaFeedProps) {
   if (isLoading) {
     return <IdeaFeedSkeleton />
   }
@@ -44,7 +55,13 @@ function IdeaFeedRoot({ ideas, isLoading, isError, onRetry }: IdeaFeedProps) {
   }
 
   return (
-    <div className="grid gap-3">
+    <div
+      className={cn(
+        "grid gap-3 transition-opacity duration-150",
+        isSwapping && "opacity-60",
+      )}
+      aria-busy={isSwapping || undefined}
+    >
       {ideas.map((idea) => (
         <IdeaCard key={idea.id} idea={idea} />
       ))}
