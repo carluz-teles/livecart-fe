@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { CornerDownRight } from "lucide-react"
+import { ChevronDown, ChevronUp, CornerDownRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -53,10 +53,19 @@ interface CommentItemProps {
   depth: number
 }
 
+function countDescendants(node: IdeaCommentNode): number {
+  return node.replies.reduce((acc, reply) => acc + 1 + countDescendants(reply), 0)
+}
+
 function CommentItem({ ideaId, comment, depth }: CommentItemProps) {
   const [replyOpen, setReplyOpen] = useState(false)
+  const [repliesOpen, setRepliesOpen] = useState(false)
 
   const indentDepth = Math.min(depth, MAX_VISUAL_DEPTH)
+  const replyCount = comment.replies.reduce(
+    (acc, reply) => acc + 1 + countDescendants(reply),
+    0,
+  )
   const initials = comment.authorName
     .split(" ")
     .map((s) => s[0])
@@ -110,11 +119,38 @@ function CommentItem({ ideaId, comment, depth }: CommentItemProps) {
               />
             </div>
           )}
+
+          {comment.replies.length > 0 && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 -ml-2 px-2 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => setRepliesOpen((v) => !v)}
+                aria-expanded={repliesOpen}
+                aria-controls={`replies-${comment.id}`}
+              >
+                {repliesOpen ? (
+                  <ChevronUp className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {repliesOpen
+                  ? "Ocultar respostas"
+                  : `Ver ${replyCount} ${replyCount === 1 ? "resposta" : "respostas"}`}
+              </Button>
+            </div>
+          )}
         </div>
       </article>
 
-      {comment.replies.length > 0 && (
-        <ol className="mt-4 flex flex-col gap-4" aria-label={`Respostas a ${comment.authorName}`}>
+      {comment.replies.length > 0 && repliesOpen && (
+        <ol
+          id={`replies-${comment.id}`}
+          className="mt-4 flex flex-col gap-4"
+          aria-label={`Respostas a ${comment.authorName}`}
+        >
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}
