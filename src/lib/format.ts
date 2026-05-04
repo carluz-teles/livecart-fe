@@ -126,6 +126,22 @@ export function formatRelativeTime(dateString: string): string {
 }
 
 /**
+ * Returns up to two uppercase initials from a name (e.g., "Ana Silva" → "AS").
+ * Falls back to "?" when the input has no usable letters.
+ */
+export function getInitials(name: string): string {
+  return (
+    name
+      .split(" ")
+      .map((s) => s[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?"
+  )
+}
+
+/**
  * Formats a relative date (e.g., "Hoje", "Ontem", "3 dias atras")
  * @param dateString - ISO date string
  * @returns Relative date string

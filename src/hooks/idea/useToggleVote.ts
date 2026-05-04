@@ -24,7 +24,10 @@ export function useToggleVote(ideaId: string) {
       return ideaService.toggleVote(ideaId, token)
     },
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ideaKeys.all })
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ideaKeys.lists() }),
+        queryClient.cancelQueries({ queryKey: ideaKeys.detail(ideaId) }),
+      ])
 
       const previousLists = queryClient.getQueriesData<ListIdeasResponse>({
         queryKey: ideaKeys.lists(),

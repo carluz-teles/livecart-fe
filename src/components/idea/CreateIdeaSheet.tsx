@@ -55,11 +55,6 @@ export function CreateIdeaSheet() {
         form.reset()
         router.push(`/ideas/${idea.id}`)
       },
-      onError: (err: { message?: string }) => {
-        toast.error("Erro ao publicar ideia", {
-          description: err.message || "Tente novamente em instantes.",
-        })
-      },
     })
   }
 
