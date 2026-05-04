@@ -21,12 +21,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useRegenerateCheckout } from "@/hooks/order"
 import { OrderDetailContext } from "./OrderDetailContext"
 
-// Best-effort clipboard write — some browsers block writes outside trusted
-// gestures. Returns true when the write succeeded so callers can pick the
-// right toast copy.
 async function copyToClipboard(value: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(value)
@@ -39,19 +35,17 @@ async function copyToClipboard(value: string): Promise<boolean> {
 export function OrderDetailActions() {
   const ctx = use(OrderDetailContext)
   const [refundOpen, setRefundOpen] = useState(false)
-  const [regenerateOpen, setRegenerateOpen] = useState(false)
-  const regenerate = useRegenerateCheckout()
   if (!ctx) return null
   const { order } = ctx.state
-  const { refund, isRefunding, print } = ctx.actions
+  const { refund, isRefunding, print, requestRegenerate } = ctx.actions
 
   const checkoutUrl = order.token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/cart/${order.token}`
     : ""
 
-  // The two link actions only make sense before payment / shipment — backend
-  // returns 409 in those states anyway, but hiding the entries keeps the menu
-  // honest about what's available.
+  // Both link entries only make sense before payment / shipment — backend
+  // returns 409 in those states anyway, but hiding the entries keeps the
+  // menu honest about what's available.
   const canShareLink = order.paymentStatus !== "paid" && !order.shipment
 
   const handleCopyShortId = async () => {
@@ -70,23 +64,6 @@ export function OrderDetailActions() {
   const handleRefundConfirm = () => {
     refund()
     setRefundOpen(false)
-  }
-
-  const handleRegenerateConfirm = () => {
-    regenerate.mutate(
-      { id: order.id },
-      {
-        onSuccess: async (data) => {
-          const url = `${window.location.origin}/cart/${data.token}`
-          const ok = await copyToClipboard(url)
-          toast.success(ok ? "Novo link copiado" : "Checkout reaberto", {
-            description: url,
-          })
-          setRegenerateOpen(false)
-        },
-        onError: () => toast.error("Falha ao regerar link"),
-      },
-    )
   }
 
   return (
@@ -109,7 +86,7 @@ export function OrderDetailActions() {
             </DropdownMenuItem>
           )}
           {canShareLink && (
-            <DropdownMenuItem onSelect={() => setRegenerateOpen(true)}>
+            <DropdownMenuItem onSelect={requestRegenerate}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Regerar link
             </DropdownMenuItem>
@@ -150,28 +127,6 @@ export function OrderDetailActions() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isRefunding ? "Reembolsando..." : "Reembolsar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={regenerateOpen} onOpenChange={setRegenerateOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Regerar link do checkout?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O prazo de pagamento é estendido e um novo link é gerado. Use
-              quando o PIX expirou ou o cliente perdeu o link anterior — o
-              link atual deixa de funcionar.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRegenerateConfirm}
-              disabled={regenerate.isPending}
-            >
-              {regenerate.isPending ? "Gerando…" : "Gerar e copiar link"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

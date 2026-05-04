@@ -1,14 +1,16 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { useUpdateOrder } from "@/hooks/order"
+import { useRegenerateCheckout, useUpdateOrder } from "@/hooks/order"
 import { useStoreId } from "@/hooks/useUser"
 import type { OrderDetail } from "@/types/cart.types"
 import {
   OrderDetailContext,
   type OrderDetailContextValue,
+  type RegenerateShareState,
 } from "./OrderDetailContext"
+import { OrderDetailRegenerateController } from "./OrderDetail.RegenerateController"
 
 interface ProviderProps {
   order: OrderDetail
@@ -17,7 +19,12 @@ interface ProviderProps {
 
 export function OrderDetailProvider({ order, children }: ProviderProps) {
   const updateOrder = useUpdateOrder()
+  const regenerate = useRegenerateCheckout()
   const { storeId } = useStoreId()
+
+  const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false)
+  const [regenerateShare, setRegenerateShare] =
+    useState<RegenerateShareState | null>(null)
 
   const refund = useCallback(() => {
     updateOrder.mutate(
@@ -33,15 +40,60 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
     window.print()
   }, [])
 
+  const requestRegenerate = useCallback(() => {
+    setRegenerateConfirmOpen(true)
+  }, [])
+
+  const cancelRegenerate = useCallback(() => {
+    setRegenerateConfirmOpen(false)
+  }, [])
+
+  const confirmRegenerate = useCallback(() => {
+    regenerate.mutate(
+      { id: order.id },
+      {
+        onSuccess: (data) => {
+          const url = `${window.location.origin}/cart/${data.token}`
+          setRegenerateConfirmOpen(false)
+          setRegenerateShare({ url, expiresAt: data.expiresAt })
+        },
+        onError: () => {
+          toast.error("Falha ao regerar link")
+          setRegenerateConfirmOpen(false)
+        },
+      },
+    )
+  }, [order.id, regenerate])
+
+  const closeRegenerateShare = useCallback(() => {
+    setRegenerateShare(null)
+  }, [])
+
   const value: OrderDetailContextValue = {
-    state: { order },
+    state: {
+      order,
+      regenerate: {
+        confirmOpen: regenerateConfirmOpen,
+        share: regenerateShare,
+        isPending: regenerate.isPending,
+      },
+    },
     actions: {
       refund,
       isRefunding: updateOrder.isPending,
       print,
+      requestRegenerate,
+      cancelRegenerate,
+      confirmRegenerate,
+      closeRegenerateShare,
     },
     meta: { storeId: storeId ?? "" },
   }
 
-  return <OrderDetailContext value={value}>{children}</OrderDetailContext>
+  return (
+    <OrderDetailContext value={value}>
+      {children}
+      <OrderDetailRegenerateController />
+    </OrderDetailContext>
+  )
 }
