@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { DEFAULT_PAGINATION } from "@/types/api.types"
@@ -30,6 +30,10 @@ interface UseIdeaListUrlStateReturn {
   q: string | undefined
   page: number
   params: ListIdeasParams
+  // True while the URL change triggered by setTab/setSort/etc. is still
+  // resolving (RSC roundtrip + new client query). Components can use this
+  // to render a skeleton without waiting for the URL to settle.
+  isPending: boolean
   setTab: (tab: IdeaTab) => void
   setSort: (sort: IdeaSort) => void
   setCategory: (category: string | undefined) => void
@@ -45,6 +49,11 @@ function asPage(v: string | null): number {
 export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
   const router = useRouter()
   const searchParams = useSearchParams()
+  // router.replace re-runs the Server Component (RSC roundtrip) for
+  // search-param changes. Wrapping it in a transition makes that change
+  // non-urgent, so the click stays responsive and we get a built-in
+  // pending flag the UI can use for a skeleton.
+  const [isPending, startTransition] = useTransition()
 
   const tab = asTab(searchParams.get("tab"))
   const sort = asSort(searchParams.get("sort"))
@@ -74,7 +83,9 @@ export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
         }
       }
       const qs = next.toString()
-      router.replace(qs ? `/ideas?${qs}` : "/ideas", { scroll: false })
+      startTransition(() => {
+        router.replace(qs ? `/ideas?${qs}` : "/ideas", { scroll: false })
+      })
     },
     [router, searchParams],
   )
@@ -115,6 +126,7 @@ export function useIdeaListUrlState(): UseIdeaListUrlStateReturn {
     q,
     page,
     params,
+    isPending,
     setTab,
     setSort,
     setCategory,

@@ -27,6 +27,7 @@ function IdeasPageBody() {
     q,
     page,
     params,
+    isPending,
     setTab,
     setSort,
     setCategory,
@@ -34,14 +35,13 @@ function IdeasPageBody() {
     setPage,
   } = useIdeaListUrlState()
 
-  const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } =
-    useIdeas(params)
+  const { data, isLoading, isError, refetch } = useIdeas(params)
   const ideas = data?.data ?? []
   const totalPages = data?.pagination.totalPages ?? 1
-  // Show the dim only when we're swapping filters/pages (placeholder data
-  // on screen + a fresh fetch in flight). A normal background revalidation
-  // shouldn't dim the cards.
-  const isSwapping = isFetching && isPlaceholderData
+  // Skeleton during the URL/RSC transition AND while the resulting client
+  // query is fetching. The click feels acknowledged immediately because
+  // isPending flips the moment startTransition runs.
+  const isLoadingFeed = isLoading || isPending
 
   return (
     <div className="flex flex-col gap-6">
@@ -65,13 +65,12 @@ function IdeasPageBody() {
 
       <IdeaFeed
         ideas={ideas}
-        isLoading={isLoading}
+        isLoading={isLoadingFeed}
         isError={isError}
-        isSwapping={isSwapping}
         onRetry={() => refetch()}
       />
 
-      {!isLoading && !isError && ideas.length > 0 && (
+      {!isLoadingFeed && !isError && ideas.length > 0 && (
         <IdeaFeed.Pagination
           page={page}
           totalPages={totalPages}
