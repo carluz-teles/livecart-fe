@@ -126,6 +126,11 @@ export function CheckoutPixDisplay({
         setTimeRemaining("00:00")
         return
       }
+      // Always normalize back to "active" while the new PIX still has time.
+      // Without this, the previous interval can fire one last setExpired(true)
+      // between regenerate's setExpired(false) and the new pixData landing,
+      // leaving the UI stuck on the expired card.
+      setExpired(false)
       // Pulse the timer when under 60s remaining as a soft urgency cue.
       setUrgent(diff < 60_000)
       setTimeRemaining(formatTimeRemaining(expiresAt))
