@@ -1,6 +1,6 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 import type { PackageFormat } from "./product.types"
-import type { Shipment } from "./shipment.types"
+import type { Shipment, ShipmentStatus } from "./shipment.types"
 
 export type CartStatus = "active" | "checkout" | "completed" | "expired"
 export type OrderStatus = "active" | "checkout" | "completed" | "expired"
@@ -146,6 +146,12 @@ export interface OrderFilters {
   dateTo?: string
   totalMin?: number
   totalMax?: number
+  // Tri-state: undefined = ignore; true = only orders with at least one shipment;
+  // false = only orders without any shipment. Service layer serializes as
+  // "true"/"false" strings because buildQueryString omits boolean false.
+  hasShipment?: boolean
+  // Filter by latest shipment status (normalized enum). Implies hasShipment=true.
+  shipmentStatus?: ShipmentStatus[]
 }
 
 // Query params for listing orders

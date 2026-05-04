@@ -7,6 +7,7 @@ import type {
   OrderStats,
 } from "@/types/cart.types"
 import type { Pagination } from "@/types/api.types"
+import type { OrderTabId } from "./OrderList.Tabs"
 
 export interface OrderListState {
   orders: Order[]
@@ -15,10 +16,14 @@ export interface OrderListState {
   total: number
   totalPages: number
   search: string
+  // User-applied filters (from the lateral filter panel). Tab pre-sets are
+  // applied on top of these at query time — the merged result is what the
+  // backend sees but is not stored here.
   filters: OrderFilters
   pagination: Pagination
   stats: OrderStats | undefined
   isStatsLoading: boolean
+  activeTab: OrderTabId
 }
 
 export interface OrderListActions {
@@ -26,6 +31,7 @@ export interface OrderListActions {
   setFilters: (filters: OrderFilters) => void
   setPage: (page: number) => void
   openOrder: (id: string) => void
+  setActiveTab: (tab: OrderTabId) => void
 }
 
 export interface OrderListContextValue {

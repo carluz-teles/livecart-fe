@@ -7,6 +7,7 @@ import { OrderListTable } from "./OrderList.Table"
 import { OrderListPagination } from "./OrderList.Pagination"
 import { OrderListEmpty } from "./OrderList.Empty"
 import { OrderListRow } from "./OrderList.Row"
+import { OrderListTabs } from "./OrderList.Tabs"
 
 interface FrameProps {
   children: React.ReactNode
@@ -20,6 +21,7 @@ export const OrderList = {
   Provider: OrderListProvider,
   Frame: OrderListFrame,
   Stats: OrderListStats,
+  Tabs: OrderListTabs,
   Filters: OrderListFilters,
   Table: OrderListTable,
   Row: OrderListRow,

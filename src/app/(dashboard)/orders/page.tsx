@@ -18,6 +18,7 @@ export default function OrdersPage() {
           title="Pedidos"
           description="Acompanhe e gerencie os pedidos das suas lives"
         />
+        <OrderList.Tabs />
         <OrderList.Stats />
         <Card>
           <CardHeader>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useOrders, useOrderStats } from "@/hooks/order"
 import { useDebounce } from "@/hooks/shared/useDebounce"
@@ -10,32 +10,70 @@ import {
   OrderListContext,
   type OrderListContextValue,
 } from "./OrderListContext"
+import { getOrderTabFilters, type OrderTabId } from "./OrderList.Tabs"
 
 interface ProviderProps {
   children: React.ReactNode
+}
+
+const DEFAULT_TAB: OrderTabId = "needs_action"
+
+// Merges the tab pre-set on top of the user-applied filters. Tab keys win on
+// overlap so switching tab is predictable; remaining keys (period, value range,
+// liveSessionId) compose freely.
+function mergeFilters(
+  tabFilters: OrderFilters,
+  userFilters: OrderFilters,
+): OrderFilters {
+  const merged: OrderFilters = { ...userFilters }
+  if (tabFilters.status !== undefined) merged.status = tabFilters.status
+  if (tabFilters.paymentStatus !== undefined)
+    merged.paymentStatus = tabFilters.paymentStatus
+  if (tabFilters.hasShipment !== undefined)
+    merged.hasShipment = tabFilters.hasShipment
+  if (tabFilters.shipmentStatus !== undefined)
+    merged.shipmentStatus = tabFilters.shipmentStatus
+  return merged
 }
 
 export function OrderListProvider({ children }: ProviderProps) {
   const router = useRouter()
   const [searchInput, setSearchInput] = useState("")
   const debouncedSearch = useDebounce(searchInput, 300)
+  const [activeTab, setActiveTabState] = useState<OrderTabId>(DEFAULT_TAB)
 
   const { filters, setFilters, pagination, setPage, sorting } =
     useListParams<OrderFilters>()
+
+  const effectiveFilters = useMemo(
+    () => mergeFilters(getOrderTabFilters(activeTab), filters),
+    [activeTab, filters],
+  )
 
   const params = {
     search: debouncedSearch || undefined,
     pagination,
     sorting,
-    filters,
+    filters: effectiveFilters,
   }
 
   const { data, isLoading, error } = useOrders(params)
-  const { data: stats, isLoading: isStatsLoading } = useOrderStats()
+  const { data: stats, isLoading: isStatsLoading } = useOrderStats({
+    search: debouncedSearch || undefined,
+    filters: effectiveFilters,
+  })
 
   const openOrder = useCallback(
     (id: string) => router.push(`/orders/${id}`),
     [router],
+  )
+
+  const setActiveTab = useCallback(
+    (tab: OrderTabId) => {
+      setActiveTabState(tab)
+      setPage(1)
+    },
+    [setPage],
   )
 
   const value: OrderListContextValue = {
@@ -50,12 +88,14 @@ export function OrderListProvider({ children }: ProviderProps) {
       pagination,
       stats,
       isStatsLoading,
+      activeTab,
     },
     actions: {
       setSearch: setSearchInput,
       setFilters,
       setPage,
       openOrder,
+      setActiveTab,
     },
   }
 

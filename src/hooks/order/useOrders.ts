@@ -12,7 +12,7 @@ export const orderKeys = {
   list: (storeId: string, params?: OrderListParams) => [...orderKeys.lists(), storeId, params] as const,
   details: () => [...orderKeys.all, "detail"] as const,
   detail: (storeId: string, id: string) => [...orderKeys.details(), storeId, id] as const,
-  stats: (storeId: string) => [...orderKeys.all, "stats", storeId] as const,
+  stats: (storeId: string, params?: OrderListParams) => [...orderKeys.all, "stats", storeId, params] as const,
 }
 
 export function useOrders(params?: OrderListParams) {
