@@ -1,5 +1,6 @@
 import { apiClient } from "./client"
 import type {
+  ApplyCouponResponse,
   PublicCheckoutCart,
   GenerateCheckoutRequest,
   GenerateCheckoutResponse,
@@ -116,4 +117,17 @@ export const checkoutService = {
       `/api/public/checkout/${token}/items`,
       { productId, quantity }
     ),
+
+  // ==========================================================================
+  // COUPONS
+  // ==========================================================================
+
+  applyCoupon: (token: string, code: string) =>
+    apiClient.publicPost<ApplyCouponResponse>(
+      `/api/public/checkout/${token}/coupon`,
+      { code },
+    ),
+
+  removeCoupon: (token: string) =>
+    apiClient.publicDelete<void>(`/api/public/checkout/${token}/coupon`),
 }

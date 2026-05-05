@@ -5,20 +5,17 @@ import { Tag, X, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import type { AppliedCoupon } from "@/types"
 
-interface AppliedCoupon {
-  code: string
-  discountAmount: number
-  discountType: "percentage" | "fixed"
-  discountValue: number
-}
-
+// formatCurrency comes in from the parent so this component stays decoupled
+// from the project's Intl helpers — same pattern as the surrounding summary.
 interface CheckoutCouponFieldProps {
   onApplyCoupon: (code: string) => Promise<AppliedCoupon | null>
   onRemoveCoupon: () => void
   appliedCoupon?: AppliedCoupon | null
   disabled?: boolean
   className?: string
+  formatCurrency: (cents: number) => string
 }
 
 export function CheckoutCouponField({
@@ -27,6 +24,7 @@ export function CheckoutCouponField({
   appliedCoupon,
   disabled = false,
   className,
+  formatCurrency,
 }: CheckoutCouponFieldProps) {
   const [code, setCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -41,12 +39,18 @@ export function CheckoutCouponField({
     try {
       const result = await onApplyCoupon(code.trim().toUpperCase())
       if (!result) {
+        // Parent didn't throw but returned null — generic fallback.
         setError("Cupom inválido ou expirado")
       } else {
         setCode("")
       }
-    } catch {
-      setError("Erro ao aplicar cupom")
+    } catch (err) {
+      // Surface the BE message (invalid / exhausted / expired / below
+      // minimum) when present; otherwise fall back to a generic copy.
+      const message =
+        (err as { message?: string } | null)?.message ||
+        "Erro ao aplicar cupom"
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -65,23 +69,26 @@ export function CheckoutCouponField({
     }
   }
 
-  // Show applied coupon
   if (appliedCoupon) {
     return (
       <div className={cn("space-y-2", className)}>
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3">
+        <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500"
+              aria-hidden="true"
+            >
               <Check className="h-3.5 w-3.5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-medium text-green-800">
+              <p
+                className="text-sm font-mono font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200"
+                translate="no"
+              >
                 {appliedCoupon.code}
               </p>
-              <p className="text-xs text-green-600">
-                {appliedCoupon.discountType === "percentage"
-                  ? `${appliedCoupon.discountValue}% de desconto`
-                  : `R$ ${(appliedCoupon.discountValue / 100).toFixed(2)} de desconto`}
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                −{formatCurrency(appliedCoupon.discountCents)} de desconto
               </p>
             </div>
           </div>
@@ -91,9 +98,10 @@ export function CheckoutCouponField({
             size="sm"
             onClick={handleRemove}
             disabled={disabled}
-            className="h-8 w-8 p-0 text-green-700 hover:bg-green-100 hover:text-green-800"
+            aria-label={`Remover cupom ${appliedCoupon.code}`}
+            className="h-8 w-8 p-0 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -104,10 +112,16 @@ export function CheckoutCouponField({
     <div className={cn("space-y-2", className)}>
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Tag
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             type="text"
             placeholder="Código do cupom"
+            autoComplete="off"
+            spellCheck={false}
+            translate="no"
             value={code}
             onChange={(e) => {
               setCode(e.target.value.toUpperCase())
@@ -115,7 +129,7 @@ export function CheckoutCouponField({
             }}
             onKeyDown={handleKeyDown}
             disabled={disabled || isLoading}
-            className="pl-9"
+            className="pl-9 font-mono uppercase"
           />
         </div>
         <Button
@@ -125,14 +139,19 @@ export function CheckoutCouponField({
           disabled={disabled || isLoading || !code.trim()}
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2
+              className="h-4 w-4 animate-spin"
+              aria-hidden="true"
+            />
           ) : (
             "Aplicar"
           )}
         </Button>
       </div>
       {error && (
-        <p className="text-xs text-destructive">{error}</p>
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
       )}
     </div>
   )

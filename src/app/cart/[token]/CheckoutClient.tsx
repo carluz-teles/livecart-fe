@@ -62,6 +62,7 @@ const CheckoutPixDisplay = dynamic(
 import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
+import { checkoutService } from "@/services/api/checkout.service"
 import {
   useCheckoutCart,
   useCheckoutConfig,
@@ -487,6 +488,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       setShippingSummary({
         subtotal: cart.summary.subtotal,
         shippingCost: cart.shipping.costCents,
+        couponDiscount: cart.summary.couponDiscount ?? 0,
         total: cart.summary.subtotal + cart.shipping.costCents,
         totalItems: cart.summary.totalItems,
         hasShippingQuote: true,
@@ -521,8 +523,28 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     }
   }, [form, runShippingQuote])
 
-  const handleApplyCoupon = async (): Promise<null> => null
-  const handleRemoveCoupon = () => {}
+  const handleApplyCoupon = useCallback(
+    async (code: string) => {
+      // Service throws on 4xx with the BE message — let it bubble so
+      // CheckoutCouponField can surface the inline error. On success we
+      // refetch so the cart's appliedCoupon + summary.couponDiscount line
+      // up with the new totals.
+      const result = await checkoutService.applyCoupon(token, code)
+      await refetchCart()
+      return { code: result.code, discountCents: result.appliedValueCents }
+    },
+    [token, refetchCart],
+  )
+
+  const handleRemoveCoupon = useCallback(async () => {
+    try {
+      await checkoutService.removeCoupon(token)
+    } finally {
+      // Even on error, refetch — the BE may have removed the coupon and
+      // failed to send 204 (network blip). The fresh state is the truth.
+      await refetchCart()
+    }
+  }, [token, refetchCart])
 
   if (cartError || !cart) {
     return (
@@ -593,8 +615,11 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   // item removals reflect immediately. shippingSummary caches the chosen
   // carrier's cost; weight-tier re-quoting happens via the existing cart
   // mutation flow.
-  const effectiveTotal =
-    cart.summary.subtotal + (shippingCostCents ?? 0)
+  const couponDiscount = cart.summary.couponDiscount ?? 0
+  const effectiveTotal = Math.max(
+    0,
+    cart.summary.subtotal + (shippingCostCents ?? 0) - couponDiscount,
+  )
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -613,6 +638,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             shippingCostCents={shippingCostCents}
             shippingRealCostCents={shippingRealCostCents}
             isFreeShipping={isFreeShipping}
+            discount={couponDiscount}
+            appliedCoupon={cart.appliedCoupon}
             total={effectiveTotal}
             platformHandle={cart.platformHandle}
             isLiveActive={isLiveActive}

@@ -282,9 +282,31 @@ export interface PublicCheckoutStore {
 export interface PublicCheckoutSummary {
   subtotal: number
   shippingCost: number
+  // Absolute coupon discount in cents (0 when none). `total` already reflects
+  // the subtraction; this is exposed so the FE can show the "−R$ X" line.
+  couponDiscount: number
   total: number
   totalItems: number
   hasShippingQuote: boolean
+}
+
+// AppliedCoupon mirrors the BE snapshot of the coupon currently attached to
+// the cart. Absent when no coupon is applied.
+export interface AppliedCoupon {
+  code: string
+  discountCents: number
+}
+
+// ApplyCouponResponse is what POST /api/public/checkout/:token/coupon returns
+// after a successful apply. Contains the new totals so the FE doesn't need a
+// second round-trip.
+export interface ApplyCouponResponse {
+  code: string
+  type: "percent" | "fixed" | "free_shipping"
+  appliedValueCents: number
+  subtotalCents: number
+  shippingCostCents: number
+  newTotalCents: number
 }
 
 export interface PublicCheckoutCustomer {
@@ -333,6 +355,7 @@ export interface PublicCheckoutCart {
   shippingAddress?: ShippingAddressPayload | null
   isReturningCustomer?: boolean
   payment?: PublicCheckoutPayment | null
+  appliedCoupon?: AppliedCoupon | null
 }
 
 // =============================================================================

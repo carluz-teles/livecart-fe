@@ -44,12 +44,7 @@ interface OrderItem {
   availableStock?: number
 }
 
-interface AppliedCoupon {
-  code: string
-  discountAmount: number
-  discountType: "percentage" | "fixed"
-  discountValue: number
-}
+import type { AppliedCoupon } from "@/types"
 
 interface CheckoutOrderSummaryProps {
   items: OrderItem[]
@@ -329,6 +324,7 @@ export function CheckoutOrderSummary({
           onApplyCoupon={onApplyCoupon}
           onRemoveCoupon={onRemoveCoupon}
           appliedCoupon={appliedCoupon}
+          formatCurrency={formatCurrency}
         />
       )}
 
