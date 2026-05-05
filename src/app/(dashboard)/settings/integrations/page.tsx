@@ -585,30 +585,32 @@ function IntegrationsContent() {
                             </div>
                           </div>
 
-                          <div className="mt-auto pt-4">
+                          <div className="mt-auto space-y-2 pt-4">
                             {isConnected ? (
-                              <div className="flex flex-wrap gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1"
-                                  onClick={() => handleOpenDetails(connected, provider)}
-                                >
-                                  <Info className="mr-1.5 h-3.5 w-3.5" />
-                                  Ver detalhes
-                                </Button>
+                              <>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => handleOpenDetails(connected, provider)}
+                                  >
+                                    <Info className="mr-1.5 h-3.5 w-3.5" />
+                                    Ver detalhes
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-muted-foreground hover:text-destructive"
+                                    onClick={() => setDisconnectId(connected.id)}
+                                  >
+                                    <Unplug className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                                 {provider.id === "tiny" && connected.status === "active" ? (
                                   <TinyHealthCheckDialog integrationId={connected.id} />
                                 ) : null}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-muted-foreground hover:text-destructive"
-                                  onClick={() => setDisconnectId(connected.id)}
-                                >
-                                  <Unplug className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                              </>
                             ) : (
                               <div className="space-y-2">
                                 <Button
