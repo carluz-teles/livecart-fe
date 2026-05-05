@@ -23,6 +23,8 @@ function formatRelative(iso: string): string {
   return date.toLocaleDateString("pt-BR")
 }
 
+// Tira o tom geral do checklist no topo (verde / âmbar) e oferece o
+// "Verificar de novo" — sem repetir o título, isso fica no DialogTitle.
 export function TinyHealthCheckHeader({
   missingCount,
   totalCount,
@@ -31,38 +33,30 @@ export function TinyHealthCheckHeader({
   onRefresh,
 }: TinyHealthCheckHeaderProps) {
   const allOk = missingCount === 0 && totalCount > 0
+  const tone = allOk
+    ? "border-emerald-200/70 bg-emerald-50/40 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-100"
+    : "border-amber-200/70 bg-amber-50/40 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100"
 
   return (
-    <header className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-      <div className="flex items-start gap-3">
-        <div
-          className={
-            allOk
-              ? "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-              : "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-          }
-        >
-          {allOk ? (
-            <ShieldCheck className="h-4 w-4" />
-          ) : (
-            <AlertTriangle className="h-4 w-4" />
-          )}
-        </div>
-        <div className="min-w-0 space-y-1">
-          <h3 className="text-sm font-semibold tracking-tight">Cadastros do Tiny</h3>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {allOk
-              ? "Todas as formas de pagamento, recebimento e envio que o LiveCart usa estão cadastradas. Pedidos vão entrar no Tiny já categorizados."
-              : missingCount > 0
-                ? `${missingCount} cadastro${missingCount > 1 ? "s" : ""} faltando — sem eles o pedido entra no Tiny como "Conta a Receber" genérica ou com transportadora padrão.`
-                : "Auditoria dos cadastros que o LiveCart consulta na hora de criar um pedido."}
-          </p>
-        </div>
+    <div
+      className={`flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${tone}`}
+    >
+      <div className="flex items-start gap-2.5">
+        {allOk ? (
+          <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+        ) : (
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+        )}
+        <p className="text-xs leading-relaxed">
+          {allOk
+            ? "Todas as formas de pagamento, recebimento e envio estão cadastradas. Pedidos vão entrar no Tiny já categorizados."
+            : `${missingCount} cadastro${missingCount > 1 ? "s" : ""} faltando — sem eles o pedido entra no Tiny como "Conta a Receber" genérica ou com transportadora padrão.`}
+        </p>
       </div>
 
-      <div className="flex items-center gap-3 sm:flex-shrink-0">
+      <div className="flex items-center gap-2 sm:flex-shrink-0">
         {checkedAt ? (
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[11px] opacity-70">
             Verificado {formatRelative(checkedAt)}
           </span>
         ) : null}
@@ -72,15 +66,16 @@ export function TinyHealthCheckHeader({
           size="sm"
           onClick={onRefresh}
           disabled={isRefreshing}
+          className="h-7 bg-background/60 px-2.5 text-xs"
         >
           {isRefreshing ? (
-            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
           ) : (
-            <RefreshCw className="mr-1.5 h-3 w-3" />
+            <RefreshCw className="mr-1 h-3 w-3" />
           )}
-          Verificar de novo
+          Verificar
         </Button>
       </div>
-    </header>
+    </div>
   )
 }

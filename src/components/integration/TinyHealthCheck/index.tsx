@@ -21,11 +21,11 @@ const CATEGORY_ORDER: ERPHealthCheckCategory[] = [
   "forma_envio",
 ]
 
-// Auditoria das três cadastros do Tiny que o LiveCart consulta na hora de
-// criar pedido (formas de pagamento, recebimento e envio). Mostra um
-// checklist com link pro caminho exato dentro do painel Tiny pra cada
-// cadastro faltando, e oferece um "Verificar de novo" que dispensa o
-// reload da página.
+// Body do checklist de cadastros do Tiny — sem chrome exterior, pensado
+// pra ser embutido em qualquer container (hoje: TinyHealthCheckDialog).
+// Estados internos: loading (skeleton compacto), erro (com retry),
+// unsupported (esconde via null), all-ok / com-pendências (lista
+// agrupada por categoria).
 //
 // Esconde silenciosamente quando o backend reporta `supported: false` —
 // ERPs que não expõem a auditoria (Bling, Omie, etc.) não devem aparecer
@@ -35,26 +35,18 @@ function TinyHealthCheck({ integrationId }: TinyHealthCheckProps) {
 
   if (query.isLoading) {
     return (
-      <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-3 border-b pb-4">
-          <Skeleton className="h-9 w-9 rounded-lg" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-64" />
-          </div>
-        </div>
-        <div className="mt-4 space-y-3">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
+      <div className="space-y-3">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     )
   }
 
   if (query.isError) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-sm text-destructive">
+      <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
         <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
         <div className="flex-1 space-y-2">
           <p className="font-medium">Não foi possível auditar os cadastros do Tiny.</p>
@@ -87,7 +79,7 @@ function TinyHealthCheck({ integrationId }: TinyHealthCheckProps) {
   const missingCount = data.items.filter((i) => i.status === "missing").length
 
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="space-y-5">
       <TinyHealthCheckHeader
         missingCount={missingCount}
         totalCount={data.items.length}
@@ -96,7 +88,7 @@ function TinyHealthCheck({ integrationId }: TinyHealthCheckProps) {
         onRefresh={() => query.refetch()}
       />
 
-      <div className="mt-5 space-y-6">
+      <div className="space-y-6">
         {CATEGORY_ORDER.map((category) => {
           const items = itemsByCategory[category] ?? []
           if (items.length === 0) return null
