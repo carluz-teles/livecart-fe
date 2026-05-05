@@ -79,6 +79,7 @@ import {
   isCustomerInfoComplete,
   isShippingAddressComplete,
 } from "@/schemas/checkout.schema"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type {
   PublicCheckoutCart,
@@ -132,6 +133,17 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     error: cartError,
     refetch: refetchCart,
   } = useCheckoutCart(token, initialCart)
+
+  // Tracks the last appliedCoupon we observed so the auto-removal toast
+  // below can spot the set→null transition. Refs (not state) because the
+  // comparison drives a side-effect, not a render. The undefined sentinel
+  // distinguishes "first render, nothing to compare" from "currently null".
+  const lastAppliedCouponRef = useRef<
+    PublicCheckoutCart["appliedCoupon"] | undefined
+  >(undefined)
+  // Set briefly while the buyer's own click on the coupon X is in flight so
+  // the same set→null transition doesn't fire the auto-removal toast.
+  const userIsRemovingCouponRef = useRef(false)
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutFormSchema),
@@ -542,6 +554,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   )
 
   const handleRemoveCoupon = useCallback(async () => {
+    userIsRemovingCouponRef.current = true
     try {
       await checkoutService.removeCoupon(token)
     } catch (err) {
@@ -550,10 +563,38 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       // (cart paid / network failure / 5xx). The BE remove path is
       // idempotent, so a fresh GET is the safe source of truth either way.
       await refetchCart()
+      userIsRemovingCouponRef.current = false
       throw err
     }
     await refetchCart()
+    // Cleared after the refetch so the auto-removal effect can observe the
+    // set→null transition once and skip it (user-initiated, not auto-removed).
+    userIsRemovingCouponRef.current = false
   }, [token, refetchCart])
+
+  // Detects the BE auto-removing the coupon after a cart-item edit (subtotal
+  // dropped below min_purchase_cents) and surfaces the reason as a toast so
+  // the buyer doesn't watch the discount silently disappear. Skips
+  // user-initiated removes (handleRemoveCoupon flag) and the very first
+  // render (we don't toast on page load just because a paid cart never had
+  // a coupon to begin with).
+  useEffect(() => {
+    const previous = lastAppliedCouponRef.current
+    const current = cart?.appliedCoupon ?? null
+    lastAppliedCouponRef.current = current
+
+    if (previous === undefined) return // first render, nothing to compare
+    if (!previous || current) return // wasn't set, or still set
+
+    if (userIsRemovingCouponRef.current) return // buyer pressed X themselves
+
+    const min = previous.minPurchaseCents ?? 0
+    const message =
+      min > 0
+        ? `Cupom ${previous.code} removido — sua compra ficou abaixo do mínimo de ${formatCurrency(min)}.`
+        : `Cupom ${previous.code} foi removido após a alteração do carrinho.`
+    toast.warning(message)
+  }, [cart?.appliedCoupon])
 
   if (cartError || !cart) {
     return (

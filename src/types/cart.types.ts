@@ -304,6 +304,11 @@ export interface AppliedCoupon {
   type?: "percent" | "fixed" | "free_shipping"
   discountCents: number
   maxDiscountCents?: number
+  // Threshold the cart subtotal must keep meeting for the coupon to stay
+  // applied. The buyer sees this referenced in the auto-removal toast
+  // ("compra mínima de R$ X não atingida") when an item edit drops them
+  // below it. 0 / undefined when the merchant didn't set a min purchase.
+  minPurchaseCents?: number
 }
 
 // ApplyCouponResponse is what POST /api/public/checkout/:token/coupon returns
