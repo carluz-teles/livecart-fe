@@ -92,6 +92,7 @@ import { EventMetricCards } from "@/components/analytics/EventMetricCards"
 import { TopProducts } from "@/components/analytics/TopProducts"
 import { TopBuyers } from "@/components/analytics/TopBuyers"
 import { LiveModeControlPanel } from "@/components/live/LiveModeControlPanel"
+import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { EventUpsells } from "@/components/event/EventUpsells"
 import { EventActiveCheckouts } from "@/components/event/EventActiveCheckouts"
@@ -371,6 +372,7 @@ export default function EventDetailsPage() {
               <Badge variant="secondary" className="ml-2">{event.upsellCount}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="coupons">Cupons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
@@ -512,6 +514,10 @@ export default function EventDetailsPage() {
 
         <TabsContent value="upsells" className="mt-6">
           <EventUpsells eventId={id} />
+        </TabsContent>
+
+        <TabsContent value="coupons" className="mt-6">
+          <EventCoupons eventId={id} />
         </TabsContent>
       </Tabs>
     </div>
