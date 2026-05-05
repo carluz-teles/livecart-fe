@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Puzzle, CreditCard, Truck } from "lucide-react"
+import { User, Building2, Users, Puzzle, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -36,12 +36,6 @@ const settingsNav = [
     href: "/settings/integrations",
     icon: Puzzle,
     description: "Conecte com outras plataformas",
-  },
-  {
-    title: "Frete",
-    href: "/settings/shipping",
-    icon: Truck,
-    description: "Provedores de frete ativos e serviços habilitados",
   },
 ]
 
