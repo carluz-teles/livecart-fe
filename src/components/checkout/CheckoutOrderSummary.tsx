@@ -74,7 +74,7 @@ interface CheckoutOrderSummaryProps {
   expiresAt?: string | null
   appliedCoupon?: AppliedCoupon | null
   onApplyCoupon?: (code: string) => Promise<AppliedCoupon | null>
-  onRemoveCoupon?: () => void
+  onRemoveCoupon?: () => Promise<void> | void
   onUpdateQuantity?: (itemId: string, quantity: number) => void
   onRemoveItem?: (itemId: string) => void
   onExpired?: () => void

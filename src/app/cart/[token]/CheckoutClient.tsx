@@ -539,11 +539,15 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const handleRemoveCoupon = useCallback(async () => {
     try {
       await checkoutService.removeCoupon(token)
-    } finally {
-      // Even on error, refetch — the BE may have removed the coupon and
-      // failed to send 204 (network blip). The fresh state is the truth.
+    } catch (err) {
+      // Refetch first so the UI reflects whatever the server actually has,
+      // then re-throw so CheckoutCouponField can render the inline error
+      // (cart paid / network failure / 5xx). The BE remove path is
+      // idempotent, so a fresh GET is the safe source of truth either way.
       await refetchCart()
+      throw err
     }
+    await refetchCart()
   }, [token, refetchCart])
 
   if (cartError || !cart) {
@@ -1133,6 +1137,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               shippingCostCents={shippingCostCents}
               shippingRealCostCents={shippingRealCostCents}
               isFreeShipping={isFreeShipping}
+              discount={couponDiscount}
+              appliedCoupon={cart.appliedCoupon}
               total={effectiveTotal}
               platformHandle={cart.platformHandle}
               isLiveActive={isLiveActive}
