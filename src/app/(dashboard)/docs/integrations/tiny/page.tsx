@@ -468,6 +468,45 @@ export default function TinyDocPage() {
             </>
           }
         />
+
+        <FaqItem
+          question="O LiveCart está apontando “cadastros faltando” no Tiny — o que conferir?"
+          answer={
+            <>
+              Quando o Tiny está conectado, o LiveCart audita três cadastros
+              que ele consulta na hora de criar o pedido: formas de pagamento,
+              formas de recebimento e formas de envio. Os dois primeiros
+              ficam em{" "}
+              <Highlight>
+                Configurações &rsaquo; Finanças &rsaquo; Formas de Pagamento
+              </Highlight>{" "}
+              e{" "}
+              <Highlight>
+                Configurações &rsaquo; Finanças &rsaquo; Formas de Recebimento
+              </Highlight>{" "}
+              — a Tiny já cria os padrões (Cartão de Crédito, Pix, Boleto)
+              automaticamente, então normalmente é só confirmar que estão
+              ativos. As formas de envio ficam em{" "}
+              <Highlight>Cadastros &rsaquo; Formas de Envio</Highlight>; aí
+              você precisa cadastrar a transportadora que sua loja usa
+              (Correios, Jadlog, etc.) com esse nome exato.
+            </>
+          }
+        />
+
+        <FaqItem
+          question="Mesmo com os cadastros padrão habilitados, a auditoria do LiveCart marca como faltando — por quê?"
+          answer={
+            <>
+              O LiveCart procura por nome (exato ou parecido) — as formas
+              padrão da Tiny vêm como “Cartão de Crédito” e “Pix”. Se sua
+              conta tem outras com nomes muito diferentes (por exemplo
+              “Crédito MP” ou “PIX manual”), elas não vão bater. Se isso
+              acontecer, basta deixar uma forma com o nome canônico ativa
+              (Cartão de Crédito / Pix) que a auditoria fica verde.
+            </>
+          }
+        />
       </section>
 
       {/* Footer */}
