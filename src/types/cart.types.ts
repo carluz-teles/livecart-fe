@@ -292,9 +292,18 @@ export interface PublicCheckoutSummary {
 
 // AppliedCoupon mirrors the BE snapshot of the coupon currently attached to
 // the cart. Absent when no coupon is applied.
+//
+// `type` and `maxDiscountCents` carry the context the checkout uses to
+// explain partial free-shipping discounts:
+//   - `maxDiscountCents > 0` means the merchant set a ceiling.
+//   - `discountCents < shipping.costCents` means either the cheapest
+//     available service or the merchant cap clamped the refund — the FE
+//     renders the matching reason inline on the applied tile.
 export interface AppliedCoupon {
   code: string
+  type?: "percent" | "fixed" | "free_shipping"
   discountCents: number
+  maxDiscountCents?: number
 }
 
 // ApplyCouponResponse is what POST /api/public/checkout/:token/coupon returns
@@ -304,6 +313,10 @@ export interface ApplyCouponResponse {
   code: string
   type: "percent" | "fixed" | "free_shipping"
   appliedValueCents: number
+  // Merchant-set ceiling for free-shipping coupons (0 when uncapped, omitted
+  // for percent / fixed). Surfaced so the apply call can hydrate the cart's
+  // appliedCoupon optimistically without a refetch round-trip.
+  maxDiscountCents?: number
   subtotalCents: number
   shippingCostCents: number
   newTotalCents: number

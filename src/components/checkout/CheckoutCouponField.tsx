@@ -16,6 +16,11 @@ interface CheckoutCouponFieldProps {
   // Should reject (re-throw) on failure so the inline alert can render.
   onRemoveCoupon: () => Promise<void> | void
   appliedCoupon?: AppliedCoupon | null
+  // Cost in cents of the shipping option the buyer is currently paying. Used
+  // alongside `appliedCoupon` to explain why a free-shipping discount may be
+  // smaller than the chosen freight (cheapest-cap or merchant-cap). null when
+  // no shipping is selected yet.
+  selectedShippingCents?: number | null
   disabled?: boolean
   className?: string
   // Injected so the component stays decoupled from project-wide Intl helpers.
@@ -26,6 +31,7 @@ export function CheckoutCouponField({
   onApplyCoupon,
   onRemoveCoupon,
   appliedCoupon,
+  selectedShippingCents = null,
   disabled = false,
   className,
   formatCurrency,
@@ -89,6 +95,11 @@ export function CheckoutCouponField({
   }
 
   if (appliedCoupon) {
+    const explanation = buildFreeShippingExplanation(
+      appliedCoupon,
+      selectedShippingCents,
+      formatCurrency,
+    )
     return (
       <div className={cn("space-y-2", className)} aria-live="polite">
         <div
@@ -136,6 +147,11 @@ export function CheckoutCouponField({
             )}
           </Button>
         </div>
+        {explanation && (
+          <p className="text-xs leading-relaxed text-emerald-800/90 dark:text-emerald-200/80">
+            {explanation}
+          </p>
+        )}
         {error && (
           <p
             role="alert"
@@ -210,4 +226,45 @@ export function CheckoutCouponField({
       )}
     </div>
   )
+}
+
+// buildFreeShippingExplanation renders the inline note under the applied
+// tile that tells the buyer *why* the discount is what it is. Three cases
+// produce a message; the rest stay silent so percent / fixed coupons or a
+// fully-covered free-shipping coupon don't add visual noise.
+//
+//   1. Cap by merchant (`maxDiscount > 0` and `discount === maxDiscount`):
+//      the merchant set a ceiling and we hit it.
+//   2. Cap by cheapest available (`discount < selectedShipping`): the buyer
+//      picked an upgrade above the cheapest — coupon stayed at the cheapest.
+//   3. Coupon is free_shipping but no shipping selected: gentle nudge so
+//      the buyer knows the discount activates after picking a service.
+//
+// All amounts use the parent's formatCurrency so the locale stays consistent
+// with the rest of the checkout summary.
+function buildFreeShippingExplanation(
+  applied: AppliedCoupon,
+  selectedShippingCents: number | null,
+  formatCurrency: (cents: number) => string,
+): string | null {
+  if (applied.type !== "free_shipping") return null
+
+  if (selectedShippingCents == null) {
+    return "Selecione o frete para aplicar o desconto."
+  }
+
+  const cap = applied.maxDiscountCents ?? 0
+  const discount = applied.discountCents
+  const diff = selectedShippingCents - discount
+
+  // Buyer chose a shipping that is fully covered (or even cheaper than the
+  // discount, which can happen if the cheapest option price dropped between
+  // apply and now). No explanation needed.
+  if (diff <= 0) return null
+
+  if (cap > 0 && discount === cap) {
+    return `O cupom cobre até ${formatCurrency(cap)} de frete. Você escolheu um envio de ${formatCurrency(selectedShippingCents)} e paga a diferença de ${formatCurrency(diff)}.`
+  }
+
+  return `O cupom cobre o frete mais barato disponível (${formatCurrency(discount)}). Você escolheu um envio mais caro e paga a diferença de ${formatCurrency(diff)}.`
 }

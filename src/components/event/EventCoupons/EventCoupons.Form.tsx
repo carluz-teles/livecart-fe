@@ -66,7 +66,7 @@ const TYPES: {
   {
     value: "free_shipping",
     label: "Frete grátis",
-    hint: "Zera o valor do frete",
+    hint: "Cobre o frete mais barato disponível",
     icon: Truck,
   },
 ]
@@ -76,6 +76,7 @@ const DEFAULTS: CouponFormData = {
   type: "percent",
   percentValue: "10",
   fixedValueBrl: "",
+  freeShippingMaxBrl: "",
   maxUses: "",
   minPurchaseBrl: "",
   validFrom: "",
@@ -84,11 +85,19 @@ const DEFAULTS: CouponFormData = {
 }
 
 function couponToFormData(c: Coupon): CouponFormData {
+  // valueCents is shared with `fixed` (the discount amount) and
+  // `free_shipping` (the optional ceiling). The form mirrors it into the
+  // matching field based on the coupon's type so the merchant edits the
+  // right input.
+  const isShipping = c.type === "free_shipping"
   return {
     code: c.code,
     type: c.type,
     percentValue: c.percentBps ? String(c.percentBps / 100) : "",
-    fixedValueBrl: c.valueCents ? (c.valueCents / 100).toFixed(2) : "",
+    fixedValueBrl:
+      !isShipping && c.valueCents ? (c.valueCents / 100).toFixed(2) : "",
+    freeShippingMaxBrl:
+      isShipping && c.valueCents ? (c.valueCents / 100).toFixed(2) : "",
     maxUses: c.maxUses != null ? String(c.maxUses) : "",
     minPurchaseBrl: c.minPurchaseCents
       ? (c.minPurchaseCents / 100).toFixed(2)
@@ -140,8 +149,16 @@ export function EventCouponsForm({
 
   const handleSubmit = form.handleSubmit((data) => {
     const code = data.code.trim()
-    const valueCents =
-      data.type === "fixed" ? Math.round(Number(data.fixedValueBrl) * 100) : 0
+    // valueCents is reused: it carries the fixed discount for `fixed`
+    // coupons and the optional ceiling for `free_shipping`. Empty / 0 on a
+    // free-shipping coupon means "no merchant cap; cover the cheapest
+    // available service in full".
+    let valueCents = 0
+    if (data.type === "fixed") {
+      valueCents = Math.round(Number(data.fixedValueBrl) * 100)
+    } else if (data.type === "free_shipping" && data.freeShippingMaxBrl) {
+      valueCents = Math.round(Number(data.freeShippingMaxBrl) * 100)
+    }
     const percentBps =
       data.type === "percent" ? Math.round(Number(data.percentValue) * 100) : 0
     const minPurchaseCents = data.minPurchaseBrl
@@ -342,6 +359,45 @@ export function EventCouponsForm({
                           />
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {type === "free_shipping" && (
+                <FormField
+                  control={form.control}
+                  name="freeShippingMaxBrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Limite de desconto</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
+                            aria-hidden="true"
+                          >
+                            R$
+                          </span>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            step="0.01"
+                            placeholder="Sem limite"
+                            autoComplete="off"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        O cupom cobre o frete mais barato disponível, até esse
+                        limite. Vazio = cobre o frete mais barato em qualquer
+                        valor. Se o cliente escolher um envio mais caro, paga a
+                        diferença.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

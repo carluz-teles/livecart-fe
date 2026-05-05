@@ -14,6 +14,11 @@ export const couponFormSchema = z
     type: z.enum(["percent", "fixed", "free_shipping"]),
     percentValue: z.string().optional(), // 1–100
     fixedValueBrl: z.string().optional(), // 0.01+
+    // Optional ceiling on a free-shipping discount, in BRL. When set, the
+    // checkout never refunds more than this amount even when the cheapest
+    // available shipping costs more — protects the merchant from absorbing
+    // remote-CEP freight that blew past their margin.
+    freeShippingMaxBrl: z.string().optional(),
     maxUses: z.string().optional(),
     minPurchaseBrl: z.string().optional(),
     validFrom: z.string().optional(),
@@ -38,6 +43,16 @@ export const couponFormSchema = z
           code: "custom",
           path: ["fixedValueBrl"],
           message: "Informe um valor maior que zero",
+        })
+      }
+    }
+    if (data.type === "free_shipping" && data.freeShippingMaxBrl) {
+      const n = Number(data.freeShippingMaxBrl)
+      if (Number.isNaN(n) || n <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["freeShippingMaxBrl"],
+          message: "Informe um valor maior que zero ou deixe em branco",
         })
       }
     }

@@ -531,7 +531,12 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       // up with the new totals.
       const result = await checkoutService.applyCoupon(token, code)
       await refetchCart()
-      return { code: result.code, discountCents: result.appliedValueCents }
+      return {
+        code: result.code,
+        type: result.type,
+        discountCents: result.appliedValueCents,
+        maxDiscountCents: result.maxDiscountCents ?? 0,
+      }
     },
     [token, refetchCart],
   )

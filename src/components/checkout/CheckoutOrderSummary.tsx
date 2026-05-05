@@ -324,6 +324,7 @@ export function CheckoutOrderSummary({
           onApplyCoupon={onApplyCoupon}
           onRemoveCoupon={onRemoveCoupon}
           appliedCoupon={appliedCoupon}
+          selectedShippingCents={shippingCostCents}
           formatCurrency={formatCurrency}
         />
       )}
