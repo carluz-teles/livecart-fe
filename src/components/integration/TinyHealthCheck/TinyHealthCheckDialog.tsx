@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ChevronRight,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -151,24 +152,28 @@ export function TinyHealthCheckDialog({ integrationId }: TinyHealthCheckDialogPr
   )
 }
 
-// Skeleton do banner — replica o tamanho exato pra evitar layout shift
-// quando a request termina. O pulse é feito via Tailwind animate-pulse
-// no fundo da barra; sem CLS, sem mudança de altura.
+// Skeleton do banner — réplica fiel do banner final em altura/padding/borda
+// pra zerar layout shift quando a request termina. Em vez de barras
+// pulsando (que exigem leitura) usamos um spinner + texto explícito;
+// o usuário entende o estado em meio segundo, mesmo passando rápido.
 function TinyHealthCheckSkeleton() {
   return (
     <div
       role="status"
       aria-live="polite"
       aria-label="Verificando cadastros do Tiny"
-      className="flex w-full items-center gap-2.5 rounded-lg border border-muted bg-muted/40 px-3 py-2 text-xs"
+      className="flex w-full items-center gap-2.5 rounded-lg border border-muted bg-muted/30 px-3 py-2 text-xs"
     >
-      <span className="h-5 w-5 flex-shrink-0 animate-pulse rounded-full bg-muted-foreground/20" />
-      <span className="min-w-0 flex-1 space-y-1.5">
-        <span className="block h-3 w-44 animate-pulse rounded bg-muted-foreground/20" />
-        <span className="block h-2.5 w-32 animate-pulse rounded bg-muted-foreground/15" />
+      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
       </span>
-      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        Verificando…
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium leading-tight text-foreground">
+          Verificando cadastros do Tiny
+        </span>
+        <span className="block leading-tight text-muted-foreground">
+          Conferindo formas de pagamento, recebimento e envio
+        </span>
       </span>
     </div>
   )
