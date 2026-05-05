@@ -41,7 +41,7 @@ export interface OrderTab {
 export const ORDER_TABS: OrderTab[] = [
   {
     id: "needs_action",
-    label: "Precisam ação",
+    label: "Precisam atenção",
     description:
       "Envios com problema (NFe pendente, recusa, bloqueio fiscal/logístico, dano, falha na entrega). Pedidos sem envio criado ainda não aparecem aqui.",
     filters: {
@@ -60,7 +60,7 @@ export const ORDER_TABS: OrderTab[] = [
   },
   {
     id: "awaiting_payment",
-    label: "Aguardando pagto",
+    label: "Aguardando pagamento",
     description:
       "Cliente está no checkout ou recebeu o PIX e ainda não pagou. Sai daqui assim que o pagamento é confirmado.",
     filters: {
@@ -96,7 +96,7 @@ export const ORDER_TABS: OrderTab[] = [
   },
   {
     id: "completed",
-    label: "Concluídos",
+    label: "Entregues",
     description: "Envios entregues ao destinatário pela transportadora.",
     filters: {
       shipmentStatus: ["delivered"],

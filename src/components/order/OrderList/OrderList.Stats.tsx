@@ -129,7 +129,7 @@ const TAB_KPIS: Record<OrderTabId, [KpiSpec, KpiSpec, KpiSpec]> = {
   completed: [
     {
       field: "totalOrders",
-      title: "Concluídos",
+      title: "Entregues",
       description: "Entregues ao destinatário",
       icon: CheckCircle2,
       variant: "success",
