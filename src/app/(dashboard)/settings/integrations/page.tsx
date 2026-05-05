@@ -62,6 +62,7 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import { IntegrationCard } from "@/components/integration/IntegrationCard"
 import { CopyableURL } from "@/components/integration/CopyableURL"
+import { TinyHealthCheck } from "@/components/integration/TinyHealthCheck"
 import {
   useIntegrations,
   integrationKeys,
@@ -538,6 +539,8 @@ function IntegrationsContent() {
           {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
             const config = categoryConfig[type]
             const providers = getProvidersByType(type)
+            const connectedTiny =
+              type === "erp" ? getConnectedIntegration("tiny") : null
 
             return (
               <TabsContent key={type} value={type} className="mt-0 space-y-4">
@@ -636,6 +639,12 @@ function IntegrationsContent() {
                     )
                   })}
                 </div>
+
+                {connectedTiny && connectedTiny.status === "active" ? (
+                  <div className="pt-2">
+                    <TinyHealthCheck integrationId={connectedTiny.id} />
+                  </div>
+                ) : null}
               </TabsContent>
             )
           })}

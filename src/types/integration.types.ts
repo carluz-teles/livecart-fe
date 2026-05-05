@@ -67,6 +67,34 @@ export interface TestConnectionResponse {
   testedAt: string
 }
 
+// Categories LiveCart audits inside the merchant's ERP. Each category maps
+// to a different cadastro screen in the ERP UI, surfaced via PanelPath.
+export type ERPHealthCheckCategory =
+  | "forma_pagamento"
+  | "forma_recebimento"
+  | "forma_envio"
+
+export type ERPHealthCheckStatus = "ok" | "missing"
+
+export interface ERPHealthCheckItem {
+  category: ERPHealthCheckCategory
+  expected_name: string
+  status: ERPHealthCheckStatus
+  matched_id?: number
+  matched_name?: string
+  description: string
+  panel_path: string
+}
+
+// Wrapper bundles the per-item audit + a flag the backend uses to signal
+// that the underlying ERP doesn't expose the audit endpoints (in which
+// case the FE should hide the section silently rather than show "all OK").
+export interface ERPHealthCheckResponse {
+  supported: boolean
+  checkedAt: string
+  items: ERPHealthCheckItem[]
+}
+
 export interface CreateIntegrationPayload {
   type: IntegrationType
   provider: IntegrationProvider

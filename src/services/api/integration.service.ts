@@ -12,6 +12,7 @@ import type {
   InstagramLivesResponse,
   ConnectSmartEnviosPayload,
   ProviderURLs,
+  ERPHealthCheckResponse,
 } from "@/types"
 
 export const integrationService = {
@@ -52,6 +53,15 @@ export const integrationService = {
     apiClient.post<TestConnectionResponse>(
       `/stores/${storeId}/integrations/${integrationId}/test`,
       {},
+      token
+    ),
+
+  // ERP cadastro audit (Tiny v3 today). Returns supported=false when the
+  // underlying ERP doesn't expose the audit capability — the caller should
+  // hide the section, not show an empty "all good" state.
+  runERPHealthCheck: (storeId: string, integrationId: string, token?: string | null) =>
+    apiClient.get<ERPHealthCheckResponse>(
+      `/stores/${storeId}/integrations/${integrationId}/erp/health-check`,
       token
     ),
 
