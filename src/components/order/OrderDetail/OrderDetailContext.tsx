@@ -29,6 +29,8 @@ export interface OrderDetailActions {
   cancelRegenerate: () => void
   confirmRegenerate: () => void
   closeRegenerateShare: () => void
+  markDelivered: () => void
+  isMarkingDelivered: boolean
 }
 
 export interface OrderDetailMeta {

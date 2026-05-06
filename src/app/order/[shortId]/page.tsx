@@ -39,7 +39,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
     )
   }
 
-  return <OrderTracking order={order} />
+  return <OrderTracking order={order} trackingKey={key} />
 }
 
 function NotFound({ message }: { message: string }) {

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { useRegenerateCheckout, useUpdateOrder } from "@/hooks/order"
+import { useMarkDelivered, useRegenerateCheckout, useUpdateOrder } from "@/hooks/order"
 import { useStoreId } from "@/hooks/useUser"
 import type { OrderDetail } from "@/types/cart.types"
 import {
@@ -20,6 +20,7 @@ interface ProviderProps {
 export function OrderDetailProvider({ order, children }: ProviderProps) {
   const updateOrder = useUpdateOrder()
   const regenerate = useRegenerateCheckout()
+  const markDeliveredMutation = useMarkDelivered()
   const { storeId } = useStoreId()
 
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false)
@@ -69,6 +70,16 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
     setRegenerateShare(null)
   }, [])
 
+  const markDelivered = useCallback(() => {
+    markDeliveredMutation.mutate(
+      { id: order.id },
+      {
+        onSuccess: () => toast.success("Pedido marcado como entregue"),
+        onError: () => toast.error("Falha ao marcar como entregue"),
+      },
+    )
+  }, [order.id, markDeliveredMutation])
+
   const value: OrderDetailContextValue = {
     state: {
       order,
@@ -86,6 +97,8 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
       cancelRegenerate,
       confirmRegenerate,
       closeRegenerateShare,
+      markDelivered,
+      isMarkingDelivered: markDeliveredMutation.isPending,
     },
     meta: { storeId: storeId ?? "" },
   }

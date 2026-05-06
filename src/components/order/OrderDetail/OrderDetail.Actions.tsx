@@ -1,7 +1,7 @@
 "use client"
 
 import { use, useState } from "react"
-import { Hash, Link2, MoreHorizontal, Printer, RefreshCw } from "lucide-react"
+import { CheckCircle2, Hash, Link2, MoreHorizontal, Printer, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,7 +37,23 @@ export function OrderDetailActions() {
   const [refundOpen, setRefundOpen] = useState(false)
   if (!ctx) return null
   const { order } = ctx.state
-  const { refund, isRefunding, print, requestRegenerate } = ctx.actions
+  const {
+    refund,
+    isRefunding,
+    print,
+    requestRegenerate,
+    markDelivered,
+    isMarkingDelivered,
+  } = ctx.actions
+
+  // Show "Marcar como entregue" only when the order has been paid AND there
+  // is a shipment, AND it hasn't already been marked delivered. The BE is
+  // idempotent on order_events, so a misclick is harmless — but hiding the
+  // entry keeps the menu honest.
+  const canMarkDelivered =
+    order.paymentStatus === "paid" &&
+    !!order.shipment &&
+    order.shipmentStatus !== "delivered"
 
   const checkoutUrl = order.token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/cart/${order.token}`
@@ -90,6 +106,19 @@ export function OrderDetailActions() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Regerar link
             </DropdownMenuItem>
+          )}
+          {canMarkDelivered && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={markDelivered}
+                disabled={isMarkingDelivered}
+                className="text-emerald-700 focus:text-emerald-700"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Marcar como entregue
+              </DropdownMenuItem>
+            </>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={print}>

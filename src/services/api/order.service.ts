@@ -87,4 +87,13 @@ export const orderService = {
       {},
       token,
     ),
+
+  // Marks the order as delivered from the merchant's side. The BE emits a
+  // `delivered` order_event and dispatches the "Pedido entregue" email.
+  markDelivered: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<{ confirmed: boolean }>(
+      `/stores/${storeId}/orders/${id}/mark-delivered`,
+      {},
+      token,
+    ),
 }

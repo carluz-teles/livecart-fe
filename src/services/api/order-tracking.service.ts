@@ -31,3 +31,13 @@ export async function fetchPublicOrder(
   const json = (await res.json()) as ApiEnvelope<PublicOrder>
   return json.data
 }
+
+// Customer-facing "Recebi!" CTA on the public tracking page.
+export async function confirmPublicDelivery(
+  shortId: string,
+  key: string,
+): Promise<void> {
+  const url = `${publicBase()}/api/public/orders/${encodeURIComponent(shortId)}/confirm-delivery?key=${encodeURIComponent(key)}`
+  const res = await fetch(url, { method: "POST" })
+  if (!res.ok) throw new Error(`Falha ao confirmar entrega (${res.status})`)
+}
