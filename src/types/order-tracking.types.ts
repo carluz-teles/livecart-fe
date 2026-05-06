@@ -23,6 +23,19 @@ export interface PublicShippingSummary {
   deadline_days?: number
 }
 
+export type PublicOrderEventType =
+  | "payment_confirmed"
+  | "shipped"
+  | "delivered"
+
+export interface PublicOrderEvent {
+  type: PublicOrderEventType
+  occurred_at: string // RFC3339
+  title: string
+  subtitle?: string
+  source: "system" | "merchant" | "customer"
+}
+
 export interface PublicOrder {
   short_id: string
   store_name: string
@@ -38,4 +51,5 @@ export interface PublicOrder {
   total_cents: number
   shipping_address?: PublicShippingAddress
   shipping?: PublicShippingSummary
+  events: PublicOrderEvent[]
 }

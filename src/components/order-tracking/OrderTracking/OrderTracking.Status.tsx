@@ -3,49 +3,56 @@
 import { Check, Clock, Package, Truck, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { PublicOrder, PublicOrderStatus } from "@/types/order-tracking.types"
+import type {
+  PublicOrder,
+  PublicOrderEvent,
+  PublicOrderEventType,
+  PublicOrderStatus,
+} from "@/types/order-tracking.types"
 
 interface OrderTrackingStatusProps {
   order: PublicOrder
 }
 
 interface Step {
-  id: PublicOrderStatus | "pending"
+  type: PublicOrderEventType
   label: string
-  description: string
+  defaultDescription: string
   Icon: LucideIcon
 }
 
+// Visual timeline order. Indexes here drive the "reached" calculation.
 const STEPS: Step[] = [
   {
-    id: "paid",
+    type: "payment_confirmed",
     label: "Pagamento confirmado",
-    description: "Recebemos seu pagamento",
+    defaultDescription: "Recebemos seu pagamento",
     Icon: Check,
   },
   {
-    id: "shipped",
+    type: "shipped",
     label: "Pedido enviado",
-    description: "Em transporte",
+    defaultDescription: "Em transporte",
     Icon: Truck,
   },
   {
-    id: "delivered",
+    type: "delivered",
     label: "Entregue",
-    description: "Pedido recebido",
+    defaultDescription: "Pedido recebido",
     Icon: Package,
   },
 ]
 
-const ORDER: PublicOrderStatus[] = ["paid", "shipped", "delivered"]
-
-function reachedFor(status: PublicOrderStatus): number {
-  const i = ORDER.indexOf(status)
-  return i < 0 ? -1 : i
+const STATUS_INDEX: Record<PublicOrderStatus, number> = {
+  paid: 0,
+  shipped: 1,
+  delivered: 2,
+  refunded: -1,
 }
 
 export function OrderTrackingStatus({ order }: OrderTrackingStatusProps) {
-  const reached = reachedFor(order.status)
+  const reached = STATUS_INDEX[order.status] ?? 0
+  const eventByType = mapEventsByType(order.events)
 
   return (
     <section>
@@ -56,8 +63,11 @@ export function OrderTrackingStatus({ order }: OrderTrackingStatusProps) {
         {STEPS.map((step, idx) => {
           const isReached = idx <= reached
           const isCurrent = idx === reached
+          const event = eventByType.get(step.type)
+          const description = event?.subtitle ?? step.defaultDescription
+
           return (
-            <li key={step.id} className="flex items-start gap-4">
+            <li key={step.type} className="flex items-start gap-4">
               <div className="flex flex-col items-center">
                 <div
                   className={cn(
@@ -67,11 +77,13 @@ export function OrderTrackingStatus({ order }: OrderTrackingStatusProps) {
                       : "bg-gray-100 text-gray-400",
                   )}
                 >
-                  {isCurrent && !isReached && (
+                  {isReached ? (
+                    <step.Icon className="h-5 w-5" />
+                  ) : isCurrent ? (
                     <Clock className="h-5 w-5" />
+                  ) : (
+                    <step.Icon className="h-5 w-5" />
                   )}
-                  {isReached && <step.Icon className="h-5 w-5" />}
-                  {!isCurrent && !isReached && <step.Icon className="h-5 w-5" />}
                 </div>
                 {idx < STEPS.length - 1 && (
                   <div
@@ -91,7 +103,12 @@ export function OrderTrackingStatus({ order }: OrderTrackingStatusProps) {
                 >
                   {step.label}
                 </p>
-                <p className="text-xs text-gray-500">{step.description}</p>
+                <p className="text-xs text-gray-500">{description}</p>
+                {event && (
+                  <p className="mt-0.5 text-[11px] text-gray-400">
+                    {formatRelative(event.occurred_at)}
+                  </p>
+                )}
               </div>
             </li>
           )
@@ -99,4 +116,29 @@ export function OrderTrackingStatus({ order }: OrderTrackingStatusProps) {
       </ol>
     </section>
   )
+}
+
+function mapEventsByType(events: PublicOrderEvent[]): Map<PublicOrderEventType, PublicOrderEvent> {
+  const m = new Map<PublicOrderEventType, PublicOrderEvent>()
+  for (const ev of events) {
+    m.set(ev.type, ev)
+  }
+  return m
+}
+
+// Cheap relative-time formatter. RFC3339 in, "há X" out. Falls back to the
+// raw date string if parsing fails.
+function formatRelative(rfc3339: string): string {
+  const then = new Date(rfc3339)
+  if (Number.isNaN(then.getTime())) return rfc3339
+  const diffMs = Date.now() - then.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return "agora"
+  if (diffMin < 60) return `há ${diffMin} min`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `há ${diffHr} h`
+  const diffD = Math.floor(diffHr / 24)
+  if (diffD === 1) return "há 1 dia"
+  if (diffD < 7) return `há ${diffD} dias`
+  return then.toLocaleDateString("pt-BR")
 }
