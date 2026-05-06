@@ -51,6 +51,8 @@ export const createEventSchema = z.object({
   cartExpirationMinutes: z.number().min(5).max(1440).nullable().optional(),
   cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
   freeShipping: z.boolean().optional(),
+  // Pix discount in whole percent (0-100). 0 disables the feature.
+  pixDiscountPercent: z.number().int().min(0).max(100).optional(),
 })
 
 export type CreateEventFormData = z.infer<typeof createEventSchema>

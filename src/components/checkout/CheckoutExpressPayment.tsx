@@ -11,6 +11,11 @@ interface CheckoutExpressPaymentProps {
   pixAvailable?: boolean
   cardAvailable?: boolean
   disabled?: boolean
+  /**
+   * Event-level Pix discount percent (0-100). When > 0 the Pix card surfaces
+   * a "−X%" badge instead of the generic "Recomendado" label.
+   */
+  pixDiscountPercent?: number
 }
 
 export function CheckoutExpressPayment({
@@ -19,6 +24,7 @@ export function CheckoutExpressPayment({
   pixAvailable = true,
   cardAvailable = true,
   disabled = false,
+  pixDiscountPercent = 0,
 }: CheckoutExpressPaymentProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -112,7 +118,9 @@ export function CheckoutExpressPayment({
                     : "bg-emerald-100 text-emerald-700"
                 )}
               >
-                Recomendado
+                {pixDiscountPercent > 0
+                  ? `${pixDiscountPercent}% de desconto`
+                  : "Recomendado"}
               </div>
             </div>
           </button>

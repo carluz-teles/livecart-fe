@@ -260,6 +260,9 @@ export interface PublicCheckoutEvent {
   id: string
   title: string
   freeShipping: boolean
+  /** Discount percent (0-100) applied at checkout when the buyer pays with
+   *  Pix. 0 disables the feature. */
+  pixDiscountPercent: number
 }
 
 export interface PublicCheckoutSelectedShipping {
@@ -285,6 +288,14 @@ export interface PublicCheckoutSummary {
   // Absolute coupon discount in cents (0 when none). `total` already reflects
   // the subtraction; this is exposed so the FE can show the "−R$ X" line.
   couponDiscount: number
+  // Configured event-level Pix discount (0 when disabled). Applied
+  // conditionally at payment time when the buyer picks Pix; `total` does NOT
+  // subtract it.
+  pixDiscountPercent: number
+  // Absolute Pix discount in cents that *would* apply if the buyer pays with
+  // Pix. Pre-computed by the backend off (subtotal − couponDiscount) so the
+  // FE can preview the discounted total without re-running the math.
+  pixDiscountCents: number
   total: number
   totalItems: number
   hasShippingQuote: boolean

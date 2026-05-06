@@ -501,6 +501,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         subtotal: cart.summary.subtotal,
         shippingCost: cart.shipping.costCents,
         couponDiscount: cart.summary.couponDiscount ?? 0,
+        pixDiscountPercent: cart.summary.pixDiscountPercent ?? 0,
+        pixDiscountCents: cart.summary.pixDiscountCents ?? 0,
         total: cart.summary.subtotal + cart.shipping.costCents,
         totalItems: cart.summary.totalItems,
         hasShippingQuote: true,
@@ -666,9 +668,16 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   // carrier's cost; weight-tier re-quoting happens via the existing cart
   // mutation flow.
   const couponDiscount = cart.summary.couponDiscount ?? 0
+  const pixDiscountPercent = cart.summary.pixDiscountPercent ?? 0
+  const pixDiscountCents = cart.summary.pixDiscountCents ?? 0
+  const pixDiscountApplied =
+    selectedMethod === "pix" && pixDiscountCents > 0
   const effectiveTotal = Math.max(
     0,
-    cart.summary.subtotal + (shippingCostCents ?? 0) - couponDiscount,
+    cart.summary.subtotal +
+      (shippingCostCents ?? 0) -
+      couponDiscount -
+      (pixDiscountApplied ? pixDiscountCents : 0),
   )
 
   return (
@@ -689,6 +698,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             shippingRealCostCents={shippingRealCostCents}
             isFreeShipping={isFreeShipping}
             discount={couponDiscount}
+            pixDiscountPercent={pixDiscountPercent}
+            pixDiscountCents={pixDiscountCents}
+            pixDiscountApplied={pixDiscountApplied}
             appliedCoupon={cart.appliedCoupon}
             total={effectiveTotal}
             platformHandle={cart.platformHandle}
@@ -1132,6 +1144,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                           onSelectMethod={setSelectedMethod}
                           pixAvailable={availableMethods.includes("pix")}
                           cardAvailable={availableMethods.includes("card")}
+                          pixDiscountPercent={pixDiscountPercent}
                         />
 
                         <Separator className="bg-gray-100" />
@@ -1184,6 +1197,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               shippingRealCostCents={shippingRealCostCents}
               isFreeShipping={isFreeShipping}
               discount={couponDiscount}
+              pixDiscountPercent={pixDiscountPercent}
+              pixDiscountCents={pixDiscountCents}
+              pixDiscountApplied={pixDiscountApplied}
               appliedCoupon={cart.appliedCoupon}
               total={effectiveTotal}
               platformHandle={cart.platformHandle}

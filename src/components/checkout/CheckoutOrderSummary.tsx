@@ -66,6 +66,21 @@ interface CheckoutOrderSummaryProps {
    */
   isFreeShipping?: boolean
   discount?: number
+  /**
+   * Configured Pix discount percent (0-100). Surfaced only as a hint when no
+   * Pix has been chosen yet so the buyer understands they could save.
+   */
+  pixDiscountPercent?: number
+  /**
+   * Absolute Pix discount in cents that *would* apply if the buyer chose Pix.
+   * The summary renders it as a green "−R$ X,XX (Pix)" line when applied.
+   */
+  pixDiscountCents?: number
+  /**
+   * True when the buyer has selected Pix as the payment method. Drives the
+   * actual subtraction from the displayed total.
+   */
+  pixDiscountApplied?: boolean
   total: number
   platformHandle?: string
   isLiveActive?: boolean
@@ -268,6 +283,9 @@ export function CheckoutOrderSummary({
   shippingRealCostCents = null,
   isFreeShipping = false,
   discount = 0,
+  pixDiscountPercent = 0,
+  pixDiscountCents = 0,
+  pixDiscountApplied = false,
   total,
   platformHandle,
   isLiveActive,
@@ -366,6 +384,22 @@ export function CheckoutOrderSummary({
           </div>
         )}
 
+        {pixDiscountApplied && pixDiscountCents > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">
+              Desconto Pix
+              {pixDiscountPercent > 0 && (
+                <span className="ml-1 text-xs text-gray-400">
+                  ({pixDiscountPercent}%)
+                </span>
+              )}
+            </span>
+            <span className="font-medium text-emerald-600">
+              -{formatCurrency(pixDiscountCents)}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Frete</span>
           {shippingPending ? (
@@ -400,6 +434,13 @@ export function CheckoutOrderSummary({
           <span className="text-base font-semibold text-gray-900">Total</span>
           <span className="text-xl font-bold text-gray-900">{formatCurrency(total)}</span>
         </div>
+
+        {!pixDiscountApplied && pixDiscountPercent > 0 && pixDiscountCents > 0 && (
+          <p className="text-xs text-emerald-600">
+            Pague com Pix e ganhe {pixDiscountPercent}% de desconto (
+            -{formatCurrency(pixDiscountCents)}).
+          </p>
+        )}
       </div>
 
       {/* User info */}

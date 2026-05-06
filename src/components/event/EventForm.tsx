@@ -101,6 +101,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       cartExpirationMinutes: null,
       cartMaxQuantityPerItem: null,
       freeShipping: false,
+      pixDiscountPercent: 0,
     },
   })
 
@@ -118,6 +119,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         cartExpirationMinutes: event.cartExpirationMinutes,
         cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
         freeShipping: event.freeShipping ?? false,
+        pixDiscountPercent: event.pixDiscountPercent ?? 0,
       })
     } else {
       form.reset({
@@ -131,6 +133,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         cartExpirationMinutes: null,
         cartMaxQuantityPerItem: null,
         freeShipping: false,
+        pixDiscountPercent: 0,
       })
     }
   }, [event, form])
@@ -153,6 +156,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       cartExpirationMinutes: data.cartExpirationMinutes,
       cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
       freeShipping: data.freeShipping,
+      pixDiscountPercent: data.pixDiscountPercent ?? 0,
     }
 
     createEvent.mutate(payload, {
@@ -370,6 +374,65 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                   </FormControl>
                 </FormItem>
               )}
+            />
+
+            <FormField
+              control={form.control}
+              name="pixDiscountPercent"
+              render={({ field }) => {
+                const value = field.value ?? 0
+                const enabled = value > 0
+                return (
+                  <FormItem className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-0.5 flex-1">
+                        <FormLabel className="text-sm font-medium">
+                          Desconto no PIX
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          Aplicado automaticamente no checkout quando o cliente
+                          escolhe pagar com Pix. Independente de cupons.
+                        </FormDescription>
+                      </div>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) =>
+                          field.onChange(checked ? 10 : 0)
+                        }
+                      />
+                    </div>
+                    {enabled && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={value}
+                            onChange={(e) => {
+                              const parsed = parseInt(e.target.value, 10)
+                              if (Number.isNaN(parsed)) {
+                                field.onChange(0)
+                              } else {
+                                field.onChange(Math.min(100, Math.max(0, parsed)))
+                              }
+                            }}
+                            className="w-24"
+                            aria-label="Percentual de desconto no Pix"
+                          />
+                        </FormControl>
+                        <span className="text-sm text-muted-foreground">%</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          O cliente verá o valor descontado no resumo do checkout.
+                        </span>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
 
             <FormField

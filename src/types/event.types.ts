@@ -59,6 +59,9 @@ export interface Event {
   cartExpirationMinutes: number | null
   cartMaxQuantityPerItem: number | null
   freeShipping: boolean
+  /** Discount percent (0-100) applied at checkout when the buyer pays with
+   *  Pix. 0 disables the feature. Stacks with coupons. */
+  pixDiscountPercent: number
   scheduledAt: string | null
   description: string | null
   productCount: number
@@ -86,6 +89,7 @@ export interface CreateEventPayload {
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
   freeShipping?: boolean
+  pixDiscountPercent?: number
 }
 
 export interface CreateEventResponse {
@@ -100,6 +104,7 @@ export interface CreateEventResponse {
 // Update Event
 export interface UpdateEventPayload {
   title: string
+  pixDiscountPercent?: number
 }
 
 // End Event - payload is now empty since auto-send is handled via Private Reply during the live
