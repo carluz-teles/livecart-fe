@@ -115,7 +115,7 @@ function EmailEditor({ type }: EmailEditorProps) {
               className="mt-2"
             />
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Vazio = usa o assunto padrão "Pedido #X · Sua loja".
+              Vazio = usa o assunto padrão &quot;Pedido #X · Sua loja&quot;.
             </p>
           </div>
 
