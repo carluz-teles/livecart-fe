@@ -23,8 +23,10 @@ export const checkoutSettingsSchema = z.object({
 
 export type CheckoutSettingsFormData = z.infer<typeof checkoutSettingsSchema>
 
-// Default templates kept here because the Communications editor reads them as
-// fallback values when a store has no template configured yet.
+// Default IG DM templates kept here because the Communications editor reads
+// them as fallback values when a store has no template configured yet.
+// Post-payment (email) types intentionally have empty defaults — the BE owns
+// the polished default content; the merchant only sees their own override.
 export const defaultTemplates = {
   checkout_immediate:
     "Oi {handle}! 🛒\n\nAnotei seu pedido de {produto}!\n\nTotal: {total}\n\nFinalize aqui: {link}\n\n⏰ Válido por {expira_em}",
@@ -32,6 +34,9 @@ export const defaultTemplates = {
     "Oi {handle}! ➕\n\nAdicionei {produto} ao seu carrinho!\n\nAgora são {total_itens} itens - {total}\n\nFinalize: {link}",
   checkout_reminder:
     "Ei {handle}! ⏰\n\nSeu carrinho vai expirar em breve!\n\n{total_itens} itens - {total}\n\nFinaliza logo: {link}",
+  payment_confirmed: "",
+  shipped: "",
+  delivered: "",
 } as const
 
 // Friendly names for template variables — read by the Communications editor.

@@ -3,7 +3,14 @@
 import { notFound, useParams } from "next/navigation"
 
 import { NotificationEditor } from "@/components/communications/NotificationEditor"
-import { NOTIFICATION_TYPES, type NotificationType } from "@/types/notification.types"
+import { EmailEditor } from "@/components/communications/EmailEditor"
+import {
+  NOTIFICATION_TYPES,
+  isPostPaymentType,
+  type CartNotificationType,
+  type NotificationType,
+  type PostPaymentNotificationType,
+} from "@/types/notification.types"
 
 export default function CommunicationDetailPage() {
   const params = useParams<{ type: string }>()
@@ -13,5 +20,8 @@ export default function CommunicationDetailPage() {
     notFound()
   }
 
-  return <NotificationEditor type={type as NotificationType} />
+  if (isPostPaymentType(type)) {
+    return <EmailEditor type={type as PostPaymentNotificationType} />
+  }
+  return <NotificationEditor type={type as CartNotificationType} />
 }

@@ -6,7 +6,7 @@ import { Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCommunication } from "@/hooks/communications"
 import { defaultTemplates } from "@/schemas/checkout-settings.schema"
-import type { NotificationType } from "@/types/notification.types"
+import type { CartNotificationType } from "@/types/notification.types"
 
 import { InstagramPreview } from "../InstagramPreview"
 import {
@@ -19,7 +19,7 @@ import { NotificationEditorTestDialog } from "./NotificationEditor.TestDialog"
 import { NotificationEditorFooter } from "./NotificationEditor.Footer"
 
 interface NotificationEditorProps {
-  type: NotificationType
+  type: CartNotificationType
 }
 
 function NotificationEditor({ type }: NotificationEditorProps) {

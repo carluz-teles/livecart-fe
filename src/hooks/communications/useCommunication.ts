@@ -12,6 +12,7 @@ import { storeKeys } from "@/hooks/store/useStore"
 import { NOTIFICATION_META } from "@/lib/communications"
 import type {
   AvailableVariablesResponse,
+  CartNotificationType,
   NotificationSettings,
   NotificationType,
   TemplateSettings,
@@ -39,7 +40,10 @@ interface UseCommunicationResult {
   isSaving: boolean
 }
 
-export function useCommunication(type: NotificationType): UseCommunicationResult {
+// useCommunication is the hook for the original Instagram-DM cart-flow
+// notifications. Post-payment (email) types use useEmailCommunication
+// because their shape (subject + body_html) is different.
+export function useCommunication(type: CartNotificationType): UseCommunicationResult {
   const { getToken } = useAuth()
   const qc = useQueryClient()
   const storeQuery = useStore()
@@ -65,7 +69,7 @@ export function useCommunication(type: NotificationType): UseCommunicationResult
     staleTime: 1000 * 60 * 30,
   })
 
-  const template = useMemo(() => {
+  const template = useMemo<TemplateSettings | null>(() => {
     const s = settingsQuery.data
     if (!s) return null
     return s[type] ?? null
@@ -77,20 +81,26 @@ export function useCommunication(type: NotificationType): UseCommunicationResult
       const token = await getToken()
 
       const current = settingsQuery.data
-      const merged: NotificationSettings = {
+      const merged = {
         checkout_immediate: current?.checkout_immediate ?? null,
         item_added: current?.item_added ?? null,
         checkout_reminder: current?.checkout_reminder ?? null,
+        payment_confirmed: current?.payment_confirmed ?? null,
+        shipped: current?.shipped ?? null,
+        delivered: current?.delivered ?? null,
       }
       merged[type] = { enabled: payload.enabled, template: payload.template }
 
-      // Save the templates
+      // Save the templates (preserves email-side fields untouched).
       await notificationService.updateSettings(
         storeId,
         {
           checkout_immediate: merged.checkout_immediate,
           item_added: merged.item_added,
           checkout_reminder: merged.checkout_reminder,
+          payment_confirmed: merged.payment_confirmed,
+          shipped: merged.shipped,
+          delivered: merged.delivered,
         },
         token,
       )

@@ -26,7 +26,7 @@ function NotificationCard({ card, onClick }: NotificationCardProps) {
           status={
             <NotificationCardStatus status={card.enabled ? "active" : "paused"} />
           }
-          meta={<NotificationCardMeta triggerLabel={card.triggerLabel} />}
+          meta={<NotificationCardMeta channel={card.channel} triggerLabel={card.triggerLabel} />}
         />
         <ChevronRight className="h-4 w-4 self-center shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
       </div>

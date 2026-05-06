@@ -4,10 +4,16 @@ import Link from "next/link"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotificationCard } from "@/components/communications/NotificationCard"
-import { useCommunications } from "@/hooks/communications"
+import { useCommunications, type CommunicationCard as CommunicationCardData } from "@/hooks/communications"
 
 export default function CommunicationsPage() {
   const { isLoading, cards } = useCommunications()
+
+  // Two sections — channels behave differently enough to warrant separation.
+  // Cart-flow cards are IG DM templates the lojista has had since v1; the
+  // post-payment cards are email-only and arrived in this phase.
+  const cartCards = cards.filter((c) => c.channel === "instagram_dm")
+  const emailCards = cards.filter((c) => c.channel === "email")
 
   return (
     <div className="flex flex-col gap-6">
@@ -15,22 +21,10 @@ export default function CommunicationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Comunicações</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Mensagens automáticas que sua loja envia pelo Instagram em cada
-            momento da jornada do cliente.
+            Mensagens automáticas que sua loja envia em cada momento da jornada
+            do cliente — antes, durante e depois da compra.
           </p>
         </div>
-        <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-          </span>
-          Instagram conectado
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium tracking-tight">Modelos de mensagem</h2>
-        <span className="font-mono text-xs text-muted-foreground">{cards.length} tipos</span>
       </div>
 
       {isLoading ? (
@@ -40,15 +34,45 @@ export default function CommunicationsPage() {
           <Skeleton className="h-[110px] w-full rounded-xl" />
         </div>
       ) : (
-        <div className="flex flex-col gap-5">
-          {cards.map((card) => (
-            <Link key={card.type} href={`/settings/communications/${card.type}`}>
-              <NotificationCard card={card} onClick={() => undefined} />
-            </Link>
-          ))}
+        <div className="flex flex-col gap-10">
+          <Section
+            title="Mensagens do carrinho"
+            subtitle="Instagram DM enquanto o cliente ainda está decidindo a compra."
+            cards={cartCards}
+          />
+          <Section
+            title="Comunicações pós-venda"
+            subtitle="Emails automáticos depois que o pagamento é confirmado."
+            cards={emailCards}
+          />
         </div>
       )}
     </div>
   )
 }
 
+function Section({
+  title,
+  subtitle,
+  cards,
+}: {
+  title: string
+  subtitle: string
+  cards: CommunicationCardData[]
+}) {
+  return (
+    <section>
+      <div className="mb-4">
+        <h2 className="text-sm font-medium tracking-tight">{title}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="flex flex-col gap-5">
+        {cards.map((card) => (
+          <Link key={card.type} href={`/settings/communications/${card.type}`}>
+            <NotificationCard card={card} onClick={() => undefined} />
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}

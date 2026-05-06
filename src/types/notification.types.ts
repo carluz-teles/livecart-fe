@@ -5,11 +5,22 @@ export interface TemplateSettings {
   template: string
 }
 
+// Email-channel template (post-payment notifications). Subject and body_html
+// can be empty — empty means "use the BE default for this type".
+export interface EmailTemplateSettings {
+  enabled: boolean
+  subject: string
+  body_html: string
+}
+
 // Notification settings for a store
 export interface NotificationSettings {
   checkout_immediate: TemplateSettings | null
   item_added: TemplateSettings | null
   checkout_reminder: TemplateSettings | null
+  payment_confirmed?: EmailTemplateSettings | null
+  shipped?: EmailTemplateSettings | null
+  delivered?: EmailTemplateSettings | null
 }
 
 // Request payload for updating notification settings
@@ -17,6 +28,9 @@ export interface UpdateNotificationSettingsPayload {
   checkout_immediate?: TemplateSettings | null
   item_added?: TemplateSettings | null
   checkout_reminder?: TemplateSettings | null
+  payment_confirmed?: EmailTemplateSettings | null
+  shipped?: EmailTemplateSettings | null
+  delivered?: EmailTemplateSettings | null
 }
 
 // Response for template preview
@@ -40,13 +54,36 @@ export interface AvailableVariablesResponse {
   variables: TemplateVariable[]
 }
 
-// Notification type identifiers — must match BE notification.NotificationType
-export const NOTIFICATION_TYPES = [
+// Cart-flow notifications go through Instagram DM (the original 3 templates).
+export const CART_NOTIFICATION_TYPES = [
   "checkout_immediate",
   "item_added",
   "checkout_reminder",
 ] as const
+export type CartNotificationType = (typeof CART_NOTIFICATION_TYPES)[number]
+
+// Post-payment notifications go through email. Subject + body_html shape.
+export const POST_PAYMENT_NOTIFICATION_TYPES = [
+  "payment_confirmed",
+  "shipped",
+  "delivered",
+] as const
+export type PostPaymentNotificationType =
+  (typeof POST_PAYMENT_NOTIFICATION_TYPES)[number]
+
+// Combined union for the FE editor.
+export const NOTIFICATION_TYPES = [
+  ...CART_NOTIFICATION_TYPES,
+  ...POST_PAYMENT_NOTIFICATION_TYPES,
+] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
+
+export const POST_PAYMENT_TYPE_SET: Set<string> = new Set(
+  POST_PAYMENT_NOTIFICATION_TYPES,
+)
+export function isPostPaymentType(type: string): type is PostPaymentNotificationType {
+  return POST_PAYMENT_TYPE_SET.has(type)
+}
 
 // Test recipient state returned by GET /notifications/test/recipient
 export interface TestRecipient {
@@ -57,8 +94,16 @@ export interface TestRecipient {
   setup_code_active: boolean
 }
 
-// Payload for POST /notifications/test
+// Payload for POST /notifications/test (Instagram DM channel).
 export interface SendTestPayload {
   type: NotificationType
   template: string
+}
+
+// Payload for POST /notifications/test/email (email channel).
+export interface SendTestEmailPayload {
+  type: PostPaymentNotificationType
+  subject: string
+  body_html: string
+  recipient_email: string
 }

@@ -6,6 +6,7 @@ import type {
   AvailableVariablesResponse,
   TestRecipient,
   SendTestPayload,
+  SendTestEmailPayload,
 } from "@/types/notification.types"
 
 export const notificationService = {
@@ -36,4 +37,17 @@ export const notificationService = {
   // Send a real test DM to the configured recipient
   sendTest: (storeId: string, payload: SendTestPayload, token?: string | null) =>
     apiClient.post<{ sent: boolean }>(`/stores/${storeId}/notifications/test`, payload, token),
+
+  // Send a real test email rendered through the override shell to an
+  // arbitrary address (the FE auto-fills the lojista's Clerk email).
+  sendTestEmail: (
+    storeId: string,
+    payload: SendTestEmailPayload,
+    token?: string | null,
+  ) =>
+    apiClient.post<{ sent: boolean }>(
+      `/stores/${storeId}/notifications/test/email`,
+      payload,
+      token,
+    ),
 }
