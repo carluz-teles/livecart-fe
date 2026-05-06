@@ -1,0 +1,30 @@
+.story-ring {
+  background: linear-gradient(
+    135deg,
+    #feda75 0%,
+    #fa7e1e 25%,
+    #d62976 50%,
+    #962fbf 75%,
+    #4f5bd5 100%
+  );
+  padding: 2px;
+  border-radius: 9999px;
+}
+
+.story-ring-inner {
+  background: #ffffff;
+  padding: 1.5px;
+  border-radius: 9999px;
+}
+
+.ig-dynamic-island {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 28px;
+  background: #000;
+  border-radius: 9999px;
+  z-index: 5;
+}

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   ShoppingCart,
   Clock,
@@ -7,8 +8,6 @@ import {
   Loader2,
   Pencil,
   MessageSquare,
-  Zap,
-  Radio,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -22,19 +21,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { InlineTemplateEditor } from "@/components/settings/InlineTemplateEditor"
 import { useCheckoutSettings } from "@/hooks/settings/useCheckoutSettings"
-import { defaultTemplates } from "@/schemas/checkout-settings.schema"
 
 export default function CheckoutSettingsPage() {
-  const {
-    isLoading,
-    isSaving,
-    form,
-    variables,
-    onSubmit,
-    handlePreview,
-  } = useCheckoutSettings()
+  const { isLoading, isSaving, form, onSubmit } = useCheckoutSettings()
 
   const {
     register,
@@ -44,13 +34,9 @@ export default function CheckoutSettingsPage() {
     formState: { errors, isDirty },
   } = form
 
-  // Watch values for controlled components
   const enabled = watch("enabled")
   const allowEdit = watch("allowEdit")
   const reserveStock = watch("reserveStock")
-  const realTimeCart = watch("realTimeCart")
-  const sendExpirationReminder = watch("sendExpirationReminder")
-  const templates = watch("templates")
 
   if (isLoading) {
     return (
@@ -196,7 +182,7 @@ export default function CheckoutSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Section 4: Automatic Messages */}
+      {/* Section 4: pointer to Comunicações */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -204,131 +190,10 @@ export default function CheckoutSettingsPage() {
             Mensagens automáticas
           </CardTitle>
           <CardDescription>
-            Configure quando e o que enviar para seus clientes via Instagram DM
+            Mensagens enviadas pelo Instagram em cada etapa da jornada agora
+            ficam em <Link href="/settings/communications" className="font-medium text-primary hover:underline">Comunicações</Link>.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Real-time Cart */}
-          <div className="rounded-lg border bg-card">
-            <div className="flex items-start justify-between gap-4 p-4">
-              <div className="space-y-0.5">
-                <Label
-                  htmlFor="realTimeCart"
-                  className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                >
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                  Carrinho em tempo real
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Envia mensagem toda vez que o cliente adiciona um item
-                </p>
-              </div>
-              <Switch
-                id="realTimeCart"
-                checked={realTimeCart}
-                onCheckedChange={(checked) =>
-                  setValue("realTimeCart", checked, { shouldDirty: true })
-                }
-              />
-            </div>
-
-            {realTimeCart && (
-              <div className="border-t px-4 pb-4 pt-3 space-y-4">
-                {/* Template: First Item */}
-                <InlineTemplateEditor
-                  id="first-item"
-                  label="Primeiro item"
-                  description="Enviada quando o cliente adiciona o primeiro item"
-                  enabled={templates.checkout_immediate?.enabled ?? true}
-                  onEnabledChange={(checked) =>
-                    setValue("templates.checkout_immediate.enabled", checked, {
-                      shouldDirty: true,
-                    })
-                  }
-                  template={templates.checkout_immediate?.template ?? ""}
-                  defaultTemplate={defaultTemplates.checkout_immediate}
-                  onTemplateChange={(template) =>
-                    setValue("templates.checkout_immediate.template", template, {
-                      shouldDirty: true,
-                    })
-                  }
-                  variables={variables}
-                  onPreview={handlePreview}
-                />
-
-                {/* Template: New Items */}
-                <InlineTemplateEditor
-                  id="new-items"
-                  label="Novos itens"
-                  description="Enviada quando o cliente adiciona mais itens"
-                  enabled={templates.item_added?.enabled ?? true}
-                  onEnabledChange={(checked) =>
-                    setValue("templates.item_added.enabled", checked, {
-                      shouldDirty: true,
-                    })
-                  }
-                  template={templates.item_added?.template ?? ""}
-                  defaultTemplate={defaultTemplates.item_added}
-                  onTemplateChange={(template) =>
-                    setValue("templates.item_added.template", template, {
-                      shouldDirty: true,
-                    })
-                  }
-                  variables={variables}
-                  onPreview={handlePreview}
-                />
-
-              </div>
-            )}
-          </div>
-
-          {/* Expiration Reminder */}
-          <InlineTemplateEditor
-            id="expiration-reminder"
-            label="Lembrete de expiração"
-            description="Enviada alguns minutos antes do carrinho expirar"
-            enabled={sendExpirationReminder}
-            onEnabledChange={(checked) =>
-              setValue("sendExpirationReminder", checked, { shouldDirty: true })
-            }
-            template={templates.checkout_reminder?.template ?? ""}
-            defaultTemplate={defaultTemplates.checkout_reminder}
-            onTemplateChange={(template) =>
-              setValue("templates.checkout_reminder.template", template, {
-                shouldDirty: true,
-              })
-            }
-            variables={variables}
-            onPreview={handlePreview}
-            additionalFields={
-              sendExpirationReminder && (
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="expirationReminderMinutes"
-                    className="text-sm"
-                  >
-                    Enviar lembrete X minutos antes
-                  </Label>
-                  <Input
-                    id="expirationReminderMinutes"
-                    type="number"
-                    min={1}
-                    max={60}
-                    className="max-w-[200px]"
-                    {...register("expirationReminderMinutes", {
-                      valueAsNumber: true,
-                    })}
-                  />
-                  {errors.expirationReminderMinutes && (
-                    <p className="text-sm text-destructive">
-                      {errors.expirationReminderMinutes.message}
-                    </p>
-                  )}
-                </div>
-              )
-            }
-          />
-        </CardContent>
       </Card>
 
       {/* Actions */}

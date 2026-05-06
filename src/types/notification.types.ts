@@ -39,3 +39,26 @@ export interface TemplateVariable {
 export interface AvailableVariablesResponse {
   variables: TemplateVariable[]
 }
+
+// Notification type identifiers — must match BE notification.NotificationType
+export const NOTIFICATION_TYPES = [
+  "checkout_immediate",
+  "item_added",
+  "checkout_reminder",
+] as const
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
+
+// Test recipient state returned by GET /notifications/test/recipient
+export interface TestRecipient {
+  configured: boolean
+  handle?: string
+  setup_code?: string
+  setup_expires_at?: string
+  setup_code_active: boolean
+}
+
+// Payload for POST /notifications/test
+export interface SendTestPayload {
+  type: NotificationType
+  template: string
+}

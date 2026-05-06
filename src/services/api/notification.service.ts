@@ -4,6 +4,8 @@ import type {
   UpdateNotificationSettingsPayload,
   PreviewTemplateResponse,
   AvailableVariablesResponse,
+  TestRecipient,
+  SendTestPayload,
 } from "@/types/notification.types"
 
 export const notificationService = {
@@ -22,4 +24,16 @@ export const notificationService = {
   // Get available template variables
   getVariables: (storeId: string, token?: string | null) =>
     apiClient.get<AvailableVariablesResponse>(`/stores/${storeId}/notifications/variables`, token),
+
+  // Test recipient: read current state (configured handle + active setup code)
+  getTestRecipient: (storeId: string, token?: string | null) =>
+    apiClient.get<TestRecipient>(`/stores/${storeId}/notifications/test/recipient`, token),
+
+  // Test recipient: start setup — returns the magic code to DM from personal IG
+  startTestSetup: (storeId: string, token?: string | null) =>
+    apiClient.post<TestRecipient>(`/stores/${storeId}/notifications/test/setup`, {}, token),
+
+  // Send a real test DM to the configured recipient
+  sendTest: (storeId: string, payload: SendTestPayload, token?: string | null) =>
+    apiClient.post<{ sent: boolean }>(`/stores/${storeId}/notifications/test`, payload, token),
 }
