@@ -34,13 +34,13 @@ export default function CommunicationsPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-5">
           <Skeleton className="h-[110px] w-full rounded-xl" />
           <Skeleton className="h-[110px] w-full rounded-xl" />
           <Skeleton className="h-[110px] w-full rounded-xl" />
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-5">
           {cards.map((card) => (
             <Link key={card.type} href={`/settings/communications/${card.type}`}>
               <NotificationCard card={card} onClick={() => undefined} />

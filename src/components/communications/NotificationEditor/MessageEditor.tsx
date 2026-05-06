@@ -129,9 +129,9 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
     const overLimit = byteLen > MAX_BYTES
 
     return (
-      <div className="rounded-md border bg-card">
+      <div className="rounded-xl border bg-muted/30">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
           <EmojiPicker onPick={insertEmoji} />
           <VariableMenu variables={variables} onPick={insertVariable} />
           <div className="flex-1" />
@@ -147,9 +147,11 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
           </Button>
         </div>
 
-        {/* Editor */}
-        <div className="p-4">
-          <EditorContent editor={editor} />
+        {/* Writing surface — distinctly elevated above the panel */}
+        <div className="px-3 pb-3">
+          <div className="rounded-lg border bg-card p-4 shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
+            <EditorContent editor={editor} />
+          </div>
           {/* Char progress */}
           <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
             <div
@@ -167,7 +169,7 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
         </div>
 
         {/* Footer hint */}
-        <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
           <span>
             Aperte{" "}
             <kbd className="rounded border bg-card px-1 font-mono text-[11px]">
