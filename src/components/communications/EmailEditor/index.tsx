@@ -141,11 +141,11 @@ function EmailEditor({ type }: EmailEditorProps) {
                 Corpo
               </p>
               <div
-                className="prose prose-sm max-w-none text-foreground"
+                className="email-editor-content text-[15px] leading-[1.6] text-foreground"
                 dangerouslySetInnerHTML={{
                   __html:
                     bodyHTML ||
-                    `<p class='text-muted-foreground italic'>Vazio: usaremos o template padrão da LiveCart.</p>`,
+                    `<p style="color:hsl(var(--muted-foreground));font-style:italic">Vazio: usaremos o template padrão da LiveCart.</p>`,
                 }}
               />
             </div>

@@ -1,0 +1,81 @@
+/*
+ * In-editor visual styles. The shipped HTML lands inside the override email
+ * shell on the BE — these rules only affect what the merchant sees while
+ * editing. We keep them minimal and email-friendly: H2/H3 sizes that match
+ * what Gmail-rendered emails will produce, list margins that read right.
+ */
+
+.email-editor-content > * + * {
+  margin-top: 0.6em;
+}
+
+.email-editor-content h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: hsl(var(--foreground));
+  margin-top: 1em;
+}
+
+.email-editor-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+  margin-top: 1em;
+}
+
+.email-editor-content p {
+  margin: 0;
+}
+
+.email-editor-content ul,
+.email-editor-content ol {
+  padding-left: 1.5rem;
+}
+
+.email-editor-content ul {
+  list-style: disc;
+}
+
+.email-editor-content ol {
+  list-style: decimal;
+}
+
+.email-editor-content li > p {
+  margin: 0;
+}
+
+.email-editor-content blockquote {
+  border-left: 3px solid hsl(var(--primary) / 0.6);
+  padding: 0.25rem 1rem;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+.email-editor-content hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 1.5em 0;
+}
+
+.email-editor-content a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.email-editor-content strong {
+  font-weight: 600;
+}
+
+/* TipTap Placeholder: shows the configured text in the first empty paragraph. */
+.email-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
