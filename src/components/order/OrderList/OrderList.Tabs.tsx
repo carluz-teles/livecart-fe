@@ -60,6 +60,10 @@ export const ORDER_TABS: OrderTab[] = [
       needsAttention: true,
     },
   },
+  // Every tab below excludes needs_attention rows so the triage buckets are
+  // mutually exclusive — a problem cart shows up only in "Precisam atenção",
+  // never doubled up in "Para despachar" because it happens to also be paid
+  // without a shipment. "Todos" stays as the catch-all for full visibility.
   {
     id: "awaiting_payment",
     label: "Aguardando pagamento",
@@ -68,16 +72,18 @@ export const ORDER_TABS: OrderTab[] = [
     filters: {
       status: ["active", "checkout"],
       paymentStatus: ["pending"],
+      needsAttention: false,
     },
   },
   {
     id: "to_ship",
     label: "Para despachar",
     description:
-      "Pedidos pagos sem envio criado. Próximo passo é gerar o envio no Melhor Envio ou SmartEnvios.",
+      "Pedidos pagos sem envio criado e sem nenhum problema pendente. Próximo passo é gerar o envio no Melhor Envio ou SmartEnvios.",
     filters: {
       paymentStatus: ["paid"],
       hasShipment: false,
+      needsAttention: false,
     },
   },
   {
@@ -94,6 +100,7 @@ export const ORDER_TABS: OrderTab[] = [
         "in_transit",
         "out_for_delivery",
       ],
+      needsAttention: false,
     },
   },
   {
@@ -102,6 +109,7 @@ export const ORDER_TABS: OrderTab[] = [
     description: "Envios entregues ao destinatário pela transportadora.",
     filters: {
       shipmentStatus: ["delivered"],
+      needsAttention: false,
     },
   },
 ]

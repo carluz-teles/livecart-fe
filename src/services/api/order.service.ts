@@ -15,15 +15,23 @@ export interface RegenerateCheckoutResponse {
   expiresAt: string
 }
 
-// buildQueryString omits `false` booleans, but the orders API uses hasShipment
-// as a tri-state filter where `false` is meaningful ("orders without shipment").
-// Serializing it as a string preserves both states without changing the
+// buildQueryString omits `false` booleans, but the orders API uses
+// hasShipment and needsAttention as tri-state filters where `false` carries
+// real meaning ("orders without shipment", "exclude the problems bucket").
+// Serializing each as a string preserves both states without changing the
 // shared utility.
 function serializeOrderFilters(filters: OrderListParams["filters"]) {
   if (!filters) return undefined
-  const { hasShipment, ...rest } = filters
-  if (hasShipment === undefined) return rest
-  return { ...rest, hasShipment: hasShipment ? "true" : "false" }
+  const { hasShipment, needsAttention, ...rest } = filters
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const out: Record<string, any> = { ...rest }
+  if (hasShipment !== undefined) {
+    out.hasShipment = hasShipment ? "true" : "false"
+  }
+  if (needsAttention !== undefined) {
+    out.needsAttention = needsAttention ? "true" : "false"
+  }
+  return out
 }
 
 export const orderService = {
