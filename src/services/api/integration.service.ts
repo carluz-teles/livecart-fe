@@ -11,6 +11,7 @@ import type {
   Product,
   InstagramLivesResponse,
   ConnectSmartEnviosPayload,
+  ConnectPagarmePayload,
   ProviderURLs,
   ERPHealthCheckResponse,
 } from "@/types"
@@ -122,6 +123,19 @@ export const integrationService = {
   ) =>
     apiClient.post<Integration>(
       `/stores/${storeId}/integrations/shipping/smartenvios/connect`,
+      payload,
+      token
+    ),
+
+  // Connect or rotate Pagar.me API keys. Backend validates the secret
+  // against /customers in real time — 422 means the keys are invalid.
+  connectPagarme: (
+    storeId: string,
+    payload: ConnectPagarmePayload,
+    token?: string | null
+  ) =>
+    apiClient.post<Integration>(
+      `/stores/${storeId}/integrations/payment/pagarme/connect`,
       payload,
       token
     ),

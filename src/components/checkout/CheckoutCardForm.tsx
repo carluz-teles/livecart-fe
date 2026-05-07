@@ -72,6 +72,39 @@ export function CheckoutCardForm(props: CheckoutCardFormProps) {
 // Shared utilities & shells
 // ─────────────────────────────────────────────────────────────────────────────
 
+// readPagarmeTokenError extracts a friendly PT-BR message from a failed
+// /v5/tokens response. Pagar.me v5 returns errors as
+// `{ message, errors: { "card.number": ["..."], ... } }` — we surface the
+// first field-level message when present, mapping the technical field key
+// to a human label so the buyer sees "CVV inválido" not "card.cvv ...".
+async function readPagarmeTokenError(response: Response): Promise<string> {
+  const fieldLabels: Record<string, string> = {
+    "card.number": "Número do cartão",
+    "card.holder_name": "Nome no cartão",
+    "card.holder_document": "CPF",
+    "card.exp_month": "Validade",
+    "card.exp_year": "Validade",
+    "card.cvv": "CVV",
+  }
+  try {
+    const data = (await response.json()) as {
+      message?: string
+      errors?: Record<string, string[]>
+    }
+    if (data.errors) {
+      const [field, msgs] = Object.entries(data.errors)[0] ?? []
+      if (field && msgs?.[0]) {
+        return `${fieldLabels[field] ?? field}: ${msgs[0]}`
+      }
+    }
+    if (data.message) return data.message
+  } catch {
+    /* fall through */
+  }
+  if (response.status === 422) return "Verifique os dados do cartão."
+  return "Erro ao validar dados do cartão."
+}
+
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -735,6 +768,7 @@ function PagarmeCardForm({
 
     try {
       const [expMonth, expYear] = cardExpiry.split("/")
+      const holderDocument = customer.customerDocument?.replace(/\D/g, "") ?? ""
 
       const tokenResponse = await fetch(
         "https://api.pagar.me/core/v5/tokens?appId=" + publicKey,
@@ -746,6 +780,7 @@ function PagarmeCardForm({
             card: {
               number: cardNumber.replace(/\s/g, ""),
               holder_name: cardName || customer.customerName,
+              holder_document: holderDocument,
               exp_month: parseInt(expMonth ?? "0"),
               exp_year: parseInt(
                 (expYear?.length ?? 0) === 2 ? "20" + expYear : expYear ?? "0"
@@ -757,7 +792,7 @@ function PagarmeCardForm({
       )
 
       if (!tokenResponse.ok) {
-        throw new Error("Erro ao validar dados do cartão")
+        throw new Error(await readPagarmeTokenError(tokenResponse))
       }
 
       const tokenData = await tokenResponse.json()

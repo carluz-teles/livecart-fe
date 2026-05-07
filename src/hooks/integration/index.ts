@@ -6,6 +6,7 @@ export {
 } from "./useConnectIntegration"
 export { useImportERPProduct } from "./useImportERPProduct"
 export { useConnectTiny } from "./useConnectTiny"
+export { useConnectPagarme } from "./useConnectPagarme"
 export { useDisconnectIntegration } from "./useDisconnectIntegration"
 export { useTestConnection } from "./useTestConnection"
 export { useSearchERPProducts } from "./useSearchERPProducts"

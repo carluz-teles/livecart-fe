@@ -70,6 +70,7 @@ import {
   useConnectApiKey,
   useConnectTiny,
   useConnectSmartEnvios,
+  useConnectPagarme,
   useDisconnectIntegration,
   useTestConnection,
   useProviderURLs,
@@ -227,6 +228,7 @@ function IntegrationsContent() {
   const connectApiKey = useConnectApiKey()
   const connectTiny = useConnectTiny()
   const connectSmartEnvios = useConnectSmartEnvios()
+  const connectPagarme = useConnectPagarme()
   const disconnectIntegration = useDisconnectIntegration()
   const testConnection = useTestConnection()
 
@@ -241,6 +243,13 @@ function IntegrationsContent() {
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
   const tinyProviderURLs = useProviderURLs("tiny", tinyDialog)
+  const [pagarmeDialog, setPagarmeDialog] = useState(false)
+  const [pagarmeSecretKey, setPagarmeSecretKey] = useState("")
+  const [pagarmePublicKey, setPagarmePublicKey] = useState("")
+  const [pagarmeWebhookUser, setPagarmeWebhookUser] = useState("")
+  const [pagarmeWebhookPass, setPagarmeWebhookPass] = useState("")
+  const [pagarmeError, setPagarmeError] = useState<string | null>(null)
+  const pagarmeProviderURLs = useProviderURLs("pagarme", pagarmeDialog)
   const [detailsSheet, setDetailsSheet] = useState<{
     integration: Integration
     provider: ProviderConfig
@@ -313,9 +322,80 @@ function IntegrationsContent() {
         }
         break
       case "api_key":
+        // Pagar.me has its own dialog (secret + public + webhook auth);
+        // the generic single-key dialog only fits Tiny / SmartEnvios.
+        if (provider.id === "pagarme") {
+          setPagarmeDialog(true)
+          break
+        }
         setApiKeyDialog(provider.id)
         break
     }
+  }
+
+  const closePagarmeDialog = () => {
+    setPagarmeDialog(false)
+    setPagarmeSecretKey("")
+    setPagarmePublicKey("")
+    setPagarmeWebhookUser("")
+    setPagarmeWebhookPass("")
+    setPagarmeError(null)
+  }
+
+  const handleConnectPagarme = () => {
+    const secret = pagarmeSecretKey.trim()
+    const publicKey = pagarmePublicKey.trim()
+    if (!secret || !publicKey) return
+
+    setPagarmeError(null)
+
+    const secretEnv = secret.startsWith("sk_test_")
+      ? "test"
+      : secret.startsWith("sk_live_")
+        ? "live"
+        : null
+    const publicEnv = publicKey.startsWith("pk_test_")
+      ? "test"
+      : publicKey.startsWith("pk_live_")
+        ? "live"
+        : null
+    if (!secretEnv) {
+      setPagarmeError("Chave secreta deve começar com sk_test_ ou sk_live_.")
+      return
+    }
+    if (!publicEnv) {
+      setPagarmeError("Chave pública deve começar com pk_test_ ou pk_live_.")
+      return
+    }
+    if (secretEnv !== publicEnv) {
+      setPagarmeError(
+        "As chaves precisam ser do mesmo ambiente (ambas test ou ambas live)."
+      )
+      return
+    }
+
+    connectPagarme.mutate(
+      {
+        secretKey: secret,
+        publicKey,
+        webhookUsername: pagarmeWebhookUser.trim() || undefined,
+        webhookPassword: pagarmeWebhookPass.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Pagar.me conectada com sucesso!")
+          closePagarmeDialog()
+        },
+        onError: (err) => {
+          const apiErr = err as unknown as ApiError
+          const fallback =
+            apiErr?.status === 422
+              ? "Chaves inválidas. Confira os valores e tente novamente."
+              : "Falha ao conectar Pagar.me. Tente novamente."
+          setPagarmeError(apiErr?.message || fallback)
+        },
+      }
+    )
   }
 
   const closeApiKeyDialog = () => {
@@ -854,6 +934,153 @@ function IntegrationsContent() {
                 <ExternalLink className="mr-2 h-4 w-4" />
               )}
               Continuar com OAuth
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pagar.me API Keys Dialog */}
+      <Dialog
+        open={pagarmeDialog}
+        onOpenChange={(open) => {
+          if (!open) closePagarmeDialog()
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Conectar Pagar.me</DialogTitle>
+            <DialogDescription>
+              Cole as chaves de API encontradas em{" "}
+              <a
+                href="https://dashboard.pagar.me"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Configurações → Chaves de API
+              </a>{" "}
+              da Pagar.me. O ambiente (sandbox / produção) é detectado pelo
+              prefixo da chave.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                    URL de webhooks para configurar na Pagar.me
+                  </p>
+                  <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                    Cadastre esta URL em <strong>Configurações → Webhooks</strong>
+                    {" "}com os eventos <code>order.paid</code>,{" "}
+                    <code>order.payment_failed</code> e{" "}
+                    <code>order.canceled</code>. Se você proteger o webhook
+                    com Basic Auth, use os mesmos valores nos campos abaixo.
+                  </p>
+                </div>
+              </div>
+
+              {pagarmeProviderURLs.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando URL...
+                </div>
+              ) : pagarmeProviderURLs.isError ? (
+                <div className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>
+                    Não foi possível carregar a URL. Recarregue a página e
+                    tente novamente.
+                  </span>
+                </div>
+              ) : pagarmeProviderURLs.data?.webhookUrl ? (
+                <CopyableURL
+                  label="URL de Webhooks"
+                  value={pagarmeProviderURLs.data.webhookUrl}
+                />
+              ) : null}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="pagarme-secret">
+                Chave secreta <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="pagarme-secret"
+                type="password"
+                placeholder="sk_test_... ou sk_live_..."
+                value={pagarmeSecretKey}
+                onChange={(e) => {
+                  setPagarmeSecretKey(e.target.value)
+                  if (pagarmeError) setPagarmeError(null)
+                }}
+                aria-invalid={!!pagarmeError}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pagarme-public">
+                Chave pública <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="pagarme-public"
+                placeholder="pk_test_... ou pk_live_..."
+                value={pagarmePublicKey}
+                onChange={(e) => {
+                  setPagarmePublicKey(e.target.value)
+                  if (pagarmeError) setPagarmeError(null)
+                }}
+                aria-invalid={!!pagarmeError}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="pagarme-webhook-user">Webhook · usuário</Label>
+                <Input
+                  id="pagarme-webhook-user"
+                  placeholder="Opcional"
+                  value={pagarmeWebhookUser}
+                  onChange={(e) => setPagarmeWebhookUser(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pagarme-webhook-pass">Webhook · senha</Label>
+                <Input
+                  id="pagarme-webhook-pass"
+                  type="password"
+                  placeholder="Opcional"
+                  value={pagarmeWebhookPass}
+                  onChange={(e) => setPagarmeWebhookPass(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {pagarmeError && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>{pagarmeError}</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closePagarmeDialog}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConnectPagarme}
+              disabled={
+                !pagarmeSecretKey.trim() ||
+                !pagarmePublicKey.trim() ||
+                connectPagarme.isPending
+              }
+            >
+              {connectPagarme.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Conectar
             </Button>
           </DialogFooter>
         </DialogContent>

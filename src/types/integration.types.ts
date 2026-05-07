@@ -258,6 +258,15 @@ export interface ConnectSmartEnviosPayload {
   env: "production"
 }
 
+export interface ConnectPagarmePayload {
+  secretKey: string
+  publicKey: string
+  // Optional Basic Auth credentials the merchant configured on the
+  // Pagar.me webhook URL — used to validate inbound notifications.
+  webhookUsername?: string
+  webhookPassword?: string
+}
+
 // A carrier service that the store's shipping embarcador has enabled for use.
 // Returned by GET /integrations/shipping/:provider/carriers.
 export interface ShippingCarrier {
