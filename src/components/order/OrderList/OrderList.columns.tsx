@@ -88,6 +88,13 @@ export function isOrderStuck(order: Order): boolean {
   )
 }
 
+// True when the post-payment Tiny order creation rejected this paid cart
+// and the merchant still has to retry. Authoritative signal — overrides
+// the 5-minute "stuck" heuristic which was best-effort.
+export function isOrderERPFailed(order: Order): boolean {
+  return order.erpFinalisationStatus === "failed"
+}
+
 export const orderColumns: ColumnDef<Order>[] = [
   {
     id: "shortId",
@@ -105,17 +112,20 @@ export const orderColumns: ColumnDef<Order>[] = [
     header: () => "Cliente",
     cell: ({ row }) => {
       const order = row.original
-      const stuck = isOrderStuck(order)
+      const erpFailed = isOrderERPFailed(order)
+      const stuck = !erpFailed && isOrderStuck(order)
       const PlatformIcon = PLATFORM_ICON[order.livePlatform] ?? null
       return (
         <div className="flex items-center gap-2">
-          {stuck && (
+          {(erpFailed || stuck) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                Pago há mais de 5 minutos sem completar — verifique a integração com o ERP.
+                {erpFailed
+                  ? "Pagamento confirmado mas o pedido não foi enviado para a Tiny. Abra para tentar novamente."
+                  : "Pago há mais de 5 minutos sem completar — verifique a integração com o ERP."}
               </TooltipContent>
             </Tooltip>
           )}
@@ -181,15 +191,22 @@ export const orderColumns: ColumnDef<Order>[] = [
     id: "payment",
     header: () => "Pagamento",
     cell: ({ row }) => {
+      const order = row.original
       const cfg = getStatusConfig(
         PAYMENT_STATUS_CONFIG,
-        row.original.paymentStatus,
+        order.paymentStatus,
         "pending",
       )
       return (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
-          {row.original.isFirstPurchase && (
+          {isOrderERPFailed(order) && (
+            // Sits next to the payment-status badge so the row reads "Pago,
+            // mas Tiny falhou" at a glance — the merchant doesn't need to
+            // remember which tab gates which status.
+            <Badge variant="destructive">Tiny falhou</Badge>
+          )}
+          {order.isFirstPurchase && (
             <Badge variant={FIRST_PURCHASE_BADGE.variant}>
               {FIRST_PURCHASE_BADGE.label}
             </Badge>

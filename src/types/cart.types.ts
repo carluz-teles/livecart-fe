@@ -82,6 +82,11 @@ export interface Order {
   expiresAt: string | null
   // True only for the buyer's earliest paid order in this store.
   isFirstPurchase: boolean
+  // Lifecycle of the post-payment Tiny order creation. 'failed' means the
+  // cart is paid but Tiny rejected the order — stock is held, merchant has
+  // to retry from the detail page. List rows render a destructive badge
+  // when this is 'failed' so the row is visible at-a-glance.
+  erpFinalisationStatus: "pending" | "done" | "failed"
 }
 
 export interface OrderComment {
@@ -192,6 +197,10 @@ export interface OrderFilters {
   hasShipment?: boolean
   // Filter by latest shipment status (normalized enum). Implies hasShipment=true.
   shipmentStatus?: ShipmentStatus[]
+  // Filter by ERP finalisation lifecycle. ['failed'] surfaces the
+  // "Precisam atenção" tab on the orders list — paid carts that blew up
+  // in Tiny mid-flow and still need a retry from the merchant.
+  erpFinalisation?: Array<"pending" | "done" | "failed">
 }
 
 // Query params for listing orders
