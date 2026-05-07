@@ -5,6 +5,7 @@ import { OrderDetailHeader } from "./OrderDetail.Header"
 import { OrderDetailActions } from "./OrderDetail.Actions"
 import { OrderDetailBody } from "./OrderDetail.Body"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
+import { OrderDetailERPRetryBanner } from "./OrderDetail.ERPRetryBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailPayment } from "./OrderDetail.Payment"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
@@ -33,6 +34,7 @@ export const OrderDetail = {
   Actions: OrderDetailActions,
   Body: OrderDetailBody,
   Customer: OrderDetailCustomer,
+  ERPRetryBanner: OrderDetailERPRetryBanner,
   Payment: OrderDetailPayment,
   Shipping: OrderDetailShipping,
   Items: OrderDetailItems,

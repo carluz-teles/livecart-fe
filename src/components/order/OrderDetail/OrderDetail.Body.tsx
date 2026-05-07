@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
+import { OrderDetailERPRetryBanner } from "./OrderDetail.ERPRetryBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
@@ -35,22 +36,29 @@ export function OrderDetailBody() {
   const { order } = ctx.state
 
   return (
-    // Mobile stacks the rail above the items because those cards carry the
-    // highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
-    // Desktop reverts to natural main / aside flow.
-    <div className="grid gap-4 lg:grid-cols-12">
-      <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
-        <OrderDetailItems />
-        <OrderDetailUpsell />
-        <OrderDetailLogistics />
-        <OrderDetailHistory />
-      </main>
-      <aside className="order-1 flex flex-col gap-4 lg:col-span-4 lg:order-none">
-        <OrderDetailPayment />
-        <OrderDetailCustomer />
-        <OrderDetailShipping />
-        <SummaryLiveCard order={order} />
-      </aside>
+    <div className="flex flex-col gap-4">
+      {/* High-priority banner: paid carts whose Tiny order failed to finalise.
+          Lives above the grid so it's the first thing the merchant sees on
+          opening the page — the action it surfaces (retry) blocks fulfilment. */}
+      <OrderDetailERPRetryBanner />
+
+      {/* Mobile stacks the rail above the items because those cards carry the
+          highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
+          Desktop reverts to natural main / aside flow. */}
+      <div className="grid gap-4 lg:grid-cols-12">
+        <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
+          <OrderDetailItems />
+          <OrderDetailUpsell />
+          <OrderDetailLogistics />
+          <OrderDetailHistory />
+        </main>
+        <aside className="order-1 flex flex-col gap-4 lg:col-span-4 lg:order-none">
+          <OrderDetailPayment />
+          <OrderDetailCustomer />
+          <OrderDetailShipping />
+          <SummaryLiveCard order={order} />
+        </aside>
+      </div>
     </div>
   )
 }

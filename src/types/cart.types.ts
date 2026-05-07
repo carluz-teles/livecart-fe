@@ -140,6 +140,21 @@ export interface OrderDetail extends Order {
   shipment: Shipment | null
   // Always present — backend snapshots the store onto the order.
   store: OrderStore
+  // Lifecycle of the post-payment Tiny order creation. Drives the "tentar
+  // novamente" banner on the order detail page when CreateOrder failed and
+  // the cart's stock stayed reserved.
+  erpFinalisation: ERPFinalisation | null
+}
+
+// Mirror of integration.Service finalisation state. Status `failed` means
+// the cart still owns the unit (reservation re-created) and the merchant
+// can retry via POST /orders/:id/retry-erp.
+export interface ERPFinalisation {
+  status: "pending" | "done" | "failed"
+  lastError?: string
+  lastAttemptAt?: string
+  attemptsCount: number
+  canRetry: boolean
 }
 
 export interface OrderStats {

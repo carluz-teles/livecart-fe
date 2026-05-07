@@ -96,4 +96,14 @@ export const orderService = {
       {},
       token,
     ),
+
+  // Replays the post-payment Tiny order creation for an order whose
+  // finalisation previously failed. Returns the refreshed OrderDetail so
+  // the FE can swap the banner state in-place.
+  retryERPFinalisation: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<OrderDetail>(
+      `/stores/${storeId}/orders/${id}/retry-erp`,
+      {},
+      token,
+    ),
 }
