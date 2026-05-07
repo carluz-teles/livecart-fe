@@ -33,6 +33,28 @@ interface KpiSpec {
 // avg ticket) so the merchant builds a stable mental model when switching
 // tabs; only the labels and accent shift to match the tab's intent.
 const TAB_KPIS: Record<OrderTabId, [KpiSpec, KpiSpec, KpiSpec]> = {
+  all: [
+    {
+      field: "totalOrders",
+      title: "Total de pedidos",
+      description: "Volume total da loja",
+      icon: Package,
+    },
+    {
+      field: "totalRevenue",
+      title: "Receita acumulada",
+      description: "Soma de todos os pedidos",
+      icon: DollarSign,
+      isCurrency: true,
+    },
+    {
+      field: "avgTicket",
+      title: "Ticket médio",
+      description: "Valor médio por pedido",
+      icon: TrendingUp,
+      isCurrency: true,
+    },
+  ],
   needs_action: [
     {
       field: "totalOrders",

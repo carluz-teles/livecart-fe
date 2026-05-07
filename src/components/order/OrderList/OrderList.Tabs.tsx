@@ -17,6 +17,7 @@ import {
 import { OrderListContext } from "./OrderListContext"
 
 export type OrderTabId =
+  | "all"
   | "needs_action"
   | "awaiting_payment"
   | "to_ship"
@@ -41,9 +42,16 @@ export interface OrderTab {
 // regardless of which subsystem blew up.
 export const ORDER_TABS: OrderTab[] = [
   {
-    // First in the list because every entry here represents a merchant
-    // action item — a customer is waiting on us. Renders in destructive
-    // tone when populated so it's the most visible thing on the page.
+    // Default landing tab — shows every order with no preset filter so the
+    // merchant has a single clean view of their pipeline. User-applied
+    // filters in the dropdown still compose freely on top.
+    id: "all",
+    label: "Todos",
+    description:
+      "Todos os pedidos, sem nenhum filtro pré-aplicado. Use a busca e os filtros para refinar.",
+    filters: {},
+  },
+  {
     id: "needs_action",
     label: "Precisam atenção",
     description:

@@ -21,7 +21,7 @@ interface ProviderProps {
   children: React.ReactNode
 }
 
-const DEFAULT_TAB: OrderTabId = "needs_action"
+const DEFAULT_TAB: OrderTabId = "all"
 
 // Merges the tab pre-set on top of the user-applied filters. Tab keys win on
 // overlap so switching tab is predictable; remaining keys (period, value range,
