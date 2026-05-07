@@ -22,7 +22,11 @@ export function useRetryERPFinalisation() {
         orderKeys.detail(storeId ?? "", id),
         refreshed,
       )
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      // Invalidate the entire orders surface — list pages, per-tab counts,
+      // and stats KPIs all read derived state that flips after a retry. A
+      // narrower invalidation would leave the "Precisam atenção" pill
+      // stale until the next remount.
+      queryClient.invalidateQueries({ queryKey: orderKeys.all })
     },
   })
 }

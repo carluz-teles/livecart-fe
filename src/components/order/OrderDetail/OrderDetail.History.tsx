@@ -26,7 +26,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { formatDateTime, formatRelativeTime } from "@/lib/format"
+import {
+  formatAttemptCount,
+  formatDateTime,
+  formatRelativeTime,
+} from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/cart.types"
 import type { ShipmentStatus } from "@/types/shipment.types"
@@ -37,6 +41,7 @@ type EventKind =
   | "created"
   | "comment"
   | "paid"
+  | "erp_done"
   | "shipment_created"
   | "shipment_event"
   | "delivered"
@@ -67,26 +72,28 @@ const ICON: Record<EventKind, React.ComponentType<{ className?: string }>> = {
   created: Activity,
   comment: MessageCircle,
   paid: CreditCard,
+  erp_done: CheckCircle2,
   shipment_created: Package,
   shipment_event: Truck,
   delivered: CheckCircle2,
   issue: AlertTriangle,
 }
 
+const SUCCESS_TONE =
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+
 // Three tones only — keeps the modal aligned with the rest of the page,
 // which leans on neutral muted + emerald success + destructive alert.
 const TONE: Record<EventKind, string> = {
   created: "bg-muted text-muted-foreground",
   comment: "bg-muted text-muted-foreground",
-  paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  delivered:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  paid: SUCCESS_TONE,
+  erp_done: SUCCESS_TONE,
+  delivered: SUCCESS_TONE,
   shipment_created: "bg-muted text-muted-foreground",
   shipment_event: "bg-muted text-muted-foreground",
   issue: "bg-destructive/15 text-destructive",
 }
-
-const FIVE_MIN_MS = 5 * 60 * 1000
 
 const SHIPMENT_ISSUE_STATUSES: ShipmentStatus[] = [
   "issue",
@@ -134,26 +141,42 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
     })
   }
 
-  // ERP stuck signal — flagged when payment confirmed >5min ago but the
-  // order didn't move to completed. Surfaces in the "Sistema" filter and
-  // drives the alert dot on the card.
-  if (
-    order.paidAt &&
-    order.paymentStatus === "paid" &&
-    order.status !== "completed" &&
-    Date.now() - new Date(order.paidAt).getTime() > FIVE_MIN_MS
-  ) {
-    const stuckAt = new Date(
-      new Date(order.paidAt).getTime() + FIVE_MIN_MS,
-    ).toISOString()
-    out.push({
-      category: "system",
-      kind: "issue",
-      date: stuckAt,
-      title: "ERP não finalizou o pedido",
-      description:
-        "Pagamento confirmado, mas a integração com o ERP não fechou o pedido. Verifique a configuração da integração.",
-    })
+  // ERP finalisation — read the authoritative lifecycle column instead of
+  // a "paid more than 5 min ago" heuristic. Done shows as a positive event
+  // (Pedido enviado para o ERP); failed shows as an issue with the verbatim
+  // ERP message. We anchor the timestamp to lastAttemptAt so the entry
+  // sits where it actually happened in the timeline (sometimes hours after
+  // payment, sometimes after a manual retry).
+  if (order.erpFinalisation) {
+    const finalisation = order.erpFinalisation
+    const at =
+      finalisation.lastAttemptAt ??
+      order.paidAt ??
+      order.createdAt
+    const attemptsSuffix =
+      finalisation.attemptsCount > 1
+        ? ` (após ${formatAttemptCount(finalisation.attemptsCount)})`
+        : ""
+    if (finalisation.status === "done") {
+      out.push({
+        category: "system",
+        kind: "erp_done",
+        date: at,
+        title: `Pedido enviado para o ERP${attemptsSuffix}`,
+        description:
+          "Tudo certo — o pedido foi criado no ERP e o estoque foi baixado.",
+      })
+    } else if (finalisation.status === "failed") {
+      out.push({
+        category: "system",
+        kind: "issue",
+        date: at,
+        title: "Falha ao enviar pedido para o ERP",
+        description:
+          finalisation.lastError?.trim() ||
+          "Tente reenviar pelo botão acima ou contate o suporte.",
+      })
+    }
   }
 
   if (order.shipment) {

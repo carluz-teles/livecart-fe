@@ -6,7 +6,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { useRetryERPFinalisation } from "@/hooks/order"
-import { formatDateTime } from "@/lib/format"
+import { formatAttemptCount, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
 
@@ -78,7 +78,7 @@ export function OrderDetailERPRetryBanner() {
 
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <p className="text-xs text-muted-foreground">
-          {attempts === 1 ? "1 tentativa" : `${attempts} tentativas`}
+          {formatAttemptCount(attempts)}
           {lastAttempt && (
             <>
               {" · "}

@@ -72,6 +72,15 @@ export function formatNumber(value: number): string {
 }
 
 /**
+ * Singular/plural Portuguese rendering of a retry-attempt counter.
+ * @param count - integer attempts count, expected >= 0
+ * @returns e.g. "1 tentativa" / "3 tentativas"
+ */
+export function formatAttemptCount(count: number): string {
+  return count === 1 ? "1 tentativa" : `${count} tentativas`
+}
+
+/**
  * Parses currency string to cents
  * @param value - Currency string (e.g., "19,90" or "R$ 19,90")
  * @returns Amount in cents
