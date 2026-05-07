@@ -10,7 +10,7 @@ import {
   ShoppingCart,
   Settings,
   MessageSquare,
-  HelpCircle,
+  LifeBuoy,
   Building2,
   Users,
   FileText,
@@ -53,15 +53,15 @@ const navSections: NavSection[] = [
   {
     title: "Outros",
     items: [
-      { name: "Configurações", href: "/settings/account", icon: Settings },
+      { name: "Suporte", href: "/support", icon: LifeBuoy },
       { name: "Documentação", href: "/docs", icon: FileText },
+      { name: "Configurações", href: "/settings/account", icon: Settings },
     ],
   },
 ]
 
 const supportItems: NavItem[] = [
   { name: "Feedback", href: "mailto:feedback@livecart.app", icon: MessageSquare, external: true },
-  { name: "Suporte", href: "mailto:suporte@livecart.app", icon: HelpCircle, external: true },
 ]
 
 export function Sidebar() {
