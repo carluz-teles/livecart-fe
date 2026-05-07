@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { OrderListContext } from "./OrderListContext"
-import { isOrderStuck, orderColumns } from "./OrderList.columns"
+import { isOrderERPFailed, orderColumns } from "./OrderList.columns"
 import { OrderListEmpty } from "./OrderList.Empty"
 
 // Skeleton widths mapped to each column id. Kept here (not in columns.tsx)
@@ -121,18 +121,18 @@ export function OrderListTable() {
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => {
-                const stuck = isOrderStuck(row.original)
+                const erpFailed = isOrderERPFailed(row.original)
                 return (
                   <TableRow
                     key={row.id}
                     onClick={() => ctx.actions.openOrder(row.original.id)}
-                    data-state={stuck ? "stuck" : undefined}
+                    data-state={erpFailed ? "erp_failed" : undefined}
                     className={cn(
                       "group/row cursor-pointer transition-colors duration-150 hover:bg-muted/40",
-                      // Stuck rows wear a 3px destructive bar inset on the
-                      // left edge. Subtle bg amplifies the cue on hover
+                      // Failed-ERP rows wear a 3px destructive bar inset on
+                      // the left edge. Subtle bg amplifies the cue on hover
                       // without competing with the bar.
-                      stuck &&
+                      erpFailed &&
                         "bg-destructive/[0.025] shadow-[inset_3px_0_0_0_hsl(var(--destructive))] hover:bg-destructive/[0.05]",
                     )}
                   >

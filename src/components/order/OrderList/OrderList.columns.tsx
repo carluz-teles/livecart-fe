@@ -57,8 +57,6 @@ declare module "@tanstack/react-table" {
   }
 }
 
-const FIVE_MIN_MS = 5 * 60 * 1000
-
 const PLATFORM_ICON: Record<string, LucideIcon> = {
   instagram: Instagram,
   facebook: Facebook,
@@ -76,21 +74,11 @@ const SHIPMENT_BUCKET_BADGE: Record<
   canceled: "secondary",
 }
 
-// Stuck = paid but the cart never moved to completed and it's been more than
-// 5 minutes since payment was confirmed. Surface a destructive cue so the
-// merchant can act before the customer asks.
-export function isOrderStuck(order: Order): boolean {
-  return Boolean(
-    order.paymentStatus === "paid" &&
-      order.status !== "completed" &&
-      order.paidAt &&
-      Date.now() - new Date(order.paidAt).getTime() > FIVE_MIN_MS,
-  )
-}
-
-// True when the post-payment Tiny order creation rejected this paid cart
-// and the merchant still has to retry. Authoritative signal — overrides
-// the 5-minute "stuck" heuristic which was best-effort.
+// True when the post-payment ERP order creation rejected this paid cart
+// and the merchant still has to retry. Authoritative signal off the cart
+// lifecycle column — replaces an earlier 5-min "stuck" heuristic that
+// kept firing on every paid order, including the ones that finalised
+// successfully.
 export function isOrderERPFailed(order: Order): boolean {
   return order.erpFinalisationStatus === "failed"
 }
@@ -113,19 +101,16 @@ export const orderColumns: ColumnDef<Order>[] = [
     cell: ({ row }) => {
       const order = row.original
       const erpFailed = isOrderERPFailed(order)
-      const stuck = !erpFailed && isOrderStuck(order)
       const PlatformIcon = PLATFORM_ICON[order.livePlatform] ?? null
       return (
         <div className="flex items-center gap-2">
-          {(erpFailed || stuck) && (
+          {erpFailed && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                {erpFailed
-                  ? "Pagamento confirmado mas o pedido não foi enviado para o ERP. Abra para tentar novamente."
-                  : "Pago há mais de 5 minutos sem completar — verifique a integração com o ERP."}
+                Pagamento confirmado mas o pedido não foi enviado para o ERP. Abra para tentar novamente.
               </TooltipContent>
             </Tooltip>
           )}
