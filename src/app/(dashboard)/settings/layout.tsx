@@ -95,10 +95,10 @@ export default function SettingsLayout({
         <div
           className={cn(
             "flex-1",
-            // Communications pages have a wide split-pane editor; integrations
-            // already breaks out of the narrow shell via its own layout. Keep
-            // simple settings pages constrained for readability.
-            pathname.startsWith("/settings/communications") || pathname.startsWith("/settings/integrations")
+            // Only the communications detail editor needs the wide split-pane
+            // layout. Every other settings page (including the comms list and
+            // integrations grid) reads better constrained.
+            pathname.startsWith("/settings/communications/")
               ? "min-w-0"
               : "lg:max-w-2xl",
           )}
