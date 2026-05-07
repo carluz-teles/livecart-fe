@@ -191,7 +191,7 @@ export default function CheckoutSettingsPage() {
           </CardTitle>
           <CardDescription>
             Mensagens enviadas pelo Instagram em cada etapa da jornada agora
-            ficam em <Link href="/settings/communications" className="font-medium text-primary hover:underline">Comunicações</Link>.
+            ficam em <Link href="/communications" className="font-medium text-primary hover:underline">Comunicações</Link>.
           </CardDescription>
         </CardHeader>
       </Card>

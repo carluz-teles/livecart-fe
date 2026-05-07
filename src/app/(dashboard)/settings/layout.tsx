@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Puzzle, CreditCard, MessageSquare } from "lucide-react"
+import { User, Building2, Users, Puzzle, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -24,12 +24,6 @@ const settingsNav = [
     href: "/settings/checkout",
     icon: CreditCard,
     description: "Carrinho e finalização de compra",
-  },
-  {
-    title: "Comunicações",
-    href: "/settings/communications",
-    icon: MessageSquare,
-    description: "Mensagens automáticas pelo Instagram",
   },
   {
     title: "Equipe",
@@ -92,17 +86,7 @@ export default function SettingsLayout({
         </aside>
 
         {/* Page Content */}
-        <div
-          className={cn(
-            "flex-1",
-            // Only the communications detail editor needs the wide split-pane
-            // layout. Every other settings page (including the comms list and
-            // integrations grid) reads better constrained.
-            pathname.startsWith("/settings/communications/")
-              ? "min-w-0"
-              : "lg:max-w-2xl",
-          )}
-        >{children}</div>
+        <div className="flex-1 lg:max-w-2xl">{children}</div>
       </div>
     </div>
   )

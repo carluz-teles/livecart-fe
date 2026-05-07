@@ -41,6 +41,7 @@ const navSections: NavSection[] = [
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
       { name: "Clientes", href: "/customers", icon: Users },
+      { name: "Comunicações", href: "/communications", icon: MessageSquare },
     ],
   },
   {

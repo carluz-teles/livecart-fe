@@ -68,7 +68,7 @@ function Section({
       </div>
       <div className="flex flex-col gap-5">
         {cards.map((card) => (
-          <Link key={card.type} href={`/settings/communications/${card.type}`}>
+          <Link key={card.type} href={`/communications/${card.type}`}>
             <NotificationCard card={card} onClick={() => undefined} />
           </Link>
         ))}

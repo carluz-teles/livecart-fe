@@ -23,7 +23,7 @@ export function NotificationEditorHeader({
   enabled,
   onEnabledChange,
   trailing,
-  backHref = "/settings/communications",
+  backHref = "/communications",
 }: NotificationEditorHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
