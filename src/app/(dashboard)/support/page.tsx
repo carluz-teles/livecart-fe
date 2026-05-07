@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   Lightbulb,
   Mail,
+  MessageSquare,
   Search,
   Sparkles,
 } from "lucide-react"
@@ -259,28 +260,61 @@ export default function SupportPage() {
         />
       </div>
 
-      {/* Contact CTA */}
-      <div className="mx-auto mt-10 flex flex-col items-start gap-4 rounded-2xl border bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <Mail className="h-5 w-5" strokeWidth={1.8} />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold tracking-tight">
-              Ainda travado em algo?
-            </h3>
-            <p className="mt-0.5 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Manda um email pro time. A gente responde no mesmo dia útil.
-            </p>
-          </div>
-        </div>
-        <Button asChild size="lg" className="shrink-0">
-          <a href="mailto:suporte@livecart.app">
-            Falar com o time
-            <ArrowUpRight className="ml-1 h-4 w-4" />
-          </a>
-        </Button>
+      {/* Contact cards — Falar com o time + Feedback */}
+      <div className="mx-auto mt-10 grid w-full gap-4 sm:grid-cols-2">
+        <ContactCard
+          icon={Mail}
+          title="Falar com o time"
+          description="Travado em algo? A gente responde no mesmo dia útil."
+          cta="Pedir ajuda"
+          email="suporte@livecart.app"
+        />
+        <ContactCard
+          icon={MessageSquare}
+          title="Enviar feedback"
+          description="Tem ideia ou crítica? Manda pra gente — a gente lê tudo."
+          cta="Mandar feedback"
+          email="feedback@livecart.app"
+        />
       </div>
+    </div>
+  )
+}
+
+interface ContactCardProps {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
+  title: string
+  description: string
+  cta: string
+  email: string
+}
+
+function ContactCard({
+  icon: Icon,
+  title,
+  description,
+  cta,
+  email,
+}: ContactCardProps) {
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border bg-card p-6">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+          <Icon className="h-5 w-5" strokeWidth={1.8} />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <Button asChild variant="outline" className="self-start">
+        <a href={`mailto:${email}`}>
+          {cta}
+          <ArrowUpRight className="ml-1 h-4 w-4" />
+        </a>
+      </Button>
     </div>
   )
 }

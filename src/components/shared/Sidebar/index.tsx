@@ -13,8 +13,6 @@ import {
   LifeBuoy,
   Building2,
   Users,
-  FileText,
-  Lightbulb,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/hooks/useUser"
@@ -24,7 +22,6 @@ interface NavItem {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  external?: boolean
 }
 
 interface NavSection {
@@ -45,24 +42,18 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Comunidade",
-    items: [
-      { name: "Ideias", href: "/ideas", icon: Lightbulb },
-    ],
-  },
-  {
     title: "Outros",
     items: [
       { name: "Suporte", href: "/support", icon: LifeBuoy },
-      { name: "Documentação", href: "/docs", icon: FileText },
-      { name: "Configurações", href: "/settings/account", icon: Settings },
     ],
   },
 ]
 
-const supportItems: NavItem[] = [
-  { name: "Feedback", href: "mailto:feedback@livecart.app", icon: MessageSquare, external: true },
-]
+const settingsItem: NavItem = {
+  name: "Configurações",
+  href: "/settings/account",
+  icon: Settings,
+}
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -141,25 +132,20 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer - Support Links */}
+      {/* Footer — Settings */}
       <div className="border-t p-4">
-        <div className="space-y-1">
-          {supportItems.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              target={item.external ? "_blank" : undefined}
-              rel={item.external ? "noopener noreferrer" : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </a>
-          ))}
-        </div>
+        <Link
+          href={settingsItem.href}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            pathname.startsWith("/settings")
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          )}
+        >
+          <settingsItem.icon className="h-5 w-5" />
+          {settingsItem.name}
+        </Link>
       </div>
     </aside>
   )
