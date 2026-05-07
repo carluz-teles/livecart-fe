@@ -4,7 +4,12 @@ import type { Shipment, ShipmentStatus } from "./shipment.types"
 
 export type CartStatus = "active" | "checkout" | "completed" | "expired"
 export type OrderStatus = "active" | "checkout" | "completed" | "expired"
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
+export type PaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "refunded"
+  | "cancelled"
 
 export interface OrderItem {
   id: string

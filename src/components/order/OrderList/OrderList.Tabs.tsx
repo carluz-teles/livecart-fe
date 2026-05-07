@@ -23,6 +23,7 @@ export type OrderTabId =
   | "to_ship"
   | "in_transit"
   | "completed"
+  | "cancelled"
 
 export interface OrderTab {
   id: OrderTabId
@@ -110,6 +111,19 @@ export const ORDER_TABS: OrderTab[] = [
     filters: {
       shipmentStatus: ["delivered"],
       needsAttention: false,
+    },
+  },
+  {
+    // Estado terminal por desistência do cliente — sem ação operacional do
+    // lojista, mas precisa de uma janela explícita pra recuperação de
+    // carrinho abandonado e pra tirar essas linhas do "Todos" quando o
+    // merchant quer triar só o pipeline ativo.
+    id: "cancelled",
+    label: "Cancelados",
+    description:
+      "Pedidos que o cliente abandonou ou que expiraram sem pagamento. Útil para campanhas de recuperação de carrinho.",
+    filters: {
+      paymentStatus: ["cancelled"],
     },
   },
 ]

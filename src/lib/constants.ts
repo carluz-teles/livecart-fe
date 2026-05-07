@@ -64,6 +64,7 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, StatusConfig> = {
   paid: { label: "Pago", variant: "default" },
   failed: { label: "Falhou", variant: "destructive" },
   refunded: { label: "Reembolsado", variant: "secondary" },
+  cancelled: { label: "Cancelado", variant: "secondary" },
 }
 
 /**

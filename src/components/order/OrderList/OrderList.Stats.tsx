@@ -148,6 +148,28 @@ const TAB_KPIS: Record<OrderTabId, [KpiSpec, KpiSpec, KpiSpec]> = {
       isCurrency: true,
     },
   ],
+  cancelled: [
+    {
+      field: "totalOrders",
+      title: "Cancelados",
+      description: "Cliente desistiu ou expirou",
+      icon: AlertTriangle,
+    },
+    {
+      field: "totalRevenue",
+      title: "Receita perdida",
+      description: "Soma dos carrinhos abandonados",
+      icon: DollarSign,
+      isCurrency: true,
+    },
+    {
+      field: "avgTicket",
+      title: "Ticket médio",
+      description: "Valor médio por pedido",
+      icon: TrendingUp,
+      isCurrency: true,
+    },
+  ],
   completed: [
     {
       field: "totalOrders",
