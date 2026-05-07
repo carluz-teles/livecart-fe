@@ -72,6 +72,66 @@ export function CheckoutCardForm(props: CheckoutCardFormProps) {
 // Shared utilities & shells
 // ─────────────────────────────────────────────────────────────────────────────
 
+// detectCardBrandFromBin returns the BRAND_ICON_MAP key for a card number
+// based on its first 6 digits. Pagar.me tokens don't return the brand
+// client-side (unlike MP's getPaymentMethods({bin})), so we run a local
+// regex check to drive the active-brand chip + AcceptedBrandsHeader.
+//
+// Order matters: Visa is checked before Elo because some Visa-Electron
+// BINs collide with Elo prefixes; the match-most-specific-first rule
+// keeps "5067 7667..." (Elo) from being grabbed by Mastercard's range.
+function detectCardBrandFromBin(cardNumber: string): string {
+  const digits = cardNumber.replace(/\D/g, "")
+  if (digits.length < 6) return ""
+  const bin6 = parseInt(digits.slice(0, 6), 10)
+  const bin4 = parseInt(digits.slice(0, 4), 10)
+  const bin2 = parseInt(digits.slice(0, 2), 10)
+
+  // Elo — Banco Central tabela oficial (subset of the most common ranges).
+  // Checked before Visa/Master because Elo BINs sit inside their numeric
+  // space (e.g. 4011* is Elo, not Visa).
+  const eloRanges: Array<[number, number]> = [
+    [401178, 401179],
+    [438935, 438935],
+    [451416, 451416],
+    [457393, 457393],
+    [457631, 457632],
+    [504175, 504175],
+    [506699, 506778],
+    [509000, 509999],
+    [627780, 627780],
+    [636297, 636297],
+    [636368, 636368],
+    [650031, 650033],
+    [650035, 650051],
+    [650405, 650439],
+    [650485, 650538],
+    [650541, 650598],
+    [650700, 650718],
+    [650720, 650727],
+    [650901, 650920],
+    [651652, 651679],
+    [655000, 655019],
+    [655021, 655058],
+  ]
+  if (eloRanges.some(([lo, hi]) => bin6 >= lo && bin6 <= hi)) return "elo"
+
+  // Hipercard — most common BIN.
+  if (digits.startsWith("606282")) return "hipercard"
+
+  // Amex — 34 / 37.
+  if (bin2 === 34 || bin2 === 37) return "amex"
+
+  // Visa — anything starting with 4 not already claimed by Elo above.
+  if (digits.startsWith("4")) return "visa"
+
+  // Mastercard — 51-55 (legacy) and 2221-2720 (post-2017).
+  if (bin2 >= 51 && bin2 <= 55) return "master"
+  if (bin4 >= 2221 && bin4 <= 2720) return "master"
+
+  return ""
+}
+
 // readPagarmeTokenError extracts a friendly PT-BR message from a failed
 // /v5/tokens response. Pagar.me v5 returns errors as
 // `{ message, errors: { "card.number": ["..."], ... } }` — we surface the
@@ -745,6 +805,11 @@ function PagarmeCardForm({
   const [cardCvv, setCardCvv] = useState("")
   const [installments, setInstallments] = useState("1")
 
+  const detectedBrand = detectCardBrandFromBin(cardNumber)
+  const ActiveBrandIcon = detectedBrand
+    ? BRAND_ICON_MAP[detectedBrand] ?? GenericCardIcon
+    : GenericCardIcon
+
   const formatCardNumber = (value: string) => {
     const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "")
     const match = v.match(/\d{4,16}/g)?.[0] ?? ""
@@ -822,25 +887,33 @@ function PagarmeCardForm({
 
   return (
     <FormShell error={error}>
-      <AcceptedBrandsHeader paymentMethodId="" />
+      <AcceptedBrandsHeader paymentMethodId={detectedBrand} />
 
       <div className="space-y-4 pt-4">
         <div className="space-y-1.5">
           <Label htmlFor="pm-card-number" className="text-sm font-medium text-gray-700">
             Número do Cartão
           </Label>
-          <Input
-            id="pm-card-number"
-            type="text"
-            inputMode="numeric"
-            autoComplete="cc-number"
-            placeholder="0000 0000 0000 0000"
-            value={cardNumber}
-            onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-            maxLength={19}
-            disabled={loading}
-            className="h-11 rounded-xl tabular-nums tracking-wide"
-          />
+          <div className="relative">
+            <Input
+              id="pm-card-number"
+              type="text"
+              inputMode="numeric"
+              autoComplete="cc-number"
+              placeholder="0000 0000 0000 0000"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+              maxLength={19}
+              disabled={loading}
+              className="h-11 rounded-xl pr-12 tabular-nums tracking-wide"
+            />
+            <ActiveBrandIcon
+              className={cn(
+                "absolute right-3 top-1/2 h-5 w-8 -translate-y-1/2 transition-opacity",
+                detectedBrand ? "opacity-100" : "opacity-30"
+              )}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
