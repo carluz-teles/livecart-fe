@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEmailCommunication } from "@/hooks/communications"
+import { useStore } from "@/hooks/store/useStore"
 import type { PostPaymentNotificationType } from "@/types/notification.types"
 
 import { NotificationEditorHeader } from "../NotificationEditor/NotificationEditor.Header"
@@ -16,6 +17,7 @@ import {
   EmailMessageEditor,
   type EmailMessageEditorHandle,
 } from "./EmailEditor.MessageEditor"
+import { EmailEditorPreview } from "./EmailEditor.Preview"
 import { EmailEditorTestDialog } from "./EmailEditor.TestDialog"
 
 interface EmailEditorProps {
@@ -34,6 +36,7 @@ function EmailEditor({ type }: EmailEditorProps) {
     sendTest,
     isSendingTest,
   } = useEmailCommunication(type)
+  const { data: store } = useStore()
 
   const [enabled, setEnabled] = useState(true)
   const [subject, setSubject] = useState("")
@@ -100,7 +103,7 @@ function EmailEditor({ type }: EmailEditorProps) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_460px]">
         <div className="flex flex-col gap-4">
           <div className="rounded-md border bg-card p-5">
             <Label htmlFor="email-subject" className="text-sm font-medium">
@@ -128,31 +131,13 @@ function EmailEditor({ type }: EmailEditorProps) {
         </div>
 
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-md border bg-card p-5">
-            <h2 className="text-sm font-medium tracking-tight mb-4">Prévia</h2>
-            <div className="rounded-md border bg-white p-4">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                Assunto
-              </p>
-              <p className="font-medium text-sm mb-4">
-                {subject || `Pedido #1234 · Sua loja`}
-              </p>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                Corpo
-              </p>
-              <div
-                className="email-editor-content text-[15px] leading-[1.6] text-foreground"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    bodyHTML ||
-                    `<p style="color:hsl(var(--muted-foreground));font-style:italic">Vazio: usaremos o template padrão da LiveCart.</p>`,
-                }}
-              />
-            </div>
-            <p className="mt-3 text-[11px] text-center text-muted-foreground">
-              No envio real, o email vem dentro de um shell com logo da loja e rodapé.
-            </p>
-          </div>
+          <EmailEditorPreview
+            subject={subject}
+            bodyHTML={bodyHTML}
+            storeName={store?.name}
+            storeSlug={store?.slug}
+            ownerEmail={ownerEmail}
+          />
         </aside>
       </div>
 
@@ -175,6 +160,7 @@ function EmailEditor({ type }: EmailEditorProps) {
 }
 
 EmailEditor.MessageEditor = EmailMessageEditor
+EmailEditor.Preview = EmailEditorPreview
 EmailEditor.TestDialog = EmailEditorTestDialog
 
 export { EmailEditor }

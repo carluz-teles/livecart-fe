@@ -79,3 +79,30 @@
   pointer-events: none;
   height: 0;
 }
+
+/*
+ * Backdrop behind the "paper" email card in the preview pane. Dark slate
+ * surface with a soft amber glow + tiny grain — the white card spotlights
+ * against it and the merchant feels they're reading a real inbox view.
+ */
+.email-preview-backdrop {
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(ellipse at 50% -20%, rgba(245, 158, 11, 0.18), transparent 55%),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: auto, 14px 14px;
+  background-position: 0 0, 0 0;
+}
+
+/*
+ * The email card always renders in light theme regardless of the dashboard
+ * theme — emails are pretty much universally light. We re-declare the CSS
+ * vars used by .email-editor-content so headings/links/borders stay legible
+ * on the white paper even when the lojista has the app in dark mode.
+ */
+.email-preview-card {
+  --foreground: 222 47% 11%;
+  --muted-foreground: 215 16% 47%;
+  --border: 220 13% 91%;
+  --primary: 38 92% 50%;
+}
