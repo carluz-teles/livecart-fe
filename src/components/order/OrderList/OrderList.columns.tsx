@@ -124,7 +124,7 @@ export const orderColumns: ColumnDef<Order>[] = [
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
                 {erpFailed
-                  ? "Pagamento confirmado mas o pedido não foi enviado para a Tiny. Abra para tentar novamente."
+                  ? "Pagamento confirmado mas o pedido não foi enviado para o ERP. Abra para tentar novamente."
                   : "Pago há mais de 5 minutos sem completar — verifique a integração com o ERP."}
               </TooltipContent>
             </Tooltip>
@@ -202,9 +202,9 @@ export const orderColumns: ColumnDef<Order>[] = [
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
           {isOrderERPFailed(order) && (
             // Sits next to the payment-status badge so the row reads "Pago,
-            // mas Tiny falhou" at a glance — the merchant doesn't need to
-            // remember which tab gates which status.
-            <Badge variant="destructive">Tiny falhou</Badge>
+            // ERP falhou" at a glance — generic across providers (Tiny,
+            // Bling, …) so the copy doesn't drift when more ERPs land.
+            <Badge variant="destructive">Falha no ERP</Badge>
           )}
           {order.isFirstPurchase && (
             <Badge variant={FIRST_PURCHASE_BADGE.variant}>

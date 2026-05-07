@@ -197,10 +197,14 @@ export interface OrderFilters {
   hasShipment?: boolean
   // Filter by latest shipment status (normalized enum). Implies hasShipment=true.
   shipmentStatus?: ShipmentStatus[]
-  // Filter by ERP finalisation lifecycle. ['failed'] surfaces the
-  // "Precisam atenção" tab on the orders list — paid carts that blew up
-  // in Tiny mid-flow and still need a retry from the merchant.
+  // Filter by ERP finalisation lifecycle. Direct-query escape hatch — the
+  // unified "Precisam atenção" tab uses needsAttention instead so the same
+  // bucket covers shipment problems and ERP failures across providers.
   erpFinalisation?: Array<"pending" | "done" | "failed">
+  // Single triage flag that ORs every "merchant has to fix this" state:
+  // payment failed/refunded, shipment in error, or ERP finalisation failed.
+  // Drives the unified problems tab — ERP-agnostic by design.
+  needsAttention?: boolean
 }
 
 // Query params for listing orders

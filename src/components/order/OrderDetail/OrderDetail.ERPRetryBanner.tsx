@@ -31,10 +31,10 @@ export function OrderDetailERPRetryBanner() {
       {
         onSuccess: (refreshed) => {
           if (refreshed.erpFinalisation?.status === "done") {
-            toast.success("Pedido criado na Tiny com sucesso")
+            toast.success("Pedido enviado para o ERP com sucesso")
           } else if (refreshed.erpFinalisation?.status === "failed") {
             toast.error(
-              "A Tiny rejeitou o pedido novamente. Confira a mensagem e contate o suporte se persistir.",
+              "O ERP rejeitou o pedido novamente. Confira a mensagem e contate o suporte se persistir.",
             )
           }
         },
@@ -60,10 +60,10 @@ export function OrderDetailERPRetryBanner() {
         />
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-sm font-semibold text-destructive">
-            Pedido pago, mas não foi enviado para a Tiny
+            Pedido pago, mas não foi enviado para o ERP
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            O estoque continua reservado para esse pedido na Tiny — nenhuma
+            O estoque continua reservado para esse pedido no ERP — nenhuma
             unidade foi liberada. Tente reenviar abaixo. Se o erro persistir
             após algumas tentativas, contate o suporte.
           </p>

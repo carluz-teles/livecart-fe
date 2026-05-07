@@ -17,13 +17,11 @@ import {
 import { OrderListContext } from "./OrderListContext"
 
 export type OrderTabId =
-  | "erp_failed"
   | "needs_action"
   | "awaiting_payment"
   | "to_ship"
   | "in_transit"
   | "completed"
-  | "issues"
 
 export interface OrderTab {
   id: OrderTabId
@@ -36,39 +34,22 @@ export interface OrderTab {
   filters: OrderFilters
 }
 
-// Status sets are scoped to each tab's *primary intent*. Some merchant flows
-// (e.g. ERP-stuck orders, expired-without-payment) span multiple buckets and
-// would require backend OR-support — those are deferred to a follow-up PR.
+// Status sets are scoped to each tab's *primary intent*. The "needs_action"
+// tab is intentionally ERP-agnostic and uses a single needsAttention flag
+// on the BE that ORs every merchant-fixable failure (payment failed/refunded,
+// shipment in error, ERP finalisation failed) so a problem is a problem
+// regardless of which subsystem blew up.
 export const ORDER_TABS: OrderTab[] = [
   {
-    // First in the list because it's the highest-urgency state: the customer
-    // already paid, money already moved, but the ERP order doesn't exist —
-    // stock is held against this cart and only the merchant can unstick it.
-    id: "erp_failed",
-    label: "Falha na Tiny",
-    description:
-      "Pedidos pagos cujo envio para a Tiny falhou. O estoque continua reservado para esses pedidos — abra cada um e use o botão 'Tentar novamente'. Se o erro persistir, contate o suporte.",
-    filters: {
-      erpFinalisation: ["failed"],
-    },
-  },
-  {
+    // First in the list because every entry here represents a merchant
+    // action item — a customer is waiting on us. Renders in destructive
+    // tone when populated so it's the most visible thing on the page.
     id: "needs_action",
     label: "Precisam atenção",
     description:
-      "Envios com problema (NFe pendente, recusa, bloqueio fiscal/logístico, dano, falha na entrega). Pedidos sem envio criado ainda não aparecem aqui.",
+      "Pedidos que precisam de ação manual: pagamento falhou ou foi reembolsado, envio com problema (NFe, recusa, bloqueio, dano, não entregue) ou pedido pago que falhou ao ser enviado para o ERP. O estoque continua reservado para os casos de ERP — abra cada um para resolver.",
     filters: {
-      shipmentStatus: [
-        "awaiting_invoice",
-        "issue",
-        "delivery_issue",
-        "delivery_blocked",
-        "shipment_blocked",
-        "fiscal_issue",
-        "damaged",
-        "refused",
-        "not_delivered",
-      ],
+      needsAttention: true,
     },
   },
   {
@@ -113,15 +94,6 @@ export const ORDER_TABS: OrderTab[] = [
     description: "Envios entregues ao destinatário pela transportadora.",
     filters: {
       shipmentStatus: ["delivered"],
-    },
-  },
-  {
-    id: "issues",
-    label: "Problemas",
-    description:
-      "Pagamentos que falharam ou foram reembolsados. Pode ser cartão recusado, chargeback ou estorno manual.",
-    filters: {
-      paymentStatus: ["failed", "refunded"],
     },
   },
 ]
@@ -172,11 +144,12 @@ export function OrderListTabs() {
             const isActive = activeTab === tab.id
             const count = queries[index].data?.pagination.total
             const isLoading = queries[index].isLoading
-            // The "Falha na Tiny" tab is always urgent when populated: a
-            // count > 0 means a paid customer is stuck. Render the count
-            // pill in destructive tone (red) regardless of active state so
-            // the merchant spots it across any view of the page.
-            const isAlertTab = tab.id === "erp_failed" && (count ?? 0) > 0
+            // The "Precisam atenção" tab is always urgent when populated:
+            // every entry there means a customer is waiting on the merchant
+            // to act. Render the pill in destructive tone (red) regardless
+            // of active state so it's impossible to miss across any view of
+            // the page.
+            const isAlertTab = tab.id === "needs_action" && (count ?? 0) > 0
             return (
               <Tooltip key={tab.id}>
                 <TooltipTrigger asChild>

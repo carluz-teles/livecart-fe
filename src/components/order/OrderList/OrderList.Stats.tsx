@@ -33,44 +33,20 @@ interface KpiSpec {
 // avg ticket) so the merchant builds a stable mental model when switching
 // tabs; only the labels and accent shift to match the tab's intent.
 const TAB_KPIS: Record<OrderTabId, [KpiSpec, KpiSpec, KpiSpec]> = {
-  erp_failed: [
-    {
-      field: "totalOrders",
-      title: "Pedidos com falha na Tiny",
-      description: "Pagos sem pedido criado no ERP",
-      icon: AlertTriangle,
-      variant: "danger",
-    },
-    {
-      field: "totalRevenue",
-      title: "Valor preso",
-      description: "Soma dos pedidos a recuperar",
-      icon: DollarSign,
-      variant: "danger",
-      isCurrency: true,
-    },
-    {
-      field: "avgTicket",
-      title: "Ticket médio",
-      description: "Valor médio por pedido",
-      icon: TrendingUp,
-      isCurrency: true,
-    },
-  ],
   needs_action: [
     {
       field: "totalOrders",
       title: "Pedidos com problema",
-      description: "Aguardando ação do lojista",
+      description: "Pagamento, envio ou ERP",
       icon: AlertTriangle,
-      variant: "warning",
+      variant: "danger",
     },
     {
       field: "totalRevenue",
       title: "Valor em risco",
       description: "Soma dos pedidos travados",
       icon: DollarSign,
-      variant: "warning",
+      variant: "danger",
       isCurrency: true,
     },
     {
@@ -164,30 +140,6 @@ const TAB_KPIS: Record<OrderTabId, [KpiSpec, KpiSpec, KpiSpec]> = {
       description: "Soma dos pedidos entregues",
       icon: DollarSign,
       variant: "success",
-      isCurrency: true,
-    },
-    {
-      field: "avgTicket",
-      title: "Ticket médio",
-      description: "Valor médio por pedido",
-      icon: TrendingUp,
-      isCurrency: true,
-    },
-  ],
-  issues: [
-    {
-      field: "totalOrders",
-      title: "Com problema de pagamento",
-      description: "Falhou ou foi reembolsado",
-      icon: AlertTriangle,
-      variant: "danger",
-    },
-    {
-      field: "totalRevenue",
-      title: "Valor afetado",
-      description: "Soma dos pedidos com falha",
-      icon: DollarSign,
-      variant: "danger",
       isCurrency: true,
     },
     {

@@ -40,6 +40,8 @@ function mergeFilters(
     merged.shipmentStatus = tabFilters.shipmentStatus
   if (tabFilters.erpFinalisation !== undefined)
     merged.erpFinalisation = tabFilters.erpFinalisation
+  if (tabFilters.needsAttention !== undefined)
+    merged.needsAttention = tabFilters.needsAttention
   return merged
 }
 
