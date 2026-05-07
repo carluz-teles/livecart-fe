@@ -103,7 +103,7 @@ function EmailEditor({ type }: EmailEditorProps) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_460px]">
+      <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
           <div className="rounded-md border bg-card p-5">
             <Label htmlFor="email-subject" className="text-sm font-medium">
