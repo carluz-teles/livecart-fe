@@ -57,8 +57,8 @@ export function EmailEditorPreview({
   const timestamp = formatTimestamp(new Date())
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-medium tracking-tight">Prévia</h2>
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
           Como aparece no inbox
@@ -70,7 +70,7 @@ export function EmailEditorPreview({
           of the dashboard theme. */}
       <div
         className={cn(
-          "email-preview-frame group relative overflow-hidden rounded-2xl border bg-card",
+          "email-preview-frame group relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-card",
           "shadow-[0_30px_60px_-30px_rgba(15,23,42,0.35),0_8px_20px_-12px_rgba(15,23,42,0.18)]",
         )}
       >
@@ -81,7 +81,7 @@ export function EmailEditorPreview({
         />
 
         {/* Window chrome — light Mac-style */}
-        <div className="flex items-center gap-3 border-b bg-muted px-4 py-3">
+        <div className="flex shrink-0 items-center gap-3 border-b bg-muted px-4 py-3">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57] ring-1 ring-black/10" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e] ring-1 ring-black/10" />
@@ -96,7 +96,7 @@ export function EmailEditorPreview({
         </div>
 
         {/* Toolbar — pure decoration */}
-        <div className="flex items-center gap-1 border-b bg-muted/60 px-3 py-1.5 text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-1 border-b bg-muted/60 px-3 py-1.5 text-muted-foreground">
           <ToolbarButton icon={Archive} label="Arquivar" />
           <ToolbarButton icon={Trash2} label="Excluir" />
           <span className="mx-1 h-4 w-px bg-border" />
@@ -107,7 +107,7 @@ export function EmailEditorPreview({
         </div>
 
         {/* Backdrop — the email "paper" floats over this with strong elevation. */}
-        <div className="email-preview-backdrop relative px-6 py-8 sm:px-10 sm:py-12">
+        <div className="email-preview-backdrop relative min-h-0 flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-12">
           <article
             className={cn(
               "relative overflow-hidden rounded-xl bg-white",
@@ -171,7 +171,7 @@ export function EmailEditorPreview({
         </div>
       </div>
 
-      <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
+      <p className="shrink-0 px-1 text-[11px] leading-relaxed text-muted-foreground">
         No envio real, o email é entregue dentro de um shell com o logo da loja
         e rodapé. Esta é uma simulação do que o cliente verá no inbox.
       </p>

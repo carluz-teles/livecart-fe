@@ -110,7 +110,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
         }
       />
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:grid-rows-1">
         <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
           <NotificationEditorTriggerConfig
             type={type}

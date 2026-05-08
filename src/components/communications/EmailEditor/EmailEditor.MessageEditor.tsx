@@ -115,20 +115,22 @@ export const EmailMessageEditor = forwardRef<EmailMessageEditorHandle, EmailMess
     }
 
     return (
-      <div className="rounded-xl border bg-muted/30">
+      <div className="flex h-full min-h-0 flex-col rounded-xl border bg-muted/30">
         <EmailToolbar
           editor={editor}
           variables={variables}
           onRequestLink={() => setLinkDialogOpen(true)}
         />
 
-        <div className="px-3 pb-3">
-          <div className="rounded-lg border bg-card p-4 shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
-            <EditorContent editor={editor} />
+        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-1">
+          <div className="flex min-h-0 flex-1 flex-col rounded-lg border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <EditorContent editor={editor} />
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
           <span>
             Use {"{numero_pedido}"}, {"{tracking_code}"} e outras variáveis para personalizar.
           </span>

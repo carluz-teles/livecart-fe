@@ -103,8 +103,8 @@ function EmailEditor({ type }: EmailEditorProps) {
         }
       />
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
-        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:grid-rows-1">
+        <div className="flex min-h-0 flex-col gap-4">
           <div className="shrink-0 rounded-md border bg-card p-5">
             <Label htmlFor="email-subject" className="text-sm font-medium">
               Assunto
@@ -122,15 +122,17 @@ function EmailEditor({ type }: EmailEditorProps) {
             </p>
           </div>
 
-          <EmailMessageEditor
-            ref={editorRef}
-            initialHTML={bodyHTML}
-            variables={variables}
-            onHTMLChange={setBodyHTML}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <EmailMessageEditor
+              ref={editorRef}
+              initialHTML={bodyHTML}
+              variables={variables}
+              onHTMLChange={setBodyHTML}
+            />
+          </div>
         </div>
 
-        <aside className="min-h-0 overflow-y-auto pr-1">
+        <aside className="flex min-h-0 flex-col">
           <EmailEditorPreview
             subject={subject}
             bodyHTML={bodyHTML}
