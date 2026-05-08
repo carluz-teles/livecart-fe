@@ -3,10 +3,24 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 export interface Customer {
   id: string
   handle: string
+  email?: string | null
+  phone?: string | null
   totalOrders: number
   totalSpent: number
   lastOrderAt: string | null
   firstOrderAt: string | null
+}
+
+// Lightweight order summary returned by the customer-detail drawer.
+export interface CustomerOrder {
+  id: string
+  shortId: number
+  status: string
+  paymentStatus: string | null
+  totalItems: number
+  totalValue: number
+  paidAt: string | null
+  createdAt: string | null
 }
 
 export interface CustomerStats {

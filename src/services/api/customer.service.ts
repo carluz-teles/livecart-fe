@@ -1,6 +1,12 @@
 import { apiClient } from "./client"
 import { buildQueryString } from "@/lib/query"
-import type { Customer, CustomerListParams, CustomerListResponse, CustomerStats } from "@/types"
+import type {
+  Customer,
+  CustomerListParams,
+  CustomerListResponse,
+  CustomerOrder,
+  CustomerStats,
+} from "@/types"
 
 export const customerService = {
   list: (storeId: string, params?: CustomerListParams, token?: string | null) => {
@@ -18,4 +24,10 @@ export const customerService = {
 
   getStats: (storeId: string, token?: string | null) =>
     apiClient.get<CustomerStats>(`/stores/${storeId}/customers/stats`, token),
+
+  listOrders: (storeId: string, id: string, token?: string | null, limit = 20) =>
+    apiClient.get<CustomerOrder[]>(
+      `/stores/${storeId}/customers/${id}/orders?limit=${limit}`,
+      token,
+    ),
 }
