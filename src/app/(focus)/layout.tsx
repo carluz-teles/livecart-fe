@@ -10,7 +10,7 @@ export default function FocusLayout({
 }) {
   return (
     <AppProviders>
-      <div className="min-h-screen bg-surface-secondary p-4 print:bg-white print:p-0">
+      <div className="flex h-screen flex-col overflow-hidden bg-surface-secondary p-4 print:h-auto print:overflow-visible print:bg-white print:p-0">
         {children}
       </div>
     </AppProviders>

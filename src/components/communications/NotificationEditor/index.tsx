@@ -91,7 +91,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
   const previewText = renderWithSamples(draft)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <NotificationEditorHeader
         title={meta.title}
         description={meta.description}
@@ -110,8 +110,8 @@ function NotificationEditor({ type }: NotificationEditorProps) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-        <div className="flex flex-col gap-4">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
           <NotificationEditorTriggerConfig
             type={type}
             expirationReminderMinutes={reminderMinutes}
@@ -127,7 +127,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
           />
         </div>
 
-        <aside className="lg:sticky lg:top-6 lg:self-start">
+        <aside className="min-h-0 overflow-y-auto pr-1">
           <div className="rounded-md border bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-medium tracking-tight">Prévia ao vivo</h2>

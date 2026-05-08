@@ -84,7 +84,7 @@ function EmailEditor({ type }: EmailEditorProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <NotificationEditorHeader
         title={meta.title}
         description={meta.description}
@@ -103,9 +103,9 @@ function EmailEditor({ type }: EmailEditorProps) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="flex flex-col gap-4">
-          <div className="rounded-md border bg-card p-5">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <div className="shrink-0 rounded-md border bg-card p-5">
             <Label htmlFor="email-subject" className="text-sm font-medium">
               Assunto
             </Label>
@@ -130,7 +130,7 @@ function EmailEditor({ type }: EmailEditorProps) {
           />
         </div>
 
-        <aside className="lg:sticky lg:top-6 lg:self-start">
+        <aside className="min-h-0 overflow-y-auto pr-1">
           <EmailEditorPreview
             subject={subject}
             bodyHTML={bodyHTML}
