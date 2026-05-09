@@ -1125,29 +1125,6 @@ export default function OrganizationPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Danger Zone */}
-        <Card className="border-destructive/50">
-          <CardHeader>
-            <CardTitle className="text-destructive">Zona de perigo</CardTitle>
-            <CardDescription>
-              Ações irreversíveis para sua organização
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Excluir organização</p>
-                <p className="text-sm text-muted-foreground">
-                  Exclua permanentemente esta loja e todos os dados
-                </p>
-              </div>
-              <Button variant="destructive" size="sm" type="button" disabled>
-                Excluir loja
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </form>
     </Form>
   )

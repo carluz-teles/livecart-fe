@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { useUser } from "@clerk/nextjs"
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -40,6 +41,27 @@ const profileSchema = z.object({
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
+
+// Maps a Clerk error from user.delete() to a merchant-facing message. The
+// most common failure is the Clerk Dashboard having "Allow users to delete
+// their accounts" turned off — in that case Clerk returns a structured 422
+// and we surface a hint pointing at the dashboard toggle. Everything else
+// shows the API longMessage when present (it's already in pt-BR for most
+// instances), with a generic fallback.
+function deleteAccountErrorMessage(error: unknown): string {
+  if (isClerkAPIResponseError(error)) {
+    const clerkErr = error.errors?.[0]
+    if (clerkErr?.code === "self_service_disabled") {
+      return "A exclusão de conta pelo próprio usuário está desativada. Habilite em User & Authentication → Personal Account → Self-deletion no painel do Clerk e tente novamente."
+    }
+    return (
+      clerkErr?.longMessage ||
+      clerkErr?.message ||
+      "Não foi possível excluir sua conta. Tente novamente."
+    )
+  }
+  return "Não foi possível excluir sua conta. Tente novamente."
+}
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U"
@@ -162,7 +184,7 @@ export default function AccountPage() {
     } catch (error) {
       console.error("Failed to delete account:", error)
       toast.error("Erro ao excluir conta", {
-        description: "Não foi possível excluir sua conta. Tente novamente.",
+        description: deleteAccountErrorMessage(error),
       })
       setIsDeleting(false)
     }
