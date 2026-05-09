@@ -185,6 +185,73 @@ interface AccountField {
   mono?: boolean
 }
 
+// Provider-specific copy for the Webhook / Redirect URL panel inside the
+// "Ver detalhes" sheet. Each provider gets its own hints because the merchant
+// has to paste these URLs into a different panel for each one — surfacing
+// "no app da Tiny" inside a Mercado Pago integration was confusing.
+//
+// `showHealth` flips the green/amber badge: only Tiny pings us when the URL
+// is saved correctly, so for the others we hide the "ativo / não confirmado"
+// affordance and rely on the URL display + provider-specific hint.
+type ProviderWebhookCopy = {
+  showHealth: boolean
+  healthHint: string
+  webhookHint?: string
+  redirectHint?: string
+}
+
+const PROVIDER_WEBHOOK_COPY: Record<string, ProviderWebhookCopy> = {
+  tiny: {
+    showHealth: true,
+    healthHint:
+      "Confira se a URL abaixo está cadastrada no app da Tiny. Assim que ela for salva, a Tiny envia um ping de validação e este status fica verde.",
+    webhookHint:
+      "Cole no app da Tiny em Configurações → API → Webhooks. Eventos: estoque, produto e nota_fiscal.",
+    redirectHint: "Use para reconfigurar o callback no painel da Tiny.",
+  },
+  mercado_pago: {
+    showHealth: false,
+    healthHint: "",
+    webhookHint:
+      "Cole nas configurações da aplicação no Mercado Pago em Notificações → Webhooks. Eventos: payment.",
+    redirectHint:
+      "Use para reconfigurar o callback OAuth no painel do Mercado Pago.",
+  },
+  pagarme: {
+    showHealth: false,
+    healthHint: "",
+    webhookHint:
+      "Cole no painel da Pagar.me em Webhooks. Eventos recomendados: order.paid, order.canceled. Se o webhook tiver basic auth, atualize as credenciais ao reconectar.",
+  },
+  melhor_envio: {
+    showHealth: false,
+    healthHint: "",
+    webhookHint:
+      "Cole no painel do Melhor Envio em Aplicação → Webhooks. Eventos: order.created, order.released, order.posted, order.delivered, order.cancelled.",
+    redirectHint:
+      "Use para reconfigurar o callback OAuth no painel do Melhor Envio.",
+  },
+  instagram: {
+    showHealth: false,
+    healthHint: "",
+    redirectHint:
+      "Use para reconfigurar o callback OAuth do app Instagram no Meta for Developers.",
+  },
+  smartenvios: {
+    showHealth: false,
+    healthHint: "",
+  },
+}
+
+function providerWebhookCopy(provider: string): ProviderWebhookCopy {
+  return (
+    PROVIDER_WEBHOOK_COPY[provider] ?? {
+      showHealth: false,
+      healthHint: "",
+    }
+  )
+}
+
 // Pulls the presentable fields out of whatever the provider returned in
 // accountInfo. Missing / empty values are skipped so the caller can omit
 // the whole card when the result is empty.
@@ -1132,15 +1199,18 @@ function IntegrationsContent() {
               </div>
             </div>
 
-            {/* Webhook + setup URLs — only providers that need them (Tiny)
-                ship redirectUrl / webhookUrl on the integration record, so
-                this whole block stays hidden for everyone else. */}
-            {currentDetailsIntegration && (() => {
+            {/* Webhook + setup URLs — surfaced only for providers that
+                expose redirectUrl / webhookUrl on the integration record.
+                The copy is provider-aware: each provider has its own panel
+                name (Tiny, Pagar.me, Mercado Pago, Melhor Envio) so a Tiny
+                tip never shows up under a Mercado Pago integration. */}
+            {currentDetailsIntegration && detailsSheet && (() => {
               const { redirectUrl, webhookUrl, webhookStatus, webhookLastPingAt } =
                 currentDetailsIntegration
               const hasAny = !!(redirectUrl || webhookUrl)
               if (!hasAny) return null
 
+              const providerCopy = providerWebhookCopy(detailsSheet.provider.id)
               const isActive = webhookStatus === "active"
               const lastPingLabel = webhookLastPingAt
                 ? formatDistanceToNow(new Date(webhookLastPingAt), {
@@ -1155,8 +1225,11 @@ function IntegrationsContent() {
                     Webhook
                   </h4>
                   <div className="space-y-3 rounded-lg border p-4">
-                    {/* Webhook health */}
-                    {isActive ? (
+                    {/* Webhook health — only meaningful when the provider
+                        actually pings us back (Tiny). For providers that
+                        don't ping on save we hide the badge so the section
+                        doesn't read "não confirmado" forever. */}
+                    {providerCopy.showHealth && isActive ? (
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
                           <Webhook className="h-3 w-3 text-emerald-600" />
@@ -1170,7 +1243,7 @@ function IntegrationsContent() {
                           )}
                         </div>
                       </div>
-                    ) : (
+                    ) : providerCopy.showHealth ? (
                       <div className="flex items-start gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
                         <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
                         <div className="min-w-0 flex-1">
@@ -1178,25 +1251,29 @@ function IntegrationsContent() {
                             Webhook não confirmado
                           </p>
                           <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-                            Confira se a URL abaixo está cadastrada no app da
-                            Tiny. Assim que ela for salva, a Tiny envia um
-                            ping de validação e este status fica verde.
+                            {providerCopy.healthHint}
                           </p>
                         </div>
                       </div>
+                    ) : null}
+
+                    {providerCopy.showHealth && (webhookUrl || redirectUrl) && (
+                      <Separator />
                     )}
 
-                    <Separator />
-
                     {webhookUrl && (
-                      <CopyableURL label="URL de Webhook" value={webhookUrl} />
+                      <CopyableURL
+                        label="URL de Webhook"
+                        value={webhookUrl}
+                        description={providerCopy.webhookHint}
+                      />
                     )}
 
                     {redirectUrl && (
                       <CopyableURL
                         label="URL de Redirecionamento (OAuth)"
                         value={redirectUrl}
-                        description="Use para reconfigurar o callback no painel da Tiny."
+                        description={providerCopy.redirectHint}
                       />
                     )}
                   </div>
