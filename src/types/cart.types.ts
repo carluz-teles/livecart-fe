@@ -154,6 +154,10 @@ export interface OrderDetail extends Order {
   // novamente" banner on the order detail page when CreateOrder failed and
   // the cart's stock stayed reserved.
   erpFinalisation: ERPFinalisation | null
+  // NFe state captured by the Tiny webhook (or the manual "Verificar NFe"
+  // button). Null until the merchant emits the NFe in the ERP — that's the
+  // "Aguardando NFe" branch on the order detail page.
+  erpInvoice: ERPInvoice | null
 }
 
 // Mirror of integration.Service finalisation state. Status `failed` means
@@ -165,6 +169,16 @@ export interface ERPFinalisation {
   lastAttemptAt?: string
   attemptsCount: number
   canRetry: boolean
+}
+
+// NFe captured from the ERP. `authorized` unlocks the "Criar envio" flow;
+// `pending` keeps the order in "Aguardando NFe"; `cancelled`/`rejected`
+// surface a destructive banner so the merchant fixes things in the ERP.
+export interface ERPInvoice {
+  invoiceId?: string
+  invoiceKey?: string
+  status: "pending" | "authorized" | "cancelled" | "rejected"
+  emittedAt?: string
 }
 
 export interface OrderStats {

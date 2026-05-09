@@ -10,9 +10,11 @@ import {
   Loader2,
   Package,
   RefreshCw,
+  ScrollText,
   Tag,
   Truck,
   Upload,
+  XCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -45,6 +47,7 @@ import {
   useGenerateLabels,
   useFetchTracking,
 } from "@/hooks/shipping"
+import { useSyncInvoice } from "@/hooks/order"
 import { formatCurrency, formatDateTime } from "@/lib/format"
 import {
   shipmentStatusBucket,
@@ -141,7 +144,14 @@ export function OrderLogistics({ order }: OrderLogisticsProps) {
 function NoShipmentView({ order }: { order: OrderDetail }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const blockers = collectBlockers(order)
-  const canCreate = blockers.length === 0
+  // The NFe gate is treated as a separate, dedicated panel — it has its own
+  // recovery action ("Verificar NFe") and copy, so we surface it next to the
+  // rest of the no-shipment UI rather than inside the generic blocker list.
+  const invoiceReady =
+    order.erpInvoice?.status === "authorized" &&
+    !!order.erpInvoice?.invoiceKey
+  const invoicePending = !invoiceReady
+  const canCreate = blockers.length === 0 && invoiceReady
 
   return (
     <div className="space-y-4">
@@ -165,6 +175,8 @@ function NoShipmentView({ order }: { order: OrderDetail }) {
           </p>
         </div>
       )}
+
+      <InvoiceStatusPanel order={order} />
 
       {blockers.length > 0 && (
         <div className="flex gap-2 rounded-md border border-amber-200 bg-amber-50/50 p-3 text-sm text-amber-800">
@@ -190,6 +202,11 @@ function NoShipmentView({ order }: { order: OrderDetail }) {
         <Package className="mr-1.5 h-3.5 w-3.5" />
         Criar envio
       </Button>
+      {invoicePending && blockers.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          O botão fica disponível assim que a NFe for emitida na Tiny.
+        </p>
+      )}
 
       {canCreate && (
         <CreateShipmentSheet
@@ -198,6 +215,142 @@ function NoShipmentView({ order }: { order: OrderDetail }) {
           order={order}
         />
       )}
+    </div>
+  )
+}
+
+// --------------------------------------------------------------------------
+// NFe gate: renders the merchant-facing copy for each `erpInvoice.status`
+// transition between checkout and "Criar envio".
+//
+// States:
+//   nil          → "Aguardando emissão na Tiny" + Verificar NFe button
+//   pending      → idem (NFe protocolada mas SEFAZ ainda não autorizou)
+//   authorized   → chip verde + chave de acesso (preenchida no "Criar envio")
+//   cancelled    → banner destrutivo, NFe foi cancelada
+//   rejected     → banner destrutivo com instrução de reemitir
+// --------------------------------------------------------------------------
+interface InvoiceStatusPanelProps {
+  order: OrderDetail
+}
+
+function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
+  const syncInvoice = useSyncInvoice()
+  const invoice = order.erpInvoice
+  const status = invoice?.status
+
+  const handleSync = async () => {
+    try {
+      await syncInvoice.mutateAsync({ id: order.id })
+      toast.success(
+        invoice?.status === "authorized"
+          ? "NFe atualizada"
+          : "Status sincronizado",
+      )
+    } catch (err) {
+      toast.error(
+        (err as { message?: string })?.message ||
+          "Não foi possível verificar a NFe na Tiny.",
+      )
+    }
+  }
+
+  if (status === "authorized") {
+    return (
+      <div className="rounded-md border border-emerald-200 bg-emerald-50/60 p-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+        <div className="flex items-start gap-2">
+          <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-emerald-900 dark:text-emerald-200">
+              NFe emitida na Tiny
+            </p>
+            {invoice?.invoiceKey && (
+              <p
+                className="mt-1 break-all font-mono text-xs text-emerald-800/80 dark:text-emerald-200/80"
+                title={invoice.invoiceKey}
+              >
+                {invoice.invoiceKey}
+              </p>
+            )}
+            {invoice?.emittedAt && (
+              <p className="mt-1 text-xs text-emerald-700/70 dark:text-emerald-300/70">
+                Autorizada em {formatDateTime(invoice.emittedAt)}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === "cancelled" || status === "rejected") {
+    const isCancelled = status === "cancelled"
+    return (
+      <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+        <div className="flex items-start gap-2">
+          <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-medium text-destructive">
+              {isCancelled ? "NFe cancelada" : "NFe rejeitada pela SEFAZ"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isCancelled
+                ? "Reemita a nota fiscal na Tiny para liberar o envio."
+                : "Corrija o cadastro na Tiny e reemita para gerar uma chave válida."}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSync}
+              disabled={syncInvoice.isPending}
+              className="mt-1"
+            >
+              {syncInvoice.isPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Verificar novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No invoice yet (or status === "pending"): waiting on the merchant to emit
+  // in the ERP. Tiny webhook covers the happy path; this panel is the manual
+  // recovery hatch.
+  return (
+    <div className="rounded-md border border-amber-200 bg-amber-50/60 p-3 text-sm dark:border-amber-500/30 dark:bg-amber-500/10">
+      <div className="flex items-start gap-2">
+        <ScrollText className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            {status === "pending"
+              ? "NFe enviada à SEFAZ — aguardando autorização"
+              : "Aguardando emissão da NFe na Tiny"}
+          </p>
+          <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+            Emita a NFe diretamente no painel da Tiny. O envio é liberado
+            automaticamente assim que a chave for autorizada.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSync}
+            disabled={syncInvoice.isPending}
+            className="mt-1"
+          >
+            {syncInvoice.isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Verificar NFe na Tiny
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -246,7 +399,13 @@ function CreateShipmentSheet({
   onOpenChange,
   order,
 }: CreateShipmentSheetProps) {
-  const [invoiceKey, setInvoiceKey] = useState("")
+  // Pre-fill the chave de acesso when the merchant has already emitted the
+  // NFe in the ERP — the NFe gate above only opens this sheet after the
+  // invoice is authorised, so we expect a value here. Falls back to the
+  // empty input for the rare case where the merchant overrides manually.
+  const [invoiceKey, setInvoiceKey] = useState(
+    order.erpInvoice?.invoiceKey ?? "",
+  )
   const [observation, setObservation] = useState("")
   const createShipment = useCreateShipment(order.id)
 

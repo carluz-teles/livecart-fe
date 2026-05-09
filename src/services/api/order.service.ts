@@ -114,4 +114,16 @@ export const orderService = {
       {},
       token,
     ),
+
+  // Forces a fetch of the NFe state from the active ERP (today: Tiny). The
+  // backend Tiny webhook covers this automatically, but Tiny doesn't always
+  // deliver nota_fiscal events promptly — this gives the merchant a manual
+  // "Verificar NFe" button to bridge the gap. The refreshed OrderDetail
+  // carries the updated `erpInvoice` field.
+  syncInvoice: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<OrderDetail>(
+      `/stores/${storeId}/orders/${id}/sync-invoice`,
+      {},
+      token,
+    ),
 }

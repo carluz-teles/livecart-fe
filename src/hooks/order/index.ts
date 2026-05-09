@@ -6,6 +6,7 @@ export { useOrderUpsell } from "./useOrderUpsell"
 export { useUpdateShippingAddress } from "./useUpdateShippingAddress"
 export { useRegenerateCheckout } from "./useRegenerateCheckout"
 export { useRetryERPFinalisation } from "./useRetryERPFinalisation"
+export { useSyncInvoice } from "./useSyncInvoice"
 export { useMarkDelivered } from "./useMarkDelivered"
 export {
   useOrderNavigation,
