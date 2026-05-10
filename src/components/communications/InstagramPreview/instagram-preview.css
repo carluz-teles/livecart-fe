@@ -1,3 +1,7 @@
+/*
+ * Story ring — gradient halo around avatar circles. Used in the chat
+ * header, profile card and message bubble avatar.
+ */
 .story-ring {
   background: linear-gradient(
     135deg,
@@ -17,14 +21,38 @@
   border-radius: 9999px;
 }
 
-.ig-dynamic-island {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 28px;
-  background: #000;
-  border-radius: 9999px;
-  z-index: 5;
+/*
+ * Mirrors .email-preview-frame: theme-locks the whole preview widget to
+ * light regardless of the dashboard theme. Instagram DMs are universally
+ * white in the real app and the preview should read identically in both
+ * dashboard modes.
+ */
+.instagram-preview-frame {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 48 100% 96%;
+  --accent-foreground: 22 82% 31%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 0%;
+  --ring: 38 92% 50%;
+}
+
+/*
+ * Chat backdrop behind the message bubble. Pale neutral with a tiny IG
+ * pink halo at top + grain dots — gives the bubble enough contrast to
+ * feel like a real DM thread without breaking the white-on-white IG look.
+ */
+.instagram-preview-backdrop {
+  background-color: #f7f8fa;
+  background-image:
+    radial-gradient(ellipse at 50% -10%, rgba(225, 48, 108, 0.07), transparent 50%),
+    radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.035) 1px, transparent 0);
+  background-size: auto, 14px 14px;
+  background-position: 0 0, 0 0;
 }

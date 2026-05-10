@@ -111,39 +111,26 @@ function NotificationEditor({ type }: NotificationEditorProps) {
       />
 
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:grid-rows-1">
-        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+        <div className="flex min-h-0 flex-col gap-4">
           <NotificationEditorTriggerConfig
             type={type}
             expirationReminderMinutes={reminderMinutes}
             cartExpirationMinutes={cartSettings?.expirationMinutes ?? 30}
             onMinutesChange={setReminderMinutes}
           />
-          <MessageEditor
-            ref={editorRef}
-            initialTemplate={draft}
-            defaultTemplate={defaultTemplates[type]}
-            variables={variables}
-            onTemplateChange={setDraft}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <MessageEditor
+              ref={editorRef}
+              initialTemplate={draft}
+              defaultTemplate={defaultTemplates[type]}
+              variables={variables}
+              onTemplateChange={setDraft}
+            />
+          </div>
         </div>
 
-        <aside className="min-h-0 overflow-y-auto pr-1">
-          <div className="rounded-md border bg-card p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-medium tracking-tight">Prévia ao vivo</h2>
-              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                </span>
-                ao vivo
-              </span>
-            </div>
-            <InstagramPreview storeName="minhaloja" message={previewText} />
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">
-              A prévia atualiza enquanto você digita.
-            </p>
-          </div>
+        <aside className="flex min-h-0 flex-col">
+          <InstagramPreview storeName="minhaloja" message={previewText} />
         </aside>
       </div>
 
