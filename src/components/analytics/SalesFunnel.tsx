@@ -1,12 +1,13 @@
 "use client"
 
-import { ShoppingCart, CreditCard, CheckCircle, DollarSign } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface SalesFunnelProps {
-  totalComments?: number // Kept for backward compatibility but not displayed
+  /** Kept for API parity but no longer rendered — comments don't belong in
+   *  the conversion timeline (they're not a discrete step). */
+  totalComments?: number
   totalCarts: number
   checkoutCarts: number
   paidCarts: number
@@ -18,12 +19,14 @@ interface SalesFunnelProps {
 interface FunnelStep {
   label: string
   value: number
-  percentage: number
-  icon: React.ElementType
-  color: string
-  bgColor: string
+  percent: number
 }
 
+// Minimalist conversion timeline. One dot per step, connecting line between
+// dots, label on the left, absolute count and percentage on the right.
+// All percentages reference the entry of the funnel (totalCarts) so the
+// drop-off between steps reads in absolute terms — easier mental math for
+// the merchant scanning post-live.
 export function SalesFunnel({
   totalCarts,
   checkoutCarts,
@@ -32,108 +35,102 @@ export function SalesFunnel({
   projectedRevenue = 0,
   className,
 }: SalesFunnelProps) {
-  // Calculate percentages based on the previous step (funnel logic)
-  const getPercentage = (current: number, base: number): number => {
-    if (base === 0) return 0
-    return Math.round((current / base) * 100)
+  const pct = (value: number) => {
+    if (totalCarts === 0) return 0
+    return Math.round((value / totalCarts) * 100)
   }
 
-  // All percentages relative to totalCarts (real funnel)
   const steps: FunnelStep[] = [
-    {
-      label: "Carrinhos",
-      value: totalCarts,
-      percentage: 100,
-      icon: ShoppingCart,
-      color: "text-amber-600",
-      bgColor: "bg-amber-500",
-    },
-    {
-      label: "Checkout",
-      value: checkoutCarts,
-      percentage: getPercentage(checkoutCarts, totalCarts),
-      icon: CreditCard,
-      color: "text-purple-600",
-      bgColor: "bg-purple-500",
-    },
-    {
-      label: "Pagos",
-      value: paidCarts,
-      percentage: getPercentage(paidCarts, totalCarts),
-      icon: CheckCircle,
-      color: "text-green-600",
-      bgColor: "bg-green-500",
-    },
+    { label: "Carrinhos", value: totalCarts, percent: 100 },
+    { label: "Checkout", value: checkoutCarts, percent: pct(checkoutCarts) },
+    { label: "Pagos", value: paidCarts, percent: pct(paidCarts) },
   ]
 
+  const hasRevenue = confirmedRevenue > 0 || projectedRevenue > 0
+
   return (
-    <Card className={cn("flex flex-col", className)}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-medium">Funil de Vendas</CardTitle>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <span className="font-semibold text-green-600">{formatCurrency(confirmedRevenue)}</span>
-              <span className="text-muted-foreground">confirmado</span>
+    <Card className={cn(className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium tracking-tight">
+          Funil
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="relative">
+          {steps.map((step, idx) => {
+            const isLast = idx === steps.length - 1
+            const isActive = step.value > 0
+            return (
+              <li
+                key={step.label}
+                className="relative flex items-center gap-4 pb-5 last:pb-0"
+              >
+                {/* Vertical connector — sits between this dot and the next. */}
+                {!isLast && (
+                  <span
+                    aria-hidden
+                    className="absolute left-[7px] top-4 h-full w-px bg-border"
+                  />
+                )}
+                {/* Dot */}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "relative z-10 h-3.5 w-3.5 shrink-0 rounded-full ring-4 ring-card transition-colors",
+                    isActive
+                      ? idx === steps.length - 1
+                        ? "bg-emerald-500"
+                        : "bg-foreground"
+                      : "bg-muted",
+                  )}
+                />
+                {/* Label + numbers */}
+                <div className="flex flex-1 items-baseline justify-between gap-3">
+                  <span
+                    className={cn(
+                      "text-sm font-medium tracking-tight",
+                      !isActive && "text-muted-foreground",
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                  <div className="flex items-baseline gap-4 tabular-nums">
+                    <span className="text-sm text-muted-foreground">
+                      {step.value}
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-[3rem] text-right text-sm font-semibold",
+                        !isActive && "text-muted-foreground",
+                      )}
+                    >
+                      {step.percent}%
+                    </span>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+
+        {hasRevenue && (
+          <div className="mt-4 space-y-1.5 border-t pt-3 text-sm">
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground">Confirmado</span>
+              <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                {formatCurrency(confirmedRevenue)}
+              </span>
             </div>
             {projectedRevenue > confirmedRevenue && (
-              <div className="text-muted-foreground">
-                <span className="font-medium">{formatCurrency(projectedRevenue)}</span>
-                <span className="ml-1">projetado</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-muted-foreground">Projetado</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {formatCurrency(projectedRevenue)}
+                </span>
               </div>
             )}
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex-1 flex flex-col justify-center">
-        <div className="space-y-4">
-          {steps.map((step, index) => {
-            const Icon = step.icon
-            const isFirst = index === 0
-
-            return (
-              <div key={step.label}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                      step.value > 0 ? step.bgColor + "/10" : "bg-muted"
-                    )}>
-                      <Icon className={cn("h-4 w-4", step.value > 0 ? step.color : "text-muted-foreground")} />
-                    </div>
-                    <span className="font-medium">{step.label}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground tabular-nums">
-                      {step.value}
-                    </span>
-                    {!isFirst && (
-                      <span className={cn(
-                        "text-lg font-bold tabular-nums min-w-[4rem] text-right",
-                        step.percentage >= 50 ? "text-green-600" :
-                        step.percentage >= 25 ? "text-amber-600" :
-                        step.percentage > 0 ? "text-red-500" : "text-muted-foreground"
-                      )}>
-                        {step.percentage}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-500", step.bgColor)}
-                    style={{
-                      width: `${isFirst ? 100 : step.percentage}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        )}
       </CardContent>
     </Card>
   )
