@@ -5,9 +5,7 @@ import { forwardRef } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
-import { RotateCcw } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import type { TemplateVariable } from "@/types/notification.types"
 
 import {
@@ -15,8 +13,7 @@ import {
   docToTemplate,
   templateToDoc,
 } from "./variableExtension"
-import { EmojiPicker } from "./EmojiPicker"
-import { VariableMenu } from "./VariableMenu"
+import { NotificationToolbar } from "./NotificationEditor.Toolbar"
 
 const MAX_BYTES = 1000
 
@@ -107,18 +104,6 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
       )
     }
 
-    const insertEmoji = (emoji: string) => {
-      editor.chain().focus().insertContent(emoji).run()
-    }
-
-    const insertVariable = (name: string) => {
-      editor
-        .chain()
-        .focus()
-        .insertContent({ type: "variable", attrs: { name } })
-        .run()
-    }
-
     const restoreDefault = () => {
       editor.commands.setContent(templateToDoc(defaultTemplate, knownNames))
       onTemplateChange(defaultTemplate)
@@ -130,22 +115,11 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
 
     return (
       <div className="flex h-full min-h-0 flex-col rounded-xl border bg-muted/30">
-        {/* Toolbar */}
-        <div className="flex shrink-0 flex-wrap items-center gap-2 px-3 py-2.5">
-          <EmojiPicker onPick={insertEmoji} />
-          <VariableMenu variables={variables} onPick={insertVariable} />
-          <div className="flex-1" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 text-muted-foreground"
-            onClick={restoreDefault}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Restaurar padrão
-          </Button>
-        </div>
+        <NotificationToolbar
+          editor={editor}
+          variables={variables}
+          onRestore={restoreDefault}
+        />
 
         {/* Writing surface — distinctly elevated above the panel */}
         <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
