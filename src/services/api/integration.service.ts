@@ -33,6 +33,21 @@ export const integrationService = {
   delete: (storeId: string, id: string, token?: string | null) =>
     apiClient.delete<void>(`/stores/${storeId}/integrations/${id}`, token),
 
+  // Reorders integrations within a store. Lower priority wins the checkout
+  // selection; the admin UI surfaces this for payment providers when 2+ are
+  // connected (Mercado Pago + Pagar.me, etc.).
+  updatePriority: (
+    storeId: string,
+    id: string,
+    priority: number,
+    token?: string | null,
+  ) =>
+    apiClient.patch<{ id: string; priority: number }>(
+      `/stores/${storeId}/integrations/${id}/priority`,
+      { priority },
+      token,
+    ),
+
   // Get OAuth connect URL (for OAuth providers like Mercado Pago)
   getOAuthURL: (storeId: string, provider: IntegrationProvider, token?: string | null) =>
     apiClient.get<OAuthConnectResponse>(

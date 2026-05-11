@@ -22,6 +22,9 @@ import {
   AlertTriangle,
   BookOpen,
   Webhook,
+  ArrowUp,
+  ArrowDown,
+  Star,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -73,6 +76,7 @@ import {
   useConnectPagarme,
   useDisconnectIntegration,
   useTestConnection,
+  useUpdateIntegrationPriority,
   useProviderURLs,
 } from "@/hooks/integration"
 import type {
@@ -298,6 +302,7 @@ function IntegrationsContent() {
   const connectPagarme = useConnectPagarme()
   const disconnectIntegration = useDisconnectIntegration()
   const testConnection = useTestConnection()
+  const updatePriority = useUpdateIntegrationPriority()
 
   const [disconnectId, setDisconnectId] = useState<string | null>(null)
   const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(null)
@@ -331,6 +336,31 @@ function IntegrationsContent() {
   } | null>(null)
 
   const integrations = data?.data ?? []
+
+  // Active payment integrations sorted by priority — drives the "Primário"
+  // badge and the ↑↓ reorder controls on payment cards. Mirrors the BE's
+  // GetStorePaymentIntegration ordering so the merchant sees exactly which
+  // provider the checkout will pick. Only computed once per render.
+  const paymentChain = integrations
+    .filter((i) => i.type === "payment" && i.status === "active")
+    .sort(
+      (a, b) =>
+        a.priority - b.priority || a.createdAt.localeCompare(b.createdAt),
+    )
+  const primaryPaymentId = paymentChain[0]?.id
+
+  const handleReorderPayment = (integrationId: string, direction: "up" | "down") => {
+    const idx = paymentChain.findIndex((p) => p.id === integrationId)
+    if (idx === -1) return
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= paymentChain.length) return
+    const a = paymentChain[idx]
+    const b = paymentChain[swapIdx]
+    // Swap priorities — keep their numerical distance so the UI feels
+    // predictable instead of normalising to 10/20/30 on every move.
+    updatePriority.mutate({ integrationId: a.id, priority: b.priority })
+    updatePriority.mutate({ integrationId: b.id, priority: a.priority })
+  }
 
   // Read the live integration from the list so the details sheet picks up
   // refetched fields (e.g. webhookLastPingAt) without having to be reopened.
@@ -695,6 +725,13 @@ function IntegrationsContent() {
                   {providers.map((provider) => {
                     const connected = getConnectedIntegration(provider.id)
                     const isConnected = !!connected
+                    const showReorder =
+                      type === "payment" && paymentChain.length > 1
+                    const chainIdx = showReorder
+                      ? paymentChain.findIndex((p) => p.id === connected?.id)
+                      : -1
+                    const isPrimary =
+                      type === "payment" && connected?.id === primaryPaymentId
 
                     return (
                       <IntegrationCard
@@ -706,12 +743,23 @@ function IntegrationsContent() {
                           <div className="flex items-start gap-4">
                             <IntegrationCard.Logo provider={provider.id} size="lg" />
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-semibold">{provider.name}</h3>
                                 {isConnected && (
                                   <IntegrationCard.Status
                                     status={connected.status === "active" ? "active" : "pending"}
                                   />
+                                )}
+                                {isPrimary && (
+                                  <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
+                                    Primário
+                                  </span>
+                                )}
+                                {showReorder && chainIdx >= 0 && !isPrimary && (
+                                  <span className="text-[11px] font-medium text-muted-foreground">
+                                    Fallback #{chainIdx + 1}
+                                  </span>
                                 )}
                               </div>
                               <p className="mt-1 text-sm text-muted-foreground">
@@ -745,6 +793,39 @@ function IntegrationsContent() {
                                     <Info className="mr-1.5 h-3.5 w-3.5" />
                                     Ver detalhes
                                   </Button>
+                                  {showReorder && chainIdx >= 0 && (
+                                    <div className="flex items-center gap-0.5 rounded-md border border-border bg-background">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        disabled={
+                                          chainIdx === 0 || updatePriority.isPending
+                                        }
+                                        onClick={() =>
+                                          handleReorderPayment(connected.id, "up")
+                                        }
+                                        title="Promover prioridade"
+                                      >
+                                        <ArrowUp className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        disabled={
+                                          chainIdx === paymentChain.length - 1 ||
+                                          updatePriority.isPending
+                                        }
+                                        onClick={() =>
+                                          handleReorderPayment(connected.id, "down")
+                                        }
+                                        title="Reduzir prioridade"
+                                      >
+                                        <ArrowDown className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="sm"

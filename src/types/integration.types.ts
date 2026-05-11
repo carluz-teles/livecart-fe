@@ -31,6 +31,9 @@ export interface Integration {
   // ISO-8601 of the last webhook ping received from the provider. Null
   // until the first ping arrives. Always emitted whenever webhookUrl is set.
   webhookLastPingAt?: string | null
+  // Order used when a store has multiple integrations of the same type
+  // (currently only payment). Lower = primary; checkout walks ascending.
+  priority: number
 }
 
 // Response from GET /stores/:storeId/integrations/providers/:provider/urls.
