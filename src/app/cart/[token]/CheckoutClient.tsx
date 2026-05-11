@@ -63,6 +63,7 @@ const CheckoutPixDisplay = dynamic(
 import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
+import { CheckoutWaitlistOnlyScreen } from "@/components/checkout/CheckoutWaitlistOnlyScreen"
 import { checkoutService } from "@/services/api/checkout.service"
 import {
   useCheckoutCart,
@@ -639,6 +640,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   })
 
   if (availableItems.length === 0) {
+    if (cart.waitlistItems.length > 0) {
+      return <CheckoutWaitlistOnlyScreen cart={cart} onUpdated={refetchCart} />
+    }
     return <CheckoutErrorScreen message="Nenhum item disponível para pagamento." />
   }
 
