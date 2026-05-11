@@ -537,8 +537,21 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       const zip = (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
       if (zip.length === 8) runShippingQuote(zip)
       shippingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
     }
-  }, [form, runShippingQuote])
+    // Backend returned "provedor de pagamento indisponível" — that's the 5xx
+    // transport-error path the BE introduced together with the cart-unbind on
+    // failure. The cart is now bound to NULL (or about to be), so refetching
+    // /config makes resolveCheckoutIntegration walk the priority chain and
+    // hand back the next healthy provider's publicKey. The card form
+    // remounts against the new SDK; the buyer re-enters the card on the next
+    // attempt (token is gateway-bound, so we can't reuse the old one). For
+    // PIX there's no token, so the next "Generate PIX" click lands on the
+    // new provider transparently.
+    if (/provedor de pagamento indispon[ií]vel/i.test(error)) {
+      refetchConfig()
+    }
+  }, [form, runShippingQuote, refetchConfig])
 
   const handleApplyCoupon = useCallback(
     async (code: string) => {
