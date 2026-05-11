@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package, Lock } from "lucide-react"
+import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -131,13 +131,12 @@ function OrderItemCompact({
   const effectiveLimit = Math.min(cap, stockBound)
   const canDecrease = item.quantity > 1
   const canIncrease = item.quantity < effectiveLimit
-  const isStockExhausted = !canIncrease && stockBound <= cap
+  const stockIsBinding = !canIncrease && stockBound <= cap
 
   // Stock-bound limits surprise buyers more than per-item caps, so when both
-  // bite the stock message wins. "Sem mais unidades disponíveis" is the
-  // hard sold-out case (freeUnits=0); the count variant covers partial.
+  // bite the stock message wins. freeUnits=0 = hard sold-out copy.
   const limitReason = !canIncrease
-    ? isStockExhausted
+    ? stockIsBinding
       ? freeUnits === 0
         ? "Sem mais unidades disponíveis no estoque"
         : `Apenas ${item.availableStock} ${item.availableStock === 1 ? "unidade" : "unidades"} disponíveis`
@@ -222,30 +221,19 @@ function OrderItemCompact({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "h-8 w-8 rounded-l-none hover:bg-gray-100",
-                        // Sold-out state gets an intentional "locked" treatment
-                        // (amber tint + lock icon) so buyers don't mistake the
-                        // disabled "+" for a momentary glitch.
-                        isStockExhausted &&
-                          "bg-amber-50 text-amber-700 disabled:opacity-100 disabled:text-amber-700",
-                      )}
+                      className="h-8 w-8 rounded-l-none hover:bg-gray-100"
                       onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                       disabled={!canIncrease}
                       aria-label="Aumentar quantidade"
                     >
-                      {isStockExhausted ? (
-                        <Lock className="h-3 w-3" />
-                      ) : (
-                        <Plus className="h-3 w-3" />
-                      )}
+                      <Plus className="h-3 w-3" />
                     </Button>
                   </span>
                 </TooltipTrigger>
                 {limitReason && (
                   <TooltipContent
                     className={cn(
-                      isStockExhausted &&
+                      stockIsBinding &&
                         "border-amber-200 bg-amber-50 text-amber-900",
                     )}
                   >
