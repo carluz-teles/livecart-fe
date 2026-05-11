@@ -835,6 +835,25 @@ function PagarmeCardForm({
       const [expMonth, expYear] = cardExpiry.split("/")
       const holderDocument = customer.customerDocument?.replace(/\D/g, "") ?? ""
 
+      // Pagar.me's sandbox PSP layer rejects card_token-only orders with
+      // `validation_error | billing | "value" is required` when the token
+      // payload doesn't carry billing_address — it surfaces the missing
+      // field via an internal alias ("billing"). The public-API docs list
+      // billing_address as optional for /tokens, but the simulator path
+      // treats it as required. We pass the buyer's shipping address (the
+      // only address captured at checkout) so the token is self-contained
+      // and the backend doesn't need to send a partial `card` block
+      // alongside card_token (which has its own validation pitfalls).
+      const sa = customer.shippingAddress
+      const billingAddress = {
+        line_1: [sa.street, sa.number, sa.neighborhood].filter(Boolean).join(", "),
+        line_2: sa.complement || undefined,
+        zip_code: sa.zipCode.replace(/\D/g, ""),
+        city: sa.city,
+        state: sa.state,
+        country: "BR",
+      }
+
       const tokenResponse = await fetch(
         "https://api.pagar.me/core/v5/tokens?appId=" + publicKey,
         {
@@ -851,6 +870,7 @@ function PagarmeCardForm({
                 (expYear?.length ?? 0) === 2 ? "20" + expYear : expYear ?? "0"
               ),
               cvv: cardCvv,
+              billing_address: billingAddress,
             },
           }),
         }
