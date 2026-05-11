@@ -35,6 +35,7 @@ import {
   CheckoutOrderSummary,
   CheckoutWaitlistSection,
   CheckoutShippingOptions,
+  CheckoutPromotionBanner,
 } from "@/components/checkout"
 
 // Heavy payment widgets only render after the shopper completes the
@@ -641,7 +642,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
 
   if (availableItems.length === 0) {
     if (cart.waitlistItems.length > 0) {
-      return <CheckoutWaitlistOnlyScreen cart={cart} onUpdated={refetchCart} />
+      return <CheckoutWaitlistOnlyScreen cart={cart} />
     }
     return <CheckoutErrorScreen message="Nenhum item disponível para pagamento." />
   }
@@ -658,6 +659,14 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       availableStock: item.availableStock,
     }
   })
+
+  // Notified waitlist entries are already merged into the cart as regular
+  // items — we surface them as a celebratory banner at the top instead of
+  // duplicating them inside CheckoutWaitlistSection (which now only renders
+  // "waiting" entries).
+  const notifiedItems = cart.waitlistItems.filter(
+    (w) => w.status === "notified",
+  )
 
   const isAddressAutoFilled = cepLookup.isSuccess
   const isFreeShipping =
@@ -694,6 +703,12 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       />
 
       <div className="mx-auto max-w-6xl px-4 py-8">
+        {notifiedItems.length > 0 && (
+          <div className="mb-6">
+            <CheckoutPromotionBanner items={notifiedItems} />
+          </div>
+        )}
+
         <div className="mb-6 lg:hidden">
           <CheckoutOrderSummary
             items={orderItems}
@@ -725,7 +740,6 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               <CheckoutWaitlistSection
                 token={cart.token}
                 items={cart.waitlistItems}
-                onNotifiedExpired={() => refetchCart()}
               />
             </div>
           )}
@@ -1232,7 +1246,6 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               <CheckoutWaitlistSection
                 token={cart.token}
                 items={cart.waitlistItems}
-                onNotifiedExpired={() => refetchCart()}
               />
             )}
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package } from "lucide-react"
+import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package, Lock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -121,16 +121,26 @@ function OrderItemCompact({
   const [confirmRemove, setConfirmRemove] = useState(false)
 
   const cap = maxQuantityPerItem && maxQuantityPerItem > 0 ? maxQuantityPerItem : Infinity
-  const stock = item.availableStock && item.availableStock > 0 ? item.availableStock : Infinity
-  const effectiveLimit = Math.min(cap, stock)
+  // availableStock = free units of the SKU at read time (BE: product.stock).
+  // The buyer can grow to (current qty + free units); undefined means the SKU
+  // doesn't track stock and is effectively unconstrained.
+  const stockUnknown =
+    item.availableStock === undefined || item.availableStock === null
+  const freeUnits: number = stockUnknown ? Infinity : (item.availableStock ?? Infinity)
+  const stockBound = item.quantity + freeUnits
+  const effectiveLimit = Math.min(cap, stockBound)
   const canDecrease = item.quantity > 1
   const canIncrease = item.quantity < effectiveLimit
+  const isStockExhausted = !canIncrease && stockBound <= cap
 
-  // Choose the most informative reason — stock cap usually beats per-item cap
-  // because it changes more often and surprises buyers more.
+  // Stock-bound limits surprise buyers more than per-item caps, so when both
+  // bite the stock message wins. "Sem mais unidades disponíveis" is the
+  // hard sold-out case (freeUnits=0); the count variant covers partial.
   const limitReason = !canIncrease
-    ? stock <= cap
-      ? `Apenas ${item.availableStock} em estoque`
+    ? isStockExhausted
+      ? freeUnits === 0
+        ? "Sem mais unidades disponíveis no estoque"
+        : `Apenas ${item.availableStock} ${item.availableStock === 1 ? "unidade" : "unidades"} disponíveis`
       : `Limite de ${maxQuantityPerItem} por item`
     : null
 
@@ -212,17 +222,35 @@ function OrderItemCompact({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-l-none hover:bg-gray-100"
+                      className={cn(
+                        "h-8 w-8 rounded-l-none hover:bg-gray-100",
+                        // Sold-out state gets an intentional "locked" treatment
+                        // (amber tint + lock icon) so buyers don't mistake the
+                        // disabled "+" for a momentary glitch.
+                        isStockExhausted &&
+                          "bg-amber-50 text-amber-700 disabled:opacity-100 disabled:text-amber-700",
+                      )}
                       onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                       disabled={!canIncrease}
                       aria-label="Aumentar quantidade"
                     >
-                      <Plus className="h-3 w-3" />
+                      {isStockExhausted ? (
+                        <Lock className="h-3 w-3" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
                     </Button>
                   </span>
                 </TooltipTrigger>
                 {limitReason && (
-                  <TooltipContent>{limitReason}</TooltipContent>
+                  <TooltipContent
+                    className={cn(
+                      isStockExhausted &&
+                        "border-amber-200 bg-amber-50 text-amber-900",
+                    )}
+                  >
+                    {limitReason}
+                  </TooltipContent>
                 )}
               </Tooltip>
             </TooltipProvider>

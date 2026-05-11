@@ -8,14 +8,11 @@ import type { PublicCheckoutCart } from "@/types"
 
 interface CheckoutWaitlistOnlyScreenProps {
   cart: PublicCheckoutCart
-  onUpdated?: () => void
 }
 
 export function CheckoutWaitlistOnlyScreen({
   cart,
-  onUpdated,
 }: CheckoutWaitlistOnlyScreenProps) {
-  const hasNotified = cart.waitlistItems.some((i) => i.status === "notified")
   const handle = cart.platformHandle
 
   return (
@@ -32,24 +29,12 @@ export function CheckoutWaitlistOnlyScreen({
               </div>
             </div>
             <h2 className="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-              {hasNotified
-                ? "Sua vez chegou!"
-                : "Você está na fila de espera"}
+              Você está na fila de espera
             </h2>
             <p className="mt-3 max-w-sm text-center text-sm leading-relaxed text-gray-500">
-              {hasNotified ? (
-                <>
-                  Alguns produtos liberaram. Garanta o seu antes do tempo
-                  acabar — saindo da fila, ele volta a ser oferecido para o
-                  próximo da lista.
-                </>
-              ) : (
-                <>
-                  Os produtos que você pediu estavam esgotados no momento do
-                  pedido. Vamos te avisar assim que liberar — sem fila dupla,
-                  sem sorteio: ordem de chegada.
-                </>
-              )}
+              Os produtos que você pediu estavam esgotados no momento do
+              pedido. Vamos te avisar assim que liberar — sem fila dupla,
+              sem sorteio: ordem de chegada.
             </p>
 
             {handle && (
@@ -67,7 +52,6 @@ export function CheckoutWaitlistOnlyScreen({
         <CheckoutWaitlistSection
           token={cart.token}
           items={cart.waitlistItems}
-          onNotifiedExpired={onUpdated}
         />
 
         <Card className="border-gray-100 shadow-sm">

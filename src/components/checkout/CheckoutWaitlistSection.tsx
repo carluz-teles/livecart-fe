@@ -1,12 +1,10 @@
 "use client"
 
 import Image from "next/image"
-import { Clock, Hourglass, Sparkles, X } from "lucide-react"
+import { Hourglass, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { CheckoutExpirationTimer } from "./CheckoutExpirationTimer"
 import { useDropFromWaitlist } from "@/hooks/checkout"
 import { cn } from "@/lib/utils"
 import type { PublicCheckoutWaitlistItem } from "@/types"
@@ -14,10 +12,6 @@ import type { PublicCheckoutWaitlistItem } from "@/types"
 interface CheckoutWaitlistSectionProps {
   token: string
   items: PublicCheckoutWaitlistItem[]
-  /** Disparado quando o timer de qualquer item 'notified' expira — o pai
-   *  invalida o cart pra que a UI reflita o estado pós-expiração (item
-   *  voltou para 'waiting' ou foi promovido outro cliente). */
-  onNotifiedExpired?: () => void
 }
 
 function formatPrice(cents: number): string {
@@ -30,14 +24,15 @@ function formatPrice(cents: number): string {
 export function CheckoutWaitlistSection({
   token,
   items,
-  onNotifiedExpired,
 }: CheckoutWaitlistSectionProps) {
   const dropMutation = useDropFromWaitlist()
 
-  if (items.length === 0) return null
-
-  const notified = items.filter((i) => i.status === "notified")
+  // Only waiting entries belong in this section. Notified items are already
+  // back in the cart as regular products and are surfaced via the dedicated
+  // promotion banner at the top of the checkout — duplicating them here (with
+  // a per-item timer that's actually just the global cart TTL) confused buyers.
   const waiting = items.filter((i) => i.status === "waiting")
+  if (waiting.length === 0) return null
 
   return (
     <Card className="border-amber-100 bg-gradient-to-br from-amber-50/50 to-orange-50/30">
@@ -45,7 +40,7 @@ export function CheckoutWaitlistSection({
         <div className="flex items-center gap-2">
           <Hourglass className="h-4 w-4 text-amber-600" />
           <CardTitle className="text-sm font-medium text-amber-900">
-            Produtos em fila de espera
+            Aguardando estoque
           </CardTitle>
         </div>
         <p className="text-xs leading-relaxed text-amber-800/80">
@@ -55,47 +50,16 @@ export function CheckoutWaitlistSection({
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {notified.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Disponíveis para finalizar agora
-            </div>
-            {notified.map((item) => (
-              <NotifiedRow
-                key={item.id}
-                token={token}
-                item={item}
-                onExpired={onNotifiedExpired}
-                onDrop={() =>
-                  dropMutation.mutate({ token, waitlistItemId: item.id })
-                }
-                disabled={dropMutation.isPending}
-              />
-            ))}
-          </div>
-        )}
-
-        {notified.length > 0 && waiting.length > 0 && <Separator />}
-
-        {waiting.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
-              <Clock className="h-3.5 w-3.5" />
-              Aguardando estoque
-            </div>
-            {waiting.map((item) => (
-              <WaitingRow
-                key={item.id}
-                item={item}
-                onDrop={() =>
-                  dropMutation.mutate({ token, waitlistItemId: item.id })
-                }
-                disabled={dropMutation.isPending}
-              />
-            ))}
-          </div>
-        )}
+        {waiting.map((item) => (
+          <WaitingRow
+            key={item.id}
+            item={item}
+            onDrop={() =>
+              dropMutation.mutate({ token, waitlistItemId: item.id })
+            }
+            disabled={dropMutation.isPending}
+          />
+        ))}
       </CardContent>
     </Card>
   )
@@ -105,43 +69,6 @@ interface RowProps {
   item: PublicCheckoutWaitlistItem
   onDrop: () => void
   disabled?: boolean
-}
-
-interface NotifiedRowProps extends RowProps {
-  token: string
-  onExpired?: () => void
-}
-
-function NotifiedRow({ item, onExpired, onDrop, disabled }: NotifiedRowProps) {
-  return (
-    <div className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-white p-3">
-      <div className="flex items-start gap-3">
-        <ProductThumb image={item.productImage} name={item.productName} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900">
-                {item.productName}
-              </p>
-              <p className="text-xs text-gray-500">
-                {item.quantity}x · {formatPrice(item.unitPrice)}
-              </p>
-            </div>
-            <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-              Disponível!
-            </Badge>
-          </div>
-        </div>
-      </div>
-      {item.expiresAt && (
-        <CheckoutExpirationTimer
-          expiresAt={item.expiresAt}
-          onExpired={onExpired}
-        />
-      )}
-      <DropButton onClick={onDrop} disabled={disabled} />
-    </div>
-  )
 }
 
 function WaitingRow({ item, onDrop, disabled }: RowProps) {

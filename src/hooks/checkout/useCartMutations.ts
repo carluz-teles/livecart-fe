@@ -35,6 +35,24 @@ function errorMessage(err: unknown, fallback: string): string {
   return fallback
 }
 
+/** Detects the BE "estoque insuficiente" 422 so the buyer sees a calmer
+ *  amber-toned toast with context instead of a red generic error. The check
+ *  is loose on purpose — the BE owns the copy. */
+function isInsufficientStockError(err: unknown): boolean {
+  const apiErr = err as Partial<ApiError> | null
+  if (apiErr?.status !== 422) return false
+  const msg = (apiErr.message ?? apiErr.error ?? "").toLowerCase()
+  return msg.includes("estoque")
+}
+
+function showStockExhaustedToast() {
+  toast.warning("Esse produto acabou de esgotar", {
+    description:
+      "Outro cliente fechou a última unidade enquanto você editava. Seu carrinho voltou ao valor anterior.",
+    duration: 6000,
+  })
+}
+
 export function useUpdateCartItemQuantity() {
   const queryClient = useQueryClient()
 
@@ -87,6 +105,10 @@ export function useUpdateCartItemQuantity() {
     onError: (err, { token }, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(checkoutKeys.cart(token), ctx.previous)
+      }
+      if (isInsufficientStockError(err)) {
+        showStockExhaustedToast()
+        return
       }
       toast.error(errorMessage(err, "Não foi possível atualizar o item"))
     },
@@ -212,6 +234,10 @@ export function useAddCartItem() {
     mutationFn: ({ token, productId, quantity }) =>
       checkoutService.addItem(token, productId, quantity),
     onError: (err) => {
+      if (isInsufficientStockError(err)) {
+        showStockExhaustedToast()
+        return
+      }
       toast.error(errorMessage(err, "Não foi possível adicionar o produto"))
     },
     onSuccess: (data, { token }) => {
