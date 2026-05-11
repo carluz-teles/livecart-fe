@@ -119,6 +119,20 @@ export const checkoutService = {
     ),
 
   // ==========================================================================
+  // WAITLIST
+  // ==========================================================================
+
+  /**
+   * Cliente desiste de uma entry da waitlist. Devolve o cart atualizado.
+   * Se a entry estava 'notified', o backend libera o estoque para o
+   * próximo da fila automaticamente.
+   */
+  dropFromWaitlist: (token: string, waitlistItemId: string) =>
+    apiClient.publicDelete<PublicCheckoutCart>(
+      `/api/public/checkout/${token}/waitlist/${waitlistItemId}`,
+    ),
+
+  // ==========================================================================
   // COUPONS
   // ==========================================================================
 

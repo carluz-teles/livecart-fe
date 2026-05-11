@@ -9,4 +9,5 @@ export {
   useUpdateCartItemQuantity,
   useRemoveCartItem,
   useAddCartItem,
+  useDropFromWaitlist,
 } from "./useCartMutations"

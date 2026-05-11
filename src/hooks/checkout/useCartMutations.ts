@@ -24,6 +24,10 @@ interface AddItemArgs extends MutationArgs {
   quantity: number
 }
 
+interface DropFromWaitlistArgs extends MutationArgs {
+  waitlistItemId: string
+}
+
 function errorMessage(err: unknown, fallback: string): string {
   const apiErr = err as Partial<ApiError> | null
   if (apiErr?.message) return apiErr.message
@@ -149,6 +153,51 @@ export function useRemoveCartItem() {
     onSuccess: (data, { token }) => {
       queryClient.setQueryData(checkoutKeys.cart(token), data)
       toast.success("Item removido")
+    },
+    onSettled: (_data, _err, { token }) => {
+      queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })
+    },
+  })
+}
+
+export function useDropFromWaitlist() {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+    PublicCheckoutCart,
+    ApiError,
+    DropFromWaitlistArgs,
+    { previous?: PublicCheckoutCart }
+  >({
+    mutationFn: ({ token, waitlistItemId }) =>
+      checkoutService.dropFromWaitlist(token, waitlistItemId),
+    onMutate: async ({ token, waitlistItemId }) => {
+      await queryClient.cancelQueries({ queryKey: checkoutKeys.cart(token) })
+      const previous = queryClient.getQueryData<PublicCheckoutCart>(
+        checkoutKeys.cart(token),
+      )
+      if (previous) {
+        queryClient.setQueryData<PublicCheckoutCart>(
+          checkoutKeys.cart(token),
+          {
+            ...previous,
+            waitlistItems: previous.waitlistItems.filter(
+              (w) => w.id !== waitlistItemId,
+            ),
+          },
+        )
+      }
+      return { previous }
+    },
+    onError: (err, { token }, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(checkoutKeys.cart(token), ctx.previous)
+      }
+      toast.error(errorMessage(err, "Não foi possível sair da fila"))
+    },
+    onSuccess: (data, { token }) => {
+      queryClient.setQueryData(checkoutKeys.cart(token), data)
+      toast.success("Você saiu da fila desse produto")
     },
     onSettled: (_data, _err, { token }) => {
       queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })

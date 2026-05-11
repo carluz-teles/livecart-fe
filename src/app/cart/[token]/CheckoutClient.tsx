@@ -33,6 +33,7 @@ import {
   CheckoutSection,
   CheckoutExpressPayment,
   CheckoutOrderSummary,
+  CheckoutWaitlistSection,
   CheckoutShippingOptions,
 } from "@/components/checkout"
 
@@ -715,6 +716,15 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             onExpired={() => refetchCart()}
             formatCurrency={formatCurrency}
           />
+          {cart.waitlistItems.length > 0 && (
+            <div className="mt-4">
+              <CheckoutWaitlistSection
+                token={cart.token}
+                items={cart.waitlistItems}
+                onNotifiedExpired={() => refetchCart()}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr,400px]">
@@ -1188,7 +1198,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             </form>
           </Form>
 
-          <div className="hidden lg:block lg:sticky lg:top-8 lg:self-start">
+          <div className="hidden space-y-4 lg:block lg:sticky lg:top-8 lg:self-start">
             <CheckoutOrderSummary
               items={orderItems}
               subtotal={cart.summary.subtotal}
@@ -1214,6 +1224,13 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               onExpired={() => refetchCart()}
               formatCurrency={formatCurrency}
             />
+            {cart.waitlistItems.length > 0 && (
+              <CheckoutWaitlistSection
+                token={cart.token}
+                items={cart.waitlistItems}
+                onNotifiedExpired={() => refetchCart()}
+              />
+            )}
           </div>
         </div>
       </div>

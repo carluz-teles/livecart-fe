@@ -287,6 +287,23 @@ export interface OrderUpsellSummary {
 // PUBLIC CHECKOUT TYPES
 // =============================================================================
 
+export interface PublicCheckoutWaitlistItem {
+  id: string
+  productId: string
+  productName: string
+  productImage: string | null
+  unitPrice: number
+  quantity: number
+  position: number
+  /** "waiting" = aguardando estoque liberar; "notified" = liberou e o
+   *  cliente tem `expiresAt` para finalizar antes do item voltar para a
+   *  fila. */
+  status: "waiting" | "notified"
+  notifiedAt?: string | null
+  expiresAt?: string | null
+  createdAt?: string | null
+}
+
 export interface PublicCheckoutItem {
   id: string
   productId: string
@@ -422,6 +439,7 @@ export interface PublicCheckoutCart {
   event: PublicCheckoutEvent
   store: PublicCheckoutStore
   items: PublicCheckoutItem[]
+  waitlistItems: PublicCheckoutWaitlistItem[]
   summary: PublicCheckoutSummary
   shipping?: PublicCheckoutSelectedShipping | null
   // Populated when paymentStatus === "paid" (post-payment receipt) OR when the
