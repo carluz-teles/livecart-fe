@@ -65,6 +65,8 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import { IntegrationCard } from "@/components/integration/IntegrationCard"
 import { CopyableURL } from "@/components/integration/CopyableURL"
+import { PagarmeConnectWizard } from "@/components/integration/PagarmeConnectWizard"
+import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProbe"
 import { TinyHealthCheckDialog } from "@/components/integration/TinyHealthCheck/TinyHealthCheckDialog"
 import {
   useIntegrations,
@@ -78,6 +80,7 @@ import {
   useTestConnection,
   useUpdateIntegrationPriority,
   useProviderURLs,
+  usePagarmeWebhookStatus,
 } from "@/hooks/integration"
 import type {
   Integration,
@@ -222,10 +225,11 @@ const PROVIDER_WEBHOOK_COPY: Record<string, ProviderWebhookCopy> = {
       "Use para reconfigurar o callback OAuth no painel do Mercado Pago.",
   },
   pagarme: {
-    showHealth: false,
-    healthHint: "",
+    showHealth: true,
+    healthHint:
+      "Ainda não recebemos nenhum evento. Confira se a URL e as credenciais estão corretas no painel da Pagar.me.",
     webhookHint:
-      "Cole no painel da Pagar.me em Webhooks. Eventos recomendados: order.paid, order.canceled. Se o webhook tiver basic auth, atualize as credenciais ao reconectar.",
+      "Cole no painel da Pagar.me em Webhooks. Eventos recomendados: order.paid, order.payment_failed, order.canceled. Se o webhook tiver basic auth, atualize as credenciais ao reconectar.",
   },
   melhor_envio: {
     showHealth: false,
@@ -1112,43 +1116,21 @@ function IntegrationsContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
-            <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                    URL de webhooks para configurar na Pagar.me
-                  </p>
-                  <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-                    Cadastre esta URL em <strong>Configurações → Webhooks</strong>
-                    {" "}com os eventos <code>order.paid</code>,{" "}
-                    <code>order.payment_failed</code> e{" "}
-                    <code>order.canceled</code>. Se você proteger o webhook
-                    com Basic Auth, use os mesmos valores nos campos abaixo.
-                  </p>
-                </div>
-              </div>
+            <PagarmeConnectWizard
+              webhookUrl={pagarmeProviderURLs.data?.webhookUrl}
+              webhookUser={pagarmeWebhookUser}
+              webhookPass={pagarmeWebhookPass}
+            />
 
-              {pagarmeProviderURLs.isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Carregando URL...
-                </div>
-              ) : pagarmeProviderURLs.isError ? (
-                <div className="flex items-start gap-2 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  <span>
-                    Não foi possível carregar a URL. Recarregue a página e
-                    tente novamente.
-                  </span>
-                </div>
-              ) : pagarmeProviderURLs.data?.webhookUrl ? (
-                <CopyableURL
-                  label="URL de Webhooks"
-                  value={pagarmeProviderURLs.data.webhookUrl}
-                />
-              ) : null}
-            </div>
+            {pagarmeProviderURLs.isError && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>
+                  Não foi possível carregar a URL do webhook. Recarregue a
+                  página e tente novamente.
+                </span>
+              </div>
+            )}
 
             <Separator />
 
@@ -1341,6 +1323,17 @@ function IntegrationsContent() {
                     {providerCopy.showHealth && (webhookUrl || redirectUrl) && (
                       <Separator />
                     )}
+
+                    {/* Pagar.me-specific probe: queries the gateway's hooks
+                        history to confirm the merchant cadastrou a URL no
+                        painel. Other providers either ping us back on save
+                        (Tiny) or rely on the live event reception. */}
+                    {detailsSheet.provider.id === "pagarme" &&
+                      currentDetailsIntegration?.id && (
+                        <PagarmeWebhookProbe
+                          integrationId={currentDetailsIntegration.id}
+                        />
+                      )}
 
                     {webhookUrl && (
                       <CopyableURL

@@ -12,6 +12,7 @@ import type {
   InstagramLivesResponse,
   ConnectSmartEnviosPayload,
   ConnectPagarmePayload,
+  PagarmeWebhookStatus,
   ProviderURLs,
   ERPHealthCheckResponse,
 } from "@/types"
@@ -152,6 +153,19 @@ export const integrationService = {
     apiClient.post<Integration>(
       `/stores/${storeId}/integrations/payment/pagarme/connect`,
       payload,
+      token
+    ),
+
+  // Reads Pagar.me's recent delivery history (no public API to list
+  // subscriptions, so we infer "configured" from a matching URL). Returns
+  // configured=false when no recent delivery hit our endpoint.
+  getPagarmeWebhookStatus: (
+    storeId: string,
+    integrationId: string,
+    token?: string | null
+  ) =>
+    apiClient.get<PagarmeWebhookStatus>(
+      `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-status`,
       token
     ),
 }

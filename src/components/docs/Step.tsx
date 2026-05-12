@@ -7,6 +7,7 @@ type StepLocation =
   | "livecart"
   | "smartenvios"
   | "mercadopago"
+  | "pagarme"
   | "instagram"
   | "melhor_envio"
 
@@ -43,6 +44,11 @@ const LOCATION_STYLES: Record<
     label: "No Mercado Pago",
     className:
       "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300",
+  },
+  pagarme: {
+    label: "Na Pagar.me",
+    className:
+      "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300",
   },
   instagram: {
     label: "No Instagram",

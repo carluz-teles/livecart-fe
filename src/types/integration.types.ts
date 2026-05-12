@@ -270,6 +270,21 @@ export interface ConnectPagarmePayload {
   webhookPassword?: string
 }
 
+// Pagar.me v5 has no public API to list webhook subscriptions, so this
+// status is inferred from recent delivery history (GET /hooks). configured
+// is true whenever at least one recent event was delivered to our URL;
+// lastResponseStatus surfaces what our endpoint answered so the UI can warn
+// when the URL is wired but delivering 401/5xx.
+export interface PagarmeWebhookStatus {
+  expectedUrl: string
+  configured: boolean
+  matchCount: number
+  lastDeliveryAt: string | null
+  lastDeliveryStatus: "" | "sent" | "failed" | "pending"
+  lastResponseStatus: number
+  lastEvent: string
+}
+
 // A carrier service that the store's shipping embarcador has enabled for use.
 // Returned by GET /integrations/shipping/:provider/carriers.
 export interface ShippingCarrier {
