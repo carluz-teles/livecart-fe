@@ -3,7 +3,7 @@
 import { use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ChevronLeft, ChevronRight, Instagram } from "lucide-react"
+import { ArrowLeft, Ban, ChevronLeft, ChevronRight, Instagram } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -64,6 +64,20 @@ export function OrderDetailHeader() {
                 <Badge variant={FIRST_PURCHASE_BADGE.variant}>
                   {FIRST_PURCHASE_BADGE.label}
                 </Badge>
+              )}
+              {order.customerBlocked && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="destructive" className="gap-1">
+                      <Ban className="h-3 w-3" />
+                      Cliente bloqueado
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    Esse cliente está bloqueado na loja. Pedidos antigos
+                    seguem normais; novas compras dele serão ignoradas.
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
             <p className="text-sm text-muted-foreground">

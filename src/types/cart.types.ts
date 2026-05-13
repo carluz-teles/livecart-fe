@@ -158,6 +158,10 @@ export interface OrderDetail extends Order {
   // button). Null until the merchant emits the NFe in the ERP — that's the
   // "Aguardando NFe" branch on the order detail page.
   erpInvoice: ERPInvoice | null
+  // True when the buyer's handle is currently blocked for this store. Drives
+  // the "Cliente bloqueado" badge on the order detail page. Informational
+  // only — past orders stay fully visible.
+  customerBlocked: boolean
 }
 
 // Mirror of integration.Service finalisation state. Status `failed` means

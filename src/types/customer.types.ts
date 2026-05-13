@@ -50,3 +50,26 @@ export interface CustomerListParams {
 
 // Response type for customer listing
 export type CustomerListResponse = PaginatedResponse<Customer>
+
+// Blocked handle (a customer prevented from purchasing). Lives in its own
+// table on the backend: customers are not deleted when blocked — purchases
+// are filtered at the comment-processor layer, and any open cart they have
+// gets soft-cancelled with cancelled_reason='customer_blocked'.
+export interface BlockedHandle {
+  id: string
+  handle: string
+  reason?: string | null
+  blockedAt: string
+  unblockedAt?: string | null
+  blockedByUserId?: string | null
+}
+
+export interface BlockedHandlesResponse {
+  data: BlockedHandle[]
+  total: number
+}
+
+export interface BlockHandlePayload {
+  handle: string
+  reason?: string
+}

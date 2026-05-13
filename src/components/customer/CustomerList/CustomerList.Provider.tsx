@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { useCustomers, useCustomerStats } from "@/hooks/customer"
+import { useCallback, useMemo, useState } from "react"
+import { useBlockedHandles, useCustomers, useCustomerStats } from "@/hooks/customer"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { useListParams } from "@/hooks/shared/useListParams"
 import type { CustomerFilters } from "@/types/customer.types"
@@ -18,6 +18,7 @@ export function CustomerListProvider({ children }: ProviderProps) {
   const [searchInput, setSearchInput] = useState("")
   const debouncedSearch = useDebounce(searchInput, 300)
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
+  const [showBlockedOnly, setShowBlockedOnly] = useState(false)
 
   const { filters, setFilters, pagination, setPage, sorting, setSorting } =
     useListParams<CustomerFilters>({ defaultSortBy: "last_order_at", defaultSortOrder: "desc" })
@@ -42,14 +43,26 @@ export function CustomerListProvider({ children }: ProviderProps) {
 
   const { data, isLoading, error } = useCustomers(params)
   const { data: stats, isLoading: isStatsLoading } = useCustomerStats()
+  const { data: blockedList } = useBlockedHandles()
+
+  // Lower-case Set so row badges + the "apenas bloqueados" filter share a
+  // single source of truth and avoid re-normalizing per render.
+  const blockedHandles = useMemo(() => {
+    return new Set((blockedList?.data ?? []).map((b) => b.handle.toLowerCase()))
+  }, [blockedList])
+
+  const customers = data?.data ?? []
+  const filteredCustomers = showBlockedOnly
+    ? customers.filter((c) => blockedHandles.has(c.handle.toLowerCase()))
+    : customers
 
   const value: CustomerListContextValue = {
     state: {
-      customers: data?.data ?? [],
+      customers: filteredCustomers,
       isLoading,
       error: error as Error | null,
-      total: data?.pagination.total ?? 0,
-      totalPages: data?.pagination.totalPages ?? 0,
+      total: showBlockedOnly ? filteredCustomers.length : data?.pagination.total ?? 0,
+      totalPages: showBlockedOnly ? 1 : data?.pagination.totalPages ?? 0,
       search: searchInput,
       filters,
       pagination,
@@ -57,6 +70,8 @@ export function CustomerListProvider({ children }: ProviderProps) {
       stats,
       isStatsLoading,
       selectedCustomerId,
+      blockedHandles,
+      showBlockedOnly,
     },
     actions: {
       setSearch: setSearchInput,
@@ -65,6 +80,7 @@ export function CustomerListProvider({ children }: ProviderProps) {
       toggleSort,
       openCustomer: setSelectedCustomerId,
       closeCustomer: () => setSelectedCustomerId(null),
+      setShowBlockedOnly,
     },
   }
 

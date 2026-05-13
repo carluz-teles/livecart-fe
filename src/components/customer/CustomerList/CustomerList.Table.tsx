@@ -1,10 +1,11 @@
 "use client"
 
 import { use } from "react"
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye, ShoppingBag } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Eye, ShoppingBag } from "lucide-react"
 import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -76,9 +77,10 @@ function LoadingRow() {
 
 interface CustomerRowProps {
   customer: Customer
+  isBlocked: boolean
 }
 
-function CustomerRow({ customer }: CustomerRowProps) {
+function CustomerRow({ customer, isBlocked }: CustomerRowProps) {
   const ctx = use(CustomerListContext)!
   const { openCustomer } = ctx.actions
 
@@ -89,13 +91,36 @@ function CustomerRow({ customer }: CustomerRowProps) {
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 ring-1 ring-border/60">
-            <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+          <Avatar
+            className={cn(
+              "h-9 w-9 ring-1",
+              isBlocked ? "ring-destructive/40 opacity-70" : "ring-border/60",
+            )}
+          >
+            <AvatarFallback
+              className={cn(
+                "text-xs font-medium",
+                isBlocked
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-primary/10 text-primary",
+              )}
+            >
               {initialsFromHandle(customer.handle)}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="font-medium leading-tight">@{customer.handle}</span>
+            <span className="flex items-center gap-2 font-medium leading-tight">
+              @{customer.handle}
+              {isBlocked && (
+                <Badge
+                  variant="destructive"
+                  className="gap-0.5 px-1.5 py-0 text-[10px] uppercase tracking-wide"
+                >
+                  <Ban className="h-2.5 w-2.5" />
+                  Bloq.
+                </Badge>
+              )}
+            </span>
             {customer.email && (
               <span className="text-xs text-muted-foreground">{customer.email}</span>
             )}
@@ -138,7 +163,7 @@ function CustomerRow({ customer }: CustomerRowProps) {
 export function CustomerListTable() {
   const ctx = use(CustomerListContext)
   if (!ctx) return null
-  const { customers, isLoading, error } = ctx.state
+  const { customers, isLoading, error, blockedHandles } = ctx.state
 
   return (
     <div className="rounded-md border">
@@ -185,7 +210,11 @@ export function CustomerListTable() {
             </TableRow>
           ) : (
             customers.map((customer) => (
-              <CustomerRow key={customer.id} customer={customer} />
+              <CustomerRow
+                key={customer.id}
+                customer={customer}
+                isBlocked={blockedHandles.has(customer.handle.toLowerCase())}
+              />
             ))
           )}
         </TableBody>

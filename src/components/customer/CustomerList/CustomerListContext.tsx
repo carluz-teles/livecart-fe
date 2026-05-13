@@ -21,6 +21,11 @@ export interface CustomerListState {
   stats: CustomerStats | undefined
   isStatsLoading: boolean
   selectedCustomerId: string | null
+  // Set of currently-blocked handles (lower-cased) for the active store.
+  // Used by Table rows for the "Bloqueado" badge and by Toolbar for the
+  // "Apenas bloqueados" toggle.
+  blockedHandles: Set<string>
+  showBlockedOnly: boolean
 }
 
 export interface CustomerListActions {
@@ -30,6 +35,7 @@ export interface CustomerListActions {
   toggleSort: (column: string) => void
   openCustomer: (id: string) => void
   closeCustomer: () => void
+  setShowBlockedOnly: (value: boolean) => void
 }
 
 export interface CustomerListContextValue {
