@@ -8,9 +8,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { Separator } from "@/components/ui/separator"
 import { useCustomer } from "@/hooks/customer"
 import { CustomerListContext } from "../CustomerList/CustomerListContext"
-import { CustomerDetailHeader } from "./CustomerDetail.Header"
+import { CustomerDetailHero } from "./CustomerDetail.Hero"
+import { CustomerDetailIdentity } from "./CustomerDetail.Identity"
+import { CustomerDetailAddress } from "./CustomerDetail.Address"
 import { CustomerDetailStats } from "./CustomerDetail.Stats"
 import { CustomerDetailOrders } from "./CustomerDetail.Orders"
 
@@ -27,29 +30,42 @@ export function CustomerDetail() {
     <Sheet open={!!selectedCustomerId} onOpenChange={(open) => !open && closeCustomer()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-6 overflow-y-auto sm:max-w-lg"
+        className="flex w-full flex-col gap-0 overflow-y-auto bg-background p-0 sm:max-w-xl"
       >
-        <SheetHeader className="space-y-0 text-left">
-          <SheetTitle className="sr-only">Detalhes do cliente</SheetTitle>
-          <SheetDescription className="sr-only">
-            Resumo do cliente, métricas e histórico de pedidos.
+        <SheetHeader className="sr-only">
+          <SheetTitle>Detalhes do cliente</SheetTitle>
+          <SheetDescription>
+            Identidade, métricas, endereço da última entrega e histórico de pedidos.
           </SheetDescription>
-          <CustomerDetailHeader customer={customer} isLoading={isLoading} />
         </SheetHeader>
 
-        <CustomerDetailStats customer={customer} isLoading={isLoading} />
+        <div className="flex flex-col gap-6 p-6">
+          <CustomerDetailHero customer={customer} isLoading={isLoading} />
 
-        {selectedCustomerId && (
-          <CustomerDetailOrders
-            customerId={selectedCustomerId}
-            onClose={closeCustomer}
-          />
-        )}
+          {customer && (
+            <>
+              <CustomerDetailStats customer={customer} isLoading={isLoading} />
+              <Separator className="opacity-60" />
+              <CustomerDetailIdentity customer={customer} />
+              <CustomerDetailAddress address={customer.lastShippingAddress ?? null} />
+              <Separator className="opacity-60" />
+            </>
+          )}
+
+          {selectedCustomerId && (
+            <CustomerDetailOrders
+              customerId={selectedCustomerId}
+              onClose={closeCustomer}
+            />
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   )
 }
 
-CustomerDetail.Header = CustomerDetailHeader
+CustomerDetail.Hero = CustomerDetailHero
 CustomerDetail.Stats = CustomerDetailStats
+CustomerDetail.Identity = CustomerDetailIdentity
+CustomerDetail.Address = CustomerDetailAddress
 CustomerDetail.Orders = CustomerDetailOrders

@@ -81,6 +81,66 @@ export function formatAttemptCount(count: number): string {
 }
 
 /**
+ * Formats a Brazilian phone number for display. Accepts any input shape
+ * (with/without country code, with mask, with spaces) and returns either
+ * "(11) 99999-9999", "(11) 9999-9999" or the original cleaned string.
+ */
+export function formatPhoneBR(raw: string | null | undefined): string {
+  if (!raw) return ""
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length < 10) return raw
+
+  const withoutCountry = digits.startsWith("55") && digits.length > 11
+    ? digits.slice(2)
+    : digits
+
+  if (withoutCountry.length === 11) {
+    return `(${withoutCountry.slice(0, 2)}) ${withoutCountry.slice(2, 7)}-${withoutCountry.slice(7)}`
+  }
+  if (withoutCountry.length === 10) {
+    return `(${withoutCountry.slice(0, 2)}) ${withoutCountry.slice(2, 6)}-${withoutCountry.slice(6)}`
+  }
+  return raw
+}
+
+/**
+ * Returns the E.164-ish digits that can follow `https://wa.me/`. Prepends 55
+ * when the input is a 10/11-digit BR phone without country code.
+ */
+export function toWhatsAppDigits(raw: string | null | undefined): string {
+  if (!raw) return ""
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length === 10 || digits.length === 11) return `55${digits}`
+  return digits
+}
+
+/**
+ * Formats a Brazilian CPF or CNPJ for display. CPF = 11 digits, CNPJ = 14.
+ */
+export function formatDocument(raw: string | null | undefined): string {
+  if (!raw) return ""
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length === 11) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+  }
+  if (digits.length === 14) {
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
+  }
+  return raw
+}
+
+/**
+ * Formats a CEP / postal code as "00000-000". Falls back to raw when length
+ * isn't 8 digits.
+ */
+export function formatZipBR(raw: string | null | undefined): string {
+  if (!raw) return ""
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length === 8) return `${digits.slice(0, 5)}-${digits.slice(5)}`
+  return raw
+}
+
+/**
  * Parses currency string to cents
  * @param value - Currency string (e.g., "19,90" or "R$ 19,90")
  * @returns Amount in cents

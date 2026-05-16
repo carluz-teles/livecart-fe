@@ -1,14 +1,31 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 
+export interface CustomerShippingAddress {
+  zipCode?: string
+  street?: string
+  number?: string
+  complement?: string
+  neighborhood?: string
+  city?: string
+  state?: string
+}
+
 export interface Customer {
   id: string
   handle: string
   email?: string | null
   phone?: string | null
+  // Captured at the most recent checkout. Empty until the buyer fills the
+  // public cart form.
+  name?: string | null
+  document?: string | null
   totalOrders: number
   totalSpent: number
   lastOrderAt: string | null
   firstOrderAt: string | null
+  // Last destination the buyer typed at checkout. Null until any cart of
+  // theirs has shipping info.
+  lastShippingAddress?: CustomerShippingAddress | null
 }
 
 // Lightweight order summary returned by the customer-detail drawer.
