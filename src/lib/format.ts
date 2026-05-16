@@ -81,6 +81,26 @@ export function formatAttemptCount(count: number): string {
 }
 
 /**
+ * Strips Brazil's country code from a stream of digits. Handles the three
+ * shapes the dashboard sees in production:
+ *   - 13 digits "5511999999999" → "11999999999"
+ *   - 12 digits "551199999999" or country-prefixed landline → "1199999999"
+ *   - 11 digits "5511999999X" where someone typed +55 but lost a digit:
+ *     when the 3rd digit is "9" (mobile indicator) we assume the leading
+ *     "55" is the country code, not DDD 55 (Santa Maria/RS — extremely
+ *     rare in our customer base). Falls back to leaving the digits alone
+ *     so legitimate DDD-55 numbers still render.
+ *
+ * Exposed for tests; most callers should use formatPhoneBR / toWhatsAppDigits.
+ */
+function stripBRCountryCode(digits: string): string {
+  if (!digits.startsWith("55")) return digits
+  if (digits.length === 12 || digits.length === 13) return digits.slice(2)
+  if (digits.length === 11 && digits[2] === "9") return digits.slice(2)
+  return digits
+}
+
+/**
  * Formats a Brazilian phone number for display. Accepts any input shape
  * (with/without country code, with mask, with spaces) and returns either
  * "(11) 99999-9999", "(11) 9999-9999" or the original cleaned string.
@@ -90,27 +110,34 @@ export function formatPhoneBR(raw: string | null | undefined): string {
   const digits = raw.replace(/\D/g, "")
   if (digits.length < 10) return raw
 
-  const withoutCountry = digits.startsWith("55") && digits.length > 11
-    ? digits.slice(2)
-    : digits
+  const local = stripBRCountryCode(digits)
 
-  if (withoutCountry.length === 11) {
-    return `(${withoutCountry.slice(0, 2)}) ${withoutCountry.slice(2, 7)}-${withoutCountry.slice(7)}`
+  if (local.length === 11) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`
   }
-  if (withoutCountry.length === 10) {
-    return `(${withoutCountry.slice(0, 2)}) ${withoutCountry.slice(2, 6)}-${withoutCountry.slice(6)}`
+  if (local.length === 10) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`
+  }
+  if (local.length === 9) {
+    // Country code stripped but DDD missing (rare malformed data). Keep
+    // the digits intact rather than losing precision.
+    return local
   }
   return raw
 }
 
 /**
  * Returns the E.164-ish digits that can follow `https://wa.me/`. Prepends 55
- * when the input is a 10/11-digit BR phone without country code.
+ * when the input looks like a BR phone without country code.
  */
 export function toWhatsAppDigits(raw: string | null | undefined): string {
   if (!raw) return ""
   const digits = raw.replace(/\D/g, "")
-  if (digits.length === 10 || digits.length === 11) return `55${digits}`
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`
+  }
+  // Already country-prefixed (12-13) or otherwise — return as-is so wa.me
+  // can decide; never prepend a second "55".
   return digits
 }
 

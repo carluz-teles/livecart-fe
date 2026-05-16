@@ -1,7 +1,7 @@
 "use client"
 
 import { CalendarClock, ShoppingBag, Sparkles, Wallet } from "lucide-react"
-import { formatCompactCurrency, formatCurrency, formatDate } from "@/lib/format"
+import { formatCurrency, formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Customer } from "@/types/customer.types"
@@ -30,30 +30,35 @@ function Stat({ label, value, hint, icon: Icon, isLoading, accent = "default" }:
 
   return (
     <div className="group relative overflow-hidden rounded-xl border bg-card p-4 transition-colors hover:border-foreground/20">
-      {/* Hover glow */}
       <div
         aria-hidden
         className="absolute -inset-px rounded-xl bg-gradient-to-br from-primary/0 via-primary/0 to-primary/0 opacity-0 transition-opacity group-hover:from-primary/[0.04] group-hover:to-primary/[0.02] group-hover:opacity-100"
       />
-      <div className="relative">
+      <div className="relative flex flex-col gap-2.5">
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md ring-1",
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1",
               accentClass,
             )}
           >
             <Icon className="h-3.5 w-3.5" />
           </div>
-          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          <span className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             {label}
           </span>
         </div>
-        <div className="mt-2.5 text-lg font-semibold tabular-nums leading-none">
-          {isLoading ? <Skeleton className="h-5 w-20" /> : value}
+        <div className="flex min-h-[1.75rem] items-baseline gap-1.5">
+          {isLoading ? (
+            <Skeleton className="h-6 w-24" />
+          ) : (
+            <span className="text-xl font-semibold leading-none tabular-nums">
+              {value}
+            </span>
+          )}
         </div>
         {hint && !isLoading && (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">{hint}</p>
+          <p className="text-[11px] leading-none text-muted-foreground">{hint}</p>
         )}
       </div>
     </div>
@@ -66,12 +71,15 @@ export function CustomerDetailStats({ customer, isLoading }: CustomerDetailStats
   const aov = total > 0 ? Math.round(spent / total) : 0
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+    // Drawer is narrow (sm:max-w-xl ≈ 576px). Forcing 2 cols keeps room for
+    // full currency strings like "R$ 36.344,50" without truncation.
+    <div className="grid grid-cols-2 gap-2.5">
       <Stat
         label="Pedidos"
         value={total}
         icon={ShoppingBag}
         isLoading={isLoading}
+        hint={total === 0 ? "sem compras" : total === 1 ? "1 pedido" : `${total} pedidos`}
       />
       <Stat
         label="Total gasto"
@@ -82,19 +90,15 @@ export function CustomerDetailStats({ customer, isLoading }: CustomerDetailStats
       />
       <Stat
         label="Ticket médio"
-        value={aov > 0 ? formatCompactCurrency(aov) : "—"}
+        value={aov > 0 ? formatCurrency(aov) : "—"}
         icon={Sparkles}
         accent="live"
         isLoading={isLoading}
-        hint={aov > 0 ? "por pedido" : "sem pedidos"}
+        hint={aov > 0 ? "por pedido" : "sem histórico"}
       />
       <Stat
         label="Última compra"
-        value={
-          <span className="text-sm font-medium">
-            {formatDate(customer?.lastOrderAt ?? null)}
-          </span>
-        }
+        value={formatDate(customer?.lastOrderAt ?? null)}
         icon={CalendarClock}
         isLoading={isLoading}
       />
