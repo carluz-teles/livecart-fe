@@ -15,6 +15,7 @@ import type {
   EventSession,
   EventPlatform,
   EventDetailStatsResponse,
+  EventCart,
   EventCartsResponse,
   EventSoldProductsResponse,
   EventWhitelistProduct,
@@ -82,6 +83,19 @@ export const eventService = {
   // Event Details - List carts for an event
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
+
+  // Event Details - Resend the Instagram checkout DM for a single cart
+  resendCartMessage: (
+    storeId: string,
+    eventId: string,
+    cartId: string,
+    token?: string | null
+  ) =>
+    apiClient.post<EventCart>(
+      `/stores/${storeId}/lives/${eventId}/carts/${cartId}/resend-message`,
+      {},
+      token
+    ),
 
   // Event Details - List carts currently in checkout phase (live merchant view)
   listActiveCheckouts: (storeId: string, eventId: string, token?: string | null) =>

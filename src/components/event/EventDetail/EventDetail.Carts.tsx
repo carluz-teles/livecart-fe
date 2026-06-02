@@ -1,8 +1,9 @@
 "use client"
 
 import { use } from "react"
-import { Clock, Copy, ShoppingCart } from "lucide-react"
+import { Clock, Copy, Loader2, Send, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
+import { useResendCartMessage } from "@/hooks/event"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -103,6 +104,7 @@ export function EventDetailCarts() {
                     <CartRow
                       key={cart.id}
                       cart={cart}
+                      eventId={event.id}
                       sessionNumber={sessionIndex >= 0 ? sessionIndex + 1 : null}
                     />
                   )
@@ -118,10 +120,12 @@ export function EventDetailCarts() {
 
 interface CartRowProps {
   cart: EventCart
+  eventId: string
   sessionNumber: number | null
 }
 
-function CartRow({ cart, sessionNumber }: CartRowProps) {
+function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
+  const resendMessage = useResendCartMessage(eventId)
   const statusConfig = getStatusConfig(ORDER_STATUS_CONFIG, cart.status, "active")
   const paymentConfig = cart.paymentStatus
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
@@ -210,24 +214,49 @@ function CartRow({ cart, sessionNumber }: CartRowProps) {
         {getRelativeTime(cart.createdAt)}
       </TableCell>
       <TableCell>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleCopyCheckoutLink}
-              >
-                <Copy className="h-4 w-4" />
-                <span className="sr-only">Copiar link do checkout</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Copiar link do checkout</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center justify-end gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => resendMessage.mutate(cart.id)}
+                  disabled={resendMessage.isPending}
+                >
+                  {resendMessage.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">Reenviar mensagem de checkout</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reenviar mensagem de checkout</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleCopyCheckoutLink}
+                >
+                  <Copy className="h-4 w-4" />
+                  <span className="sr-only">Copiar link do checkout</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copiar link do checkout</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </TableCell>
     </TableRow>
   )
