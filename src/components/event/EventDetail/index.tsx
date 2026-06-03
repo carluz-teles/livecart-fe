@@ -11,6 +11,7 @@ import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
 import { EventDetailCarts } from "./EventDetail.Carts"
+import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
@@ -32,6 +33,7 @@ export const EventDetail = {
   TopBuyers: EventDetailTopBuyers,
   Sessions: EventDetailSessions,
   Carts: EventDetailCarts,
+  Comments: EventDetailComments,
   ActiveCheckouts: EventDetailActiveCheckouts,
   CheckoutUpsell: EventDetailCheckoutUpsell,
   LiveControl: EventDetailLiveControl,

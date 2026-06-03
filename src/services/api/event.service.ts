@@ -17,6 +17,7 @@ import type {
   EventDetailStatsResponse,
   EventCart,
   EventCartsResponse,
+  EventCommentsResponse,
   EventSoldProductsResponse,
   EventWhitelistProduct,
   EventWhitelistResponse,
@@ -83,6 +84,31 @@ export const eventService = {
   // Event Details - List carts for an event
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
+
+  // Event Details - List comments (with Instagram comment IDs) for moderation
+  listComments: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventCommentsResponse>(`/stores/${storeId}/lives/${eventId}/comments`, token),
+
+  // Comment moderation — reply (public), hide/unhide, delete via Instagram Graph API
+  replyComment: (storeId: string, commentId: string, text: string, token?: string | null) =>
+    apiClient.post<{ commentId: string; replied: boolean }>(
+      `/stores/${storeId}/integrations/instagram/comments/${commentId}/reply`,
+      { text },
+      token
+    ),
+
+  hideComment: (storeId: string, commentId: string, hidden: boolean, token?: string | null) =>
+    apiClient.post<{ commentId: string; hidden: boolean }>(
+      `/stores/${storeId}/integrations/instagram/comments/${commentId}/hide`,
+      { hidden },
+      token
+    ),
+
+  deleteComment: (storeId: string, commentId: string, token?: string | null) =>
+    apiClient.delete<{ commentId: string; deleted: boolean }>(
+      `/stores/${storeId}/integrations/instagram/comments/${commentId}`,
+      token
+    ),
 
   // Event Details - Resend the Instagram checkout DM for a single cart
   resendCartMessage: (

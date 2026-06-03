@@ -15,6 +15,7 @@ import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
 import { EventDetailCarts } from "./EventDetail.Carts"
+import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
@@ -66,6 +67,7 @@ export function EventDetailBody() {
             <main className="flex flex-col gap-4 lg:col-span-8">
               <EventDetailSessions />
               <EventDetailCarts />
+              <EventDetailComments />
               <EventDetailActiveCheckouts />
               <EventDetailCheckoutUpsell />
             </main>

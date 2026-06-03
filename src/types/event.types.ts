@@ -209,6 +209,20 @@ export interface EventCartsResponse {
   data: EventCart[]
 }
 
+// A live comment with its Instagram comment ID, for the moderation UI
+export interface EventComment {
+  id: string
+  platformCommentId: string
+  handle: string
+  text: string
+  hasPurchaseIntent: boolean
+  createdAt: string
+}
+
+export interface EventCommentsResponse {
+  data: EventComment[]
+}
+
 /** A cart currently in checkout phase (status='checkout', not yet paid).
  *  Surfaced live on the merchant dashboard so the operator can see buyer
  *  edits in real time before the payment lands. */
