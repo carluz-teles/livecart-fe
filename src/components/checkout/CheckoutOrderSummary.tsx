@@ -84,6 +84,7 @@ interface CheckoutOrderSummaryProps {
   total: number
   platformHandle?: string
   isLiveActive?: boolean
+  isPost?: boolean
   allowEdit?: boolean
   maxQuantityPerItem?: number
   expiresAt?: string | null
@@ -305,6 +306,7 @@ export function CheckoutOrderSummary({
   total,
   platformHandle,
   isLiveActive,
+  isPost,
   allowEdit,
   maxQuantityPerItem,
   expiresAt,
@@ -340,12 +342,14 @@ export function CheckoutOrderSummary({
         />
       )}
 
-      {/* Live notice with pulse */}
+      {/* Active-event notice: post-aware wording */}
       {isLiveActive && (
         <div className="relative overflow-hidden rounded-xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
           <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-orange-200/50" />
           <p className="relative text-sm text-orange-800">
-            <span className="font-semibold">Live em andamento!</span>
+            <span className="font-semibold">
+              {isPost ? "Promoção ativa!" : "Live em andamento!"}
+            </span>
             <br />
             <span className="text-orange-600">Novos itens podem ser adicionados.</span>
           </p>

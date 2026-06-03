@@ -327,6 +327,8 @@ export interface PublicCheckoutItem {
 export interface PublicCheckoutEvent {
   id: string
   title: string
+  /** 'single' | 'multi' | 'post'. Used to show post-appropriate wording. */
+  type?: string
   freeShipping: boolean
   /** Discount percent (0-100) applied at checkout when the buyer pays with
    *  Pix. 0 disables the feature. */

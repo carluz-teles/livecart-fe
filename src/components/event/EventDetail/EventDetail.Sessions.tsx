@@ -9,5 +9,8 @@ export function EventDetailSessions() {
   if (!ctx) return null
   const { event } = ctx.state
 
+  // Post events have no broadcast sessions to manage.
+  if (event.type === "post") return null
+
   return <SessionsTable sessions={event.sessions ?? []} isLoading={false} />
 }

@@ -647,6 +647,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   }
 
   const isLiveActive = cart.status === "active"
+  const isPost = cart.event?.type === "post"
 
   const availableItems = cart.items.filter((item) => {
     const availableQty = item.quantity - item.waitlistedQuantity
@@ -713,6 +714,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         storeName={cart.store.name}
         logoUrl={cart.store.logoUrl}
         isLiveActive={isLiveActive}
+        isPost={isPost}
       />
 
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -738,6 +740,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             total={effectiveTotal}
             platformHandle={cart.platformHandle}
             isLiveActive={isLiveActive}
+        isPost={isPost}
             allowEdit={cart.allowEdit}
             maxQuantityPerItem={cart.maxQuantityPerItem}
             expiresAt={cart.expiresAt}
@@ -1245,6 +1248,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               total={effectiveTotal}
               platformHandle={cart.platformHandle}
               isLiveActive={isLiveActive}
+        isPost={isPost}
               allowEdit={cart.allowEdit}
               maxQuantityPerItem={cart.maxQuantityPerItem}
               expiresAt={cart.expiresAt}

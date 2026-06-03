@@ -1,21 +1,31 @@
 import Image from "next/image"
-import { Lock, Radio, ShieldCheck } from "lucide-react"
+import { Instagram, Lock, Radio, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface CheckoutHeaderProps {
   storeName: string
   logoUrl?: string | null
   isLiveActive?: boolean
+  isPost?: boolean
 }
 
-export function CheckoutHeader({ storeName, logoUrl, isLiveActive }: CheckoutHeaderProps) {
+export function CheckoutHeader({ storeName, logoUrl, isLiveActive, isPost }: CheckoutHeaderProps) {
   return (
     <header className="relative overflow-hidden border-b border-gray-100 bg-white">
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 to-transparent pointer-events-none" />
 
       <div className="relative mx-auto max-w-6xl px-4 py-8">
         <div className="flex animate-in fade-in-0 slide-in-from-bottom-2 flex-col items-center gap-4 duration-700">
-          {isLiveActive && (
+          {isLiveActive && isPost && (
+            <div className="animate-in fade-in-0 slide-in-from-top-2 duration-700 md:absolute md:right-4 md:top-4">
+              <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 shadow-sm">
+                <Instagram className="h-3 w-3" />
+                <span className="font-medium">Promoção ativa</span>
+              </Badge>
+            </div>
+          )}
+
+          {isLiveActive && !isPost && (
             <div className="animate-in fade-in-0 slide-in-from-top-2 duration-700 md:absolute md:right-4 md:top-4">
               <Badge
                 variant="destructive"

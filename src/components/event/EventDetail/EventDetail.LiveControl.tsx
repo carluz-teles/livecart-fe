@@ -9,6 +9,8 @@ export function EventDetailLiveControl() {
   if (!ctx) return null
   const { event } = ctx.state
 
+  // "Modo Live" only applies to live events, never to post-commerce events.
+  if (event.type === "post") return null
   if (event.status !== "active") return null
   return <LiveModeControlPanel eventId={event.id} enabled />
 }
