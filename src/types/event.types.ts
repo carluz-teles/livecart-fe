@@ -104,6 +104,9 @@ export interface CreateInstagramPostPayload {
   endsAt?: string | null
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
+  // Stable per selected media so a retried submit (after a client timeout)
+  // returns the original post instead of publishing a duplicate.
+  idempotencyKey?: string
 }
 
 // Payload to create a post-commerce event (maps an Instagram post + products)

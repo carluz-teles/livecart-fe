@@ -40,6 +40,9 @@ interface CreatePostFormProps {
 export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const submittingRef = useRef(false)
+  // Stable per selected media: sent with every submit so a retry after a client
+  // timeout dedupes server-side instead of publishing the same post twice.
+  const idempotencyKeyRef = useRef("")
   const [mayHavePublished, setMayHavePublished] = useState(false)
   const [mediaType, setMediaType] = useState<"image" | "reel">("image")
   const [file, setFile] = useState<File | null>(null)
@@ -109,6 +112,11 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       return
     }
     setFile(f)
+    // New media → new idempotency key (one publishable post per selected file).
+    idempotencyKeyRef.current =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return URL.createObjectURL(f)
@@ -150,6 +158,7 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       endsAt: toISO(endsAt),
       cartExpirationMinutes,
       cartMaxQuantityPerItem: maxQty,
+      idempotencyKey: idempotencyKeyRef.current || undefined,
     }
     const callbacks = {
       onSuccess: () => {

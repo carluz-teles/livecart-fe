@@ -6,7 +6,8 @@ async function request<T>(
   method: string,
   url: string,
   body?: unknown,
-  token?: string | null
+  token?: string | null,
+  timeoutMs: number = DEFAULT_TIMEOUT
 ): Promise<T> {
   const authToken = token
 
@@ -19,7 +20,7 @@ async function request<T>(
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
@@ -136,7 +137,8 @@ async function multipartRequest<T>(
 
 export const apiClient = {
   get: <T>(url: string, token?: string | null) => request<T>("GET", url, undefined, token),
-  post: <T>(url: string, body: unknown, token?: string | null) => request<T>("POST", url, body, token),
+  post: <T>(url: string, body: unknown, token?: string | null, timeoutMs?: number) =>
+    request<T>("POST", url, body, token, timeoutMs),
   put: <T>(url: string, body: unknown, token?: string | null) => request<T>("PUT", url, body, token),
   patch: <T>(url: string, body: unknown, token?: string | null) => request<T>("PATCH", url, body, token),
   delete: <T>(url: string, token?: string | null) => request<T>("DELETE", url, undefined, token),

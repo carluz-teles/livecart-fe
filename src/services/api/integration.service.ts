@@ -147,10 +147,15 @@ export const integrationService = {
     payload: CreateInstagramPostPayload,
     token?: string | null
   ) =>
+    // Publishing waits on Instagram to fetch + process the image, which can take
+    // far longer than the default 10s. A short timeout aborts the request while
+    // the post still publishes server-side, leading the user to resubmit and
+    // duplicate the post — so allow up to 3 minutes here.
     apiClient.post<CreateEventResponse>(
       `/stores/${storeId}/integrations/instagram/posts`,
       payload,
-      token
+      token,
+      180_000
     ),
 
   // Connect or rotate SmartEnvios token. Backend validates the token against

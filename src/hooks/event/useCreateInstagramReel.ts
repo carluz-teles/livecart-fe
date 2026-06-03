@@ -33,6 +33,7 @@ export function useCreateInstagramReel() {
         fd.append("cartExpirationMinutes", String(rest.cartExpirationMinutes))
       if (rest.cartMaxQuantityPerItem != null)
         fd.append("cartMaxQuantityPerItem", String(rest.cartMaxQuantityPerItem))
+      if (rest.idempotencyKey) fd.append("idempotencyKey", rest.idempotencyKey)
       return uploadService.createInstagramReel(storeId, fd, token!)
     },
     onSuccess: () => {
