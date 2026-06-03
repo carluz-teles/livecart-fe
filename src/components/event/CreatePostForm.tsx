@@ -39,6 +39,8 @@ interface CreatePostFormProps {
 
 export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const submittingRef = useRef(false)
+  const [mayHavePublished, setMayHavePublished] = useState(false)
   const [mediaType, setMediaType] = useState<"image" | "reel">("image")
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -75,6 +77,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     setCartExpirationMinutes(null)
     setMaxQty(null)
     setSearch("")
+    submittingRef.current = false
+    setMayHavePublished(false)
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -140,11 +144,14 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         : "Selecione os produtos que farão parte desta promoção."
 
   const handleSubmit = () => {
-    if (!file) return
+    if (!file || submittingRef.current) return
     if (windowInvalid) {
       toast.error("A data de término deve ser depois da data de início.")
       return
     }
+    // Hard guard against a double submit: publishing is slow, and a second
+    // submission would publish a second post + create a second event.
+    submittingRef.current = true
     const payload = {
       file,
       caption: caption.trim() || undefined,
@@ -165,8 +172,16 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         onClose()
         onSuccess?.()
       },
-      onError: (err: { message?: string }) =>
-        toast.error("Erro ao publicar", { description: err.message || "Tente novamente." }),
+      onError: (err: { message?: string }) => {
+        // The request may have timed out on the client while still succeeding
+        // on the server (the post can already be live). Don't re-enable an
+        // in-place retry — warn the merchant and let them close/verify.
+        submittingRef.current = false
+        setMayHavePublished(true)
+        toast.error("Não recebemos a confirmação", {
+          description: err.message || "Verifique seu Instagram antes de tentar de novo.",
+        })
+      },
     }
     if (mediaType === "reel") {
       createReel.mutate(payload, callbacks)
@@ -267,15 +282,31 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="post-caption">Legenda</Label>
+              <Label htmlFor="post-caption">Legenda do post</Label>
               <Textarea
                 id="post-caption"
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                placeholder="Escreva a legenda do post..."
+                placeholder="Esta legenda vai junto com o post no Instagram..."
                 rows={3}
                 maxLength={2200}
               />
+              <p className="text-xs text-muted-foreground">
+                É o texto que aparece no post publicado no Instagram.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="post-title">Título do evento (opcional)</Label>
+              <Input
+                id="post-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex: Promoção da Sexta"
+              />
+              <p className="text-xs text-muted-foreground">
+                Apenas para você identificar o evento no LiveCart.
+              </p>
             </div>
           </section>
 
@@ -387,18 +418,43 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
           </section>
         </div>
 
+        {isPending && (
+          <div className="mt-6 rounded-md border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">
+              {mediaType === "reel" ? "Publicando o reel no Instagram..." : "Publicando o post no Instagram..."}
+            </p>
+            <p className="text-muted-foreground">
+              {mediaType === "reel"
+                ? "O Instagram processa o vídeo — isso pode levar alguns minutos. Não feche esta janela."
+                : "Pode levar até 1 minuto. Não feche esta janela."}
+            </p>
+          </div>
+        )}
+
+        {mayHavePublished && !isPending && (
+          <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <p className="font-medium">Não recebemos a confirmação do servidor.</p>
+            <p>
+              O post pode já ter sido publicado e o evento criado. Confira seu Instagram e a
+              lista de eventos antes de tentar novamente, para não duplicar.
+            </p>
+          </div>
+        )}
+
         <div className="mt-8 flex justify-end gap-3 border-t pt-4">
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
-            Cancelar
+            {mayHavePublished ? "Fechar" : "Cancelar"}
           </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending
-              ? mediaType === "reel"
-                ? "Publicando reel..."
-                : "Publicando..."
-              : "Publicar e criar evento"}
-          </Button>
+          {!mayHavePublished && (
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending
+                ? mediaType === "reel"
+                  ? "Publicando reel..."
+                  : "Publicando..."
+                : "Publicar e criar evento"}
+            </Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>
