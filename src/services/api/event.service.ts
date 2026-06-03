@@ -4,6 +4,7 @@ import type {
   Event,
   EventStats,
   CreateEventPayload,
+  CreatePostEventPayload,
   CreateEventResponse,
   UpdateEventPayload,
   EndEventPayload,
@@ -52,6 +53,10 @@ export const eventService = {
   // Create event + session + platform
   create: (storeId: string, payload: CreateEventPayload, token?: string | null) =>
     apiClient.post<CreateEventResponse>(`/stores/${storeId}/lives`, payload, token),
+
+  // Create a post-commerce event (maps an Instagram post + selected products)
+  createPost: (storeId: string, payload: CreatePostEventPayload, token?: string | null) =>
+    apiClient.post<CreateEventResponse>(`/stores/${storeId}/lives/posts`, payload, token),
 
   // Update event title
   update: (storeId: string, id: string, payload: UpdateEventPayload, token?: string | null) =>

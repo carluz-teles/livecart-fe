@@ -1,4 +1,5 @@
 export { EventForm } from "./EventForm"
+export { PostEventForm } from "./PostEventForm"
 export { EventFilters } from "./EventFilters"
 export { SessionForm } from "./SessionForm"
 export { ReconnectForm } from "./ReconnectForm"

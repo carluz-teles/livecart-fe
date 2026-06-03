@@ -10,6 +10,7 @@ import type {
   ImportERPProductResponse,
   Product,
   InstagramLivesResponse,
+  InstagramMediaResponse,
   ConnectSmartEnviosPayload,
   ConnectPagarmePayload,
   PagarmeWebhookStatus,
@@ -127,6 +128,13 @@ export const integrationService = {
   getInstagramLives: (storeId: string, token?: string | null) =>
     apiClient.get<InstagramLivesResponse>(
       `/stores/${storeId}/integrations/instagram/lives`,
+      token
+    ),
+
+  // Get recent Instagram posts/reels for the post-event selector
+  getInstagramMedia: (storeId: string, token?: string | null) =>
+    apiClient.get<InstagramMediaResponse>(
+      `/stores/${storeId}/integrations/instagram/media`,
       token
     ),
 

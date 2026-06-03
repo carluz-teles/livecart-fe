@@ -92,6 +92,18 @@ export interface CreateEventPayload {
   pixDiscountPercent?: number
 }
 
+// Payload to create a post-commerce event (maps an Instagram post + products)
+export interface CreatePostEventPayload {
+  title?: string
+  mediaId: string
+  mediaPermalink?: string
+  mediaThumbnailUrl?: string
+  mediaCaption?: string
+  productIds: string[]
+  cartExpirationMinutes?: number | null
+  cartMaxQuantityPerItem?: number | null
+}
+
 export interface CreateEventResponse {
   id: string
   title: string

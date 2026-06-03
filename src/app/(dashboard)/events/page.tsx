@@ -22,7 +22,7 @@ import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
 import { EVENT_STATUS_CONFIG, getStatusConfig, type EventStatusConfig } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { EventFilters, EventForm, SessionForm, ReconnectForm } from "@/components/event"
+import { EventFilters, EventForm, PostEventForm, SessionForm, ReconnectForm } from "@/components/event"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
@@ -162,7 +162,10 @@ export default function EventsPage() {
         title="Eventos"
         description="Gerencie seus eventos e acompanhe as vendas em tempo real"
       >
-        <EventForm />
+        <div className="flex items-center gap-2">
+          <PostEventForm />
+          <EventForm />
+        </div>
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-4">

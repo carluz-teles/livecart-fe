@@ -193,6 +193,22 @@ export interface InstagramLivesResponse {
   data: InstagramLive[]
 }
 
+// A published Instagram post/reel, used to select the target of a post event.
+export interface InstagramMediaPost {
+  id: string
+  caption?: string
+  media_type: string
+  media_url?: string
+  thumbnail_url?: string
+  permalink?: string
+  timestamp?: string
+  comments_count?: number
+}
+
+export interface InstagramMediaResponse {
+  data: InstagramMediaPost[]
+}
+
 // Provider display info
 export interface ProviderInfo {
   id: IntegrationProvider
