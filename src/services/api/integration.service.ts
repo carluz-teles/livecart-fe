@@ -131,10 +131,11 @@ export const integrationService = {
       token
     ),
 
-  // Get recent Instagram posts/reels for the post-event selector
-  getInstagramMedia: (storeId: string, token?: string | null) =>
+  // Get recent Instagram posts/reels (newest first) for the post-event selector.
+  // `after` pages through results.
+  getInstagramMedia: (storeId: string, after?: string | null, token?: string | null) =>
     apiClient.get<InstagramMediaResponse>(
-      `/stores/${storeId}/integrations/instagram/media`,
+      `/stores/${storeId}/integrations/instagram/media${after ? `?after=${encodeURIComponent(after)}` : ""}`,
       token
     ),
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   Check,
   ExternalLink,
@@ -86,7 +86,10 @@ export function PostEventForm({
   const createPost = useCreatePostEvent()
 
   const products = productsData?.data ?? []
-  const posts = media.data?.data ?? []
+  const posts = useMemo(
+    () => media.data?.pages.flatMap((p) => p.data) ?? [],
+    [media.data]
+  )
 
   const reset = () => {
     setTitle("")
@@ -230,6 +233,23 @@ export function PostEventForm({
               selectedId={selectedPost?.id ?? null}
               onSelect={setSelectedPost}
             />
+
+            {media.hasNextPage && (
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => media.fetchNextPage()}
+                  disabled={media.isFetchingNextPage}
+                >
+                  {media.isFetchingNextPage && (
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  )}
+                  Carregar mais posts
+                </Button>
+              </div>
+            )}
 
             {selectedPost && (
               <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">

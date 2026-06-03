@@ -207,6 +207,8 @@ export interface InstagramMediaPost {
 
 export interface InstagramMediaResponse {
   data: InstagramMediaPost[]
+  /** Cursor for the next page; absent/empty when there are no more posts. */
+  after?: string
 }
 
 // Provider display info

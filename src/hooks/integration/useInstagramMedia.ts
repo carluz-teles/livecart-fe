@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
@@ -15,12 +15,14 @@ export function useInstagramMedia(enabled = true) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: instagramMediaKeys.list(storeId ?? ""),
-    queryFn: async (): Promise<InstagramMediaResponse> => {
+    queryFn: async ({ pageParam }): Promise<InstagramMediaResponse> => {
       const token = await getToken()
-      return integrationService.getInstagramMedia(storeId!, token)
+      return integrationService.getInstagramMedia(storeId!, pageParam, token)
     },
+    initialPageParam: "" as string,
+    getNextPageParam: (lastPage) => lastPage.after || undefined,
     enabled: enabled && isLoaded && isSignedIn && !storeLoading && !!storeId,
     staleTime: 30000,
   })
