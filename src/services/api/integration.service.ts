@@ -11,6 +11,8 @@ import type {
   Product,
   InstagramLivesResponse,
   InstagramMediaResponse,
+  CreateInstagramPostPayload,
+  CreateEventResponse,
   ConnectSmartEnviosPayload,
   ConnectPagarmePayload,
   PagarmeWebhookStatus,
@@ -136,6 +138,18 @@ export const integrationService = {
   getInstagramMedia: (storeId: string, after?: string | null, token?: string | null) =>
     apiClient.get<InstagramMediaResponse>(
       `/stores/${storeId}/integrations/instagram/media${after ? `?after=${encodeURIComponent(after)}` : ""}`,
+      token
+    ),
+
+  // Publish an image post on Instagram and create the bound post event.
+  createInstagramPost: (
+    storeId: string,
+    payload: CreateInstagramPostPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<CreateEventResponse>(
+      `/stores/${storeId}/integrations/instagram/posts`,
+      payload,
       token
     ),
 

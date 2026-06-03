@@ -28,4 +28,33 @@ export const uploadService = {
     const { data } = await response.json()
     return data as UploadLogoResponse
   },
+
+  // Uploads a JPEG to storage and returns a public URL Instagram can fetch
+  // when publishing the post.
+  uploadInstagramMedia: async (
+    file: File,
+    storeId: string,
+    token: string
+  ): Promise<{ url: string }> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await fetch(
+      `${apiUrl}/stores/${storeId}/integrations/instagram/media/upload`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || err.error || "Falha ao enviar a imagem")
+    }
+
+    const { data } = await response.json()
+    return data as { url: string }
+  },
 }

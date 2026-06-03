@@ -1,5 +1,6 @@
 export { EventForm } from "./EventForm"
 export { PostEventForm } from "./PostEventForm"
+export { CreatePostForm } from "./CreatePostForm"
 export { EventTypeChooser } from "./EventTypeChooser"
 export { EventFilters } from "./EventFilters"
 export { SessionForm } from "./SessionForm"
