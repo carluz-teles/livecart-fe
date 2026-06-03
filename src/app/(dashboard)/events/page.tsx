@@ -317,18 +317,24 @@ export default function EventsPage() {
                                 <DropdownMenuSeparator />
                                 {event.status === "active" && (
                                   <>
-                                    <DropdownMenuItem onClick={() => handleNewSession(event)}>
-                                      <Plus className="mr-2 h-4 w-4" />
-                                      Nova Sessao
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleReconnect(event)}>
-                                      <RefreshCw className="mr-2 h-4 w-4" />
-                                      Reconectar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
+                                    {/* Session / reconnect are live-only and
+                                        make no sense for a post event. */}
+                                    {event.type !== "post" && (
+                                      <>
+                                        <DropdownMenuItem onClick={() => handleNewSession(event)}>
+                                          <Plus className="mr-2 h-4 w-4" />
+                                          Nova Sessao
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleReconnect(event)}>
+                                          <RefreshCw className="mr-2 h-4 w-4" />
+                                          Reconectar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                      </>
+                                    )}
                                     <DropdownMenuItem onClick={() => handleEndEvent(event)}>
                                       <Square className="mr-2 h-4 w-4" />
-                                      Finalizar evento
+                                      {event.type === "post" ? "Encerrar promoção" : "Finalizar evento"}
                                     </DropdownMenuItem>
                                   </>
                                 )}

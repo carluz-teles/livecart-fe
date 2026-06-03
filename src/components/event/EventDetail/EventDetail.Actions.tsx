@@ -19,9 +19,11 @@ export function EventDetailActions() {
   const { setEndEventOpen, setCreateSessionOpen, setCrashRecoveryOpen } =
     ctx.actions
 
-  // Ações só fazem sentido com evento ativo — finalizar/nova-sessão/crash-recovery
-  // não se aplicam ao histórico.
+  // Ações só fazem sentido com evento ativo.
   if (event.status !== "active") return null
+
+  // Live-only actions (sessions / crash recovery) don't apply to post events.
+  const isPost = event.type === "post"
 
   return (
     <DropdownMenu>
@@ -32,21 +34,25 @@ export function EventDetailActions() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setCreateSessionOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova sessão
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setCrashRecoveryOpen(true)}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Crash recovery
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        {!isPost && (
+          <>
+            <DropdownMenuItem onClick={() => setCreateSessionOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova sessão
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setCrashRecoveryOpen(true)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Crash recovery
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           onClick={() => setEndEventOpen(true)}
           className="text-destructive focus:text-destructive"
         >
           <StopCircle className="mr-2 h-4 w-4" />
-          Finalizar evento
+          {isPost ? "Encerrar promoção" : "Finalizar evento"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

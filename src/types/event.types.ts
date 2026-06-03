@@ -63,6 +63,7 @@ export interface Event {
    *  Pix. 0 disables the feature. Stacks with coupons. */
   pixDiscountPercent: number
   scheduledAt: string | null
+  endsAt: string | null
   description: string | null
   productCount: number
   upsellCount: number
