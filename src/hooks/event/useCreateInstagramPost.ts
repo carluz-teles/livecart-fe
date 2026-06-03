@@ -23,8 +23,12 @@ export function useCreateInstagramPost() {
     mutationFn: async ({ file, ...rest }: CreateInstagramPostArgs): Promise<CreateEventResponse> => {
       if (!storeId) throw new Error("Store ID is required")
       const token = await getToken()
-      const { url } = await uploadService.uploadInstagramMedia(file, storeId, token!)
-      return integrationService.createInstagramPost(storeId, { ...rest, imageUrl: url }, token)
+      const { url, key } = await uploadService.uploadInstagramMedia(file, storeId, token!)
+      return integrationService.createInstagramPost(
+        storeId,
+        { ...rest, imageUrl: url, imageKey: key },
+        token
+      )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })

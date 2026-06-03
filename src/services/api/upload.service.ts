@@ -35,7 +35,7 @@ export const uploadService = {
     file: File,
     storeId: string,
     token: string
-  ): Promise<{ url: string }> => {
+  ): Promise<{ url: string; key: string }> => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
     const formData = new FormData()
     formData.append("file", file)
@@ -55,7 +55,7 @@ export const uploadService = {
     }
 
     const { data } = await response.json()
-    return data as { url: string }
+    return data as { url: string; key: string }
   },
 
   // Streams a video to Instagram as a Reel and creates the bound post event.

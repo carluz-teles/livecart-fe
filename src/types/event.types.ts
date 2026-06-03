@@ -95,6 +95,7 @@ export interface CreateEventPayload {
 // Payload to publish an image post on Instagram and create its post event
 export interface CreateInstagramPostPayload {
   imageUrl: string
+  imageKey?: string
   caption?: string
   title?: string
   productIds: string[]
