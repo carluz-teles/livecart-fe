@@ -18,6 +18,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Sheet,
@@ -64,6 +71,10 @@ export function PostEventForm({
   const [title, setTitle] = useState("")
   const [selectedPost, setSelectedPost] = useState<InstagramMediaPost | null>(null)
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [startsAt, setStartsAt] = useState("")
+  const [endsAt, setEndsAt] = useState("")
+  const [cartExpirationMinutes, setCartExpirationMinutes] = useState<number | null>(null)
+  const [maxQty, setMaxQty] = useState<number | null>(null)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 300)
 
@@ -81,6 +92,10 @@ export function PostEventForm({
     setTitle("")
     setSelectedPost(null)
     setSelectedProductIds([])
+    setStartsAt("")
+    setEndsAt("")
+    setCartExpirationMinutes(null)
+    setMaxQty(null)
     setSearch("")
   }
 
@@ -96,10 +111,25 @@ export function PostEventForm({
     )
   }
 
-  const canSubmit = !!selectedPost && selectedProductIds.length > 0 && !createPost.isPending
+  const windowInvalid =
+    !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
+
+  const canSubmit =
+    !!selectedPost &&
+    selectedProductIds.length > 0 &&
+    !windowInvalid &&
+    !createPost.isPending
+
+  // datetime-local gives a tz-less local string; interpret it in the merchant's
+  // browser timezone and serialize to UTC ISO for the API.
+  const toISO = (v: string) => (v ? new Date(v).toISOString() : undefined)
 
   const handleSubmit = () => {
     if (!selectedPost) return
+    if (windowInvalid) {
+      toast.error("A data de término deve ser depois da data de início.")
+      return
+    }
     createPost.mutate(
       {
         title: title.trim() || undefined,
@@ -108,6 +138,10 @@ export function PostEventForm({
         mediaThumbnailUrl: selectedPost.thumbnail_url || selectedPost.media_url,
         mediaCaption: selectedPost.caption,
         productIds: selectedProductIds,
+        startsAt: toISO(startsAt),
+        endsAt: toISO(endsAt),
+        cartExpirationMinutes,
+        cartMaxQuantityPerItem: maxQty,
       },
       {
         onSuccess: () => {
@@ -276,6 +310,86 @@ export function PostEventForm({
                 )}
               </div>
             </ScrollArea>
+          </section>
+
+          {/* Step 3 — schedule + cart settings */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                3
+              </span>
+              <h3 className="text-sm font-medium">Janela e carrinho</h3>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="post-starts">Início (opcional)</Label>
+                <Input
+                  id="post-starts"
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="post-ends">Término (opcional)</Label>
+                <Input
+                  id="post-ends"
+                  type="datetime-local"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
+              </div>
+            </div>
+            {windowInvalid && (
+              <p className="text-sm text-destructive">
+                O término deve ser depois do início.
+              </p>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Expiração do carrinho</Label>
+                <Select
+                  value={cartExpirationMinutes === null ? "inherit" : String(cartExpirationMinutes)}
+                  onValueChange={(v) =>
+                    setCartExpirationMinutes(v === "inherit" ? null : parseInt(v, 10))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inherit">Usar padrão da loja</SelectItem>
+                    <SelectItem value="15">15 minutos</SelectItem>
+                    <SelectItem value="30">30 minutos</SelectItem>
+                    <SelectItem value="60">1 hora</SelectItem>
+                    <SelectItem value="120">2 horas</SelectItem>
+                    <SelectItem value="1440">24 horas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Máximo por item</Label>
+                <Select
+                  value={maxQty === null ? "inherit" : String(maxQty)}
+                  onValueChange={(v) => setMaxQty(v === "inherit" ? null : parseInt(v, 10))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inherit">Usar padrão da loja</SelectItem>
+                    <SelectItem value="1">1 unidade</SelectItem>
+                    <SelectItem value="3">3 unidades</SelectItem>
+                    <SelectItem value="5">5 unidades</SelectItem>
+                    <SelectItem value="10">10 unidades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </section>
         </div>
 

@@ -100,6 +100,8 @@ export interface CreatePostEventPayload {
   mediaThumbnailUrl?: string
   mediaCaption?: string
   productIds: string[]
+  startsAt?: string | null
+  endsAt?: string | null
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
 }
