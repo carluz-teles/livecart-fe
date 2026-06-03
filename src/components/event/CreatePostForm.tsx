@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Check, ImagePlus, Loader2, Package, Search, X } from "lucide-react"
+import { Check, Film, ImagePlus, Loader2, Package, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -88,36 +88,25 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     }
   }
 
-  const switchMediaType = (next: "image" | "reel") => {
-    if (next === mediaType) return
-    setMediaType(next)
-    setFile(null)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-  }
-
+  // Single media picker: the type is auto-detected from the file. An image
+  // becomes a feed photo; a video becomes a Reel. The merchant doesn't choose.
   const pickFile = (f: File | undefined) => {
     if (!f) return
-    if (mediaType === "image") {
-      if (f.type !== "image/jpeg") {
-        toast.error("O Instagram exige uma imagem JPEG (.jpg).")
-        return
-      }
+    if (f.type === "image/jpeg") {
       if (f.size > 8 * 1024 * 1024) {
         toast.error("Imagem muito grande. Máximo de 8MB.")
         return
       }
-    } else {
-      if (f.type !== "video/mp4" && f.type !== "video/quicktime") {
-        toast.error("Para Reels, envie um vídeo MP4.")
-        return
-      }
+      setMediaType("image")
+    } else if (f.type === "video/mp4" || f.type === "video/quicktime") {
       if (f.size > 300 * 1024 * 1024) {
         toast.error("Vídeo muito grande. Máximo de 300MB.")
         return
       }
+      setMediaType("reel")
+    } else {
+      toast.error("Envie uma foto (JPEG) ou um vídeo (MP4).")
+      return
     }
     setFile(f)
     setPreviewUrl((prev) => {
@@ -206,62 +195,56 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
           <section className="space-y-3">
             <SectionTitle n={1} title="Mídia e legenda" />
 
-            {/* Media type toggle */}
-            <div className="inline-flex rounded-md border p-0.5">
-              <button
-                type="button"
-                onClick={() => switchMediaType("image")}
-                className={cn(
-                  "rounded px-3 py-1.5 text-sm font-medium transition-colors",
-                  mediaType === "image" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Foto
-              </button>
-              <button
-                type="button"
-                onClick={() => switchMediaType("reel")}
-                className={cn(
-                  "rounded px-3 py-1.5 text-sm font-medium transition-colors",
-                  mediaType === "reel" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Reels
-              </button>
-            </div>
-
             <input
               ref={fileInputRef}
               type="file"
-              accept={mediaType === "image" ? "image/jpeg" : "video/mp4"}
+              accept="image/jpeg,video/mp4"
               className="hidden"
               onChange={(e) => pickFile(e.target.files?.[0])}
             />
 
             {previewUrl ? (
-              <div className="relative overflow-hidden rounded-lg border">
-                {mediaType === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewUrl} alt="" className="max-h-72 w-full object-contain bg-muted" />
-                ) : (
-                  <video src={previewUrl} controls className="max-h-72 w-full bg-black" />
-                )}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="absolute right-2 top-2"
-                  onClick={() => {
-                    setFile(null)
-                    setPreviewUrl((prev) => {
-                      if (prev) URL.revokeObjectURL(prev)
-                      return null
-                    })
-                  }}
-                >
-                  <X className="mr-1 h-3.5 w-3.5" />
-                  Trocar
-                </Button>
+              <div className="space-y-2">
+                <div className="relative overflow-hidden rounded-lg border">
+                  {mediaType === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt="" className="max-h-72 w-full object-contain bg-muted" />
+                  ) : (
+                    <video src={previewUrl} controls className="max-h-72 w-full bg-black" />
+                  )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="absolute right-2 top-2"
+                    onClick={() => {
+                      setFile(null)
+                      setPreviewUrl((prev) => {
+                        if (prev) URL.revokeObjectURL(prev)
+                        return null
+                      })
+                    }}
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" />
+                    Trocar
+                  </Button>
+                </div>
+                {/* Let the merchant know how it will be published. */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary" className="gap-1">
+                    {mediaType === "image" ? (
+                      <ImagePlus className="h-3 w-3" />
+                    ) : (
+                      <Film className="h-3 w-3" />
+                    )}
+                    {mediaType === "image" ? "Foto no feed" : "Reels (vídeo)"}
+                  </Badge>
+                  <span>
+                    {mediaType === "image"
+                      ? "será publicado como foto no feed."
+                      : "vídeos viram Reels no Instagram."}
+                  </span>
+                </div>
               </div>
             ) : (
               <button
@@ -271,12 +254,10 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
               >
                 <ImagePlus className="h-7 w-7 text-muted-foreground/60" />
                 <span className="text-sm font-medium">
-                  {mediaType === "image" ? "Selecionar imagem (JPEG)" : "Selecionar vídeo (MP4)"}
+                  Selecionar mídia (foto ou vídeo)
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {mediaType === "image"
-                    ? "Até 8MB • proporção entre 4:5 e 1.91:1"
-                    : "Até 300MB • vertical 9:16 recomendado"}
+                  Foto JPEG (até 8MB) ou vídeo MP4 (até 300MB) — detectamos automaticamente.
                 </span>
               </button>
             )}

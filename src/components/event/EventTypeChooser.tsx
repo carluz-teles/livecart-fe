@@ -102,7 +102,7 @@ export function EventTypeChooser() {
                 <ChooserCard
                   icon={<ImagePlus className="h-5 w-5" />}
                   title="Criar um post"
-                  description="Publique um novo post de foto pelo LiveCart e já configure a promoção em um passo só."
+                  description="Publique uma foto ou vídeo (Reels) pelo LiveCart e já configure a promoção em um passo só."
                   onClick={() => pick("create-post")}
                 />
               </div>
