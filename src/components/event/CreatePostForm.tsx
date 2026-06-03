@@ -24,7 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useCreateInstagramPost } from "@/hooks/event"
+import { useCreateInstagramPost, useCreateInstagramReel } from "@/hooks/event"
 import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared"
 import { formatCurrency } from "@/lib/format"
@@ -39,6 +39,7 @@ interface CreatePostFormProps {
 
 export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [mediaType, setMediaType] = useState<"image" | "reel">("image")
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
@@ -56,6 +57,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     filters: { status: ["active"] },
   })
   const createPost = useCreateInstagramPost()
+  const createReel = useCreateInstagramReel()
+  const isPending = createPost.isPending || createReel.isPending
   const products = productsData?.data ?? []
 
   const reset = () => {
@@ -81,15 +84,36 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     }
   }
 
+  const switchMediaType = (next: "image" | "reel") => {
+    if (next === mediaType) return
+    setMediaType(next)
+    setFile(null)
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+  }
+
   const pickFile = (f: File | undefined) => {
     if (!f) return
-    if (f.type !== "image/jpeg") {
-      toast.error("O Instagram exige uma imagem JPEG (.jpg).")
-      return
-    }
-    if (f.size > 8 * 1024 * 1024) {
-      toast.error("Imagem muito grande. Máximo de 8MB.")
-      return
+    if (mediaType === "image") {
+      if (f.type !== "image/jpeg") {
+        toast.error("O Instagram exige uma imagem JPEG (.jpg).")
+        return
+      }
+      if (f.size > 8 * 1024 * 1024) {
+        toast.error("Imagem muito grande. Máximo de 8MB.")
+        return
+      }
+    } else {
+      if (f.type !== "video/mp4" && f.type !== "video/quicktime") {
+        toast.error("Para Reels, envie um vídeo MP4.")
+        return
+      }
+      if (f.size > 300 * 1024 * 1024) {
+        toast.error("Vídeo muito grande. Máximo de 300MB.")
+        return
+      }
     }
     setFile(f)
     setPreviewUrl((prev) => {
@@ -106,7 +130,7 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
   const toISO = (v: string) => (v ? new Date(v).toISOString() : undefined)
   const windowInvalid = !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
   const canSubmit =
-    !!file && selectedProductIds.length > 0 && !windowInvalid && !createPost.isPending
+    !!file && selectedProductIds.length > 0 && !windowInvalid && !isPending
 
   const ruleHint =
     selectedProductIds.length === 1
@@ -121,32 +145,34 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       toast.error("A data de término deve ser depois da data de início.")
       return
     }
-    createPost.mutate(
-      {
-        file,
-        caption: caption.trim() || undefined,
-        title: title.trim() || undefined,
-        productIds: selectedProductIds,
-        startsAt: toISO(startsAt),
-        endsAt: toISO(endsAt),
-        cartExpirationMinutes,
-        cartMaxQuantityPerItem: maxQty,
+    const payload = {
+      file,
+      caption: caption.trim() || undefined,
+      title: title.trim() || undefined,
+      productIds: selectedProductIds,
+      startsAt: toISO(startsAt),
+      endsAt: toISO(endsAt),
+      cartExpirationMinutes,
+      cartMaxQuantityPerItem: maxQty,
+    }
+    const callbacks = {
+      onSuccess: () => {
+        toast.success(
+          mediaType === "reel" ? "Reel publicado no Instagram!" : "Post publicado no Instagram!",
+          { description: "O evento já está ativo e capturando comentários." }
+        )
+        reset()
+        onClose()
+        onSuccess?.()
       },
-      {
-        onSuccess: () => {
-          toast.success("Post publicado no Instagram!", {
-            description: "O evento já está ativo e capturando comentários.",
-          })
-          reset()
-          onClose()
-          onSuccess?.()
-        },
-        onError: (err: { message?: string }) =>
-          toast.error("Erro ao publicar o post", {
-            description: err.message || "Tente novamente.",
-          }),
-      }
-    )
+      onError: (err: { message?: string }) =>
+        toast.error("Erro ao publicar", { description: err.message || "Tente novamente." }),
+    }
+    if (mediaType === "reel") {
+      createReel.mutate(payload, callbacks)
+    } else {
+      createPost.mutate(payload, callbacks)
+    }
   }
 
   return (
@@ -161,22 +187,50 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         </SheetHeader>
 
         <div className="mt-6 space-y-8">
-          {/* Step 1 — image + caption */}
+          {/* Step 1 — media + caption */}
           <section className="space-y-3">
-            <SectionTitle n={1} title="Foto e legenda" />
+            <SectionTitle n={1} title="Mídia e legenda" />
+
+            {/* Media type toggle */}
+            <div className="inline-flex rounded-md border p-0.5">
+              <button
+                type="button"
+                onClick={() => switchMediaType("image")}
+                className={cn(
+                  "rounded px-3 py-1.5 text-sm font-medium transition-colors",
+                  mediaType === "image" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Foto
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMediaType("reel")}
+                className={cn(
+                  "rounded px-3 py-1.5 text-sm font-medium transition-colors",
+                  mediaType === "reel" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Reels
+              </button>
+            </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg"
+              accept={mediaType === "image" ? "image/jpeg" : "video/mp4"}
               className="hidden"
               onChange={(e) => pickFile(e.target.files?.[0])}
             />
 
             {previewUrl ? (
               <div className="relative overflow-hidden rounded-lg border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="" className="max-h-72 w-full object-contain bg-muted" />
+                {mediaType === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewUrl} alt="" className="max-h-72 w-full object-contain bg-muted" />
+                ) : (
+                  <video src={previewUrl} controls className="max-h-72 w-full bg-black" />
+                )}
                 <Button
                   type="button"
                   variant="secondary"
@@ -201,8 +255,14 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
                 className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-10 text-center transition-colors hover:border-primary/40 hover:bg-muted/40"
               >
                 <ImagePlus className="h-7 w-7 text-muted-foreground/60" />
-                <span className="text-sm font-medium">Selecionar imagem (JPEG)</span>
-                <span className="text-xs text-muted-foreground">Até 8MB • proporção entre 4:5 e 1.91:1</span>
+                <span className="text-sm font-medium">
+                  {mediaType === "image" ? "Selecionar imagem (JPEG)" : "Selecionar vídeo (MP4)"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {mediaType === "image"
+                    ? "Até 8MB • proporção entre 4:5 e 1.91:1"
+                    : "Até 300MB • vertical 9:16 recomendado"}
+                </span>
               </button>
             )}
 
@@ -328,12 +388,16 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         </div>
 
         <div className="mt-8 flex justify-end gap-3 border-t pt-4">
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={createPost.isPending}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {createPost.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {createPost.isPending ? "Publicando..." : "Publicar e criar evento"}
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending
+              ? mediaType === "reel"
+                ? "Publicando reel..."
+                : "Publicando..."
+              : "Publicar e criar evento"}
           </Button>
         </div>
       </SheetContent>

@@ -57,4 +57,28 @@ export const uploadService = {
     const { data } = await response.json()
     return data as { url: string }
   },
+
+  // Streams a video to Instagram as a Reel and creates the bound post event.
+  // The backend uploads the bytes directly to Instagram (no hosting).
+  createInstagramReel: async (
+    storeId: string,
+    formData: FormData,
+    token: string
+  ): Promise<unknown> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    const response = await fetch(
+      `${apiUrl}/stores/${storeId}/integrations/instagram/reels`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }
+    )
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || err.error || "Falha ao publicar o reel")
+    }
+    const { data } = await response.json()
+    return data
+  },
 }
