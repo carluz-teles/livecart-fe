@@ -43,8 +43,24 @@ const MEDIA_TYPE_LABELS: Record<string, string> = {
   REEL: "Reel",
 }
 
-export function PostEventForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [open, setOpen] = useState(false)
+interface PostEventFormProps {
+  /** Controlled open state. When provided, the internal trigger is hidden. */
+  open?: boolean
+  /** Custom trigger; pass null to render no trigger (controlled usage). */
+  trigger?: React.ReactNode | null
+  onClose?: () => void
+  onSuccess?: () => void
+}
+
+export function PostEventForm({
+  open: controlledOpen,
+  trigger,
+  onClose,
+  onSuccess,
+}: PostEventFormProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
   const [title, setTitle] = useState("")
   const [selectedPost, setSelectedPost] = useState<InstagramMediaPost | null>(null)
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
@@ -70,7 +86,8 @@ export function PostEventForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const handleOpenChange = (next: boolean) => {
     if (!next) reset()
-    setOpen(next)
+    if (!isControlled) setInternalOpen(next)
+    if (!next) onClose?.()
   }
 
   const toggleProduct = (id: string) => {
@@ -117,12 +134,16 @@ export function PostEventForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button variant="outline">
-          <Instagram className="mr-2 h-4 w-4" />
-          Novo Post
-        </Button>
-      </SheetTrigger>
+      {trigger !== null && (
+        <SheetTrigger asChild>
+          {trigger ?? (
+            <Button variant="outline">
+              <Instagram className="mr-2 h-4 w-4" />
+              Novo Post
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent className="w-full sm:max-w-[640px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

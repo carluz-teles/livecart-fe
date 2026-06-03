@@ -110,7 +110,8 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     if (event) {
       form.reset({
         title: event.title || "",
-        type: event.type || "single",
+        // EventForm only handles live events; a post event never reaches here.
+        type: event.type === "multi" ? "multi" : "single",
         platform: undefined,
         platformLiveId: "",
         scheduledAt: event.scheduledAt,

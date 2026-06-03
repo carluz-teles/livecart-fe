@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Radio,
   Calendar,
+  Instagram,
   ShoppingCart,
   Trash2,
   Square,
@@ -19,10 +20,10 @@ import {
 import { toast } from "sonner"
 
 import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
-import { EVENT_STATUS_CONFIG, getStatusConfig, type EventStatusConfig } from "@/lib/constants"
+import { getEventStatusDisplay } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { EventFilters, EventForm, PostEventForm, SessionForm, ReconnectForm } from "@/components/event"
+import { EventFilters, EventTypeChooser, SessionForm, ReconnectForm } from "@/components/event"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
@@ -69,6 +70,7 @@ const EVENT_STATUS_ICONS = {
   "calendar": Calendar,
   "radio": Radio,
   "check-circle": CheckCircle,
+  "instagram": Instagram,
 } as const
 
 export default function EventsPage() {
@@ -162,10 +164,7 @@ export default function EventsPage() {
         title="Eventos"
         description="Gerencie seus eventos e acompanhe as vendas em tempo real"
       >
-        <div className="flex items-center gap-2">
-          <PostEventForm />
-          <EventForm />
-        </div>
+        <EventTypeChooser />
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -258,8 +257,9 @@ export default function EventsPage() {
                   </TableRow>
                 ) : (
                   events.map((event) => {
-                    const config = getStatusConfig(EVENT_STATUS_CONFIG, event.status, "ended") as EventStatusConfig
+                    const config = getEventStatusDisplay(event.status, event.type)
                     const StatusIcon = EVENT_STATUS_ICONS[config.icon]
+                    const isPost = event.type === "post"
                     return (
                       <TableRow
                         key={event.id}
@@ -268,6 +268,17 @@ export default function EventsPage() {
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="gap-1 text-muted-foreground"
+                            >
+                              {isPost ? (
+                                <Instagram className="h-3 w-3" />
+                              ) : (
+                                <Radio className="h-3 w-3" />
+                              )}
+                              {isPost ? "Post" : "Live"}
+                            </Badge>
                             <span className="transition-colors group-hover:text-primary">
                               {event.title || "Sem titulo"}
                             </span>

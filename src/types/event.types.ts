@@ -5,7 +5,7 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 // =============================================================================
 
 export type EventStatus = "scheduled" | "active" | "ended"
-export type EventType = "single" | "multi"
+export type EventType = "single" | "multi" | "post"
 export type Platform = "instagram" // Only Instagram supported for now
 
 // =============================================================================

@@ -34,16 +34,36 @@ export const LIVE_STATUS_CONFIG: Record<LiveStatus, LiveStatusConfig> = {
 }
 
 export interface EventStatusConfig extends StatusConfig {
-  icon: "radio" | "check-circle" | "calendar"
+  icon: "radio" | "check-circle" | "calendar" | "instagram"
 }
 
 /**
- * Event status configuration
+ * Event status configuration (live events)
  */
 export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
   scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
   active: { label: "Ao Vivo", variant: "destructive", icon: "radio" },
   ended: { label: "Finalizado", variant: "secondary", icon: "check-circle" },
+}
+
+/**
+ * Event status configuration for POST events — an active post is not "live".
+ */
+export const POST_EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
+  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
+  active: { label: "Ativo", variant: "default", icon: "instagram" },
+  ended: { label: "Encerrado", variant: "secondary", icon: "check-circle" },
+}
+
+/**
+ * Picks the status display for an event based on its type.
+ */
+export function getEventStatusDisplay(
+  status: EventStatus,
+  type?: string
+): EventStatusConfig {
+  const map = type === "post" ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
+  return map[status] ?? map.ended
 }
 
 /**
