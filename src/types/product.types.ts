@@ -36,7 +36,11 @@ export interface Product {
   shippable: boolean
   // null for simple products; uuid pointing at the parent group for variants.
   groupId: string | null
-  // Empty on list responses; on detail, identifies which variant this is.
+  // The variant group's base name (e.g. "Camiseta Básica"), used as a short
+  // title so the long per-variant name doesn't dominate the UI. "" for simple.
+  groupName?: string
+  // The variant's chosen options (e.g. [{Cor, Preto}, {Tamanho, M}]). Now
+  // populated on list responses too, for the picker.
   optionValues: ProductOptionAssignment[]
   // Gallery URLs (besides the main imageUrl). Empty on list responses.
   images: string[]

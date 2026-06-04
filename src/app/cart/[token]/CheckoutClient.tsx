@@ -668,6 +668,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     return {
       id: item.id,
       name: item.name,
+      groupName: item.groupName,
+      variant: item.variant,
       imageUrl: item.imageUrl,
       quantity: availableQty,
       unitPrice: item.unitPrice,

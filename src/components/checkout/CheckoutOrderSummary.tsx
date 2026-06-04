@@ -35,6 +35,10 @@ import { cn } from "@/lib/utils"
 interface OrderItem {
   id: string
   name: string
+  /** Short variant title (group base name); falls back to name when absent. */
+  groupName?: string
+  /** Variant options (e.g. [{Cor, Preto}, {Tamanho, M}]). */
+  variant?: { option: string; value: string }[]
   imageUrl?: string | null
   quantity: number
   unitPrice: number
@@ -189,7 +193,21 @@ function OrderItemCompact({
       </div>
 
       <div className="flex flex-1 flex-col justify-center min-w-0">
-        <h3 className="text-sm font-medium text-gray-900 truncate">{item.name}</h3>
+        <h3 className="text-sm font-medium text-gray-900 truncate">
+          {item.groupName || item.name}
+        </h3>
+        {item.variant && item.variant.length > 0 && (
+          <div className="mt-0.5 flex flex-wrap gap-1">
+            {item.variant.map((v) => (
+              <span
+                key={v.option}
+                className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600"
+              >
+                {v.option}: <span className="font-medium text-gray-800">{v.value}</span>
+              </span>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-gray-500">
           {formatCurrency(item.unitPrice)} cada
         </p>

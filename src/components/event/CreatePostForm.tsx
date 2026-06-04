@@ -594,7 +594,17 @@ function ProductRow({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{product.name}</p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="truncate text-sm font-medium">
+            {product.groupName || product.name}
+          </p>
+          {product.optionValues?.map((v) => (
+            <Badge key={v.option} variant="secondary" className="px-1.5 py-0 text-[11px]">
+              <span className="text-muted-foreground">{v.option}:</span>
+              <span className="ml-1 font-medium">{v.value}</span>
+            </Badge>
+          ))}
+        </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="font-mono">{product.keyword}</span>
           <span>•</span>

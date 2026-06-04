@@ -322,6 +322,12 @@ export interface PublicCheckoutItem {
    *  this together with maxQuantityPerItem to disable the "+" button when the
    *  buyer would exceed either limit. */
   availableStock: number
+  /** Variant group base name (e.g. "Camiseta Básica") — a short title used
+   *  instead of the long per-variant name. Empty/absent for simple products. */
+  groupName?: string
+  /** The variant's chosen options (e.g. [{Cor, Preto}, {Tamanho, M}]). Absent
+   *  for simple products. */
+  variant?: { option: string; value: string }[]
 }
 
 export interface PublicCheckoutEvent {
