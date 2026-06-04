@@ -197,15 +197,11 @@ function OrderItemCompact({
           {item.groupName || item.name}
         </h3>
         {item.variant && item.variant.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="mt-0.5">
             {item.variant.map((v) => (
-              <span
-                key={v.option}
-                className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] leading-none text-gray-600"
-              >
-                <span className="text-gray-400">{v.option}</span>
-                <span className="ml-1 font-semibold text-gray-800">{v.value}</span>
-              </span>
+              <p key={v.option} className="text-xs text-gray-500">
+                {v.option}: <span className="font-medium text-gray-700">{v.value}</span>
+              </p>
             ))}
           </div>
         )}
