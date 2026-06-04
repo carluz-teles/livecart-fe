@@ -79,9 +79,12 @@ export function PostEventForm({
   const debouncedSearch = useDebounce(search, 300)
 
   const media = useInstagramMedia(open)
+  // Only promotable products: active AND in stock, ordered by name (variants of
+  // the same product sit together).
   const { data: productsData, isLoading: productsLoading } = useProducts({
     search: debouncedSearch,
-    filters: { status: ["active"] },
+    filters: { status: ["active"], stockMin: 1 },
+    sorting: { sortBy: "name", sortOrder: "asc" },
   })
   const createPost = useCreatePostEvent()
 

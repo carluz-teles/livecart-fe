@@ -70,9 +70,13 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 300)
 
+  // Only promotable products: active AND in stock (you can't sell what's out of
+  // stock). Ordered by name so it reads like a catalog and a product's variants
+  // (which share the same base name) sit together.
   const { data: productsData, isLoading: productsLoading } = useProducts({
     search: debouncedSearch,
-    filters: { status: ["active"] },
+    filters: { status: ["active"], stockMin: 1 },
+    sorting: { sortBy: "name", sortOrder: "asc" },
   })
   const createPost = useCreateInstagramPost()
   const createReel = useCreateInstagramReel()
