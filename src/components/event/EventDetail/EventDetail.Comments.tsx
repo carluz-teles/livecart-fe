@@ -55,6 +55,9 @@ import { EventDetailContext } from "./EventDetailContext"
 export function EventDetailComments() {
   const ctx = use(EventDetailContext)
   const eventId = ctx?.state.event.id ?? ""
+  // Story buyers engage via DM, not public comments — those rows can't be
+  // moderated (replied/hidden/deleted), so we show them read-only.
+  const isStory = ctx?.state.event.type === "story"
   const { data: comments, isLoading } = useEventComments(eventId)
 
   const [replyFor, setReplyFor] = useState<EventComment | null>(null)
@@ -92,14 +95,18 @@ export function EventDetailComments() {
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageCircle className="h-4 w-4" />
-              Comentários
+              {isStory ? "Respostas por DM" : "Comentários"}
             </CardTitle>
             <CardDescription>
-              Responda, oculte ou exclua comentários da live no Instagram
+              {isStory
+                ? "Quem respondeu seu Story por DM e entrou no carrinho."
+                : "Responda, oculte ou exclua comentários da live no Instagram"}
             </CardDescription>
           </div>
           {comments && comments.length > 0 && (
-            <Badge variant="secondary">{comments.length} comentário(s)</Badge>
+            <Badge variant="secondary">
+              {comments.length} {isStory ? "resposta(s)" : "comentário(s)"}
+            </Badge>
           )}
         </div>
       </CardHeader>
@@ -118,13 +125,16 @@ export function EventDetailComments() {
           ) : !comments || comments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-muted-foreground">Nenhum comentário ainda</p>
+              <p className="text-muted-foreground">
+                {isStory ? "Nenhuma resposta ainda" : "Nenhum comentário ainda"}
+              </p>
             </div>
           ) : (
             comments.map((comment) => (
               <CommentRow
                 key={comment.id}
                 comment={comment}
+                readOnly={isStory}
                 onReply={() => {
                   setReplyFor(comment)
                   setReplyText("")
@@ -202,6 +212,8 @@ interface CommentRowProps {
   onDelete: () => void
   hidePending: boolean
   deletePending: boolean
+  // Story DM replies aren't real comments — render without moderation actions.
+  readOnly?: boolean
 }
 
 function CommentRow({
@@ -211,6 +223,7 @@ function CommentRow({
   onDelete,
   hidePending,
   deletePending,
+  readOnly = false,
 }: CommentRowProps) {
   return (
     <div className="flex items-start gap-3 rounded-md border p-3">
@@ -228,6 +241,7 @@ function CommentRow({
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">{comment.text}</p>
       </div>
+      {readOnly ? null : (
       <div className="flex shrink-0 items-center gap-1">
         <TooltipProvider>
           <Tooltip>
@@ -285,6 +299,7 @@ function CommentRow({
           </Tooltip>
         </TooltipProvider>
       </div>
+      )}
     </div>
   )
 }
