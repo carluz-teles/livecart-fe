@@ -16,6 +16,7 @@ import type {
   EventSession,
   EventPlatform,
   EventDetailStatsResponse,
+  EventPulse,
   EventCart,
   EventCartsResponse,
   EventCommentsResponse,
@@ -85,6 +86,10 @@ export const eventService = {
   // Event Details - Stats for a specific event
   getEventStats: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventDetailStatsResponse>(`/stores/${storeId}/lives/${eventId}/event-stats`, token),
+
+  // Event Details - Cheap change-signal for near-real-time refresh
+  getPulse: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventPulse>(`/stores/${storeId}/lives/${eventId}/pulse`, token),
 
   // Event Details - List carts for an event
   listCarts: (storeId: string, eventId: string, token?: string | null) =>

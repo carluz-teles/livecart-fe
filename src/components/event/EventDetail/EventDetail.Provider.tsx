@@ -1,16 +1,17 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   eventKeys,
   useEventCarts,
   useEventDetailStats,
   useEventSoldProducts,
+  useEventPulse,
   useEndEvent,
 } from "@/hooks/event"
 import { useStoreId } from "@/hooks/useUser"
-import type { Event } from "@/types/event.types"
+import type { Event, EventPulse } from "@/types/event.types"
 import {
   EventDetailContext,
   type EventDetailContextValue,
@@ -46,6 +47,29 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
   } = useEventSoldProducts(id)
 
   const endEventMutation = useEndEvent()
+
+  // Near-real-time refresh: poll the cheap pulse only while the event is active
+  // (ended events never change) and refetch just the list that actually moved.
+  const isActive = event.status === "active"
+  const { data: pulse } = useEventPulse(id, isActive)
+  const prevPulse = useRef<EventPulse | null>(null)
+  useEffect(() => {
+    if (!pulse || !storeId) return
+    const prev = prevPulse.current
+    prevPulse.current = pulse
+    if (!prev) return // first reading is the baseline — nothing to refetch yet
+    // New cart or a cart edit/payment → orders + sold products + stats.
+    if (pulse.orders !== prev.orders || pulse.ordersChangedAt !== prev.ordersChangedAt) {
+      queryClient.invalidateQueries({ queryKey: eventKeys.detailCarts(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.detailProducts(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
+    }
+    // New comment / DM reply → comments feed + stats.
+    if (pulse.comments !== prev.comments) {
+      queryClient.invalidateQueries({ queryKey: eventKeys.detailComments(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
+    }
+  }, [pulse, storeId, id, queryClient])
 
   const [endEventOpen, setEndEventOpen] = useState(false)
   const [createSessionOpen, setCreateSessionOpen] = useState(false)

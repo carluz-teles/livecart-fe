@@ -243,6 +243,14 @@ export interface EventDetailStatsResponse {
   confirmedRevenue: number
 }
 
+/** Tiny change-signal polled cheaply for near-real-time refresh. When a field
+ *  moves, the client refetches the matching heavy list (carts / comments). */
+export interface EventPulse {
+  orders: number
+  comments: number
+  ordersChangedAt: string
+}
+
 export interface EventCartsResponse {
   data: EventCart[]
 }
