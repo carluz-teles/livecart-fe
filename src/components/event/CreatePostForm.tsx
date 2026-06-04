@@ -174,26 +174,22 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       },
     }
     const callbacks = {
+      // Success/error toasts come from the global MutationCache (meta-driven), so
+      // they still fire if the merchant closed this dialog mid-publish. Here we
+      // only handle the in-form UI for when the dialog is still open.
       onSuccess: () => {
-        toast.success(
-          mediaType === "reel" ? "Reel publicado no Instagram!" : "Post publicado no Instagram!",
-          { description: "O evento já está ativo e capturando comentários." }
-        )
         reset()
         onClose()
         onSuccess?.()
       },
-      onError: (err: { message?: string }) => {
-        // The request may have timed out on the client while still succeeding
-        // on the server (the post can already be live). Don't re-enable an
-        // in-place retry — warn the merchant and let them close/verify.
+      onError: () => {
         submittingRef.current = false
         setPhase("idle")
         setUploadPercent(0)
+        // The request may have failed after the post already went live (e.g. a
+        // client timeout). Don't offer an in-place retry — warn and let them
+        // verify/close. The error toast itself is shown globally.
         setMayHavePublished(true)
-        toast.error("Não recebemos a confirmação", {
-          description: err.message || "Verifique seu Instagram antes de tentar de novo.",
-        })
       },
     }
     if (mediaType === "reel") {
@@ -469,6 +465,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
                 </p>
               </>
             )}
+            <p className="border-t pt-2 text-xs text-muted-foreground">
+              Pode fechar esta janela — avisaremos por aqui quando a publicação concluir.
+            </p>
           </div>
         )}
 
@@ -483,8 +482,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         )}
 
         <div className="mt-8 flex justify-end gap-3 border-t pt-4">
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
-            {mayHavePublished ? "Fechar" : "Cancelar"}
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            {isPending || mayHavePublished ? "Fechar" : "Cancelar"}
           </Button>
           {!mayHavePublished && (
             <Button onClick={handleSubmit} disabled={!canSubmit}>

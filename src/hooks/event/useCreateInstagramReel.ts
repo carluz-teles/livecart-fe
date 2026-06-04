@@ -44,5 +44,11 @@ export function useCreateInstagramReel() {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
       queryClient.invalidateQueries({ queryKey: eventKeys.stats(storeId!) })
     },
+    // Surfaced by the global MutationCache so the success toast fires even if the
+    // merchant closed the dialog before the Reel finished processing.
+    meta: {
+      successMessage: "Reel publicado no Instagram!",
+      successDescription: "O evento já está ativo e capturando comentários.",
+    },
   })
 }

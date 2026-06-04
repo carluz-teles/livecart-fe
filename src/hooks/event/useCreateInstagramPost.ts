@@ -47,5 +47,11 @@ export function useCreateInstagramPost() {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
       queryClient.invalidateQueries({ queryKey: eventKeys.stats(storeId!) })
     },
+    // Surfaced by the global MutationCache so the success toast fires even if the
+    // merchant closed the dialog before publishing finished.
+    meta: {
+      successMessage: "Post publicado no Instagram!",
+      successDescription: "O evento já está ativo e capturando comentários.",
+    },
   })
 }

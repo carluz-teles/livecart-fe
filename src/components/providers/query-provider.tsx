@@ -72,6 +72,22 @@ export function QueryProvider({ children }: QueryProviderProps) {
               toast.error(getErrorMessage(error))
             }
           },
+          // Cache-level success toast driven by mutation `meta`. Cache callbacks
+          // fire even after the triggering component unmounts — so long-running
+          // mutations (e.g. publishing a post/Reel) still notify the user when
+          // they closed the dialog before it finished. Opt in per mutation by
+          // setting meta.successMessage.
+          onSuccess: (_data, _variables, _context, mutation) => {
+            const meta = mutation.meta as
+              | { successMessage?: string; successDescription?: string }
+              | undefined
+            if (meta?.successMessage) {
+              toast.success(
+                meta.successMessage,
+                meta.successDescription ? { description: meta.successDescription } : undefined
+              )
+            }
+          },
         }),
       })
   )
