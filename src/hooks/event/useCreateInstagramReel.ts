@@ -7,11 +7,15 @@ import { useStoreId } from "@/hooks/useUser"
 import type { CreateInstagramPostPayload } from "@/types/event.types"
 import { eventKeys } from "./useEvents"
 
-type CreateReelArgs = { file: File } & Omit<CreateInstagramPostPayload, "imageUrl">
+type CreateReelArgs = { file: File; onProgress?: (percent: number) => void } & Omit<
+  CreateInstagramPostPayload,
+  "imageUrl"
+>
 
 /**
  * Publishes a Reel by streaming the video to the backend, which uploads it
- * directly to Instagram, then creates the bound post event.
+ * directly to Instagram, then creates the bound post event. onProgress reports
+ * the video upload (0–100); once it reaches 100 the server processes the Reel.
  */
 export function useCreateInstagramReel() {
   const { getToken } = useAuth()
@@ -19,7 +23,7 @@ export function useCreateInstagramReel() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ file, ...rest }: CreateReelArgs) => {
+    mutationFn: async ({ file, onProgress, ...rest }: CreateReelArgs) => {
       if (!storeId) throw new Error("Store ID is required")
       const token = await getToken()
       const fd = new FormData()
@@ -34,7 +38,7 @@ export function useCreateInstagramReel() {
       if (rest.cartMaxQuantityPerItem != null)
         fd.append("cartMaxQuantityPerItem", String(rest.cartMaxQuantityPerItem))
       if (rest.idempotencyKey) fd.append("idempotencyKey", rest.idempotencyKey)
-      return uploadService.createInstagramReel(storeId, fd, token!)
+      return uploadService.createInstagramReel(storeId, fd, token!, onProgress)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })

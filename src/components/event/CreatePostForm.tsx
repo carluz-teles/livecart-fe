@@ -44,6 +44,10 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
   // timeout dedupes server-side instead of publishing the same post twice.
   const idempotencyKeyRef = useRef("")
   const [mayHavePublished, setMayHavePublished] = useState(false)
+  // Publish lifecycle: "uploading" has a real percentage (client→server upload),
+  // then "processing" is indeterminate (Instagram has no progress to report).
+  const [phase, setPhase] = useState<"idle" | "uploading" | "processing">("idle")
+  const [uploadPercent, setUploadPercent] = useState(0)
   const [mediaType, setMediaType] = useState<"image" | "reel">("image")
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -82,6 +86,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     setSearch("")
     submittingRef.current = false
     setMayHavePublished(false)
+    setPhase("idle")
+    setUploadPercent(0)
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -149,6 +155,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     // Hard guard against a double submit: publishing is slow, and a second
     // submission would publish a second post + create a second event.
     submittingRef.current = true
+    setPhase("uploading")
+    setUploadPercent(0)
     const payload = {
       file,
       caption: caption.trim() || undefined,
@@ -159,6 +167,11 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       cartExpirationMinutes,
       cartMaxQuantityPerItem: maxQty,
       idempotencyKey: idempotencyKeyRef.current || undefined,
+      onProgress: (pct: number) => {
+        setUploadPercent(pct)
+        // Upload done → the server is now publishing/processing (no percentage).
+        if (pct >= 100) setPhase("processing")
+      },
     }
     const callbacks = {
       onSuccess: () => {
@@ -175,6 +188,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         // on the server (the post can already be live). Don't re-enable an
         // in-place retry — warn the merchant and let them close/verify.
         submittingRef.current = false
+        setPhase("idle")
+        setUploadPercent(0)
         setMayHavePublished(true)
         toast.error("Não recebemos a confirmação", {
           description: err.message || "Verifique seu Instagram antes de tentar de novo.",
@@ -409,15 +424,51 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         </div>
 
         {isPending && (
-          <div className="mt-6 rounded-md border bg-muted/40 p-3 text-sm">
-            <p className="font-medium">
-              {mediaType === "reel" ? "Publicando o reel no Instagram..." : "Publicando o post no Instagram..."}
-            </p>
-            <p className="text-muted-foreground">
-              {mediaType === "reel"
-                ? "O Instagram processa o vídeo — isso pode levar alguns minutos. Não feche esta janela."
-                : "Pode levar até 1 minuto. Não feche esta janela."}
-            </p>
+          <div className="mt-6 space-y-3 rounded-md border bg-muted/40 p-4 text-sm">
+            {phase === "uploading" ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">
+                    {mediaType === "reel" ? "Enviando o vídeo..." : "Enviando a imagem..."}
+                  </p>
+                  <span className="font-mono tabular-nums text-muted-foreground">
+                    {uploadPercent}%
+                  </span>
+                </div>
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-valuenow={uploadPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
+                    style={{ width: `${uploadPercent}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {mediaType === "reel"
+                    ? "Vídeos grandes levam mais tempo no envio. Não feche esta janela."
+                    : "Não feche esta janela."}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <p className="font-medium">Processando no Instagram...</p>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full w-full animate-pulse rounded-full bg-primary/70" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {mediaType === "reel"
+                    ? "O Instagram está processando o vídeo — pode levar alguns minutos."
+                    : "Publicando o post — pode levar até 1 minuto."}
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -439,9 +490,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isPending
-                ? mediaType === "reel"
-                  ? "Publicando reel..."
-                  : "Publicando..."
+                ? phase === "uploading"
+                  ? `Enviando... ${uploadPercent}%`
+                  : "Processando..."
                 : "Publicar e criar evento"}
             </Button>
           )}
