@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import {
+  Aperture,
   ChevronLeft,
   ChevronRight,
   ImagePlus,
@@ -22,7 +23,7 @@ import { EventForm } from "./EventForm"
 import { PostEventForm } from "./PostEventForm"
 import { CreatePostForm } from "./CreatePostForm"
 
-type Choice = "live" | "select-post" | "create-post"
+type Choice = "live" | "select-post" | "create-post" | "create-story"
 type Step = "root" | "post"
 
 /**
@@ -74,6 +75,12 @@ export function EventTypeChooser() {
                   description="Venda pelos comentários de um post do Instagram, com início e fim agendados."
                   onClick={() => setStep("post")}
                 />
+                <ChooserCard
+                  icon={<Aperture className="h-5 w-5" />}
+                  title="Criar um Story"
+                  description="Publique um Story (foto ou vídeo). Fica 24h no ar e quem responder por DM compra na hora."
+                  onClick={() => pick("create-story")}
+                />
               </div>
             </>
           ) : (
@@ -119,6 +126,9 @@ export function EventTypeChooser() {
       )}
       {choice === "create-post" && (
         <CreatePostForm open onClose={() => setChoice(null)} />
+      )}
+      {choice === "create-story" && (
+        <CreatePostForm variant="story" open onClose={() => setChoice(null)} />
       )}
     </>
   )

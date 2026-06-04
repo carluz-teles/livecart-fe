@@ -5,8 +5,15 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 // =============================================================================
 
 export type EventStatus = "scheduled" | "active" | "ended"
-export type EventType = "single" | "multi" | "post"
+export type EventType = "single" | "multi" | "post" | "story"
 export type Platform = "instagram" // Only Instagram supported for now
+
+// Post and Story events share the same commerce model (mapped Instagram media,
+// no live sessions/control, window-derived status) — only the buyer channel
+// differs (post comments vs story DMs). Use this wherever the UI should treat
+// them alike instead of checking just "post".
+export const isPostLikeEvent = (type: EventType): boolean =>
+  type === "post" || type === "story"
 
 // =============================================================================
 // PLATFORM - Platform IDs associated with sessions

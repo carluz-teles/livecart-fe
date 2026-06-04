@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
+  Aperture,
   Search,
   MoreHorizontal,
   Radio,
@@ -29,6 +30,7 @@ import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useEvents, useEventStats, useEndEvent, useDeleteEvent } from "@/hooks/event"
 import type { Event, EventFilters as EventFiltersType } from "@/types/event.types"
+import { isPostLikeEvent } from "@/types/event.types"
 import {
   Card,
   CardContent,
@@ -259,7 +261,9 @@ export default function EventsPage() {
                   events.map((event) => {
                     const config = getEventStatusDisplay(event.status, event.type)
                     const StatusIcon = EVENT_STATUS_ICONS[config.icon]
-                    const isPost = event.type === "post"
+                    const isStory = event.type === "story"
+                    const isPost = isPostLikeEvent(event.type)
+                    const kindLabel = isStory ? "Story" : isPost ? "Post" : "Live"
                     return (
                       <TableRow
                         key={event.id}
@@ -272,12 +276,14 @@ export default function EventsPage() {
                               variant="outline"
                               className="gap-1 text-muted-foreground"
                             >
-                              {isPost ? (
+                              {isStory ? (
+                                <Aperture className="h-3 w-3" />
+                              ) : isPost ? (
                                 <Instagram className="h-3 w-3" />
                               ) : (
                                 <Radio className="h-3 w-3" />
                               )}
-                              {isPost ? "Post" : "Live"}
+                              {kindLabel}
                             </Badge>
                             <span className="transition-colors group-hover:text-primary">
                               {event.title || "Sem titulo"}
@@ -318,8 +324,8 @@ export default function EventsPage() {
                                 {event.status === "active" && (
                                   <>
                                     {/* Session / reconnect are live-only and
-                                        make no sense for a post event. */}
-                                    {event.type !== "post" && (
+                                        make no sense for a post/story event. */}
+                                    {!isPost && (
                                       <>
                                         <DropdownMenuItem onClick={() => handleNewSession(event)}>
                                           <Plus className="mr-2 h-4 w-4" />
@@ -334,7 +340,7 @@ export default function EventsPage() {
                                     )}
                                     <DropdownMenuItem onClick={() => handleEndEvent(event)}>
                                       <Square className="mr-2 h-4 w-4" />
-                                      {event.type === "post" ? "Encerrar promoção" : "Finalizar evento"}
+                                      {isPost ? "Encerrar promoção" : "Finalizar evento"}
                                     </DropdownMenuItem>
                                   </>
                                 )}

@@ -114,4 +114,21 @@ export const uploadService = {
       onProgress
     )
   },
+
+  // Publishes a Story (photo or video) and creates the bound story event. The
+  // backend auto-detects image vs video from the file's content type.
+  createInstagramStory: async (
+    storeId: string,
+    formData: FormData,
+    token: string,
+    onProgress?: (percent: number) => void
+  ): Promise<unknown> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    return xhrUpload<unknown>(
+      `${apiUrl}/stores/${storeId}/integrations/instagram/stories`,
+      formData,
+      token,
+      onProgress
+    )
+  },
 }

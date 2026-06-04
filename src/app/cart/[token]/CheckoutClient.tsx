@@ -647,7 +647,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   }
 
   const isLiveActive = cart.status === "active"
-  const isPost = cart.event?.type === "post"
+  // Stories share the post-commerce checkout copy ("Promoção ativa!"), not the
+  // live wording.
+  const isPost = cart.event?.type === "post" || cart.event?.type === "story"
 
   const availableItems = cart.items.filter((item) => {
     const availableQty = item.quantity - item.waitlistedQuantity

@@ -2,12 +2,13 @@
 
 import { use } from "react"
 import Link from "next/link"
-import { ArrowLeft, Instagram, Radio, RefreshCw } from "lucide-react"
+import { ArrowLeft, Aperture, Instagram, Radio, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getEventStatusDisplay } from "@/lib/constants"
+import { isPostLikeEvent } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailActions } from "./EventDetail.Actions"
 
@@ -17,15 +18,17 @@ export function EventDetailHeader() {
   const { event } = ctx.state
   const { refresh } = ctx.actions
 
-  const isPost = event.type === "post"
+  const isStory = event.type === "story"
+  const isPostLike = isPostLikeEvent(event.type)
+  const kindLabel = isStory ? "Story" : isPostLike ? "Post" : "Live"
   const statusCfg = getEventStatusDisplay(event.status, event.type)
 
   const fmt = (iso: string) =>
     format(new Date(iso), "d 'de' MMM, HH:mm", { locale: ptBR })
 
-  // Post: show the scheduled window (or creation date). Live: sessions + start.
+  // Post/story: show the window (or creation date). Live: sessions + start.
   let subtitle: string
-  if (isPost) {
+  if (isPostLike) {
     const parts: string[] = []
     if (event.scheduledAt) parts.push(`começa ${fmt(event.scheduledAt)}`)
     else parts.push(`criado ${fmt(event.createdAt)}`)
@@ -51,15 +54,22 @@ export function EventDetailHeader() {
         </Link>
         <div className="min-w-0">
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Operação · {isPost ? "Post" : "Live"}
+            Operação · {kindLabel}
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              {event.title || (isPost ? "Promoção de post" : "Sem título")}
+              {event.title ||
+                (isStory ? "Promoção de Story" : isPostLike ? "Promoção de post" : "Sem título")}
             </h1>
             <Badge variant="outline" className="gap-1 text-muted-foreground">
-              {isPost ? <Instagram className="h-3 w-3" /> : <Radio className="h-3 w-3" />}
-              {isPost ? "Post" : "Live"}
+              {isStory ? (
+                <Aperture className="h-3 w-3" />
+              ) : isPostLike ? (
+                <Instagram className="h-3 w-3" />
+              ) : (
+                <Radio className="h-3 w-3" />
+              )}
+              {kindLabel}
             </Badge>
             <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
           </div>

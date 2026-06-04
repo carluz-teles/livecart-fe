@@ -62,7 +62,8 @@ export function getEventStatusDisplay(
   status: EventStatus,
   type?: string
 ): EventStatusConfig {
-  const map = type === "post" ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
+  const map =
+    type === "post" || type === "story" ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
   return map[status] ?? map.ended
 }
 

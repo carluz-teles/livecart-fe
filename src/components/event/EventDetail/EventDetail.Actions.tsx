@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { isPostLikeEvent } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
 
 export function EventDetailActions() {
@@ -22,8 +23,8 @@ export function EventDetailActions() {
   // Ações só fazem sentido com evento ativo.
   if (event.status !== "active") return null
 
-  // Live-only actions (sessions / crash recovery) don't apply to post events.
-  const isPost = event.type === "post"
+  // Live-only actions (sessions / crash recovery) don't apply to post/story events.
+  const isPost = isPostLikeEvent(event.type)
 
   return (
     <DropdownMenu>

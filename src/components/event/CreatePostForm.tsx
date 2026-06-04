@@ -24,7 +24,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useCreateInstagramPost, useCreateInstagramReel } from "@/hooks/event"
+import {
+  useCreateInstagramPost,
+  useCreateInstagramReel,
+  useCreateInstagramStory,
+} from "@/hooks/event"
 import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared"
 import { formatCurrency } from "@/lib/format"
@@ -35,9 +39,14 @@ interface CreatePostFormProps {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
+  // "post" publishes to the feed (photo/Reels, buyers comment to buy); "story"
+  // publishes a 24h Story (buyers reply via DM to buy). The form reuses the same
+  // media + products UI, hiding the caption/window for Stories.
+  variant?: "post" | "story"
 }
 
-export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps) {
+export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: CreatePostFormProps) {
+  const isStory = variant === "story"
   const fileInputRef = useRef<HTMLInputElement>(null)
   const submittingRef = useRef(false)
   // Stable per selected media: sent with every submit so a retry after a client
@@ -67,7 +76,8 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
   })
   const createPost = useCreateInstagramPost()
   const createReel = useCreateInstagramReel()
-  const isPending = createPost.isPending || createReel.isPending
+  const createStory = useCreateInstagramStory()
+  const isPending = createPost.isPending || createReel.isPending || createStory.isPending
   const products = productsData?.data ?? []
 
   const reset = () => {
@@ -108,8 +118,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
       }
       setMediaType("image")
     } else if (f.type === "video/mp4" || f.type === "video/quicktime") {
-      if (f.size > 300 * 1024 * 1024) {
-        toast.error("Vídeo muito grande. Máximo de 300MB.")
+      const maxMB = isStory ? 100 : 300
+      if (f.size > maxMB * 1024 * 1024) {
+        toast.error(`Vídeo muito grande. Máximo de ${maxMB}MB.`)
         return
       }
       setMediaType("reel")
@@ -139,11 +150,14 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
   const canSubmit =
     !!file && selectedProductIds.length > 0 && !windowInvalid && !isPending
 
+  const action = isStory ? "responde o Story por DM com" : "comenta"
   const ruleHint =
     selectedProductIds.length === 1
-      ? 'Com 1 produto, um comentário "EU QUERO" já adiciona ao carrinho.'
+      ? isStory
+        ? 'Com 1 produto, responder o Story com "EU QUERO" já adiciona ao carrinho.'
+        : 'Com 1 produto, um comentário "EU QUERO" já adiciona ao carrinho.'
       : selectedProductIds.length > 1
-        ? 'Com vários produtos, o cliente comenta a palavra-chave (ex: "EU QUERO 1005").'
+        ? `Com vários produtos, o cliente ${action} a palavra-chave (ex: "EU QUERO 1005").`
         : "Selecione os produtos que farão parte desta promoção."
 
   const handleSubmit = () => {
@@ -192,7 +206,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
         setMayHavePublished(true)
       },
     }
-    if (mediaType === "reel") {
+    if (isStory) {
+      createStory.mutate(payload, callbacks)
+    } else if (mediaType === "reel") {
       createReel.mutate(payload, callbacks)
     } else {
       createPost.mutate(payload, callbacks)
@@ -203,17 +219,18 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="w-full sm:max-w-[640px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Criar post no Instagram</SheetTitle>
+          <SheetTitle>{isStory ? "Criar um Story no Instagram" : "Criar post no Instagram"}</SheetTitle>
           <SheetDescription>
-            Publique um post de foto direto pelo LiveCart e já comece a vender pelos
-            comentários — sem sair daqui.
+            {isStory
+              ? "Publique um Story (foto ou vídeo) pelo LiveCart. Ele fica no ar por 24h e quem responder o Story por DM compra na hora."
+              : "Publique um post de foto direto pelo LiveCart e já comece a vender pelos comentários — sem sair daqui."}
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-8">
           {/* Step 1 — media + caption */}
           <section className="space-y-3">
-            <SectionTitle n={1} title="Mídia e legenda" />
+            <SectionTitle n={1} title={isStory ? "Mídia do Story" : "Mídia e legenda"} />
 
             <input
               ref={fileInputRef}
@@ -257,12 +274,20 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
                     ) : (
                       <Film className="h-3 w-3" />
                     )}
-                    {mediaType === "image" ? "Foto no feed" : "Reels (vídeo)"}
+                    {isStory
+                      ? mediaType === "image"
+                        ? "Story (foto)"
+                        : "Story (vídeo)"
+                      : mediaType === "image"
+                        ? "Foto no feed"
+                        : "Reels (vídeo)"}
                   </Badge>
                   <span>
-                    {mediaType === "image"
-                      ? "será publicado como foto no feed."
-                      : "vídeos viram Reels no Instagram."}
+                    {isStory
+                      ? "fica no ar por 24h no seu Story."
+                      : mediaType === "image"
+                        ? "será publicado como foto no feed."
+                        : "vídeos viram Reels no Instagram."}
                   </span>
                 </div>
               </div>
@@ -277,25 +302,30 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
                   Selecionar mídia (foto ou vídeo)
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Foto JPEG (até 8MB) ou vídeo MP4 (até 300MB) — detectamos automaticamente.
+                  {isStory
+                    ? "Foto JPEG (até 8MB) ou vídeo MP4 (até 100MB) — detectamos automaticamente."
+                    : "Foto JPEG (até 8MB) ou vídeo MP4 (até 300MB) — detectamos automaticamente."}
                 </span>
               </button>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="post-caption">Legenda do post</Label>
-              <Textarea
-                id="post-caption"
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Esta legenda vai junto com o post no Instagram..."
-                rows={3}
-                maxLength={2200}
-              />
-              <p className="text-xs text-muted-foreground">
-                É o texto que aparece no post publicado no Instagram.
-              </p>
-            </div>
+            {/* Stories have no public caption — buyers engage via DM, so skip it. */}
+            {!isStory && (
+              <div className="space-y-2">
+                <Label htmlFor="post-caption">Legenda do post</Label>
+                <Textarea
+                  id="post-caption"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Esta legenda vai junto com o post no Instagram..."
+                  rows={3}
+                  maxLength={2200}
+                />
+                <p className="text-xs text-muted-foreground">
+                  É o texto que aparece no post publicado no Instagram.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="post-title">Título do evento (opcional)</Label>
@@ -366,20 +396,30 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
           {/* Step 3 — window + cart */}
           <section className="space-y-3">
             <SectionTitle n={3} title="Janela e carrinho" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cp-starts">Início (opcional)</Label>
-                <Input id="cp-starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-                <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cp-ends">Término (opcional)</Label>
-                <Input id="cp-ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
-                <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
-              </div>
-            </div>
-            {windowInvalid && (
-              <p className="text-sm text-destructive">O término deve ser depois do início.</p>
+            {isStory ? (
+              // Stories always run for their fixed 24h lifetime — no custom window.
+              <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                ⏳ O Story fica ativo por <span className="font-medium text-foreground">24 horas</span>.
+                Depois disso o evento encerra automaticamente.
+              </p>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="cp-starts">Início (opcional)</Label>
+                    <Input id="cp-starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                    <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cp-ends">Término (opcional)</Label>
+                    <Input id="cp-ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+                    <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
+                  </div>
+                </div>
+                {windowInvalid && (
+                  <p className="text-sm text-destructive">O término deve ser depois do início.</p>
+                )}
+              </>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -461,7 +501,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
                 <p className="text-xs text-muted-foreground">
                   {mediaType === "reel"
                     ? "O Instagram está processando o vídeo — pode levar alguns minutos."
-                    : "Publicando o post — pode levar até 1 minuto."}
+                    : isStory
+                      ? "Publicando o Story — pode levar até 1 minuto."
+                      : "Publicando o post — pode levar até 1 minuto."}
                 </p>
               </>
             )}
@@ -475,8 +517,9 @@ export function CreatePostForm({ open, onClose, onSuccess }: CreatePostFormProps
           <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
             <p className="font-medium">Não recebemos a confirmação do servidor.</p>
             <p>
-              O post pode já ter sido publicado e o evento criado. Confira seu Instagram e a
-              lista de eventos antes de tentar novamente, para não duplicar.
+              {isStory
+                ? "O Story pode já ter sido publicado e o evento criado. Confira seu Instagram e a lista de eventos antes de tentar novamente, para não duplicar."
+                : "O post pode já ter sido publicado e o evento criado. Confira seu Instagram e a lista de eventos antes de tentar novamente, para não duplicar."}
             </p>
           </div>
         )}
