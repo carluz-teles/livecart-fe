@@ -2,6 +2,7 @@
 
 import { use, useState } from "react"
 import {
+  Eye,
   EyeOff,
   Loader2,
   MessageCircle,
@@ -139,8 +140,9 @@ export function EventDetailComments() {
                   setReplyFor(comment)
                   setReplyText("")
                 }}
-                onHide={(hidden) =>
-                  hide.mutate({ commentId: comment.platformCommentId, hidden })
+                onHide={() =>
+                  // Toggle: hidden comments get unhidden, visible ones get hidden.
+                  hide.mutate({ commentId: comment.platformCommentId, hidden: !comment.hidden })
                 }
                 onDelete={() => setDeleteFor(comment)}
                 hidePending={hide.isPending}
@@ -208,7 +210,7 @@ export function EventDetailComments() {
 interface CommentRowProps {
   comment: EventComment
   onReply: () => void
-  onHide: (hidden: boolean) => void
+  onHide: () => void
   onDelete: () => void
   hidePending: boolean
   deletePending: boolean
@@ -238,8 +240,21 @@ function CommentRow({
               intenção de compra
             </Badge>
           )}
+          {comment.hidden && (
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              oculto
+            </Badge>
+          )}
         </div>
-        <p className="text-sm leading-relaxed text-muted-foreground">{comment.text}</p>
+        <p
+          className={
+            comment.hidden
+              ? "text-sm leading-relaxed text-muted-foreground/60 line-through"
+              : "text-sm leading-relaxed text-muted-foreground"
+          }
+        >
+          {comment.text}
+        </p>
       </div>
       {readOnly ? null : (
       <div className="flex shrink-0 items-center gap-1">
@@ -263,19 +278,23 @@ function CommentRow({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => onHide(true)}
+                onClick={onHide}
                 disabled={hidePending}
               >
                 {hidePending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : comment.hidden ? (
+                  <Eye className="h-4 w-4" />
                 ) : (
                   <EyeOff className="h-4 w-4" />
                 )}
-                <span className="sr-only">Ocultar comentário</span>
+                <span className="sr-only">
+                  {comment.hidden ? "Reexibir comentário" : "Ocultar comentário"}
+                </span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Ocultar / reexibir comentário</p>
+              <p>{comment.hidden ? "Reexibir comentário" : "Ocultar comentário"}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

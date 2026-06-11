@@ -262,6 +262,8 @@ export interface EventComment {
   handle: string
   text: string
   hasPurchaseIntent: boolean
+  /** Mirrors the Instagram hide state so the hide button toggles hide ↔ unhide. */
+  hidden: boolean
   createdAt: string
 }
 
