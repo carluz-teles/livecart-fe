@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { auth } from "@clerk/nextjs/server"
 
 import { LandingNav } from "@/components/marketing/landing-nav"
 import { LandingHero } from "@/components/marketing/landing-hero"
@@ -26,10 +27,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { userId } = await auth()
   return (
     <main className="bg-background text-foreground">
-      <LandingNav />
+      <LandingNav isSignedIn={!!userId} />
       <LandingHero />
       <LandingHowItWorks />
       <LandingCheckoutHero />

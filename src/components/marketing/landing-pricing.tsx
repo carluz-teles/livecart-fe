@@ -4,6 +4,8 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+import { MobileCarousel } from "./mobile-carousel"
+
 const plans = [
   {
     name: "Start",
@@ -72,12 +74,15 @@ export function LandingPricing() {
         </div>
 
         {/* Plans */}
-        <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <MobileCarousel
+          wrapperClassName="mt-16"
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-4 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 sm:pt-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+        >
           {plans.map((plan) => (
             <div
               key={plan.name}
               className={cn(
-                "relative flex flex-col rounded-2xl border p-6",
+                "relative flex w-full min-w-full shrink-0 snap-start flex-col rounded-2xl border p-6 sm:w-auto sm:min-w-0",
                 plan.highlighted
                   ? "border-primary bg-card shadow-lg ring-1 ring-primary"
                   : "border-border bg-card"
@@ -117,7 +122,7 @@ export function LandingPricing() {
               </Button>
             </div>
           ))}
-        </div>
+        </MobileCarousel>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           A taxa sobre pedidos pagos (% do GMV) incide apenas sobre o valor dos

@@ -57,8 +57,8 @@ export function LandingAutomationsSection() {
 
         </div>
 
-        {/* Phone mock */}
-        <div className="relative mx-auto w-full max-w-[320px]">
+        {/* Phone mock (hidden on mobile) */}
+        <div className="relative mx-auto hidden w-full max-w-[320px] lg:block">
           <div className="absolute -inset-6 rounded-[3rem] bg-amber-400/20 blur-3xl" />
 
           <div className="relative rounded-[2.5rem] border border-neutral-800 bg-neutral-900 p-2.5 shadow-2xl">

@@ -18,11 +18,10 @@ const isOnboardingRoute = createRouteMatcher(["/onboarding"])
 export default clerkMiddleware(async (auth, req) => {
   const { userId, getToken, redirectToSignIn } = await auth()
 
-  // Landing page ("/") is public marketing. Signed-in users are sent to the app.
+  // Landing page ("/") is public marketing for everyone — logged in or out.
+  // Signed-in visitors see it too (the nav shows a "dashboard" link); we never
+  // force a redirect here so the page is always reachable.
   if (req.nextUrl.pathname === "/") {
-    if (userId) {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
     return NextResponse.next()
   }
 

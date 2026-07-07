@@ -16,7 +16,7 @@ const navLinks = [
   { label: "Planos", href: "#precos" },
 ]
 
-export function LandingNav() {
+export function LandingNav({ isSignedIn = false }: { isSignedIn?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -29,7 +29,7 @@ export function LandingNav() {
             width={190}
             height={51}
             priority
-            className="h-9 w-auto"
+            className="h-8 w-auto"
           />
         </Link>
 
@@ -46,12 +46,20 @@ export function LandingNav() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" asChild>
-            <Link href="/login">Entrar</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/register">Começar grátis</Link>
-          </Button>
+          {isSignedIn ? (
+            <Button asChild>
+              <Link href="/dashboard">Ir para o dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/login">Entrar</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">Começar grátis</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -81,12 +89,20 @@ export function LandingNav() {
             </a>
           ))}
           <div className="mt-2 flex flex-col gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/login">Entrar</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Começar grátis</Link>
-            </Button>
+            {isSignedIn ? (
+              <Button asChild>
+                <Link href="/dashboard">Ir para o dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/login">Entrar</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">Começar grátis</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

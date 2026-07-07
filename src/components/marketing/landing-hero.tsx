@@ -168,8 +168,8 @@ export function LandingHero() {
           </p>
         </div>
 
-        {/* Bubble flow */}
-        <div className="relative">
+        {/* Bubble flow (hidden on mobile) */}
+        <div className="relative hidden lg:block">
           {/* glow */}
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
 

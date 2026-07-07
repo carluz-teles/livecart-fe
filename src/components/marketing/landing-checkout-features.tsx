@@ -7,6 +7,8 @@ import {
   Users,
 } from "lucide-react"
 
+import { MobileCarousel } from "./mobile-carousel"
+
 const features = [
   {
     icon: RefreshCcw,
@@ -64,14 +66,17 @@ export function LandingCheckoutFeatures() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <MobileCarousel
+          wrapperClassName="mt-16"
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden"
+        >
           {features.map((f) => (
             <div
               key={f.title}
               className={
                 f.highlighted
-                  ? "rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6"
-                  : "rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md"
+                  ? "w-full min-w-full shrink-0 snap-start rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 sm:min-w-0"
+                  : "w-full min-w-full shrink-0 snap-start rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md sm:min-w-0"
               }
             >
               <div className="flex items-center gap-3">
@@ -96,7 +101,7 @@ export function LandingCheckoutFeatures() {
               </p>
             </div>
           ))}
-        </div>
+        </MobileCarousel>
       </div>
     </section>
   )

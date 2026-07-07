@@ -2,11 +2,11 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Radio,
   ShoppingCart,
   TrendingUp,
-  Zap,
   Shield,
   BarChart3,
 } from "lucide-react"
@@ -42,9 +42,9 @@ export default function AuthLayout({
     <AppProviders>
     <div className="flex min-h-screen">
       {/* Left Panel - Branding */}
-      <div className="relative hidden w-1/2 overflow-hidden lg:block">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-orange-950 to-amber-950" />
+      <div className="relative hidden w-1/2 overflow-hidden bg-neutral-950 lg:block">
+        {/* Gradient background (mesmo do hero da LP) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-neutral-950 to-orange-950" />
 
         {/* Animated mesh gradient */}
         <div className="absolute inset-0 opacity-40">
@@ -66,14 +66,16 @@ export default function AuthLayout({
         {/* Content */}
         <div className="relative z-10 flex h-full flex-col justify-between p-12">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg shadow-orange-500/25">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-semibold tracking-tight text-white">
-              LiveCart
-            </span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/livecart/logotipo-footer.png"
+              alt="LiveCart"
+              width={190}
+              height={51}
+              priority
+              className="h-8 w-auto"
+            />
+          </Link>
 
           {/* Main content */}
           <div className="space-y-12">
@@ -131,11 +133,14 @@ export default function AuthLayout({
 
         {/* Mobile logo */}
         <div className="relative z-10 flex items-center justify-between p-6 lg:hidden">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-600">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-semibold">LiveCart</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/livecart/logotipo-header.png"
+              alt="LiveCart"
+              width={170}
+              height={45}
+              className="h-8 w-auto"
+            />
           </Link>
         </div>
 
