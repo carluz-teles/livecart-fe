@@ -18,6 +18,8 @@ import type {
   PagarmeWebhookStatus,
   ProviderURLs,
   ERPHealthCheckResponse,
+  WhatsAppStatus,
+  ConnectWhatsAppPayload,
 } from "@/types"
 
 export const integrationService = {
@@ -194,6 +196,46 @@ export const integrationService = {
   ) =>
     apiClient.get<PagarmeWebhookStatus>(
       `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-status`,
+      token
+    ),
+
+  // ===========================================================================
+  // WhatsApp (Twilio) — PRD 006
+  // ===========================================================================
+
+  // Starts (or resumes) onboarding: subaccount + sender registration (OTP
+  // flows to the merchant's phone) + default recovery template.
+  connectWhatsApp: (
+    storeId: string,
+    payload: ConnectWhatsAppPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<WhatsAppStatus>(
+      `/stores/${storeId}/integrations/whatsapp/connect`,
+      payload,
+      token
+    ),
+
+  // Submits the OTP the merchant received by SMS/voice.
+  verifyWhatsApp: (storeId: string, code: string, token?: string | null) =>
+    apiClient.post<WhatsAppStatus>(
+      `/stores/${storeId}/integrations/whatsapp/verify`,
+      { code },
+      token
+    ),
+
+  // Sender + template approval state (used for wizard polling).
+  getWhatsAppStatus: (storeId: string, token?: string | null) =>
+    apiClient.get<WhatsAppStatus>(
+      `/stores/${storeId}/integrations/whatsapp/status`,
+      token
+    ),
+
+  // Sends the approved recovery template with sample data to a test number.
+  sendWhatsAppTest: (storeId: string, to: string, token?: string | null) =>
+    apiClient.post<{ messageId: string; status: string }>(
+      `/stores/${storeId}/integrations/whatsapp/test-message`,
+      { to },
       token
     ),
 }

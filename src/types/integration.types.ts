@@ -1,6 +1,6 @@
 import type { PackageFormat } from "./product.types"
 
-export type IntegrationType = "payment" | "erp" | "social" | "shipping"
+export type IntegrationType = "payment" | "erp" | "social" | "shipping" | "communication"
 export type IntegrationProvider =
   | "mercado_pago"
   | "pagarme"
@@ -8,6 +8,7 @@ export type IntegrationProvider =
   | "instagram"
   | "melhor_envio"
   | "smartenvios"
+  | "twilio_whatsapp"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
 export interface Integration {
@@ -311,4 +312,24 @@ export interface ShippingCarrier {
   carrier: string
   carrierLogoUrl?: string | null
   insuranceMaxCents: number
+}
+
+// =============================================================================
+// WhatsApp (Twilio) — PRD 006
+// =============================================================================
+
+export interface WhatsAppStatus {
+  integrationId: string
+  status: IntegrationStatus | string
+  phoneNumber: string
+  senderStatus: string // NOT_REGISTERED | PENDING_VERIFICATION | VERIFYING | ONLINE | ...
+  qualityRating: string // HIGH | MEDIUM | LOW | UNKNOWN
+  templateStatus: string // missing | pending | approved | rejected
+  templateReason?: string
+}
+
+export interface ConnectWhatsAppPayload {
+  phoneNumber: string // E.164 (+5511999999999)
+  wabaId?: string
+  displayName?: string
 }

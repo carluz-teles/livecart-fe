@@ -16,3 +16,10 @@ export { useProviderURLs, providerURLsKeys } from "./useProviderURLs"
 export { useERPHealthCheck, erpHealthCheckKeys } from "./useERPHealthCheck"
 export { usePagarmeWebhookStatus, pagarmeWebhookStatusKeys } from "./usePagarmeWebhookStatus"
 export { useInstagramMedia, instagramMediaKeys } from "./useInstagramMedia"
+export {
+  useWhatsAppStatus,
+  useConnectWhatsApp,
+  useVerifyWhatsApp,
+  useSendWhatsAppTest,
+  whatsappKeys,
+} from "./useWhatsApp"

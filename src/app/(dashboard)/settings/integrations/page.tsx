@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   BookOpen,
   Webhook,
+  MessageCircle,
   ArrowUp,
   ArrowDown,
   Star,
@@ -66,6 +67,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { IntegrationCard } from "@/components/integration/IntegrationCard"
 import { CopyableURL } from "@/components/integration/CopyableURL"
 import { PagarmeConnectWizard } from "@/components/integration/PagarmeConnectWizard"
+import { WhatsAppConnectDialog } from "@/components/integration/WhatsAppConnectDialog"
 import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProbe"
 import { TinyHealthCheckDialog } from "@/components/integration/TinyHealthCheck/TinyHealthCheckDialog"
 import {
@@ -96,7 +98,7 @@ interface ProviderConfig {
   description: string
   features: string[]
   type: IntegrationType
-  authType: "oauth" | "api_key" | "oauth_with_credentials"
+  authType: "oauth" | "api_key" | "oauth_with_credentials" | "whatsapp"
   // Optional path to the step-by-step doc for this integration. When set, a
   // "Ver tutorial passo a passo" link appears on the card so admins can read
   // the guide before / while connecting.
@@ -158,6 +160,14 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     authType: "api_key",
     docHref: "/docs/integrations/smartenvios",
   },
+  {
+    id: "twilio_whatsapp",
+    name: "WhatsApp",
+    description: "Recupere carrinhos e envie lembretes pelo WhatsApp com o seu número",
+    features: ["Recuperação de carrinho", "Lembrete de expiração", "Número próprio"],
+    type: "communication",
+    authType: "whatsapp",
+  },
 ]
 
 const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
@@ -180,6 +190,11 @@ const categoryConfig: Record<IntegrationType, { label: string; icon: React.React
     label: "Frete",
     icon: <Truck className="h-4 w-4" />,
     description: "Cote frete com transportadoras no checkout",
+  },
+  communication: {
+    label: "Comunicação",
+    icon: <MessageCircle className="h-4 w-4" />,
+    description: "Mensagens automáticas para os seus clientes",
   },
 }
 
@@ -320,6 +335,7 @@ function IntegrationsContent() {
   const [tinyClientSecret, setTinyClientSecret] = useState("")
   const tinyProviderURLs = useProviderURLs("tiny", tinyDialog)
   const [pagarmeDialog, setPagarmeDialog] = useState(false)
+  const [whatsappDialog, setWhatsappDialog] = useState(false)
   const [pagarmeSecretKey, setPagarmeSecretKey] = useState("")
   const [pagarmePublicKey, setPagarmePublicKey] = useState("")
   const [pagarmeWebhookUser, setPagarmeWebhookUser] = useState("")
@@ -430,6 +446,9 @@ function IntegrationsContent() {
           break
         }
         setApiKeyDialog(provider.id)
+        break
+      case "whatsapp":
+        setWhatsappDialog(true)
         break
     }
   }
@@ -978,6 +997,9 @@ function IntegrationsContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* WhatsApp connect wizard (PRD 006) */}
+      <WhatsAppConnectDialog open={whatsappDialog} onOpenChange={setWhatsappDialog} />
 
       {/* Tiny OAuth Credentials Dialog */}
       <Dialog open={tinyDialog} onOpenChange={() => setTinyDialog(false)}>
