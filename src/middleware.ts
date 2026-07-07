@@ -18,9 +18,17 @@ const isOnboardingRoute = createRouteMatcher(["/onboarding"])
 export default clerkMiddleware(async (auth, req) => {
   const { userId, getToken, redirectToSignIn } = await auth()
 
+  // Landing page ("/") is public marketing. Signed-in users are sent to the app.
+  if (req.nextUrl.pathname === "/") {
+    if (userId) {
+      return NextResponse.redirect(new URL("/dashboard", req.url))
+    }
+    return NextResponse.next()
+  }
+
   // Redirect signed-in users away from auth pages to dashboard
   if (userId && isAuthRoute(req)) {
-    const dashboardUrl = new URL("/", req.url)
+    const dashboardUrl = new URL("/dashboard", req.url)
     return NextResponse.redirect(dashboardUrl)
   }
 

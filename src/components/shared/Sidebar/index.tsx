@@ -33,7 +33,7 @@ const navSections: NavSection[] = [
   {
     title: "Geral",
     items: [
-      { name: "Dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Eventos", href: "/events", icon: Calendar },
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },

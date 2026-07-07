@@ -49,7 +49,7 @@ function AcceptInviteContent() {
       setPageState('success')
       // Redirect to dashboard after a short delay
       setTimeout(() => {
-        router.push('/')
+        router.push('/dashboard')
       }, 1500)
     } catch (err) {
       console.error('Error accepting invitation:', err)
@@ -145,7 +145,7 @@ function AcceptInviteContent() {
 
   const handleCancelLeave = () => {
     setShowLeaveConfirm(false)
-    router.push('/')
+    router.push('/dashboard')
   }
 
   // No token - invalid invite
