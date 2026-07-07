@@ -543,6 +543,9 @@ export interface CheckoutCustomerInfo {
   customerName: string
   customerDocument: string
   customerPhone?: string
+  // PRD 006: opt-in para lembretes e recuperação de carrinho no WhatsApp.
+  // Só é enviado como true quando o telefone foi preenchido.
+  whatsappConsent?: boolean
   shippingAddress: ShippingAddressPayload
 }
 

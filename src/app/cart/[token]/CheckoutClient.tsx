@@ -204,6 +204,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const shippingSectionRef = useRef<HTMLDivElement>(null)
   const quoteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prefilledRef = useRef(false)
+  // PRD 006: consent do WhatsApp (pré-marcado; só vale com telefone preenchido)
+  const [whatsappConsent, setWhatsappConsent] = useState(true)
 
   const email = form.watch("email")
   const customerName = form.watch("customerName")
@@ -231,6 +233,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       customerName: customerName.trim(),
       customerDocument: documentDigits,
       customerPhone: phoneDigits || undefined,
+      whatsappConsent: !!phoneDigits && whatsappConsent,
       shippingAddress: {
         zipCode: zipDigits,
         street: shippingAddress.street.trim(),
@@ -247,6 +250,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     customerName,
     customerDocument,
     customerPhone,
+    whatsappConsent,
     shippingAddress.zipCode,
     shippingAddress.street,
     shippingAddress.number,
@@ -858,6 +862,22 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                       )}
                     />
                   </div>
+
+                  {/* PRD 006: consent LGPD para lembretes/recuperação no WhatsApp */}
+                  {(customerPhone ?? "").replace(/\D/g, "").length >= 10 && (
+                    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={whatsappConsent}
+                        onChange={(e) => setWhatsappConsent(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-emerald-600"
+                      />
+                      <span>
+                        Quero receber o link do pedido e lembretes no{" "}
+                        <span className="font-medium text-emerald-700">WhatsApp</span>
+                      </span>
+                    </label>
+                  )}
 
                   <FormField
                     control={form.control}
