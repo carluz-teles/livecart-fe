@@ -21,5 +21,9 @@ export {
   useConnectWhatsApp,
   useVerifyWhatsApp,
   useSendWhatsAppTest,
+  useWhatsAppRecoverySettings,
+  useUpdateWhatsAppRecoverySettings,
+  useWhatsAppRecoveryStats,
   whatsappKeys,
+  whatsappRecoveryKeys,
 } from "./useWhatsApp"

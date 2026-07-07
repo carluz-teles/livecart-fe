@@ -20,6 +20,7 @@ import type {
   ERPHealthCheckResponse,
   WhatsAppStatus,
   ConnectWhatsAppPayload,
+  WhatsAppRecoveryStats,
 } from "@/types"
 
 export const integrationService = {
@@ -236,6 +237,13 @@ export const integrationService = {
     apiClient.post<{ messageId: string; status: string }>(
       `/stores/${storeId}/integrations/whatsapp/test-message`,
       { to },
+      token
+    ),
+
+  // Last-30-days recovery funnel (PRD 006 sprint 4).
+  getWhatsAppRecoveryStats: (storeId: string, token?: string | null) =>
+    apiClient.get<WhatsAppRecoveryStats>(
+      `/stores/${storeId}/integrations/whatsapp/recovery-stats`,
       token
     ),
 }

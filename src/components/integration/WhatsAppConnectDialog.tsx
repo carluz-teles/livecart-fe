@@ -23,12 +23,17 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   useConnectWhatsApp,
   useSendWhatsAppTest,
+  useUpdateWhatsAppRecoverySettings,
   useVerifyWhatsApp,
+  useWhatsAppRecoverySettings,
+  useWhatsAppRecoveryStats,
   useWhatsAppStatus,
 } from "@/hooks/integration"
+import { formatCurrency } from "@/lib/format"
 import type { ApiError, WhatsAppStatus } from "@/types"
 
 interface WhatsAppConnectDialogProps {
@@ -86,6 +91,30 @@ export function WhatsAppConnectDialog({ open, onOpenChange }: WhatsAppConnectDia
   const connect = useConnectWhatsApp()
   const verify = useVerifyWhatsApp()
   const test = useSendWhatsAppTest()
+
+  const isOnline = status?.senderStatus === "ONLINE"
+  const { data: recovery } = useWhatsAppRecoverySettings({ enabled: open && isOnline })
+  const { data: stats } = useWhatsAppRecoveryStats({ enabled: open && isOnline })
+  const updateRecovery = useUpdateWhatsAppRecoverySettings()
+
+  const handleToggleRecovery = (enabled: boolean) => {
+    updateRecovery.mutate(
+      {
+        enabled,
+        delay_minutes: recovery?.delay_minutes ?? 30,
+        max_attempts: recovery?.max_attempts ?? 1,
+        quiet_hours_start: recovery?.quiet_hours_start ?? 21,
+        quiet_hours_end: recovery?.quiet_hours_end ?? 8,
+        recover_ended_events: recovery?.recover_ended_events ?? true,
+        template: recovery?.template ?? "",
+      },
+      {
+        onSuccess: () =>
+          toast.success(enabled ? "Recuperação automática ativada!" : "Recuperação automática desativada."),
+        onError: () => toast.error("Falha ao salvar. Tente novamente."),
+      }
+    )
+  }
 
   const step = useMemo(() => stepFromStatus(status), [status])
 
@@ -274,6 +303,42 @@ export function WhatsAppConnectDialog({ open, onOpenChange }: WhatsAppConnectDia
                 Envia o template de recuperação com dados de exemplo (precisa estar
                 aprovado pela Meta).
               </p>
+            </div>
+
+            {/* Recuperação automática (PRD 006 sprint 4) */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Recuperação automática de carrinho</p>
+                  <p className="text-xs text-muted-foreground">
+                    Envia o link {recovery?.delay_minutes ?? 30} min após o carrinho expirar sem pagamento
+                  </p>
+                </div>
+                <Switch
+                  checked={recovery?.enabled ?? false}
+                  onCheckedChange={handleToggleRecovery}
+                  disabled={updateRecovery.isPending}
+                />
+              </div>
+
+              {stats && (
+                <div className="grid grid-cols-3 gap-2 border-t pt-3 text-center">
+                  <div>
+                    <p className="text-lg font-bold">{stats.messagesSent}</p>
+                    <p className="text-[11px] text-muted-foreground">Mensagens (30d)</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stats.cartsRecovered}</p>
+                    <p className="text-[11px] text-muted-foreground">Recuperados</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-emerald-600">
+                      {formatCurrency(stats.revenueRecoveredCents)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">Receita</p>
+                  </div>
+                </div>
+              )}
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

@@ -86,3 +86,65 @@ export function useSendWhatsAppTest() {
     },
   })
 }
+
+// ============================================================================
+// Recovery settings + stats (PRD 006 sprint 4)
+// ============================================================================
+
+import { notificationService } from "@/services/api/notification.service"
+import type { CartRecoverySettings, NotificationSettings } from "@/types/notification.types"
+
+export const whatsappRecoveryKeys = {
+  settings: (storeId: string) => ["whatsapp", "recovery-settings", storeId] as const,
+  stats: (storeId: string) => ["whatsapp", "recovery-stats", storeId] as const,
+}
+
+export function useWhatsAppRecoverySettings(options?: { enabled?: boolean }) {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { storeId, isLoading: storeLoading } = useStoreId()
+
+  return useQuery({
+    queryKey: whatsappRecoveryKeys.settings(storeId ?? ""),
+    queryFn: async (): Promise<CartRecoverySettings | null> => {
+      const token = await getToken()
+      const settings: NotificationSettings = await notificationService.getSettings(storeId!, token)
+      return settings.cart_recovery ?? null
+    },
+    enabled:
+      isLoaded && isSignedIn && !storeLoading && !!storeId && (options?.enabled ?? true),
+  })
+}
+
+export function useUpdateWhatsAppRecoverySettings() {
+  const { getToken } = useAuth()
+  const { storeId } = useStoreId()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: CartRecoverySettings) => {
+      if (!storeId) throw new Error("Store ID not found")
+      const token = await getToken()
+      return notificationService.updateSettings(storeId, { cart_recovery: payload }, token)
+    },
+    onSuccess: () => {
+      if (storeId) {
+        queryClient.invalidateQueries({ queryKey: whatsappRecoveryKeys.settings(storeId) })
+      }
+    },
+  })
+}
+
+export function useWhatsAppRecoveryStats(options?: { enabled?: boolean }) {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { storeId, isLoading: storeLoading } = useStoreId()
+
+  return useQuery({
+    queryKey: whatsappRecoveryKeys.stats(storeId ?? ""),
+    queryFn: async () => {
+      const token = await getToken()
+      return integrationService.getWhatsAppRecoveryStats(storeId!, token)
+    },
+    enabled:
+      isLoaded && isSignedIn && !storeLoading && !!storeId && (options?.enabled ?? true),
+  })
+}

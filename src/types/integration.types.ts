@@ -333,3 +333,9 @@ export interface ConnectWhatsAppPayload {
   wabaId?: string
   displayName?: string
 }
+
+export interface WhatsAppRecoveryStats {
+  messagesSent: number
+  cartsRecovered: number
+  revenueRecoveredCents: number
+}

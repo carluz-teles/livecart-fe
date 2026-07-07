@@ -13,6 +13,19 @@ export interface EmailTemplateSettings {
   body_html: string
 }
 
+// WhatsApp cart recovery (PRD 006). The template shown here is
+// informational — the message actually sent is the Meta-approved content
+// template registered on the Twilio side.
+export interface CartRecoverySettings {
+  enabled: boolean
+  delay_minutes: number
+  max_attempts: number
+  quiet_hours_start: number
+  quiet_hours_end: number
+  recover_ended_events: boolean
+  template: string
+}
+
 // Notification settings for a store
 export interface NotificationSettings {
   checkout_immediate: TemplateSettings | null
@@ -21,6 +34,7 @@ export interface NotificationSettings {
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
+  cart_recovery?: CartRecoverySettings | null
 }
 
 // Request payload for updating notification settings
@@ -31,6 +45,7 @@ export interface UpdateNotificationSettingsPayload {
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
+  cart_recovery?: CartRecoverySettings | null
 }
 
 // Response for template preview
