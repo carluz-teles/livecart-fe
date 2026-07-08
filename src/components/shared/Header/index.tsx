@@ -7,6 +7,8 @@ import { Moon, Sun, LogOut, User, Settings, ChevronsUpDown } from "lucide-react"
 import { NotificationsBell } from "@/components/notification/NotificationsBell"
 import { useTheme } from "next-themes"
 
+import { isDarkModeAllowed } from "@/lib/env"
+
 import { Button } from "@/components/ui/button"
 import { OnboardingChecklist } from "@/components/shared/OnboardingChecklist"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -46,16 +48,18 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="text-muted-foreground"
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Alternar tema</span>
-        </Button>
+        {isDarkModeAllowed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="text-muted-foreground"
+          >
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Alternar tema</span>
+          </Button>
+        )}
 
         {/* Notifications */}
         <NotificationsBell />
