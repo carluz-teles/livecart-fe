@@ -64,6 +64,12 @@ function BillingContent() {
   const badge = statusBadge[sub?.status ?? ""] ?? { label: sub?.status ?? "—", variant: "outline" as const }
   const isTrial = sub?.status === "trialing" || sub?.status === "paused"
   const currentFlat = plans.find((p) => p.id === sub?.plan)?.flatCents ?? 0
+  // Durante o trial o BE ancora a assinatura no Grow, mas o lojista ainda não
+  // escolheu nada — não exibir isso como "plano contratado".
+  const planName =
+    sub?.plan === "enterprise"
+      ? "Enterprise"
+      : plans.find((p) => p.id === sub?.plan)?.name ?? "—"
 
   const handlePlanAction = (plan: PlanID) => {
     if (isTrial || !sub?.hasPaymentMethod) {
@@ -105,8 +111,8 @@ function BillingContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-2xl font-bold capitalize">
-              {sub?.plan === "enterprise" ? "Enterprise" : sub?.plan ?? "—"}
+            <span className="text-2xl font-bold">
+              {isTrial ? "Teste grátis" : planName}
             </span>
             <Badge variant={badge.variant}>{badge.label}</Badge>
             {sub?.cancelAtPeriodEnd && (
@@ -114,13 +120,13 @@ function BillingContent() {
             )}
           </div>
 
-          {sub?.status === "trialing" && sub.trialDaysLeft > 0 && (
+          {isTrial && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="size-4 text-primary" />
-              {sub.trialDaysLeft === 1
-                ? "Último dia de teste grátis."
-                : `${sub.trialDaysLeft} dias de teste grátis restantes.`}{" "}
-              Escolha um plano abaixo pra continuar depois do teste.
+              {sub?.status === "trialing" && sub.trialDaysLeft > 0
+                ? `${sub.trialDaysLeft === 1 ? "Último dia" : `${sub.trialDaysLeft} dias`} de teste com todos os recursos liberados.`
+                : "Seu período de teste terminou."}{" "}
+              Você ainda não tem um plano contratado — escolha um abaixo quando quiser.
             </p>
           )}
           {sub?.currentPeriodEnd && sub.status === "active" && (
