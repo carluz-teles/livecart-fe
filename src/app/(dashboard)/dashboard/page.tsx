@@ -23,6 +23,7 @@ import { StatsCard } from "@/components/shared/StatsCard"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FinanceiroPanel } from "@/components/billing/FinanceiroPanel"
+import { GettingStartedCard } from "@/components/dashboard/GettingStartedCard"
 import { FunnelStates } from "@/components/analytics/FunnelStates"
 import {
   PeriodFilter,
@@ -108,6 +109,9 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
+          {/* Ativação: some quando a loja completa os primeiros passos */}
+          <GettingStartedCard />
+
           {/* KPIs do período — todos coerentes com o filtro */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatsCard
