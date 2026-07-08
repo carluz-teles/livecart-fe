@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/shared/Sidebar"
 import { Header } from "@/components/shared/Header"
 import { TrialBanner } from "@/components/shared/TrialBanner"
 import { AppProviders } from "@/components/providers/app-providers"
+import { OnboardingGuard } from "@/components/providers/onboarding-guard"
 
 // Authenticated, per-merchant área: nunca pode ser prerenderizada nem
 // cacheada publicamente. Sem isto, o Next gera estes routes como estáticos
@@ -17,6 +18,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AppProviders>
+      <OnboardingGuard>
       <div className="flex h-screen overflow-hidden">
         <div className="print:hidden">
           <Sidebar />
@@ -31,6 +33,7 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      </OnboardingGuard>
     </AppProviders>
   )
 }
