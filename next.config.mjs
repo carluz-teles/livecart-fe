@@ -16,6 +16,21 @@ const nextConfig = {
     // merging chunks across navigations.
     cssChunking: "strict",
   },
+  // Kill switch definitivo do bug "payload RSC servido como HTML": nenhuma
+  // resposta de PÁGINA pode ser armazenada (edge do Railway ou cache do
+  // navegador). O bug acontece quando um cache guarda a variante RSC
+  // (text/x-component) de uma URL e a devolve num hard-load/F5 ignorando o
+  // header Vary. Com no-store em tudo que não é asset estático, não existe
+  // variante errada pra servir. Assets em /_next/static seguem imutáveis
+  // e cacheados normalmente (não passam neste matcher).
+  async headers() {
+    return [
+      {
+        source: "/((?!_next/|.*\\.(?:ico|png|jpg|jpeg|svg|webp|woff2?|ttf|css|js|txt|xml|webmanifest)$).*)",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {
