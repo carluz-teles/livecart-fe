@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Puzzle, CreditCard } from "lucide-react"
+import { User, Building2, Users, Puzzle, CreditCard, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -36,6 +36,12 @@ const settingsNav = [
     href: "/settings/integrations",
     icon: Puzzle,
     description: "Conecte com outras plataformas",
+  },
+  {
+    title: "Plano e cobrança",
+    href: "/settings/billing",
+    icon: Wallet,
+    description: "Assinatura, faturas e mudança de plano",
   },
 ]
 

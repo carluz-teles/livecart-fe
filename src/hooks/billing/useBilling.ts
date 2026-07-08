@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { billingService } from "@/services/api/billing.service"
 import { useStoreId } from "@/hooks/useUser"
@@ -36,6 +36,44 @@ export function useStartCheckout() {
     },
     onSuccess: ({ url }) => {
       if (url) window.location.href = url
+    },
+  })
+}
+
+
+// Abre o Customer Portal da Stripe (cartão, faturas, cancelamento).
+export function useOpenPortal() {
+  const { getToken } = useAuth()
+  const { storeId } = useStoreId()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!storeId) throw new Error("Store ID not found")
+      const token = await getToken()
+      return billingService.createPortal(storeId, token)
+    },
+    onSuccess: ({ url }) => {
+      if (url) window.location.href = url
+    },
+  })
+}
+
+// Upgrade imediato (com proração) ou downgrade agendado pro próximo ciclo.
+export function useChangePlan() {
+  const { getToken } = useAuth()
+  const { storeId } = useStoreId()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (plan: "start" | "grow" | "scale") => {
+      if (!storeId) throw new Error("Store ID not found")
+      const token = await getToken()
+      return billingService.changePlan(storeId, plan, token)
+    },
+    onSuccess: () => {
+      if (storeId) {
+        queryClient.invalidateQueries({ queryKey: billingKeys.subscription(storeId) })
+      }
     },
   })
 }

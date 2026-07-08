@@ -1,1 +1,7 @@
-export { useSubscription, useStartCheckout, billingKeys } from "./useBilling"
+export {
+  useSubscription,
+  useStartCheckout,
+  useOpenPortal,
+  useChangePlan,
+  billingKeys,
+} from "./useBilling"
