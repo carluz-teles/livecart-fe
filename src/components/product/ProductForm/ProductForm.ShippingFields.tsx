@@ -289,7 +289,7 @@ const InsuranceField = forwardRef<HTMLInputElement, InsuranceFieldProps>(
 
     return (
       <FormItem>
-        <FormLabel>Valor do produto para o seguro do frete</FormLabel>
+        <FormLabel>Valor declarado para seguro</FormLabel>
         <FormControl>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -309,9 +309,7 @@ const InsuranceField = forwardRef<HTMLInputElement, InsuranceFieldProps>(
           </div>
         </FormControl>
         <FormDescription>
-          É o valor que a transportadora usa para segurar a encomenda contra
-          extravio ou avaria no transporte. Pode influenciar o preço do frete.
-          Se vazio, usamos o preço do produto.
+          Usado para seguro contra extravio. Se vazio, usamos o preço do produto.
         </FormDescription>
         <FormMessage />
       </FormItem>
