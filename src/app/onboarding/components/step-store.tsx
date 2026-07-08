@@ -1,291 +1,150 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Store, ArrowRight, MapPin } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2, Search, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { storeStepSchema, type StoreStepData } from "@/schemas/onboarding.schema"
-
-function generateSlug(name: string): string {
-  if (!name.trim()) return ""
-  // Backend expects alphanumeric only (no dashes or special chars)
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove accents
-    .replace(/[^a-z0-9]/g, "") // Keep only alphanumeric
-    .substring(0, 50)
-}
-
-function formatCNPJ(value: string): string {
-  // Remove non-digits
-  const digits = value.replace(/\D/g, "").substring(0, 14)
-
-  // Format as XX.XXX.XXX/XXXX-XX
-  if (digits.length <= 2) return digits
-  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`
-  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`
-  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
-}
+import { useCnpjLookup } from "@/hooks/onboarding"
+import { formatCNPJ, generateSlug } from "@/lib/br-format"
+import type { CnpjResult } from "@/services/external/br-lookup.service"
+import { wizardStoreSchema, type WizardStoreData } from "@/schemas/onboarding.schema"
 
 interface StepStoreProps {
-  defaultValues?: Partial<StoreStepData>
-  onNext: (data: StoreStepData & { storeSlug: string }) => void
-  isSubmitting?: boolean
+  defaultValues?: Partial<WizardStoreData>
+  onNext: (data: WizardStoreData) => void
+  onBack: () => void
+  onCnpjData: (data: CnpjResult) => void
 }
 
-export function StepStore({ defaultValues, onNext, isSubmitting }: StepStoreProps) {
-  const [showOptionalFields, setShowOptionalFields] = useState(false)
-
+// Passo 2 — Sua loja. Renderização pura: o lookup de CNPJ (BrasilAPI) vive
+// no useCnpjLookup; o autofill em cascata é orquestrado pelo wizard.
+export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepStoreProps) {
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
-  } = useForm<StoreStepData>({
-    resolver: zodResolver(storeStepSchema),
-    defaultValues: {
-      storeName: "",
-      cnpj: "",
-      whatsappNumber: "",
-      emailAddress: "",
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: "Brasil",
-      },
-      ...defaultValues,
-    },
+  } = useForm<WizardStoreData>({
+    resolver: zodResolver(wizardStoreSchema),
+    defaultValues: { storeName: "", cnpj: "", ...defaultValues },
+  })
+
+  const cnpjLookup = useCnpjLookup((data) => {
+    // nome fantasia > razão social; nunca sobrescreve o que já foi digitado
+    const suggestedName = data.tradeName || data.legalName
+    if (suggestedName && !getValues("storeName")) {
+      setValue("storeName", suggestedName, { shouldValidate: true })
+    }
+    onCnpjData(data)
   })
 
   const storeName = watch("storeName")
   const storeSlug = useMemo(() => generateSlug(storeName || ""), [storeName])
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCNPJ(e.target.value)
-    setValue("cnpj", formatted)
+    setValue("cnpj", formatCNPJ(e.target.value))
+    cnpjLookup.reset()
   }
 
-  const onSubmit = (data: StoreStepData) => {
-    onNext({ ...data, storeSlug })
-  }
+  const runLookup = () => cnpjLookup.run(getValues("cnpj") ?? "")
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Store className="h-6 w-6 text-primary" />
-        </div>
-        <CardTitle>Informações da Loja</CardTitle>
-        <CardDescription>
-          Configure sua loja para começar a vender nas lives
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {/* Store Name */}
-          <div className="space-y-2">
-            <Label htmlFor="storeName">
-              Nome da Loja <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="storeName"
-              placeholder="Minha Loja"
-              {...register("storeName")}
-              disabled={isSubmitting}
-            />
-            {errors.storeName && (
-              <p className="text-sm text-destructive">{errors.storeName.message}</p>
+    <form onSubmit={handleSubmit(onNext)} className="space-y-5" noValidate>
+      {/* CNPJ primeiro: é ele que preenche o resto */}
+      <div className="space-y-2">
+        <Label htmlFor="cnpj">CNPJ (opcional)</Label>
+        <div className="flex gap-2">
+          <Input
+            id="cnpj"
+            autoFocus
+            inputMode="numeric"
+            placeholder="00.000.000/0000-00"
+            aria-invalid={!!errors.cnpj}
+            aria-describedby={errors.cnpj ? "cnpj-error" : "cnpj-hint"}
+            {...register("cnpj")}
+            onChange={handleCNPJChange}
+            onBlur={runLookup}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={runLookup}
+            disabled={cnpjLookup.status === "loading"}
+            aria-label="Buscar dados do CNPJ na Receita"
+          >
+            {cnpjLookup.status === "loading" ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Search className="size-4" aria-hidden="true" />
             )}
-          </div>
-
-          {/* Store URL Preview */}
-          {storeSlug && (
-            <div className="space-y-2">
-              <Label>URL da Loja</Label>
-              <div className="flex items-center gap-1 rounded-md border bg-muted/50 px-3 py-2">
-                <span className="text-sm text-muted-foreground">livecart.com/</span>
-                <span className="text-sm font-medium">{storeSlug}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Gerada automaticamente a partir do nome
-              </p>
-            </div>
-          )}
-
-          {/* CNPJ */}
-          <div className="space-y-2">
-            <Label htmlFor="cnpj">CNPJ</Label>
-            <Input
-              id="cnpj"
-              placeholder="XX.XXX.XXX/XXXX-XX"
-              {...register("cnpj")}
-              onChange={handleCNPJChange}
-              disabled={isSubmitting}
-            />
-            {errors.cnpj && (
-              <p className="text-sm text-destructive">{errors.cnpj.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Usado para emissão de notas fiscais
-            </p>
-          </div>
-
-          {/* Address Section - City and State required */}
-          <div className="space-y-4 pt-2 border-t">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              Endereço
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="city">
-                  Cidade <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="city"
-                  placeholder="São Paulo"
-                  {...register("address.city")}
-                  disabled={isSubmitting}
-                />
-                {errors.address?.city && (
-                  <p className="text-sm text-destructive">{errors.address.city.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">
-                  Estado <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="state"
-                  placeholder="SP"
-                  {...register("address.state")}
-                  disabled={isSubmitting}
-                />
-                {errors.address?.state && (
-                  <p className="text-sm text-destructive">{errors.address.state.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Optional address fields */}
-            <Collapsible open={showOptionalFields} onOpenChange={setShowOptionalFields}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 px-0 text-muted-foreground hover:text-foreground"
-                >
-                  {showOptionalFields ? "Ocultar campos adicionais" : "Adicionar endereço completo (opcional)"}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="street">Rua</Label>
-                  <Input
-                    id="street"
-                    placeholder="Rua das Flores, 123"
-                    {...register("address.street")}
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="zip">CEP</Label>
-                    <Input
-                      id="zip"
-                      placeholder="01234-567"
-                      {...register("address.zip")}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">País</Label>
-                    <Input
-                      id="country"
-                      placeholder="Brasil"
-                      {...register("address.country")}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* Contact Section - Optional */}
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2 px-0 text-muted-foreground hover:text-foreground"
-              >
-                Adicionar contato (opcional)
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="whatsappNumber">WhatsApp</Label>
-                <Input
-                  id="whatsappNumber"
-                  placeholder="(11) 99999-9999"
-                  {...register("whatsappNumber")}
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Usado para notificar clientes sobre pedidos
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emailAddress">Email</Label>
-                <Input
-                  id="emailAddress"
-                  type="email"
-                  placeholder="contato@minhaloja.com"
-                  {...register("emailAddress")}
-                  disabled={isSubmitting}
-                />
-                {errors.emailAddress && (
-                  <p className="text-sm text-destructive">{errors.emailAddress.message}</p>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" className="w-full" disabled={isSubmitting || !storeSlug}>
-            {isSubmitting ? "Criando loja..." : "Criar Loja e Começar"}
-            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        </CardFooter>
-      </form>
-    </Card>
+        </div>
+        {errors.cnpj ? (
+          <p id="cnpj-error" role="alert" className="text-sm text-destructive">
+            {errors.cnpj.message}
+          </p>
+        ) : cnpjLookup.status === "hit" ? (
+          <p className="flex items-center gap-1.5 text-xs text-emerald-600" role="status">
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            {cnpjLookup.companyName} — endereço e contato preenchidos automaticamente
+          </p>
+        ) : cnpjLookup.status === "miss" ? (
+          <p className="text-xs text-muted-foreground" role="status">
+            CNPJ não encontrado na Receita — preencha os dados manualmente.
+          </p>
+        ) : (
+          <p id="cnpj-hint" className="text-xs text-muted-foreground">
+            Com o CNPJ, preenchemos endereço e contato pra você. Sem CNPJ? Sem problema.
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="storeName">
+          Nome da loja <span aria-hidden="true" className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="storeName"
+          placeholder="Minha Loja"
+          autoComplete="organization"
+          aria-required="true"
+          aria-invalid={!!errors.storeName}
+          aria-describedby={errors.storeName ? "storeName-error" : undefined}
+          {...register("storeName")}
+        />
+        {errors.storeName && (
+          <p id="storeName-error" role="alert" className="text-sm text-destructive">
+            {errors.storeName.message}
+          </p>
+        )}
+      </div>
+
+      {storeSlug && (
+        <div
+          className="flex items-center gap-1 rounded-lg border bg-muted/40 px-3 py-2.5"
+          aria-live="polite"
+        >
+          <span className="text-sm text-muted-foreground">livecart.com/</span>
+          <span className="text-sm font-semibold text-foreground">{storeSlug}</span>
+        </div>
+      )}
+
+      <div className="flex gap-3 pt-1">
+        <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Voltar
+        </Button>
+        <Button type="submit" className="flex-1" disabled={!storeSlug}>
+          Avançar
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Button>
+      </div>
+    </form>
   )
 }

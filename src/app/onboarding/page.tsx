@@ -1,91 +1,112 @@
 "use client"
 
-import { useState } from "react"
+import Image from "next/image"
 import { useUser } from "@clerk/nextjs"
-import { toast } from "sonner"
+import { MapPin, MessageCircle, Store, User } from "lucide-react"
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useOnboardingWizard, type WizardStepID } from "@/hooks/onboarding"
+import { Stepper, type StepDef } from "./components/stepper"
+import { StepUser } from "./components/step-user"
 import { StepStore } from "./components/step-store"
-import { completeOnboarding, finishOnboarding } from "./actions"
-import type { StoreStepData } from "@/schemas/onboarding.schema"
+import { StepAddress } from "./components/step-address"
+import { StepContact } from "./components/step-contact"
 
+const steps: StepDef[] = [
+  { id: "you", label: "Você", icon: User },
+  { id: "store", label: "Sua loja", icon: Store },
+  { id: "address", label: "Endereço", icon: MapPin },
+  { id: "contact", label: "Contato", icon: MessageCircle },
+]
+
+const stepCopy: Record<WizardStepID, { title: string; description: string }> = {
+  you: { title: "Sobre você", description: "Como devemos te chamar por aqui" },
+  store: { title: "Sua loja", description: "Com CNPJ, preenchemos quase tudo pra você" },
+  address: { title: "Endereço da loja", description: "Digite o CEP e deixe o resto com a gente" },
+  contact: { title: "Contato da loja", description: "Opcional — dá pra configurar depois" },
+}
+
+// Página do onboarding: renderização pura. Estado, autofill em cascata e
+// submissão vivem no useOnboardingWizard.
 export default function OnboardingPage() {
   const { user } = useUser()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleStoreSubmit = async (storeData: StoreStepData & { storeSlug: string }) => {
-    setIsSubmitting(true)
-
-    try {
-      const formData = new FormData()
-      formData.append("storeName", storeData.storeName)
-      formData.append("storeSlug", storeData.storeSlug)
-
-      // Add optional fields
-      if (storeData.cnpj) {
-        formData.append("cnpj", storeData.cnpj)
-      }
-      if (storeData.whatsappNumber) {
-        formData.append("whatsappNumber", storeData.whatsappNumber)
-      }
-      if (storeData.emailAddress) {
-        formData.append("emailAddress", storeData.emailAddress)
-      }
-
-      // Add address fields (city and state are required)
-      if (storeData.address) {
-        if (storeData.address.street) formData.append("address.street", storeData.address.street)
-        if (storeData.address.city) formData.append("address.city", storeData.address.city)
-        if (storeData.address.state) formData.append("address.state", storeData.address.state)
-        if (storeData.address.zip) formData.append("address.zip", storeData.address.zip)
-        if (storeData.address.country) formData.append("address.country", storeData.address.country)
-      }
-
-      const result = await completeOnboarding(formData)
-
-      if (result.error) {
-        toast.error(result.error)
-        setIsSubmitting(false)
-        return
-      }
-
-      // Mark onboarding as complete
-      await finishOnboarding()
-
-      // Show success message
-      toast.success("Loja criada com sucesso!")
-
-      // Redirect to dashboard
-      window.location.href = "/"
-    } catch (error) {
-      console.error("Store creation error:", error)
-      toast.error("Erro ao criar loja")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const wizard = useOnboardingWizard()
+  const copy = stepCopy[wizard.stepId]
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="mx-auto max-w-2xl pt-8">
-        {/* Welcome message */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Bem-vindo ao LiveCart{user?.firstName ? `, ${user.firstName}` : ""}!
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-amber-50/80 via-background to-background">
+      {/* brilho suave da marca */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-amber-300/25 via-orange-300/20 to-amber-300/25 blur-3xl"
+      />
+
+      <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center px-4 py-10">
+        <Image
+          src="/livecart/logotipo-header.png"
+          alt="LiveCart"
+          width={140}
+          height={36}
+          className="h-8 w-auto"
+          priority
+        />
+
+        <div className="mt-8 text-center">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bem-vindo{user?.firstName ? `, ${user.firstName}` : ""}! 👋
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Configure sua loja para começar a vender nas lives
+          <p className="mt-1.5 text-muted-foreground">
+            Sua loja e seus <strong className="text-foreground">7 dias grátis</strong> começam agora
           </p>
         </div>
 
-        {/* Single step form */}
-        <StepStore
-          onNext={handleStoreSubmit}
-          isSubmitting={isSubmitting}
-        />
+        <div className="mt-8 w-full">
+          <Stepper steps={steps} current={wizard.stepIndex} />
+        </div>
 
-        {/* Help text */}
+        {/* Anúncio de passo para leitores de tela */}
+        <p className="sr-only" role="status">
+          Passo {wizard.stepIndex + 1} de {wizard.totalSteps}: {copy.title}
+        </p>
+
+        <Card
+          key={wizard.stepId}
+          className="mt-6 w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2"
+        >
+          <CardHeader>
+            <CardTitle className="text-lg">{copy.title}</CardTitle>
+            <CardDescription>{copy.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {wizard.stepId === "you" && <StepUser onNext={wizard.goNext} />}
+            {wizard.stepId === "store" && (
+              <StepStore
+                defaultValues={wizard.storeData}
+                onCnpjData={wizard.applyCnpjData}
+                onBack={wizard.goBack}
+                onNext={wizard.saveStore}
+              />
+            )}
+            {wizard.stepId === "address" && (
+              <StepAddress
+                defaultValues={wizard.addressData}
+                onBack={wizard.goBack}
+                onNext={wizard.saveAddress}
+              />
+            )}
+            {wizard.stepId === "contact" && (
+              <StepContact
+                defaultValues={wizard.contactData}
+                onBack={wizard.goBack}
+                onSubmit={wizard.finish}
+                isSubmitting={wizard.isSubmitting}
+              />
+            )}
+          </CardContent>
+        </Card>
+
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Não se preocupe, você pode configurar integrações, equipe e outras opções depois no painel.
+          Integrações, produtos e equipe você configura depois, no painel.
         </p>
       </div>
     </div>

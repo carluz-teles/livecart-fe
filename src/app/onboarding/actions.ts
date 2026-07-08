@@ -10,6 +10,9 @@ interface ActionResult {
 
 interface StoreAddress {
   street?: string
+  number?: string
+  complement?: string
+  district?: string
   city?: string
   state?: string
   zip?: string
@@ -32,6 +35,9 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
 
   // Parse address fields
   const addressStreet = formData.get("address.street") as string | null
+  const addressNumber = formData.get("address.number") as string | null
+  const addressComplement = formData.get("address.complement") as string | null
+  const addressDistrict = formData.get("address.district") as string | null
   const addressCity = formData.get("address.city") as string | null
   const addressState = formData.get("address.state") as string | null
   const addressZip = formData.get("address.zip") as string | null
@@ -97,6 +103,9 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
   if (hasAdditionalInfo) {
     const address: StoreAddress = {}
     if (addressStreet) address.street = addressStreet
+    if (addressNumber) address.number = addressNumber
+    if (addressComplement) address.complement = addressComplement
+    if (addressDistrict) address.district = addressDistrict
     if (addressCity) address.city = addressCity
     if (addressState) address.state = addressState
     if (addressZip) address.zip = addressZip

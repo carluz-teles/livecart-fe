@@ -86,3 +86,42 @@ export type TeamInviteData = z.infer<typeof teamInviteSchema>
 // Legacy - keep for backwards compatibility
 export const onboardingSchema = storeStepSchema
 export type OnboardingFormData = StoreStepData
+
+// ============================================
+// Wizard 2.0 (4 passos: Você → Loja → Endereço → Contato)
+// ============================================
+
+export const wizardUserSchema = z.object({
+  firstName: z.string().min(2, "Como você se chama?").max(50),
+  lastName: z.string().min(1, "Sobrenome obrigatório").max(50),
+})
+export type WizardUserData = z.infer<typeof wizardUserSchema>
+
+export const wizardStoreSchema = z.object({
+  storeName: z
+    .string()
+    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  cnpj: z
+    .string()
+    .optional()
+    .refine((val) => !val || isValidCNPJ(val), { message: "CNPJ inválido" }),
+})
+export type WizardStoreData = z.infer<typeof wizardStoreSchema>
+
+export const wizardAddressSchema = z.object({
+  zip: z.string().optional(),
+  street: z.string().optional(),
+  number: z.string().optional(),
+  complement: z.string().optional(),
+  district: z.string().optional(),
+  city: z.string().min(2, "Cidade obrigatória"),
+  state: z.string().length(2, "Selecione a UF"),
+})
+export type WizardAddressData = z.infer<typeof wizardAddressSchema>
+
+export const wizardContactSchema = z.object({
+  whatsappNumber: z.string().optional(),
+  emailAddress: z.string().email("Email inválido").optional().or(z.literal("")),
+})
+export type WizardContactData = z.infer<typeof wizardContactSchema>
