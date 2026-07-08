@@ -52,3 +52,26 @@ export interface User {
 
 // Legacy alias for backward compatibility
 export type SyncUserPayload = Record<string, never>
+
+// ===== Financeiro (PRD 007 — ledger) =====
+
+export interface PeriodUsage {
+  periodStart: string
+  gmvCents: number
+  feeCents: number
+  sales: number
+  refunds: number
+  refundCreditsCents: number
+}
+
+export interface StatementEntry {
+  id: string
+  type: "sale" | "refund_credit" | "adjustment"
+  amountCents: number
+  feeCents: number
+  feeBps: number
+  billable: boolean
+  customerName?: string
+  handle?: string
+  createdAt: string
+}

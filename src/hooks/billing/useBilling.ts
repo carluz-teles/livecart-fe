@@ -77,3 +77,32 @@ export function useChangePlan() {
     },
   })
 }
+
+
+export function usePeriodUsage() {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { storeId, isLoading: storeLoading } = useStoreId()
+
+  return useQuery({
+    queryKey: ["billing", "usage", storeId ?? ""],
+    queryFn: async () => {
+      const token = await getToken()
+      return billingService.getUsage(storeId!, token)
+    },
+    enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
+  })
+}
+
+export function useStatement(page = 1) {
+  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { storeId, isLoading: storeLoading } = useStoreId()
+
+  return useQuery({
+    queryKey: ["billing", "statement", storeId ?? "", page],
+    queryFn: async () => {
+      const token = await getToken()
+      return billingService.getStatement(storeId!, page, 30, token)
+    },
+    enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
+  })
+}

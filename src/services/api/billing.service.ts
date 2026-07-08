@@ -1,5 +1,5 @@
 import { apiClient } from "./client"
-import type { SubscriptionState } from "@/types"
+import type { PeriodUsage, StatementEntry, SubscriptionState } from "@/types"
 
 export const billingService = {
   // Snapshot do paywall/assinatura (PRD 007)
@@ -17,4 +17,15 @@ export const billingService = {
   // Upgrade imediato (proração) / downgrade agendado pro fim do ciclo
   changePlan: (storeId: string, plan: "start" | "grow" | "scale", token?: string | null) =>
     apiClient.post<SubscriptionState>(`/stores/${storeId}/billing/change-plan`, { plan }, token),
+
+  // Financeiro: resumo do ciclo (GMV, taxa de sucesso, créditos)
+  getUsage: (storeId: string, token?: string | null) =>
+    apiClient.get<PeriodUsage>(`/stores/${storeId}/billing/usage`, token),
+
+  // Financeiro: extrato append-only (vendas, estornos, ajustes)
+  getStatement: (storeId: string, page = 1, limit = 30, token?: string | null) =>
+    apiClient.get<StatementEntry[]>(
+      `/stores/${storeId}/billing/statement?page=${page}&limit=${limit}`,
+      token
+    ),
 }
