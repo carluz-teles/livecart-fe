@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, ArrowLeft, Package, Layers } from "lucide-react"
@@ -783,15 +784,12 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
           <FormLabel>Imagem do produto</FormLabel>
           {imageUrl ? (
             <div className="relative h-40 w-40 overflow-hidden rounded-lg border bg-muted">
-              {/* Plain <img>: a URL vem de um ERP externo e pode ter protocolo/host
-                  fora do remotePatterns — next/image lançaria erro no cliente e
-                  quebraria o form. Além disso, evita a otimização server-side que
-                  falha com EACCES em /app/.next/cache no container do Railway. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={imageUrl}
                 alt={productName || "Imagem do produto"}
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
+                sizes="160px"
               />
             </div>
           ) : (
