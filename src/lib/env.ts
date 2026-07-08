@@ -1,5 +1,6 @@
 // Flags de ambiente do FE (NEXT_PUBLIC_* são inlined no build).
-// NEXT_PUBLIC_ENV: "production" | "staging" | undefined (dev local)
 
-// Modo escuro só existe em dev local e staging — produção é sempre light.
-export const isDarkModeAllowed = process.env.NEXT_PUBLIC_ENV !== "production"
+// Modo escuro é opt-in por ambiente: só existe onde a flag for "true"
+// (dev local e staging). Sem a flag — inclusive se esquecerem de setar em
+// produção — o tema fica travado em light.
+export const isDarkModeAllowed = process.env.NEXT_PUBLIC_DARK_THEME_ENABLED === "true"
