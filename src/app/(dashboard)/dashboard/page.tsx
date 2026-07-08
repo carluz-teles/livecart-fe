@@ -1,13 +1,14 @@
 "use client"
 
-import {
-  DollarSign,
-  ShoppingCart,
-  Radio,
-  TrendingUp,
-} from "lucide-react"
+// Dashboard redesenhado (jul/2026): filtro global de intervalo, KPIs coerentes
+// (todos respondem pelo MESMO período), funil com estados de saída e a aba
+// Financeiro. Cortes aprovados: card de lives, tabela GMV por evento e
+// gráfico de vendas por produto (redundantes); mix de pagamento foi pro
+// Financeiro.
+
+import { useState } from "react"
+import { DollarSign, MessageCircle, ShoppingCart, TrendingUp } from "lucide-react"
 import { Bar, BarChart, XAxis, YAxis } from "recharts"
-import Link from "next/link"
 
 import { formatCurrency } from "@/lib/format"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,31 +19,23 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FinanceiroPanel } from "@/components/billing/FinanceiroPanel"
+import { FunnelStates } from "@/components/analytics/FunnelStates"
 import {
-  useDashboardStats,
-  useDashboardChart,
+  PeriodFilter,
+  rangeForPreset,
+  type PeriodPreset,
+} from "@/components/dashboard/PeriodFilter"
+import {
+  useOverview,
+  useRevenueSeries,
   useTopProducts,
   useTopBuyers,
-  useProductSales,
-  useEventsWithRevenue,
-  useAggregatedFunnel,
-  useRevenueByPayment,
 } from "@/hooks/dashboard"
-import { SalesFunnel } from "@/components/analytics/SalesFunnel"
-import { ProductSalesChart } from "@/components/analytics/ProductSalesChart"
-import { PaymentMethodChart } from "@/components/analytics/PaymentMethodChart"
-import { EVENT_STATUS_CONFIG, getStatusConfig } from "@/lib/constants"
+import type { PeriodRange } from "@/types/dashboard.types"
 
 const chartConfig = {
   revenue: {
@@ -51,328 +44,250 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export default function DashboardPage() {
-  // Fetch data from API
-  const { data: stats, isLoading: statsLoading } = useDashboardStats()
-  const { data: chartData, isLoading: chartLoading } = useDashboardChart()
-  const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts()
-  const { data: topBuyersData, isLoading: topBuyersLoading } = useTopBuyers()
-  const { data: productSalesData, isLoading: productSalesLoading } = useProductSales()
-  const { data: eventsWithRevenue, isLoading: eventsLoading } = useEventsWithRevenue(20)
-  const { data: aggregatedFunnel, isLoading: funnelLoading } = useAggregatedFunnel(30)
-  const { data: revenueByPayment, isLoading: paymentLoading } = useRevenueByPayment()
+// Granularidade adaptativa: dia até 31d, semana até ~4 meses, mês acima.
+function bucketFor(range: PeriodRange): "day" | "week" | "month" {
+  const days =
+    (new Date(range.to).getTime() - new Date(range.from).getTime()) / 86_400_000
+  if (days <= 31) return "day"
+  if (days <= 120) return "week"
+  return "month"
+}
 
-  const chartItems = chartData?.data ?? []
+function bucketLabel(bucket: string, granularity: "day" | "week" | "month"): string {
+  const d = new Date(bucket + "T00:00:00")
+  if (granularity === "month") {
+    return d.toLocaleDateString("pt-BR", { month: "short" })
+  }
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+}
+
+export default function DashboardPage() {
+  const [preset, setPreset] = useState<PeriodPreset>("30d")
+  const [range, setRange] = useState<PeriodRange>(() => rangeForPreset("30d"))
+
+  const granularity = bucketFor(range)
+  const { data: overview, isLoading: overviewLoading } = useOverview(range)
+  const { data: series, isLoading: seriesLoading } = useRevenueSeries(range, granularity)
+  const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts(range)
+  const { data: topBuyersData, isLoading: topBuyersLoading } = useTopBuyers(range)
+
   const topProducts = topProductsData?.data ?? []
   const topBuyers = topBuyersData?.data ?? []
-  const productSalesProducts = productSalesData?.products ?? []
-  const productSalesItems = productSalesData?.data ?? []
-  const events = eventsWithRevenue?.data ?? []
-  const paymentItems = revenueByPayment?.data ?? []
+
+  const conversion =
+    overview && overview.totalCarts > 0
+      ? Math.round((overview.paidCarts / overview.totalCarts) * 100)
+      : null
+
+  const chartItems = (series ?? []).map((p) => ({
+    label: bucketLabel(p.bucket, granularity),
+    revenue: p.revenueCents / 100,
+  }))
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <PageHeader
-        title="Visão Geral"
-        description="Acompanhe suas vendas, conversões e performance"
-      />
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Faturamento Total"
-          value={formatCurrency(stats?.totalRevenue ?? 0)}
-          description="Total de vendas"
-          icon={DollarSign}
-          isLoading={statsLoading}
-          variant="success"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader
+          title="Dashboard"
+          description="Vendas, performance e financeiro da sua loja"
         />
-        <StatsCard
-          title="Ticket Médio"
-          value={formatCurrency(aggregatedFunnel?.averageTicket ?? 0)}
-          description="por pedido pago"
-          icon={TrendingUp}
-          isLoading={funnelLoading}
-          variant="success"
-        />
-        <StatsCard
-          title="Pedidos"
-          value={stats?.totalOrders ?? 0}
-          description="Total de pedidos"
-          icon={ShoppingCart}
-          isLoading={statsLoading}
-        />
-        <StatsCard
-          title="Lives Realizadas"
-          value={stats?.totalLives ?? 0}
-          description="Total de lives"
-          icon={Radio}
-          isLoading={statsLoading}
-          variant="info"
+        <PeriodFilter
+          preset={preset}
+          range={range}
+          onChange={(p, r) => {
+            setPreset(p)
+            setRange(r)
+          }}
         />
       </div>
 
-      {/* Sales Funnel */}
-      {funnelLoading ? (
-        <Card className="p-6">
-          <Skeleton className="h-48 w-full" />
-        </Card>
-      ) : aggregatedFunnel ? (
-        <SalesFunnel
-          totalComments={aggregatedFunnel.totalComments}
-          totalCarts={aggregatedFunnel.totalCarts}
-          checkoutCarts={aggregatedFunnel.checkoutCarts}
-          paidCarts={aggregatedFunnel.paidCarts}
-          confirmedRevenue={aggregatedFunnel.confirmedRevenue}
-        />
-      ) : null}
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+        </TabsList>
 
-      {/* Top Sellers and Top Buyers */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Top Sellers */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Sellers</CardTitle>
-            <CardDescription>
-              Produtos mais vendidos no período
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {topProductsLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                ))}
-              </div>
-            ) : topProducts.length === 0 ? (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                Nenhum produto vendido ainda
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {topProducts.map((product, index) => (
-                  <div key={product.id} className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {product.keyword} • {product.totalSold} vendidos
-                      </p>
-                    </div>
-                    <div className="text-sm font-medium">
-                      {formatCurrency(product.totalRevenue)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Top Buyers */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Compradores</CardTitle>
-            <CardDescription>
-              Clientes que mais compraram
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {topBuyersLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                ))}
-              </div>
-            ) : topBuyers.length === 0 ? (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                Nenhuma compra confirmada ainda
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {topBuyers.map((buyer, index) => (
-                  <div key={buyer.id} className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/10 text-sm font-semibold text-green-600">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {buyer.handle}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {buyer.totalOrders} {buyer.totalOrders === 1 ? "pedido" : "pedidos"}
-                      </p>
-                    </div>
-                    <div className="text-sm font-medium text-green-600">
-                      {formatCurrency(buyer.totalSpent)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Vendas Totais */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas Totais</CardTitle>
-            <CardDescription>
-              Faturamento mensal ao longo do ano
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            {chartLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton className="h-[280px] w-full" />
-              </div>
-            ) : chartItems.length === 0 ? (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nenhum dado disponível
-              </div>
-            ) : (
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart accessibilityLayer data={chartItems}>
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => formatCurrency(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar
-                    dataKey="revenue"
-                    fill="var(--color-revenue)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Vendas por Produto */}
-        <ProductSalesChart
-          products={productSalesProducts}
-          data={productSalesItems}
-          isLoading={productSalesLoading}
-        />
-      </div>
-
-      {/* Payment Method Chart */}
-      <PaymentMethodChart
-        data={paymentItems}
-        isLoading={paymentLoading}
-      />
-
-      {/* Events with Revenue Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>GMV por Evento</CardTitle>
-          <CardDescription>
-            Receita confirmada por cada evento de vendas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Evento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Comentários</TableHead>
-                  <TableHead className="text-center">Carrinhos</TableHead>
-                  <TableHead className="text-center">Pagos</TableHead>
-                  <TableHead className="text-right">Conversão</TableHead>
-                  <TableHead className="text-right">GMV</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {eventsLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : events.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      Nenhum evento encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  events.map((event) => {
-                    const statusConfig = getStatusConfig(EVENT_STATUS_CONFIG, event.status, "ended")
-                    return (
-                      <TableRow key={event.id}>
-                        <TableCell>
-                          <Link
-                            href={`/events/${event.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {event.title || "Sem título"}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-                        </TableCell>
-                        <TableCell className="text-center">{event.totalComments}</TableCell>
-                        <TableCell className="text-center">{event.totalCarts}</TableCell>
-                        <TableCell className="text-center text-green-600 font-medium">
-                          {event.paidCarts}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {event.conversionRate.toFixed(1)}%
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
-                          {formatCurrency(event.confirmedRevenue)}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+        <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
+          {/* KPIs do período — todos coerentes com o filtro */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatsCard
+              title="Vendas (GMV)"
+              value={formatCurrency(overview?.gmvCents ?? 0)}
+              description="pedidos pagos no período"
+              icon={DollarSign}
+              isLoading={overviewLoading}
+              variant="success"
+            />
+            <StatsCard
+              title="Pedidos pagos"
+              value={overview?.paidOrders ?? 0}
+              description={
+                conversion !== null
+                  ? `${conversion}% dos carrinhos converteram`
+                  : "no período"
+              }
+              icon={ShoppingCart}
+              isLoading={overviewLoading}
+            />
+            <StatsCard
+              title="Ticket médio"
+              value={formatCurrency(overview?.averageTicket ?? 0)}
+              description="por pedido pago"
+              icon={TrendingUp}
+              isLoading={overviewLoading}
+            />
+            <StatsCard
+              title="Gerado pelo LiveCart"
+              value={formatCurrency(overview?.recoveredRevenueCents ?? 0)}
+              description={
+                overview && overview.recoveredCarts > 0
+                  ? `${overview.recoveredCarts} carrinhos recuperados 💬`
+                  : "vendas recuperadas no período"
+              }
+              icon={MessageCircle}
+              isLoading={overviewLoading}
+              variant="info"
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Funil com estados */}
+          <FunnelStates data={overview} isLoading={overviewLoading} />
+
+          {/* Receita ao longo do tempo (granularidade adaptativa) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Receita no período</CardTitle>
+              <CardDescription>
+                {granularity === "day"
+                  ? "Por dia"
+                  : granularity === "week"
+                    ? "Por semana"
+                    : "Por mês"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {seriesLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : chartItems.length === 0 ? (
+                <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+                  Sem vendas no período selecionado.
+                </div>
+              ) : (
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                  <BarChart accessibilityLayer data={chartItems}>
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v: number) =>
+                        v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`
+                      }
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={6} />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Rankings do período */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top produtos</CardTitle>
+                <CardDescription>Mais vendidos no período</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topProductsLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-full" />
+                    ))}
+                  </div>
+                ) : topProducts.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Sem vendas no período.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {topProducts.map((p, i) => (
+                      <div key={p.id} className="flex items-center gap-3">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">#{p.keyword}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">
+                            {formatCurrency(p.totalRevenue)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.totalSold} un.
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Top compradores</CardTitle>
+                <CardDescription>Quem mais comprou no período</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topBuyersLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-full" />
+                    ))}
+                  </div>
+                ) : topBuyers.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Sem compras no período.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {topBuyers.map((b, i) => (
+                      <div key={b.id} className="flex items-center gap-3">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">@{b.handle}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {b.totalOrders} {b.totalOrders === 1 ? "pedido" : "pedidos"}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(b.totalSpent)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="financeiro" className="mt-6">
+          <FinanceiroPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

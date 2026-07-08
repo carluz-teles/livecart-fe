@@ -24,6 +24,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency } from "@/lib/format"
 import { usePeriodUsage, useStatement, useSubscription } from "@/hooks/billing"
+import { useRevenueByPayment } from "@/hooks/dashboard"
+import { PaymentMethodChart } from "@/components/analytics/PaymentMethodChart"
 import { useWhatsAppRecoveryStats } from "@/hooks/integration"
 import { cn } from "@/lib/utils"
 
@@ -34,12 +36,13 @@ const planFlat: Record<string, number> = {
   scale: 69700,
 }
 
-export default function FinanceiroPage() {
+export function FinanceiroPanel() {
   const [page, setPage] = useState(1)
   const { data: usage, isLoading: usageLoading } = usePeriodUsage()
   const { data: sub } = useSubscription()
   const { data: statement, isLoading: stmtLoading } = useStatement(page)
   const { data: recovery } = useWhatsAppRecoveryStats()
+  const { data: revenueByPayment, isLoading: paymentLoading } = useRevenueByPayment()
 
   const feeBpsLabel = usage && usage.gmvCents > 0
     ? `${((usage.feeCents / usage.gmvCents) * 100).toFixed(2).replace(".", ",")}%`
@@ -51,13 +54,10 @@ export default function FinanceiroPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">
-            Suas vendas, sua taxa de sucesso e o extrato do ciclo — sem surpresa na fatura.
-          </p>
-        </div>
-        <Button variant="outline" asChild>
+        <p className="text-sm text-muted-foreground">
+          Suas vendas, sua taxa de sucesso e o extrato do ciclo — sem surpresa na fatura.
+        </p>
+        <Button variant="outline" size="sm" asChild>
           <Link href="/settings/billing">
             <Settings2 className="size-4" />
             Plano e cobrança
@@ -142,6 +142,9 @@ export default function FinanceiroPage() {
         A LiveCart só ganha quando você vende: ciclo sem vendas, taxa zero. Estornos
         devolvem a taxa automaticamente — mesmo em ciclos seguintes.
       </p>
+
+      {/* Mix de pagamento (movido da Visão geral — assunto de dinheiro) */}
+      <PaymentMethodChart data={revenueByPayment?.data ?? []} isLoading={paymentLoading} />
 
       {/* Extrato */}
       <Card>

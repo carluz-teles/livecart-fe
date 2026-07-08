@@ -13,7 +13,6 @@ import {
   LifeBuoy,
   Building2,
   Users,
-  Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/hooks/useUser"
@@ -38,7 +37,6 @@ const navSections: NavSection[] = [
       { name: "Eventos", href: "/events", icon: Calendar },
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
-      { name: "Financeiro", href: "/financeiro", icon: Wallet },
       { name: "Clientes", href: "/customers", icon: Users },
       { name: "Comunicações", href: "/communications", icon: MessageSquare },
     ],

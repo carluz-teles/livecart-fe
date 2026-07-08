@@ -133,3 +133,33 @@ export interface CheckoutUpsellResponse {
   topAdded: CheckoutUpsellProduct[]
   topRemoved: CheckoutUpsellProduct[]
 }
+
+// ===== Redesign do dashboard (jul/2026): range-aware =====
+
+export interface DashboardOverview {
+  gmvCents: number
+  paidOrders: number
+  averageTicket: number
+  lives: number
+  totalComments: number
+  totalCarts: number
+  checkoutCarts: number
+  paidCarts: number
+  expiredCarts: number
+  expiredValueCents: number
+  recoveredCarts: number
+  recoveredRevenueCents: number
+  refundedCarts: number
+}
+
+export interface RevenueSeriesPoint {
+  bucket: string // ISO date do início do bucket
+  revenueCents: number
+  orders: number
+}
+
+// Range serializado (YYYY-MM-DD) usado por hooks/serviços do dashboard
+export interface PeriodRange {
+  from: string
+  to: string
+}

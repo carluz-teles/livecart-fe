@@ -9,6 +9,9 @@ import type {
   AggregatedFunnel,
   RevenueByPaymentResponse,
   CheckoutUpsellResponse,
+  DashboardOverview,
+  RevenueSeriesPoint,
+  PeriodRange,
 } from "@/types"
 
 export const dashboardService = {
@@ -18,11 +21,31 @@ export const dashboardService = {
   getMonthlyRevenue: (storeId: string, token?: string | null) =>
     apiClient.get<MonthlyRevenueResponse>(`/stores/${storeId}/dashboard/chart`, token),
 
-  getTopProducts: (storeId: string, token?: string | null) =>
-    apiClient.get<TopProductsResponse>(`/stores/${storeId}/dashboard/top-products`, token),
+  getTopProducts: (storeId: string, token?: string | null, range?: PeriodRange) =>
+    apiClient.get<TopProductsResponse>(
+      `/stores/${storeId}/dashboard/top-products${range ? `?from=${range.from}&to=${range.to}` : ""}`,
+      token
+    ),
 
-  getTopBuyers: (storeId: string, token?: string | null) =>
-    apiClient.get<TopBuyersResponse>(`/stores/${storeId}/dashboard/top-buyers`, token),
+  getTopBuyers: (storeId: string, token?: string | null, range?: PeriodRange) =>
+    apiClient.get<TopBuyersResponse>(
+      `/stores/${storeId}/dashboard/top-buyers${range ? `?from=${range.from}&to=${range.to}` : ""}`,
+      token
+    ),
+
+  // Redesign jul/2026: KPIs + funil com estados, coerentes com o período
+  getOverview: (storeId: string, range: PeriodRange, token?: string | null) =>
+    apiClient.get<DashboardOverview>(
+      `/stores/${storeId}/dashboard/overview?from=${range.from}&to=${range.to}`,
+      token
+    ),
+
+  // Série de receita com granularidade adaptativa
+  getRevenueSeries: (storeId: string, range: PeriodRange, bucket: string, token?: string | null) =>
+    apiClient.get<RevenueSeriesPoint[]>(
+      `/stores/${storeId}/dashboard/series?from=${range.from}&to=${range.to}&bucket=${bucket}`,
+      token
+    ),
 
   getProductSales: (storeId: string, token?: string | null) =>
     apiClient.get<ProductSalesResponse>(`/stores/${storeId}/dashboard/product-sales`, token),
