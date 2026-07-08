@@ -90,6 +90,11 @@ export default function AuthLayout({
               <p className="text-lg leading-relaxed text-amber-200/70">
                 A plataforma que automatiza a captura de pedidos durante suas transmissões ao vivo. Simples, rápido e poderoso.
               </p>
+              {!isLogin && (
+                <p className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-sm font-medium text-amber-300">
+                  ✨ 7 dias grátis, sem cartão — todos os recursos liberados
+                </p>
+              )}
             </div>
 
             {/* Features */}

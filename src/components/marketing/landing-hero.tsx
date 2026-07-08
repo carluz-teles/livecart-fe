@@ -11,7 +11,7 @@ type Bubble =
 const bubbles: Bubble[] = [
   { side: "start", variant: "comment", user: "@ana.reis", text: "quero 2 do BONE 🔥" },
   { side: "end", variant: "comment", user: "@ju_costa", text: "manda 1 CAMI 🙌" },
-  { side: "start", variant: "comment", user: "@pedro.alves", text: "tem na cor GG? 👀" },
+  { side: "start", variant: "comment", user: "@pedro.alves", text: "tem no tamanho GG? 👀" },
   { side: "end", variant: "system", text: "3 carrinhos criados na hora" },
   { side: "start", variant: "dm", text: "Checkout enviado no direct" },
   { side: "end", variant: "paid", text: "@ana.reis pagou · R$ 119,80" },
@@ -149,7 +149,7 @@ export function LandingHero() {
               className="h-12 bg-amber-400 text-base font-semibold text-black hover:bg-amber-300"
             >
               <Link href="/register">
-                Começar grátis
+                Testar 7 dias grátis
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -164,7 +164,7 @@ export function LandingHero() {
           </div>
 
           <p className="mt-5 text-sm text-neutral-400">
-            Sem cartão de crédito · Configure em minutos · Cancele quando quiser
+            7 dias grátis · Sem cartão de crédito · Configure em minutos
           </p>
         </div>
 

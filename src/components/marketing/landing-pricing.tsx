@@ -13,7 +13,7 @@ const plans = [
     gmv: "1,8%",
     description: "Pra quem está começando a vender nas lives.",
     highlighted: false,
-    cta: "Começar grátis",
+    cta: "Testar 7 dias grátis",
   },
   {
     name: "Grow",
@@ -21,7 +21,7 @@ const plans = [
     gmv: "1,3%",
     description: "Pra quem vende ao vivo toda semana.",
     highlighted: true,
-    cta: "Começar grátis",
+    cta: "Testar 7 dias grátis",
   },
   {
     name: "Scale",
@@ -29,7 +29,7 @@ const plans = [
     gmv: "1,0%",
     description: "Pra operações em ritmo acelerado.",
     highlighted: false,
-    cta: "Começar grátis",
+    cta: "Testar 7 dias grátis",
   },
   {
     name: "Enterprise",
@@ -67,9 +67,9 @@ export function LandingPricing() {
             Planos que crescem com as suas vendas
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Comece grátis e faça o upgrade só quando precisar. Escolha pela
-            mensalidade e pela taxa sobre os pedidos pagos, com todos os
-            recursos em todos os planos.
+            Todos os planos começam com 7 dias grátis, sem cartão. Escolha
+            pela mensalidade e pela taxa sobre os pedidos pagos, com todos os
+            recursos em todos os planos — você só decide quando ficar.
           </p>
         </div>
 

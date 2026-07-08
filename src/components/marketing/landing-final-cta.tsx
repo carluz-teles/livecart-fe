@@ -26,7 +26,7 @@ export function LandingFinalCta() {
             className="h-12 bg-amber-400 text-base font-semibold text-black hover:bg-amber-300"
           >
             <Link href="/register">
-              Começar grátis
+              Testar 7 dias grátis
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -40,7 +40,7 @@ export function LandingFinalCta() {
           </Button>
         </div>
         <p className="mt-5 text-sm text-neutral-400">
-          Sem cartão de crédito · Configure em minutos
+          7 dias grátis, sem cartão — crie a conta e faça sua primeira live hoje.
         </p>
       </div>
     </section>
