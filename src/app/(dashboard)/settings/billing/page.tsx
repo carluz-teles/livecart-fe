@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Check, CreditCard, ExternalLink, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
@@ -41,7 +41,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
   canceled: { label: "Cancelada", variant: "outline" },
 }
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { data: sub, isLoading } = useSubscription()
@@ -214,5 +214,15 @@ export default function BillingPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+
+// useSearchParams() exige Suspense boundary no build de produção (CSR bailout).
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+      <BillingContent />
+    </Suspense>
   )
 }

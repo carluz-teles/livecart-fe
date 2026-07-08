@@ -37,6 +37,8 @@ export interface SubscriptionState {
   graceUntil?: string
   hasPaymentMethod: boolean
   blocked: boolean
+  // false = paywall globalmente desativado (kill switch) — sem banners de pressão
+  enforced: boolean
 }
 
 // User represents the current user with their store context

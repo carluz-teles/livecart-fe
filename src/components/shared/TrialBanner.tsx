@@ -11,7 +11,8 @@ export function TrialBanner() {
   const { user } = useUser()
   const sub = user?.subscription
 
-  if (!sub) return null
+  // Kill switch: paywall desativado = sem banners de pressão
+  if (!sub || !sub.enforced) return null
 
   if (sub.status === "trialing" && sub.trialDaysLeft > 0) {
     return (
