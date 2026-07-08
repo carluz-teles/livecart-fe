@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, ArrowLeft, Package, Layers } from "lucide-react"
@@ -711,6 +712,14 @@ interface ProductFormFieldsProps {
 }
 
 function ProductFormFields({ form }: ProductFormFieldsProps) {
+  // Produtos importados de uma integração (Tiny/Bling/Shopify) trazem a imagem
+  // do ERP — o lojista não deve editar a URL, só ver a imagem. Para produtos
+  // manuais mantemos o input de URL.
+  const externalSource = form.watch("externalSource")
+  const imageUrl = form.watch("imageUrl")
+  const productName = form.watch("name")
+  const isFromERP = ERP_SOURCES.includes(externalSource as ProductSource)
+
   return (
     <>
       <FormField
@@ -770,26 +779,50 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
         />
       </div>
 
-      <FormField
-        control={form.control}
-        name="imageUrl"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>URL da Imagem</FormLabel>
-            <FormControl>
-              <Input
-                type="url"
-                placeholder="https://exemplo.com/imagem.jpg"
-                {...field}
+      {isFromERP ? (
+        <FormItem>
+          <FormLabel>Imagem do produto</FormLabel>
+          {imageUrl ? (
+            <div className="relative h-40 w-40 overflow-hidden rounded-lg border bg-muted">
+              <Image
+                src={imageUrl}
+                alt={productName || "Imagem do produto"}
+                fill
+                className="object-cover"
+                sizes="160px"
               />
-            </FormControl>
-            <FormDescription>
-              Link direto para a imagem do produto
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+            </div>
+          ) : (
+            <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed bg-muted text-center text-xs text-muted-foreground">
+              Sem imagem
+            </div>
+          )}
+          <FormDescription>
+            Imagem importada da integração.
+          </FormDescription>
+        </FormItem>
+      ) : (
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL da Imagem</FormLabel>
+              <FormControl>
+                <Input
+                  type="url"
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Link direto para a imagem do produto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <ProductFormShippingFields form={form} />
     </>

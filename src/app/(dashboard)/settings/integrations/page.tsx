@@ -704,7 +704,7 @@ function IntegrationsContent() {
         </div>
 
         <Tabs defaultValue="payment" className="w-full">
-          <TabsList className="mb-6 w-full justify-start border-b bg-transparent p-0">
+          <TabsList className="mb-6 flex w-full justify-start border-b bg-transparent p-0">
             {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
               const config = categoryConfig[type]
               const providersInCategory = getProvidersByType(type)

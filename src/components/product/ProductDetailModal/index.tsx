@@ -223,7 +223,7 @@ export function ProductDetailModal({
             <ShippingSection product={product} />
 
             {/* Timestamps */}
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>Criado em {formatDateTime(product.createdAt)}</span>
