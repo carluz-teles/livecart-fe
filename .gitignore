@@ -42,3 +42,7 @@ next-env.d.ts
 /playwright/.cache/
 e2e/.clerk/
 .playwright-mcp/
+
+# Debug artifacts (screenshots/snapshots from browser sessions)
+/*.png
+/register-page.yml
