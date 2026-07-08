@@ -23,6 +23,20 @@ export interface SyncUserResponse {
   avatarUrl: string | null
   membership: Membership | null // Single membership (1 user = 1 store)
   state: "no_store" | "ready"
+  subscription?: SubscriptionState | null // paywall (PRD 007)
+}
+
+// SubscriptionState — snapshot do paywall/assinatura (PRD 007)
+export interface SubscriptionState {
+  status: "trialing" | "active" | "past_due" | "paused" | "unpaid" | "canceled" | string
+  plan: "start" | "grow" | "scale" | "enterprise" | string
+  trialEndsAt?: string
+  trialDaysLeft: number
+  currentPeriodEnd?: string
+  cancelAtPeriodEnd: boolean
+  graceUntil?: string
+  hasPaymentMethod: boolean
+  blocked: boolean
 }
 
 // User represents the current user with their store context
@@ -33,6 +47,7 @@ export interface User {
   membership: Membership | null
   // State
   state: "no_store" | "ready"
+  subscription?: SubscriptionState | null // paywall (PRD 007)
 }
 
 // Legacy alias for backward compatibility

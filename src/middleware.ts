@@ -64,6 +64,15 @@ export default clerkMiddleware(async (auth, req) => {
         const onboardingUrl = new URL("/onboarding", req.url)
         return NextResponse.redirect(onboardingUrl)
       }
+      // Paywall (PRD 007): assinatura bloqueada prende o usuário no /paywall
+      const blocked = data.subscription?.blocked === true
+      const onPaywall = req.nextUrl.pathname === "/paywall"
+      if (blocked && !onPaywall) {
+        return NextResponse.redirect(new URL("/paywall", req.url))
+      }
+      if (!blocked && onPaywall && data.subscription?.status === "active") {
+        return NextResponse.redirect(new URL("/dashboard", req.url))
+      }
       return NextResponse.next()
     }
 

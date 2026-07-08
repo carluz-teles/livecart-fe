@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/shared/Sidebar"
 import { Header } from "@/components/shared/Header"
+import { TrialBanner } from "@/components/shared/TrialBanner"
 import { AppProviders } from "@/components/providers/app-providers"
 
 export default function DashboardLayout({
@@ -14,6 +15,7 @@ export default function DashboardLayout({
           <Sidebar />
         </div>
         <div className="flex flex-1 flex-col overflow-hidden">
+          <TrialBanner />
           <div className="print:hidden">
             <Header />
           </div>
