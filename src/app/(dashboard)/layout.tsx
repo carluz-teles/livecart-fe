@@ -3,6 +3,13 @@ import { Header } from "@/components/shared/Header"
 import { TrialBanner } from "@/components/shared/TrialBanner"
 import { AppProviders } from "@/components/providers/app-providers"
 
+// Authenticated, per-merchant área: nunca pode ser prerenderizada nem
+// cacheada publicamente. Sem isto, o Next gera estes routes como estáticos
+// (x-nextjs-prerender) e o edge do Railway acaba servindo o payload RSC
+// (text/x-component) sob a URL de HTML no hard-load/F5 — a tela quebrada.
+// force-dynamic alinha o segmento com o comportamento do "/" (no-store).
+export const dynamic = "force-dynamic"
+
 export default function DashboardLayout({
   children,
 }: {
