@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { completeOnboarding } from "@/app/onboarding/actions"
@@ -16,6 +16,43 @@ export type WizardStepID = "you" | "store" | "address" | "contact"
 
 export const WIZARD_STEP_IDS: WizardStepID[] = ["you", "store", "address", "contact"]
 
+// Rascunho no sessionStorage: um F5 no meio do fluxo não perde o que foi
+// digitado. Morre com a aba (session), então não vaza entre usuários da
+// mesma máquina.
+const DRAFT_KEY = "livecart:onboarding-draft"
+
+interface WizardDraft {
+  stepIndex: number
+  storeData: Partial<WizardStoreData>
+  addressData: Partial<WizardAddressData>
+  contactData: Partial<WizardContactData>
+}
+
+function readDraft(): WizardDraft | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY)
+    return raw ? (JSON.parse(raw) as WizardDraft) : null
+  } catch {
+    return null
+  }
+}
+
+function writeDraft(draft: WizardDraft) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  } catch {
+    // storage cheio/bloqueado: segue sem rascunho
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY)
+  } catch {
+    // noop
+  }
+}
+
 // Orquestração do wizard: passo atual, dados acumulados (voltar preserva
 // tudo), autofill em cascata do CNPJ e a submissão final. O page/steps só
 // renderizam e delegam pra cá.
@@ -26,6 +63,27 @@ export function useOnboardingWizard() {
   const [storeData, setStoreData] = useState<Partial<WizardStoreData>>({})
   const [addressData, setAddressData] = useState<Partial<WizardAddressData>>({})
   const [contactData, setContactData] = useState<Partial<WizardContactData>>({})
+  const [hydrated, setHydrated] = useState(false)
+
+  // Restaura o rascunho após a montagem (não no initializer, pra não causar
+  // divergência de hidratação entre SSR e client).
+  useEffect(() => {
+    const draft = readDraft()
+    if (draft) {
+      setStepIndex(Math.min(draft.stepIndex, WIZARD_STEP_IDS.length - 1))
+      setStoreData(draft.storeData ?? {})
+      setAddressData(draft.addressData ?? {})
+      setContactData(draft.contactData ?? {})
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persiste a cada mudança (só depois de hidratado, pra não sobrescrever o
+  // rascunho com o estado inicial vazio).
+  useEffect(() => {
+    if (!hydrated) return
+    writeDraft({ stepIndex, storeData, addressData, contactData })
+  }, [hydrated, stepIndex, storeData, addressData, contactData])
 
   const stepId = WIZARD_STEP_IDS[stepIndex]
   const goNext = () => setStepIndex((i) => Math.min(i + 1, WIZARD_STEP_IDS.length - 1))
@@ -85,6 +143,7 @@ export function useOnboardingWizard() {
         return
       }
 
+      clearDraft()
       toast.success("Loja criada! Seus 7 dias grátis começaram. 🎉")
       window.location.href = "/dashboard"
     } catch {
