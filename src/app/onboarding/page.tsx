@@ -21,7 +21,7 @@ const steps: StepDef[] = [
 
 const stepCopy: Record<WizardStepID, { title: string; description: string }> = {
   you: { title: "Sobre você", description: "Como devemos te chamar por aqui" },
-  store: { title: "Sua loja", description: "Com CNPJ, preenchemos quase tudo pra você" },
+  store: { title: "Sua loja", description: "Pessoa física ou empresa — você escolhe" },
   address: { title: "Endereço da loja", description: "Digite o CEP e deixe o resto com a gente" },
   contact: { title: "Contato da loja", description: "Opcional — dá pra configurar depois" },
 }

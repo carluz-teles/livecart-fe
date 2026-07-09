@@ -3,9 +3,10 @@
 import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, ArrowRight, Loader2, Search, Sparkles } from "lucide-react"
+import { ArrowLeft, ArrowRight, Building2, Loader2, Search, Sparkles, User } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCnpjLookup } from "@/hooks/onboarding"
@@ -32,7 +33,7 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
     formState: { errors },
   } = useForm<WizardStoreData>({
     resolver: zodResolver(wizardStoreSchema),
-    defaultValues: { storeName: "", cnpj: "", ...defaultValues },
+    defaultValues: { sellerType: "individual", storeName: "", cnpj: "", ...defaultValues },
   })
 
   const cnpjLookup = useCnpjLookup((data) => {
@@ -46,6 +47,15 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
 
   const storeName = watch("storeName")
   const storeSlug = useMemo(() => generateSlug(storeName || ""), [storeName])
+  const sellerType = watch("sellerType")
+
+  const pickSellerType = (type: "individual" | "company") => {
+    setValue("sellerType", type, { shouldValidate: true })
+    if (type === "individual") {
+      setValue("cnpj", "")
+      cnpjLookup.reset()
+    }
+  }
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue("cnpj", formatCNPJ(e.target.value))
@@ -56,13 +66,71 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
 
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5" noValidate>
-      {/* CNPJ primeiro: é ele que preenche o resto */}
+      {/* Pessoa física × Empresa: quem vende informal não precisa de CNPJ */}
+      <div className="space-y-2">
+        <Label id="sellerType-label">Como você vende?</Label>
+        <div
+          role="radiogroup"
+          aria-labelledby="sellerType-label"
+          className="grid grid-cols-2 gap-3"
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={sellerType === "individual"}
+            onClick={() => pickSellerType("individual")}
+            className={cn(
+              "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              sellerType === "individual"
+                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                : "hover:border-muted-foreground/40"
+            )}
+          >
+            <User
+              className={cn(
+                "size-5 shrink-0",
+                sellerType === "individual" ? "text-primary" : "text-muted-foreground"
+              )}
+              aria-hidden="true"
+            />
+            <span>
+              <span className="block text-sm font-medium">Pessoa física</span>
+              <span className="block text-xs text-muted-foreground">Sem CNPJ, sem burocracia</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={sellerType === "company"}
+            onClick={() => pickSellerType("company")}
+            className={cn(
+              "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              sellerType === "company"
+                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                : "hover:border-muted-foreground/40"
+            )}
+          >
+            <Building2
+              className={cn(
+                "size-5 shrink-0",
+                sellerType === "company" ? "text-primary" : "text-muted-foreground"
+              )}
+              aria-hidden="true"
+            />
+            <span>
+              <span className="block text-sm font-medium">Empresa</span>
+              <span className="block text-xs text-muted-foreground">CNPJ preenche tudo pra você</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {sellerType === "company" && (
       <div className="space-y-2">
         <Label htmlFor="cnpj">CNPJ (opcional)</Label>
         <div className="flex gap-2">
           <Input
             id="cnpj"
-            autoFocus
             inputMode="numeric"
             placeholder="00.000.000/0000-00"
             aria-invalid={!!errors.cnpj}
@@ -104,6 +172,7 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
           </p>
         )}
       </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="storeName">

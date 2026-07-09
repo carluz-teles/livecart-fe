@@ -98,6 +98,9 @@ export const wizardUserSchema = z.object({
 export type WizardUserData = z.infer<typeof wizardUserSchema>
 
 export const wizardStoreSchema = z.object({
+  // Pessoa física vende sem documento; empresa traz CNPJ (e ganha o
+  // autofill da Receita). Sem coluna nova no BE: cnpj vazio = pessoa física.
+  sellerType: z.enum(["individual", "company"]),
   storeName: z
     .string()
     .min(2, "Nome deve ter pelo menos 2 caracteres")
