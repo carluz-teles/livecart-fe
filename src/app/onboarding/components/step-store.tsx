@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, ArrowRight, Building2, Loader2, Search, Sparkles, User } from "lucide-react"
+import { ArrowLeft, ArrowRight, Building2, Loader2, Sparkles, User } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -58,11 +58,22 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
   }
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue("cnpj", formatCNPJ(e.target.value))
+    const formatted = formatCNPJ(e.target.value)
+    setValue("cnpj", formatted)
     cnpjLookup.reset()
+    // Igual ao CEP: completou os 14 dígitos, busca sozinho
+    if (formatted.replace(/\D/g, "").length === 14) {
+      cnpjLookup.run(formatted)
+    }
   }
 
-  const runLookup = () => cnpjLookup.run(getValues("cnpj") ?? "")
+  // Blur é o gatilho reserva (ex.: colou o CNPJ e saiu do campo) — só roda
+  // se ainda não buscou este valor (idle; mudanças resetam o status)
+  const handleBlur = () => {
+    if (cnpjLookup.status === "idle") {
+      cnpjLookup.run(getValues("cnpj") ?? "")
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5" noValidate>
@@ -128,7 +139,7 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
       {sellerType === "company" && (
       <div className="space-y-2">
         <Label htmlFor="cnpj">CNPJ (opcional)</Label>
-        <div className="flex gap-2">
+        <div className="relative">
           <Input
             id="cnpj"
             inputMode="numeric"
@@ -137,21 +148,14 @@ export function StepStore({ defaultValues, onNext, onBack, onCnpjData }: StepSto
             aria-describedby={errors.cnpj ? "cnpj-error" : "cnpj-hint"}
             {...register("cnpj")}
             onChange={handleCNPJChange}
-            onBlur={runLookup}
+            onBlur={handleBlur}
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={runLookup}
-            disabled={cnpjLookup.status === "loading"}
-            aria-label="Buscar dados do CNPJ na Receita"
-          >
-            {cnpjLookup.status === "loading" ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Search className="size-4" aria-hidden="true" />
-            )}
-          </Button>
+          {cnpjLookup.status === "loading" && (
+            <Loader2
+              className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
+          )}
         </div>
         {errors.cnpj ? (
           <p id="cnpj-error" role="alert" className="text-sm text-destructive">
