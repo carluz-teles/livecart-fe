@@ -259,10 +259,12 @@ function AcceptInviteContent() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <CardTitle>Convite Aceito!</CardTitle>
+            <CardTitle>
+              Bem-vindo à {invitation?.storeName ?? "equipe"}! 🎉
+            </CardTitle>
             <CardDescription>
-              Você foi adicionado à loja com sucesso.
-              Redirecionando para o dashboard...
+              Convite aceito — você agora faz parte da equipe.
+              Redirecionando para o painel...
             </CardDescription>
           </CardHeader>
         </Card>

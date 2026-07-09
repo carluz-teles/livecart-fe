@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import { useUser } from "@clerk/nextjs"
 import { MapPin, MessageCircle, Store, User } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +28,6 @@ const stepCopy: Record<WizardStepID, { title: string; description: string }> = {
 // Página do onboarding: renderização pura. Estado, autofill em cascata e
 // submissão vivem no useOnboardingWizard.
 export default function OnboardingPage() {
-  const { user } = useUser()
   const wizard = useOnboardingWizard()
   const copy = stepCopy[wizard.stepId]
 
@@ -52,9 +50,7 @@ export default function OnboardingPage() {
         />
 
         <div className="mt-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Bem-vindo{user?.firstName ? `, ${user.firstName}` : ""}! 👋
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Vamos montar sua loja 🚀</h1>
           <p className="mt-1.5 text-muted-foreground">
             Sua loja e seus <strong className="text-foreground">7 dias grátis</strong> começam agora
           </p>
