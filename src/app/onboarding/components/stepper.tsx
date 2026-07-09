@@ -27,16 +27,21 @@ export function Stepper({ steps, current }: StepperProps) {
           <li
             key={step.id}
             aria-current={active ? "step" : undefined}
-            className="flex items-center"
+            className="flex items-start"
           >
             {i > 0 && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "mx-1.5 h-0.5 w-6 rounded-full transition-colors sm:mx-2 sm:w-10",
-                  done ? "bg-primary" : "bg-border"
-                )}
-              />
+              /* wrapper com a altura do círculo (h-9) centraliza a barra no
+                 eixo dos círculos, ignorando a altura do label abaixo */
+              <span aria-hidden="true" className="flex h-9 items-center">
+                <span
+                  className={cn(
+                    "mx-1.5 h-0.5 w-6 rounded-full transition-colors sm:mx-2 sm:w-10",
+                    /* pinta quando o passo ANTERIOR está concluído — a barra
+                       conecta i-1 → i, então acende junto com a conclusão */
+                    i <= current ? "bg-primary" : "bg-border"
+                  )}
+                />
+              </span>
             )}
             <span className="flex flex-col items-center gap-1.5">
               <span
