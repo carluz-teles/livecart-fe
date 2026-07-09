@@ -83,8 +83,11 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
 
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5" noValidate>
-      <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
-        <div className="space-y-2">
+      {/* Grid único de 6 colunas: as divisas caem sempre nas colunas 2 e 4,
+          então os campos se alinham verticalmente em todas as linhas
+          (CEP 2|Rua 4 · Número 2|Complemento 2|Bairro 2 · Cidade 4|UF 2). */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="zip">CEP</Label>
           <div className="relative">
             <Input
@@ -104,19 +107,9 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
               />
             )}
           </div>
-          <p id="zip-status" role="status" className="min-h-4 text-xs">
-            {cepLookup.status === "hit" && (
-              <span className="flex items-center gap-1 text-emerald-600">
-                <Sparkles className="size-3" aria-hidden="true" /> Endereço encontrado!
-              </span>
-            )}
-            {cepLookup.status === "miss" && (
-              <span className="text-muted-foreground">CEP não encontrado — preencha abaixo.</span>
-            )}
-          </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-4">
           <Label htmlFor="street">Rua / Avenida</Label>
           <Input
             id="street"
@@ -125,10 +118,21 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
             {...register("street")}
           />
         </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-[120px_1fr_1fr]">
-        <div className="space-y-2">
+        {/* Status do lookup em linha própria (largura total) — não desalinha
+            as colunas nem muda a altura dos campos */}
+        <p id="zip-status" role="status" className="-mt-2 min-h-4 text-xs sm:col-span-full">
+          {cepLookup.status === "hit" && (
+            <span className="flex items-center gap-1 text-emerald-600">
+              <Sparkles className="size-3" aria-hidden="true" /> Endereço encontrado!
+            </span>
+          )}
+          {cepLookup.status === "miss" && (
+            <span className="text-muted-foreground">CEP não encontrado — preencha abaixo.</span>
+          )}
+        </p>
+
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="number">Número</Label>
           <Input
             id="number"
@@ -141,18 +145,18 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
             }}
           />
         </div>
-        <div className="space-y-2">
+
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="complement">Complemento</Label>
           <Input id="complement" placeholder="Sala 4, fundos…" {...register("complement")} />
         </div>
-        <div className="space-y-2">
+
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="district">Bairro</Label>
           <Input id="district" placeholder="Centro" {...register("district")} />
         </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-4">
           <Label htmlFor="city">
             Cidade <span aria-hidden="true" className="text-destructive">*</span>
           </Label>
@@ -171,7 +175,8 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
             </p>
           )}
         </div>
-        <div className="space-y-2">
+
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="state">
             UF <span aria-hidden="true" className="text-destructive">*</span>
           </Label>
@@ -181,6 +186,7 @@ export function StepAddress({ defaultValues, onNext, onBack }: StepAddressProps)
           >
             <SelectTrigger
               id="state"
+              className="w-full"
               aria-required="true"
               aria-invalid={!!errors.state}
               aria-describedby={errors.state ? "state-error" : undefined}
