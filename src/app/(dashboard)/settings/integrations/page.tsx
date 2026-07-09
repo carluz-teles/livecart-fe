@@ -160,14 +160,16 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     authType: "api_key",
     docHref: "/docs/integrations/smartenvios",
   },
-  {
-    id: "twilio_whatsapp",
-    name: "WhatsApp",
-    description: "Recupere carrinhos e envie lembretes pelo WhatsApp com o seu número",
-    features: ["Recuperação de carrinho", "Lembrete de expiração", "Número próprio"],
-    type: "communication",
-    authType: "whatsapp",
-  },
+  // WhatsApp (PRD 006) fora do catálogo por ora — infra pronta, aguardando a
+  // aprovação de ISV da Twilio. Pra reativar: descomentar esta entrada.
+  // {
+  //   id: "twilio_whatsapp",
+  //   name: "WhatsApp",
+  //   description: "Recupere carrinhos e envie lembretes pelo WhatsApp com o seu número",
+  //   features: ["Recuperação de carrinho", "Lembrete de expiração", "Número próprio"],
+  //   type: "communication",
+  //   authType: "whatsapp",
+  // },
 ]
 
 const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
