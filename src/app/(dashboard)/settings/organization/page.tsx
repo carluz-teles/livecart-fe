@@ -598,7 +598,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="cnpj"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem className="sm:col-span-4">
                       <FormLabel>CNPJ</FormLabel>
                       <FormControl>
                         <Input
@@ -647,7 +647,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.number"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-4">
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         Número <span className="text-destructive">*</span>
                       </FormLabel>
@@ -666,7 +666,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.complement"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem className="sm:col-span-3">
                       <FormLabel>Complemento</FormLabel>
                       <FormControl>
                         <Input
@@ -702,7 +702,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.city"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-3">
+                    <FormItem className="sm:col-span-4">
                       <FormLabel>
                         Cidade <span className="text-destructive">*</span>
                       </FormLabel>
@@ -721,7 +721,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.state"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-4">
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         UF <span className="text-destructive">*</span>
                       </FormLabel>
@@ -745,7 +745,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.stateRegister"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem className="sm:col-span-full">
                       <FormLabel>Inscrição estadual</FormLabel>
                       <FormControl>
                         <Input
@@ -777,7 +777,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="shippingDefaults.packageWeightGrams"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-full">
+                    <FormItem>
                       <FormLabel className="flex items-center gap-1.5">
                         Peso da embalagem (g)
                         <TooltipProvider delayDuration={100}>
