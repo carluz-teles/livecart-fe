@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useAuth, SignIn } from '@clerk/nextjs'
+import { useAuth, SignIn, SignUp } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,9 @@ function AcceptInviteContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const acceptingRef = useRef(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  // Convite = pessoa provavelmente NOVA: cadastro é o caminho principal,
+  // login é a alternativa. O e-mail do convite vem pré-preenchido.
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup')
 
   // Proceed with accepting the invitation
   const proceedWithAcceptance = useCallback(async (authToken: string | null) => {
@@ -293,14 +296,28 @@ function AcceptInviteContent() {
     )
   }
 
-  // Show login with store name - this is the main state
+  // Main state: signup-first (invited people usually don't have an account)
+  const clerkAppearance = {
+    elements: {
+      headerTitle: { display: 'none' },
+      headerSubtitle: { display: 'none' },
+      card: {
+        boxShadow: 'none',
+        border: '1px solid hsl(var(--border))',
+      },
+      footer: { display: 'none' },
+    },
+  }
+
   return (
     <InviteShell>
       <div className="w-full space-y-6">
         {/* Custom header with store name */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Entrar para continuar em {invitation?.storeName}
+            {authMode === 'signup'
+              ? `Crie sua conta para entrar em ${invitation?.storeName}`
+              : `Entrar para continuar em ${invitation?.storeName}`}
           </h1>
           <p className="text-sm text-muted-foreground">
             Você foi convidado como{' '}
@@ -311,37 +328,58 @@ function AcceptInviteContent() {
               <> por {invitation.inviterName}</>
             )}
           </p>
+          {authMode === 'signup' && invitation?.email && (
+            <p className="text-xs text-muted-foreground">
+              O convite é para <strong className="text-foreground">{invitation.email}</strong> —
+              cadastre-se com esse e-mail.
+            </p>
+          )}
         </div>
 
-        {/* Clerk SignIn component */}
+        {/* Clerk auth: signup como padrão, login como alternativa */}
         <div className="flex justify-center">
-          <SignIn
-            routing="hash"
-            signUpUrl={`/register?redirect_url=/accept-invite?token=${token}`}
-            forceRedirectUrl={`/accept-invite?token=${token}`}
-            appearance={{
-              elements: {
-                headerTitle: { display: 'none' },
-                headerSubtitle: { display: 'none' },
-                card: {
-                  boxShadow: 'none',
-                  border: '1px solid hsl(var(--border))',
-                },
-                footer: { display: 'none' },
-              },
-            }}
-          />
+          {authMode === 'signup' ? (
+            <SignUp
+              routing="hash"
+              forceRedirectUrl={`/accept-invite?token=${token}`}
+              initialValues={{ emailAddress: invitation?.email }}
+              appearance={clerkAppearance}
+            />
+          ) : (
+            <SignIn
+              routing="hash"
+              forceRedirectUrl={`/accept-invite?token=${token}`}
+              initialValues={{ emailAddress: invitation?.email }}
+              appearance={clerkAppearance}
+            />
+          )}
         </div>
 
-        {/* Link to create account */}
+        {/* Alternar entre cadastro e login sem sair da página */}
         <div className="text-center text-sm text-muted-foreground">
-          Não tem uma conta?{' '}
-          <a
-            href={`/register?redirect_url=/accept-invite?token=${token}`}
-            className="font-medium text-primary hover:underline"
-          >
-            Criar conta
-          </a>
+          {authMode === 'signup' ? (
+            <>
+              Já tem uma conta?{' '}
+              <button
+                type="button"
+                onClick={() => setAuthMode('signin')}
+                className="font-medium text-primary hover:underline"
+              >
+                Entrar
+              </button>
+            </>
+          ) : (
+            <>
+              Não tem uma conta?{' '}
+              <button
+                type="button"
+                onClick={() => setAuthMode('signup')}
+                className="font-medium text-primary hover:underline"
+              >
+                Criar conta
+              </button>
+            </>
+          )}
         </div>
       </div>
     </InviteShell>
