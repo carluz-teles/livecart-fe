@@ -1,12 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { useAuth } from "@clerk/nextjs"
-import { useUser, useStoreId } from "@/hooks/useUser"
+import { useUser } from "@/hooks/useUser"
 import { useIntegrations } from "@/hooks/integration/useIntegrations"
 import { useEventStats } from "@/hooks/event/useEventStats"
-import { notificationService } from "@/services/api/notification.service"
+import { useProductStats } from "@/hooks/product"
 
 export interface OnboardingTask {
   id: string
@@ -25,120 +23,74 @@ export interface OnboardingStatus {
   isLoading: boolean
 }
 
+// FONTE ÚNICA da ativação pós-onboarding — consumida pelo checklist do
+// Header e pelo card "Primeiros passos" do dashboard (mesmos passos, mesma
+// copy, mesmo progresso). Os 5 passos são o caminho crítico até a primeira
+// live que vende; opcionais (ERP) e coisas que já nascem prontas
+// (notificações têm defaults habilitados) ficam de fora.
 export function useOnboardingStatus(): OnboardingStatus {
   const { user, isLoading: userLoading } = useUser()
-  const { storeId } = useStoreId()
-  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth()
 
-  // Fetch all required data
   const { data: integrations, isLoading: integrationsLoading } = useIntegrations()
   const { data: eventStats, isLoading: eventsLoading } = useEventStats()
+  const { data: productStats, isLoading: productsLoading } = useProductStats()
 
-  // Fetch notification settings
-  const { data: notificationSettings, isLoading: notificationsLoading } = useQuery({
-    queryKey: ["onboarding", "notifications", storeId],
-    queryFn: async () => {
-      const token = await getToken()
-      return notificationService.getSettings(storeId!, token)
-    },
-    enabled: authLoaded && isSignedIn && !!storeId,
-  })
-
-  // Derive task completion status
   const tasks = useMemo<OnboardingTask[]>(() => {
-    // Task 1: Create store
+    const active = (integrations?.data ?? []).filter((i) => i.status === "active")
     const storeCreated = user?.state === "ready"
-
-    // Task 2: Connect payment
-    const hasPayment = integrations?.data?.some(
-      (i) => i.type === "payment" && i.status === "active"
-    ) ?? false
-
-    // Task 3: Connect ERP
-    const hasERP = integrations?.data?.some(
-      (i) => i.type === "erp" && i.status === "active"
-    ) ?? false
-
-    // Task 4: Connect Instagram
-    const hasInstagram = integrations?.data?.some(
-      (i) => i.provider === "instagram" && i.status === "active"
-    ) ?? false
-
-    // Task 5: Create first event
+    const hasInstagram = active.some((i) => i.provider === "instagram")
+    const hasPayment = active.some((i) => i.type === "payment")
+    const hasProduct = (productStats?.totalProducts ?? 0) > 0
     const hasEvents = (eventStats?.totalLives ?? 0) > 0
-
-    // Task 6: Configure notifications
-    const hasNotifications =
-      notificationSettings?.checkout_immediate?.enabled ||
-      notificationSettings?.item_added?.enabled ||
-      notificationSettings?.checkout_reminder?.enabled ||
-      false
 
     return [
       {
         id: "store",
-        title: "Criar loja",
-        description: "Configure os dados básicos da sua loja",
+        title: "Criar sua loja",
+        description: "Loja configurada e pronta",
         completed: storeCreated,
-        // No href - this is done in onboarding wizard
-      },
-      {
-        id: "payment",
-        title: "Conectar pagamento",
-        description: "Configure o Mercado Pago ou Pagar.me",
-        completed: hasPayment,
-        href: "/settings/integrations",
-      },
-      {
-        id: "erp",
-        title: "Integrar ERP",
-        description: "Conecte o Bling ou Tiny para importar produtos",
-        completed: hasERP,
-        href: "/settings/integrations",
       },
       {
         id: "instagram",
-        title: "Conectar Instagram",
-        description: "Vincule sua conta do Instagram",
+        title: "Conectar o Instagram",
+        description: "Pra detectar os pedidos nos comentários da live",
         completed: hasInstagram,
         href: "/settings/integrations",
       },
       {
+        id: "payment",
+        title: "Conectar um meio de pagamento",
+        description: "PIX e cartão no checkout (Mercado Pago ou Pagar.me)",
+        completed: hasPayment,
+        href: "/settings/integrations",
+      },
+      {
+        id: "product",
+        title: "Cadastrar o primeiro produto",
+        description: "Com a palavra-chave que o público comenta na live",
+        completed: hasProduct,
+        href: "/products",
+      },
+      {
         id: "event",
-        title: "Criar primeiro evento",
-        description: "Crie um evento para sua primeira live",
+        title: "Criar a primeira live",
+        description: "Agende o evento da sua primeira transmissão",
         completed: hasEvents,
         href: "/events",
       },
-      {
-        id: "notifications",
-        title: "Configurar notificações",
-        description: "Personalize as mensagens enviadas aos clientes",
-        completed: hasNotifications,
-        href: "/settings/checkout",
-      },
     ]
-  }, [user, integrations, eventStats, notificationSettings])
+  }, [user, integrations, eventStats, productStats])
 
-  // Calculate completion stats
   const completedCount = tasks.filter((t) => t.completed).length
   const totalCount = tasks.length
   const percentage = Math.round((completedCount / totalCount) * 100)
-  const isComplete = completedCount === totalCount
-
-  // Combined loading state
-  const isLoading =
-    userLoading ||
-    integrationsLoading ||
-    eventsLoading ||
-    notificationsLoading
 
   return {
     tasks,
     completedCount,
     totalCount,
     percentage,
-    isComplete,
-    isLoading,
+    isComplete: completedCount === totalCount,
+    isLoading: userLoading || integrationsLoading || eventsLoading || productsLoading,
   }
 }
