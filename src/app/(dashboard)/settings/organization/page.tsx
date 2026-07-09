@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@clerk/nextjs"
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, Globe, MapPin, Phone, Mail, Link as LinkIcon, Copy, Check, Loader2, Camera, Truck, Package, AlertTriangle } from "lucide-react"
+import { Building2, MapPin, Phone, Mail, Loader2, Camera, Truck, Package, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,7 +57,6 @@ const organizationSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
   emailAddress: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
-  website: z.string().url("URL inválida").optional().or(z.literal("")),
   cnpj: z
     .string()
     .optional()
@@ -178,7 +177,6 @@ export default function OrganizationPage() {
     !store.address?.district
   )
   const [isEditing, setIsEditing] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -188,7 +186,6 @@ export default function OrganizationPage() {
       name: "",
       emailAddress: "",
       phone: "",
-      website: "",
       cnpj: "",
       address: {
         street: "",
@@ -212,7 +209,6 @@ export default function OrganizationPage() {
         name: store.name,
         emailAddress: store.emailAddress || "",
         phone: store.whatsappNumber || "",
-        website: store.website || "",
         cnpj: store.cnpj || "",
         address: {
           street: store.address?.street || "",
@@ -232,14 +228,6 @@ export default function OrganizationPage() {
       })
     }
   }, [store, form])
-
-  const storeUrl = store ? `https://livecart.com/${store.slug}` : ""
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(storeUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   // Handle CEP typing: format, then query ViaCEP when 8 digits are reached
   // and auto-fill the address fields. Preserves any value the user already
@@ -299,7 +287,6 @@ export default function OrganizationPage() {
           name: data.name,
           emailAddress: data.emailAddress,
           whatsappNumber: data.phone,
-          website: data.website,
           cnpj: data.cnpj,
           address: {
             street: data.address.street || "",
@@ -337,7 +324,6 @@ export default function OrganizationPage() {
         name: store.name,
         emailAddress: store.emailAddress || "",
         phone: store.whatsappNumber || "",
-        website: store.website || "",
         cnpj: store.cnpj || "",
         address: {
           street: store.address?.street || "",
@@ -517,101 +503,6 @@ export default function OrganizationPage() {
                 )}
               />
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none">URL da loja</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={storeUrl}
-                      disabled
-                      className="pl-9 bg-muted font-mono text-sm"
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={copyToClipboard}
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="emailAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail de contato</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            {...field}
-                            type="email"
-                            disabled={!isEditing}
-                            className="pl-9"
-                            placeholder="contato@minhaloja.com"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone de contato</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            {...field}
-                            type="tel"
-                            disabled={!isEditing}
-                            className="pl-9"
-                            placeholder="(11) 99999-9999"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          type="url"
-                          disabled={!isEditing}
-                          className="pl-9"
-                          placeholder="https://minhaloja.com"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             {/* Actions */}
@@ -669,12 +560,12 @@ export default function OrganizationPage() {
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Dados da empresa</h3>
 
-              <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
                 <FormField
                   control={form.control}
                   name="address.zip"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         CEP <span className="text-destructive">*</span>
                       </FormLabel>
@@ -728,14 +619,11 @@ export default function OrganizationPage() {
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
                 <FormField
                   control={form.control}
                   name="address.street"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-4">
                       <FormLabel>
                         Rua / Avenida{" "}
                         <span className="text-destructive">*</span>
@@ -759,7 +647,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.number"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-4">
                       <FormLabel>
                         Número <span className="text-destructive">*</span>
                       </FormLabel>
@@ -774,14 +662,11 @@ export default function OrganizationPage() {
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="address.complement"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>Complemento</FormLabel>
                       <FormControl>
                         <Input
@@ -798,7 +683,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.district"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-3">
                       <FormLabel>
                         Bairro <span className="text-destructive">*</span>
                       </FormLabel>
@@ -813,14 +698,11 @@ export default function OrganizationPage() {
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-[1fr_120px_1fr]">
                 <FormField
                   control={form.control}
                   name="address.city"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-3">
                       <FormLabel>
                         Cidade <span className="text-destructive">*</span>
                       </FormLabel>
@@ -839,7 +721,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.state"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-4">
                       <FormLabel>
                         UF <span className="text-destructive">*</span>
                       </FormLabel>
@@ -863,7 +745,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="address.stateRegister"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>Inscrição estadual</FormLabel>
                       <FormControl>
                         <Input
@@ -895,7 +777,7 @@ export default function OrganizationPage() {
                   control={form.control}
                   name="shippingDefaults.packageWeightGrams"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-full">
                       <FormLabel className="flex items-center gap-1.5">
                         Peso da embalagem (g)
                         <TooltipProvider delayDuration={100}>

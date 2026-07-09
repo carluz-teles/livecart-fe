@@ -134,7 +134,7 @@ export function useOnboardingWizard() {
       if (addressData.city) formData.append("address.city", addressData.city)
       if (addressData.state) formData.append("address.state", addressData.state)
       if (addressData.zip) formData.append("address.zip", addressData.zip)
-      formData.append("address.country", "Brasil")
+      formData.append("address.country", "BR") // ISO-2, padronizado
 
       const result = await completeOnboarding(formData)
       if (result.error) {
