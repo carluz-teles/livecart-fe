@@ -1,9 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, ArrowLeft, Package, Layers } from "lucide-react"
+import { Plus, Loader2, ArrowLeft, Package, Layers, Lightbulb } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -306,14 +307,9 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
           {trigger || defaultTrigger}
         </SheetTrigger>
       )}
-      <SheetContent
-        className={cn(
-          "overflow-y-auto",
-          productType === "variants" && step === "form" && !isEditing
-            ? "w-full sm:max-w-3xl"
-            : "w-[400px] sm:w-[540px]"
-        )}
-      >
+      {/* Largura FIXA (a maior, do modo variações): alternar Simples ↔ Com
+          variações não fica mais redimensionando o sheet */}
+      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         {isEditing ? (
           <EditView
             form={form}
@@ -337,6 +333,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
             onProductTypeChange={setProductType}
             isPending={isPending}
             canChangeOrigin={availableSourceOptions.length > 1}
+            showERPHint={!isEditing && activeERPIntegrations.length === 0}
             onChangeOrigin={() => setStep("origin")}
             onSubmit={onSubmit}
             onCancel={() => onOpenChange?.(false)}
@@ -445,6 +442,8 @@ interface ManualFormStepProps {
   onProductTypeChange: (type: ProductType) => void
   isPending: boolean
   canChangeOrigin: boolean
+  // Loja sem ERP ativo: mostra a dica de que importação automática existe
+  showERPHint: boolean
   onChangeOrigin: () => void
   onSubmit: (data: CreateProductFormData | UpdateProductFormData) => void
   onCancel: () => void
@@ -453,6 +452,7 @@ interface ManualFormStepProps {
 
 function ManualFormStep({
   form,
+  showERPHint,
   productType,
   onProductTypeChange,
   isPending,
@@ -474,6 +474,21 @@ function ManualFormStep({
       </SheetHeader>
 
       <div className="mt-6 space-y-6">
+        {showERPHint && (
+          <div className="flex items-start gap-2.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs">
+            <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span className="text-muted-foreground">
+              <strong className="text-foreground">Importação automática:</strong> conecte seu
+              ERP (Tiny) pra importar produtos com preço e estoque direto de lá.{" "}
+              <Link
+                href="/settings/integrations"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Conectar integração
+              </Link>
+            </span>
+          </div>
+        )}
         {canChangeOrigin && (
           <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-xs">
             <span className="text-muted-foreground">
