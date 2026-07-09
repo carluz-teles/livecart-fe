@@ -6,6 +6,7 @@ import { useAuth, SignIn } from '@clerk/nextjs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { InviteShell } from './components/invite-shell'
 import { invitationService } from '@/services/api/invitation.service'
 import { userService } from '@/services/api/user.service'
 import { InvitationDetails } from '@/types/invitation.types'
@@ -151,8 +152,8 @@ function AcceptInviteContent() {
   // No token - invalid invite
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <CardTitle>Convite Inválido</CardTitle>
@@ -166,15 +167,15 @@ function AcceptInviteContent() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </InviteShell>
     )
   }
 
   // Loading state
   if (pageState === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
             <CardTitle>Carregando Convite</CardTitle>
@@ -183,15 +184,15 @@ function AcceptInviteContent() {
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>
+      </InviteShell>
     )
   }
 
   // Confirm leave current store state
   if (pageState === 'confirm_leave') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
             <CardTitle>Trocar de Loja</CardTitle>
@@ -231,15 +232,15 @@ function AcceptInviteContent() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      </InviteShell>
     )
   }
 
   // Accepting state
   if (pageState === 'accepting') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
             <CardTitle>Aceitando Convite</CardTitle>
@@ -248,15 +249,15 @@ function AcceptInviteContent() {
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>
+      </InviteShell>
     )
   }
 
   // Success state
   if (pageState === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
             <CardTitle>
@@ -268,15 +269,15 @@ function AcceptInviteContent() {
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>
+      </InviteShell>
     )
   }
 
   // Error state
   if (pageState === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
+      <InviteShell>
+        <Card className="w-full shadow-lg shadow-amber-100/60 duration-300 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="text-center">
             <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <CardTitle>Erro ao Processar Convite</CardTitle>
@@ -288,14 +289,14 @@ function AcceptInviteContent() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </InviteShell>
     )
   }
 
   // Show login with store name - this is the main state
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-6">
+    <InviteShell>
+      <div className="w-full space-y-6">
         {/* Custom header with store name */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -343,7 +344,7 @@ function AcceptInviteContent() {
           </a>
         </div>
       </div>
-    </div>
+    </InviteShell>
   )
 }
 
@@ -351,14 +352,14 @@ export default function AcceptInvitePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <div className="w-full max-w-md">
+        <InviteShell>
+          <div className="w-full">
             <div className="text-center">
               <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin mb-4" />
               <p className="text-sm text-muted-foreground">Carregando...</p>
             </div>
           </div>
-        </div>
+        </InviteShell>
       }
     >
       <AcceptInviteContent />
