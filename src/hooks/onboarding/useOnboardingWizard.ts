@@ -16,25 +16,22 @@ export type WizardStepID = "you" | "store" | "address" | "contact"
 
 export const WIZARD_STEP_IDS: WizardStepID[] = ["you", "store", "address", "contact"]
 
-// Rascunho num COOKIE de sessão (sem Max-Age: morre ao fechar o navegador),
-// escopado em path=/onboarding — só trafega nesta rota. Por viajar no
-// request, o servidor lê o cookie e renderiza o passo certo já no SSR
-// (initialDraft), eliminando o flash de "passo 1 vazio → pulo pro salvo"
-// que a versão com sessionStorage tinha.
-const DRAFT_COOKIE = "lc-onboarding-draft"
+// Rascunho no sessionStorage: um F5 no meio do fluxo não perde o que foi
+// digitado. Morre com a aba (session), então não vaza entre usuários da
+// mesma máquina.
+const DRAFT_KEY = "livecart:onboarding-draft"
 
-export interface WizardDraft {
+interface WizardDraft {
   stepIndex: number
   storeData: Partial<WizardStoreData>
   addressData: Partial<WizardAddressData>
   contactData: Partial<WizardContactData>
 }
 
-// Parser compartilhado: o server component usa com o valor de cookies().
-export function parseWizardDraft(raw: string | undefined): WizardDraft | null {
-  if (!raw) return null
+function readDraft(): WizardDraft | null {
   try {
-    return JSON.parse(decodeURIComponent(raw)) as WizardDraft
+    const raw = sessionStorage.getItem(DRAFT_KEY)
+    return raw ? (JSON.parse(raw) as WizardDraft) : null
   } catch {
     return null
   }
@@ -42,16 +39,15 @@ export function parseWizardDraft(raw: string | undefined): WizardDraft | null {
 
 function writeDraft(draft: WizardDraft) {
   try {
-    const value = encodeURIComponent(JSON.stringify(draft))
-    document.cookie = `${DRAFT_COOKIE}=${value}; path=/onboarding; SameSite=Lax`
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
   } catch {
-    // cookie bloqueado: segue sem rascunho
+    // storage cheio/bloqueado: segue sem rascunho
   }
 }
 
 function clearDraft() {
   try {
-    document.cookie = `${DRAFT_COOKIE}=; path=/onboarding; Max-Age=0; SameSite=Lax`
+    sessionStorage.removeItem(DRAFT_KEY)
   } catch {
     // noop
   }
@@ -60,28 +56,34 @@ function clearDraft() {
 // Orquestração do wizard: passo atual, dados acumulados (voltar preserva
 // tudo), autofill em cascata do CNPJ e a submissão final. O page/steps só
 // renderizam e delegam pra cá.
-export function useOnboardingWizard(initialDraft?: WizardDraft | null) {
-  // Estado inicial vem do SSR (cookie lido no server component) — o primeiro
-  // paint já mostra o passo certo, sem flash nem mismatch de hidratação.
-  const [stepIndex, setStepIndex] = useState(() =>
-    Math.min(initialDraft?.stepIndex ?? 0, WIZARD_STEP_IDS.length - 1)
-  )
+export function useOnboardingWizard() {
+  const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [storeData, setStoreData] = useState<Partial<WizardStoreData>>(
-    () => initialDraft?.storeData ?? {}
-  )
-  const [addressData, setAddressData] = useState<Partial<WizardAddressData>>(
-    () => initialDraft?.addressData ?? {}
-  )
-  const [contactData, setContactData] = useState<Partial<WizardContactData>>(
-    () => initialDraft?.contactData ?? {}
-  )
+  const [storeData, setStoreData] = useState<Partial<WizardStoreData>>({})
+  const [addressData, setAddressData] = useState<Partial<WizardAddressData>>({})
+  const [contactData, setContactData] = useState<Partial<WizardContactData>>({})
+  const [hydrated, setHydrated] = useState(false)
 
-  // Persiste a cada mudança
+  // Restaura o rascunho após a montagem (não no initializer, pra não causar
+  // divergência de hidratação entre SSR e client).
   useEffect(() => {
+    const draft = readDraft()
+    if (draft) {
+      setStepIndex(Math.min(draft.stepIndex, WIZARD_STEP_IDS.length - 1))
+      setStoreData(draft.storeData ?? {})
+      setAddressData(draft.addressData ?? {})
+      setContactData(draft.contactData ?? {})
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persiste a cada mudança (só depois de hidratado, pra não sobrescrever o
+  // rascunho com o estado inicial vazio).
+  useEffect(() => {
+    if (!hydrated) return
     writeDraft({ stepIndex, storeData, addressData, contactData })
-  }, [stepIndex, storeData, addressData, contactData])
+  }, [hydrated, stepIndex, storeData, addressData, contactData])
 
   const stepId = WIZARD_STEP_IDS[stepIndex]
   const goNext = () => setStepIndex((i) => Math.min(i + 1, WIZARD_STEP_IDS.length - 1))
