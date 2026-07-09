@@ -233,7 +233,7 @@ export default function OrganizationPage() {
     }
   }, [store, form])
 
-  const storeUrl = store ? `https://livecart.app/${store.slug}` : ""
+  const storeUrl = store ? `https://livecart.com/${store.slug}` : ""
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(storeUrl)
@@ -1094,37 +1094,6 @@ export default function OrganizationPage() {
           </CardContent>
         </Card>
 
-        {/* Plan & Billing */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Plano e cobrança</CardTitle>
-            <CardDescription>
-              Informações sobre seu plano atual
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Plano atual:</span>
-                  <Badge variant="default" className="uppercase">
-                    {store?.active ? "Ativo" : "Inativo"}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Loja criada em {store?.createdAt ? new Date(store.createdAt).toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  }) : "-"}
-                </p>
-              </div>
-              <Button variant="outline" type="button" disabled>
-                Gerenciar plano
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </form>
     </Form>
   )
