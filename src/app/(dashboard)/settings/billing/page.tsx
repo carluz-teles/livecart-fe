@@ -121,13 +121,34 @@ function BillingContent() {
           </div>
 
           {isTrial && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="size-4 text-primary" />
-              {sub?.status === "trialing" && sub.trialDaysLeft > 0
-                ? `${sub.trialDaysLeft === 1 ? "Último dia" : `${sub.trialDaysLeft} dias`} de teste com todos os recursos liberados.`
-                : "Seu período de teste terminou."}{" "}
-              Você ainda não tem um plano contratado — escolha um abaixo quando quiser.
-            </p>
+            <div className="space-y-1">
+              <p className="flex items-center gap-2 text-sm">
+                <Sparkles className="size-4 text-primary" />
+                {sub?.status === "trialing" && sub.trialDaysLeft > 0 ? (
+                  <span>
+                    Seu teste grátis termina em{" "}
+                    <strong>
+                      {sub.trialEndsAt
+                        ? new Date(sub.trialEndsAt).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "long",
+                          })
+                        : `${sub.trialDaysLeft} dias`}
+                    </strong>
+                    {sub.trialEndsAt
+                      ? ` (${sub.trialDaysLeft === 1 ? "amanhã" : `${sub.trialDaysLeft} dias`})`
+                      : ""}
+                    , com todos os recursos liberados até lá.
+                  </span>
+                ) : (
+                  <span>Seu período de teste terminou.</span>
+                )}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Você ainda não tem um plano contratado — assine abaixo pra não perder o acesso
+                quando o teste acabar.
+              </p>
+            </div>
           )}
           {sub?.currentPeriodEnd && sub.status === "active" && (
             <p className="text-sm text-muted-foreground">
