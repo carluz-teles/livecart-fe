@@ -3,8 +3,8 @@ import {
   Plus,
   Clock,
   CheckCircle2,
-  Truck,
-  PackageCheck,
+  XCircle,
+  Undo2,
   type LucideIcon,
 } from "lucide-react"
 
@@ -59,21 +59,21 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     triggerLabel: () => "Quando o pagamento é confirmado",
     Icon: CheckCircle2,
   },
-  shipped: {
-    type: "shipped",
+  payment_cancelled: {
+    type: "payment_cancelled",
     channel: "email",
-    title: "Pedido enviado",
-    description: "Email com o código de rastreio assim que o envio é criado.",
-    triggerLabel: () => "Quando você cria o envio do pedido",
-    Icon: Truck,
+    title: "Pedido cancelado",
+    description: "Email enviado quando o pagamento do pedido é cancelado.",
+    triggerLabel: () => "Quando o pagamento é cancelado",
+    Icon: XCircle,
   },
-  delivered: {
-    type: "delivered",
+  payment_refunded: {
+    type: "payment_refunded",
     channel: "email",
-    title: "Pedido entregue",
-    description: "Email de agradecimento quando a entrega é confirmada.",
-    triggerLabel: () => "Quando o pedido é marcado como entregue",
-    Icon: PackageCheck,
+    title: "Pedido estornado",
+    description: "Email de confirmação do reembolso, com o prazo por forma de pagamento.",
+    triggerLabel: () => "Quando o pagamento é estornado",
+    Icon: Undo2,
   },
 }
 
@@ -82,8 +82,8 @@ export const NOTIFICATION_ORDER: NotificationType[] = [
   "item_added",
   "checkout_reminder",
   "payment_confirmed",
-  "shipped",
-  "delivered",
+  "payment_cancelled",
+  "payment_refunded",
 ]
 
 export const CART_NOTIFICATION_ORDER: NotificationType[] = [
@@ -94,6 +94,6 @@ export const CART_NOTIFICATION_ORDER: NotificationType[] = [
 
 export const POST_PAYMENT_NOTIFICATION_ORDER: NotificationType[] = [
   "payment_confirmed",
-  "shipped",
-  "delivered",
+  "payment_cancelled",
+  "payment_refunded",
 ]

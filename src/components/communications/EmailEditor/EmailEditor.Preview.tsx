@@ -11,16 +11,24 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import {
+  defaultPreviewBody,
+  defaultPreviewSubject,
+  PLATFORM_FROM_EMAIL,
+} from "@/lib/email-default-previews"
+import type { PostPaymentNotificationType } from "@/types/notification.types"
 
 interface EmailPreviewProps {
+  /** Email type — seleciona o template default quando o corpo está vazio. */
+  type: PostPaymentNotificationType
   /** Subject line as the merchant types it. */
   subject: string
   /** HTML body the merchant is editing. */
   bodyHTML: string
-  /** Store name — used as the "from" name and avatar initials. */
+  /** Store name — display name do remetente e iniciais do avatar. */
   storeName?: string
-  /** Store slug — used to synthesize a from address (e.g. minhaloja@livecart.app). */
-  storeSlug?: string
+  /** Logo da organização — substitui as iniciais no avatar quando existe. */
+  storeLogoUrl?: string
   /** Logged-in owner's email — what gets shown on the "to" line. */
   ownerEmail?: string
 }
@@ -41,20 +49,25 @@ function formatTimestamp(date: Date) {
 }
 
 export function EmailEditorPreview({
+  type,
   subject,
   bodyHTML,
   storeName,
-  storeSlug,
+  storeLogoUrl,
   ownerEmail,
 }: EmailPreviewProps) {
   const displayName = storeName?.trim() || "Sua loja"
   const initials = getInitials(displayName)
-  const fromAddress = storeSlug
-    ? `${storeSlug}@livecart.app`
-    : "no-reply@livecart.app"
+  // Remetente REAL: display name da loja + endereço da plataforma (o que o
+  // BE envia de verdade) — antes o preview inventava slug@livecart.app.
+  const fromAddress = PLATFORM_FROM_EMAIL
   const toAddress = ownerEmail || "voce@suaempresa.com"
-  const displaySubject = subject.trim() || "Pedido #1234 · Sua loja"
+  const displaySubject = subject.trim() || defaultPreviewSubject(type, displayName)
   const timestamp = formatTimestamp(new Date())
+  // Vazio = mostra o template padrão renderizado (o lojista precisa VER o
+  // e-mail que sai, não um aviso).
+  const isDefaultBody = !bodyHTML.trim()
+  const effectiveBody = isDefaultBody ? defaultPreviewBody(type) : bodyHTML
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
@@ -117,12 +130,22 @@ export function EmailEditorPreview({
           >
             {/* Email header */}
             <header className="flex items-start gap-3 border-b border-slate-200/80 px-6 pt-6 pb-5">
-              <div
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-[13px] font-semibold text-white shadow-sm ring-1 ring-black/5"
-              >
-                {initials}
-              </div>
+              {storeLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={storeLogoUrl}
+                  alt=""
+                  aria-hidden
+                  className="h-10 w-10 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-black/5"
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-[13px] font-semibold text-white shadow-sm ring-1 ring-black/5"
+                >
+                  {initials}
+                </div>
+              )}
 
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
@@ -150,16 +173,15 @@ export function EmailEditorPreview({
 
             {/* Body */}
             <div className="px-6 py-7 sm:px-8 sm:py-9">
-              {bodyHTML.trim() ? (
-                <div
-                  className="email-editor-content text-[15px] leading-[1.65] text-slate-900"
-                  dangerouslySetInnerHTML={{ __html: bodyHTML }}
-                />
-              ) : (
-                <p className="text-[14px] italic leading-relaxed text-slate-400">
-                  Vazio: usaremos o template padrão da LiveCart.
+              {isDefaultBody && (
+                <p className="mb-4 inline-block rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200">
+                  Template padrão da LiveCart — personalize no editor ao lado
                 </p>
               )}
+              <div
+                className="email-editor-content text-[15px] leading-[1.65] text-slate-900"
+                dangerouslySetInnerHTML={{ __html: effectiveBody }}
+              />
 
               {/* Signature divider */}
               <div className="mt-10 border-t border-dashed border-slate-200 pt-5 text-[12px] leading-relaxed text-slate-400">

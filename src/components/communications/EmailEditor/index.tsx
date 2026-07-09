@@ -134,10 +134,11 @@ function EmailEditor({ type }: EmailEditorProps) {
 
         <aside className="flex min-h-0 flex-col">
           <EmailEditorPreview
+            type={type}
             subject={subject}
             bodyHTML={bodyHTML}
             storeName={store?.name}
-            storeSlug={store?.slug}
+            storeLogoUrl={store?.logoUrl ?? undefined}
             ownerEmail={ownerEmail}
           />
         </aside>

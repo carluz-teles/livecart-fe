@@ -91,10 +91,10 @@ function pickCardSummary(
       return summaryFromTemplate(settings.checkout_reminder)
     case "payment_confirmed":
       return summaryFromEmail(settings.payment_confirmed)
-    case "shipped":
-      return summaryFromEmail(settings.shipped)
-    case "delivered":
-      return summaryFromEmail(settings.delivered)
+    case "payment_cancelled":
+      return summaryFromEmail(settings.payment_cancelled)
+    case "payment_refunded":
+      return summaryFromEmail(settings.payment_refunded)
   }
 }
 

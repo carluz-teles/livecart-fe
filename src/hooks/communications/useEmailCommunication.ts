@@ -40,7 +40,7 @@ interface UseEmailCommunicationResult {
 }
 
 // Hook for the post-payment email notification editor (payment_confirmed,
-// shipped, delivered). Mirrors useCommunication but the wire shape is
+// cancelled, refunded). Mirrors useCommunication but the wire shape is
 // EmailTemplateSettings instead of TemplateSettings.
 export function useEmailCommunication(
   type: PostPaymentNotificationType,
@@ -99,8 +99,12 @@ export function useEmailCommunication(
             type === "payment_confirmed"
               ? updated
               : current?.payment_confirmed ?? null,
-          shipped: type === "shipped" ? updated : current?.shipped ?? null,
-          delivered: type === "delivered" ? updated : current?.delivered ?? null,
+          shipped: current?.shipped ?? null,
+          delivered: current?.delivered ?? null,
+          payment_cancelled:
+            type === "payment_cancelled" ? updated : current?.payment_cancelled ?? null,
+          payment_refunded:
+            type === "payment_refunded" ? updated : current?.payment_refunded ?? null,
         },
         token,
       )

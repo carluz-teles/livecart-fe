@@ -34,6 +34,8 @@ export interface NotificationSettings {
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
+  payment_cancelled?: EmailTemplateSettings | null
+  payment_refunded?: EmailTemplateSettings | null
   cart_recovery?: CartRecoverySettings | null
 }
 
@@ -45,6 +47,8 @@ export interface UpdateNotificationSettingsPayload {
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
+  payment_cancelled?: EmailTemplateSettings | null
+  payment_refunded?: EmailTemplateSettings | null
   cart_recovery?: CartRecoverySettings | null
 }
 
@@ -80,8 +84,8 @@ export type CartNotificationType = (typeof CART_NOTIFICATION_TYPES)[number]
 // Post-payment notifications go through email. Subject + body_html shape.
 export const POST_PAYMENT_NOTIFICATION_TYPES = [
   "payment_confirmed",
-  "shipped",
-  "delivered",
+  "payment_cancelled",
+  "payment_refunded",
 ] as const
 export type PostPaymentNotificationType =
   (typeof POST_PAYMENT_NOTIFICATION_TYPES)[number]
