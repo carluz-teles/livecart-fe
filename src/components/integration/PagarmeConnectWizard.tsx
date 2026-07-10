@@ -9,23 +9,17 @@ import { cn } from "@/lib/utils"
 
 interface PagarmeConnectWizardProps {
   webhookUrl: string | undefined
-  webhookUser: string
-  webhookPass: string
 }
 
 const STORAGE_KEY = "pagarme-wizard-checked-v1"
-type Step = "url" | "events" | "auth"
+type Step = "url" | "events"
 
 // Numbered checklist that lives at the top of the connect dialog. The user
 // usually configures Pagar.me in a separate tab; persisting which step they
 // already crossed off (in localStorage, not React state) lets them tab back
 // and forth without losing context. Resets when the user disconnects and
 // reconnects — they get a new webhook secret anyway.
-export function PagarmeConnectWizard({
-  webhookUrl,
-  webhookUser,
-  webhookPass,
-}: PagarmeConnectWizardProps) {
+export function PagarmeConnectWizard({ webhookUrl }: PagarmeConnectWizardProps) {
   const [checked, setChecked] = useState<Record<Step, boolean>>(() => emptyChecked())
 
   useEffect(() => {
@@ -37,7 +31,6 @@ export function PagarmeConnectWizard({
       setChecked({
         url: !!parsed.url,
         events: !!parsed.events,
-        auth: !!parsed.auth,
       })
     } catch {
       // ignore — fall back to all unchecked
@@ -99,27 +92,13 @@ export function PagarmeConnectWizard({
           </div>
         </Step>
 
-        <Step
-          number={3}
-          checked={checked.auth}
-          onToggle={() => toggle("auth")}
-          title="(Opcional) Proteja com Basic Auth"
-          description="Use os mesmos valores nos campos abaixo e no painel da Pagar.me."
-        >
-          {(webhookUser || webhookPass) && (
-            <div className="grid grid-cols-2 gap-2">
-              <InlineCopy label="Usuário" value={webhookUser} placeholder="(vazio)" />
-              <InlineCopy label="Senha" value={webhookPass} placeholder="(vazio)" mask />
-            </div>
-          )}
-        </Step>
       </ol>
     </div>
   )
 }
 
 function emptyChecked(): Record<Step, boolean> {
-  return { url: false, events: false, auth: false }
+  return { url: false, events: false }
 }
 
 interface StepProps {
@@ -164,13 +143,12 @@ interface InlineCopyProps {
   value: string
   label?: string
   placeholder?: string
-  mask?: boolean
 }
 
-function InlineCopy({ value, label, placeholder, mask }: InlineCopyProps) {
+function InlineCopy({ value, label, placeholder }: InlineCopyProps) {
   const [copied, setCopied] = useState(false)
   const hasValue = !!value.trim()
-  const display = mask && hasValue ? "•".repeat(Math.min(value.length, 12)) : value
+  const display = value
 
   const onCopy = async () => {
     if (!hasValue) return

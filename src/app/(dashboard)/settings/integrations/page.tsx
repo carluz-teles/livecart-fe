@@ -1148,11 +1148,7 @@ function IntegrationsContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
-            <PagarmeConnectWizard
-              webhookUrl={pagarmeProviderURLs.data?.webhookUrl}
-              webhookUser={pagarmeWebhookUser}
-              webhookPass={pagarmeWebhookPass}
-            />
+            <PagarmeConnectWizard webhookUrl={pagarmeProviderURLs.data?.webhookUrl} />
 
             {pagarmeProviderURLs.isError && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
