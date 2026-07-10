@@ -193,7 +193,7 @@ function InlineCopy({ value, label, placeholder, mask }: InlineCopyProps) {
       <div className="flex items-center gap-1 rounded-md border bg-background px-2 py-1.5">
         <code
           className={cn(
-            "flex-1 truncate font-mono text-xs",
+            "min-w-0 flex-1 truncate font-mono text-xs",
             !hasValue && "text-muted-foreground italic",
           )}
         >

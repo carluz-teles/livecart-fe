@@ -942,7 +942,7 @@ function IntegrationsContent() {
           if (!open) closeApiKeyDialog()
         }}
       >
-        <DialogContent>
+        <DialogContent className="overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>
               {apiKeyDialog === "smartenvios" && smartEnviosRotating
@@ -1013,7 +1013,7 @@ function IntegrationsContent() {
 
       {/* Tiny OAuth Credentials Dialog */}
       <Dialog open={tinyDialog} onOpenChange={() => setTinyDialog(false)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Conectar Tiny ERP</DialogTitle>
             <DialogDescription>
@@ -1130,7 +1130,7 @@ function IntegrationsContent() {
           if (!open) closePagarmeDialog()
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Conectar Pagar.me</DialogTitle>
             <DialogDescription>
@@ -1250,7 +1250,7 @@ function IntegrationsContent() {
 
       {/* Integration Details Sheet */}
       <Sheet open={!!detailsSheet} onOpenChange={handleCloseDetails}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-[400px] overflow-y-auto overflow-x-hidden sm:w-[540px]">
           <SheetHeader>
             <div className="flex items-center gap-3">
               {detailsSheet && (
