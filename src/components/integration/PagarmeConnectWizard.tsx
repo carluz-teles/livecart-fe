@@ -140,7 +140,7 @@ function Step({ number, title, description, checked, onToggle, children }: StepP
         onCheckedChange={onToggle}
         className="mt-0.5"
       />
-      <div className="flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-1.5">
         <label
           htmlFor={`pagarme-step-${number}`}
           className={cn(
@@ -193,7 +193,7 @@ function InlineCopy({ value, label, placeholder, mask }: InlineCopyProps) {
       <div className="flex items-center gap-1 rounded-md border bg-background px-2 py-1.5">
         <code
           className={cn(
-            "min-w-0 flex-1 truncate font-mono text-xs",
+            "min-w-0 flex-1 break-all font-mono text-xs leading-relaxed",
             !hasValue && "text-muted-foreground italic",
           )}
         >
