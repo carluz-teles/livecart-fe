@@ -962,9 +962,8 @@ function IntegrationsContent() {
                 {apiKeyDialog === "smartenvios" ? "Token do embarcador" : "Chave de API"}{" "}
                 <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <SecretInput
                 id="api-key"
-                type="password"
                 placeholder={
                   apiKeyDialog === "smartenvios"
                     ? "Cole o token fornecido pela SmartEnvios"
