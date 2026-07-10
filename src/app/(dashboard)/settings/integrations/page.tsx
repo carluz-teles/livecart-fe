@@ -66,6 +66,7 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import { IntegrationCard } from "@/components/integration/IntegrationCard"
 import { CopyableURL } from "@/components/integration/CopyableURL"
+import { SecretInput } from "@/components/shared/SecretInput"
 import { PagarmeConnectWizard } from "@/components/integration/PagarmeConnectWizard"
 import { WhatsAppConnectDialog } from "@/components/integration/WhatsAppConnectDialog"
 import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProbe"
@@ -1095,9 +1096,8 @@ function IntegrationsContent() {
               <Label htmlFor="tiny-client-secret">
                 Client Secret <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <SecretInput
                 id="tiny-client-secret"
-                type="password"
                 placeholder="Insira o Client Secret"
                 value={tinyClientSecret}
                 onChange={(e) => setTinyClientSecret(e.target.value)}
