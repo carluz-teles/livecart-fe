@@ -706,7 +706,7 @@ function IntegrationsContent() {
         </div>
 
         <Tabs defaultValue="payment" className="w-full">
-          <TabsList className="mb-6 w-full justify-start border-b bg-transparent p-0">
+          <TabsList className="mb-6 h-auto w-full justify-start border-b bg-transparent p-0">
             {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
               const config = categoryConfig[type]
               const providersInCategory = getProvidersByType(type)
@@ -775,6 +775,14 @@ function IntegrationsContent() {
                                     status={connected.status === "active" ? "active" : "pending"}
                                   />
                                 )}
+                                {isConnected &&
+                                  connected.status === "active" &&
+                                  connected.webhookStatus === "pending" && (
+                                    <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Webhook pendente
+                                    </span>
+                                  )}
                                 {isPrimary && (
                                   <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
                                     <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
@@ -1331,15 +1339,21 @@ function IntegrationsContent() {
                         </div>
                       </div>
                     ) : providerCopy.showHealth ? (
-                      <div className="flex items-start gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                            Webhook não confirmado
+                      <div className="flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                            Webhook não configurado — os pedidos não vão sincronizar
                           </p>
-                          <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-                            {providerCopy.healthHint}
-                          </p>
+                          <ol className="list-decimal space-y-1 pl-4 text-xs text-red-800/90 dark:text-red-200/80">
+                            <li>Copie a <strong>URL de Webhook</strong> logo abaixo</li>
+                            <li>{providerCopy.healthHint}</li>
+                            <li>
+                              Cole a URL, clique em <strong>Salvar</strong> no painel do
+                              provedor e volte aqui — a confirmação aparece sozinha após o
+                              primeiro sinal
+                            </li>
+                          </ol>
                         </div>
                       </div>
                     ) : null}

@@ -309,7 +309,7 @@ const InsuranceField = forwardRef<HTMLInputElement, InsuranceFieldProps>(
           </div>
         </FormControl>
         <FormDescription>
-          Usado para seguro contra extravio. Se vazio, usamos o preço do produto.
+          Valor informado à transportadora para o seguro do FRETE (cobre extravio/dano). Impacta o preço da cotação: quanto maior o valor, mais caro o frete. Se vazio, usamos o preço do produto.
         </FormDescription>
         <FormMessage />
       </FormItem>

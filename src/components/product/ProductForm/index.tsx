@@ -788,22 +788,45 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
       <FormField
         control={form.control}
         name="imageUrl"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>URL da Imagem</FormLabel>
-            <FormControl>
-              <Input
-                type="url"
-                placeholder="https://exemplo.com/imagem.jpg"
-                {...field}
-              />
-            </FormControl>
-            <FormDescription>
-              Link direto para a imagem do produto
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          // Produto importado do ERP: a imagem vem de lá — mostra a imagem em
+          // si, sem campo de URL editável
+          const isImported = form.watch("externalSource") !== "manual"
+          if (isImported) {
+            return (
+              <FormItem>
+                <FormLabel>Imagem do produto</FormLabel>
+                {field.value ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={field.value}
+                    alt="Imagem do produto importado"
+                    className="h-28 w-28 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    O produto importado não tem imagem cadastrada no ERP.
+                  </p>
+                )}
+                <FormDescription>Importada do ERP — gerencie a imagem por lá.</FormDescription>
+              </FormItem>
+            )
+          }
+          return (
+            <FormItem>
+              <FormLabel>URL da Imagem</FormLabel>
+              <FormControl>
+                <Input
+                  type="url"
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>Link direto para a imagem do produto</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )
+        }}
       />
 
       <ProductFormShippingFields form={form} />
