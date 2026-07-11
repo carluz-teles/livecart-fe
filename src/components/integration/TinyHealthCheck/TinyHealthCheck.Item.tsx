@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, ArrowUpRight } from "lucide-react"
+import { CheckCircle2, AlertCircle, ArrowUpRight, HelpCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { ERPHealthCheckItem } from "@/types"
@@ -9,9 +9,12 @@ interface TinyHealthCheckItemProps {
 
 // Single-row audit result. Green when matched, amber when missing —
 // amber instead of red because "missing" is a cadastro-the-merchant-can-fix
-// situation, not a hard failure of the integration.
+// situation, not a hard failure of the integration. "unknown" (lookup do
+// Tiny falhou na auditoria — 429/timeout) fica NEUTRO: não é pendência,
+// é "não conseguimos verificar agora".
 export function TinyHealthCheckItem({ item }: TinyHealthCheckItemProps) {
   const isOk = item.status === "ok"
+  const isUnknown = item.status === "unknown"
 
   return (
     <div
@@ -19,7 +22,9 @@ export function TinyHealthCheckItem({ item }: TinyHealthCheckItemProps) {
         "flex items-start gap-3 rounded-lg border p-3 transition-colors",
         isOk
           ? "border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/10"
-          : "border-amber-200/70 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/10"
+          : isUnknown
+            ? "border-border bg-muted/30"
+            : "border-amber-200/70 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/10"
       )}
     >
       <div
@@ -27,11 +32,15 @@ export function TinyHealthCheckItem({ item }: TinyHealthCheckItemProps) {
           "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full",
           isOk
             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+            : isUnknown
+              ? "bg-muted text-muted-foreground"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
         )}
       >
         {isOk ? (
           <CheckCircle2 className="h-3.5 w-3.5" />
+        ) : isUnknown ? (
+          <HelpCircle className="h-3.5 w-3.5" />
         ) : (
           <AlertCircle className="h-3.5 w-3.5" />
         )}
@@ -49,7 +58,14 @@ export function TinyHealthCheckItem({ item }: TinyHealthCheckItemProps) {
 
         <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
 
-        {!isOk && (
+        {isUnknown && (
+          <p className="pt-0.5 text-xs text-muted-foreground">
+            Não foi possível verificar agora (instabilidade no Tiny). Clique em
+            atualizar para tentar de novo.
+          </p>
+        )}
+
+        {!isOk && !isUnknown && (
           <div className="flex items-center gap-1 pt-0.5 text-xs">
             <ArrowUpRight className="h-3 w-3 text-amber-600 dark:text-amber-400" />
             <span className="text-amber-700 dark:text-amber-400">

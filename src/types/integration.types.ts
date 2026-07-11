@@ -78,7 +78,7 @@ export type ERPHealthCheckCategory =
   | "forma_recebimento"
   | "forma_envio"
 
-export type ERPHealthCheckStatus = "ok" | "missing"
+export type ERPHealthCheckStatus = "ok" | "missing" | "unknown"
 
 export interface ERPHealthCheckItem {
   category: ERPHealthCheckCategory
