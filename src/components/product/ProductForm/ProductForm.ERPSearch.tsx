@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Search, Package, AlertCircle, Layers } from "lucide-react"
+import { Search, Package, AlertCircle, Layers, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,8 @@ export function ProductFormERPSearch({
     p.isParent === true && (p.variants?.length ?? 0) > 0
 
   function handleSelect(product: ERPProduct) {
+    // Produto já no catálogo: não permite selecionar/reimportar.
+    if (product.alreadyImported) return
     if (isVariantParent(product)) {
       // Parents skip the form pre-fill flow — they need a separate picker
       // to choose which variants to bring in.
@@ -95,12 +97,20 @@ export function ProductFormERPSearch({
             <ul className="max-h-[320px] overflow-y-auto divide-y">
               {products.map((product) => {
                 const parent = isVariantParent(product)
+                const imported = product.alreadyImported === true
                 return (
                   <li key={product.id}>
                     <button
                       type="button"
                       onClick={() => handleSelect(product)}
-                      className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent ${
+                      disabled={imported}
+                      aria-disabled={imported}
+                      title={imported ? "Produto já cadastrado no catálogo" : undefined}
+                      className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${
+                        imported
+                          ? "cursor-not-allowed opacity-60"
+                          : "hover:bg-accent"
+                      } ${
                         selectedId === product.id && !parent
                           ? "bg-accent ring-1 ring-inset ring-primary"
                           : ""
@@ -124,7 +134,16 @@ export function ProductFormERPSearch({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-medium">{product.name}</p>
-                          {parent && (
+                          {imported && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-400"
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              Já cadastrado
+                            </Badge>
+                          )}
+                          {parent && !imported && (
                             <Badge variant="secondary" className="h-5 shrink-0 gap-1 text-[10px]">
                               <Layers className="h-3 w-3" />
                               {product.variants?.length} variantes

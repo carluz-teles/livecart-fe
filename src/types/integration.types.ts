@@ -148,6 +148,9 @@ export interface ERPProduct {
   isParent?: boolean
   variants?: ERPVariant[]
   shipping?: ERPShippingProfile
+  // True when a product with this external ID is already in the catalog —
+  // the search flags it and blocks re-importing.
+  alreadyImported?: boolean
 }
 
 export interface ERPProductSearchResponse {
