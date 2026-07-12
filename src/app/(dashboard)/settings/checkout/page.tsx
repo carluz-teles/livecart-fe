@@ -37,6 +37,7 @@ export default function CheckoutSettingsPage() {
   const enabled = watch("enabled")
   const allowEdit = watch("allowEdit")
   const reserveStock = watch("reserveStock")
+  const allowStorePickup = watch("allowStorePickup")
 
   if (isLoading) {
     return (
@@ -156,6 +157,24 @@ export default function CheckoutSettingsPage() {
               checked={reserveStock}
               onCheckedChange={(checked) =>
                 setValue("reserveStock", checked, { shouldDirty: true })
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowStorePickup">Permitir retirada na loja</Label>
+              <p className="text-sm text-muted-foreground">
+                Oferece &ldquo;Retirar na loja&rdquo; (grátis) no checkout, com o
+                endereço da loja. Também serve de alternativa quando não há
+                integração de frete configurada.
+              </p>
+            </div>
+            <Switch
+              id="allowStorePickup"
+              checked={allowStorePickup}
+              onCheckedChange={(checked) =>
+                setValue("allowStorePickup", checked, { shouldDirty: true })
               }
             />
           </div>

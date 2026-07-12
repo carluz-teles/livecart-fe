@@ -34,6 +34,7 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
       allowEdit: true,
       expirationMinutes: 30,
       reserveStock: true,
+      allowStorePickup: false,
       maxQuantityPerItem: 5,
     },
   })
@@ -53,6 +54,7 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
           setValue("allowEdit", cs.allowEdit ?? true)
           setValue("expirationMinutes", cs.expirationMinutes)
           setValue("reserveStock", cs.reserveStock)
+          setValue("allowStorePickup", cs.allowStorePickup ?? false)
           setValue("maxQuantityPerItem", cs.maxQuantityPerItem)
         }
       } catch (error) {
@@ -84,6 +86,7 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
         enabled: data.enabled,
         expirationMinutes: data.expirationMinutes,
         reserveStock: data.reserveStock,
+        allowStorePickup: data.allowStorePickup,
         maxQuantityPerItem: data.maxQuantityPerItem,
         allowEdit: data.allowEdit,
         checkoutSendMethods: cs.checkoutSendMethods ?? ["public_link", "manual"],

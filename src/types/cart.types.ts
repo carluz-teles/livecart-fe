@@ -485,10 +485,25 @@ export interface ShippingOption {
   error?: string
 }
 
+export interface PickupAddress {
+  street?: string
+  number?: string
+  complement?: string
+  district?: string
+  city?: string
+  state?: string
+  zip?: string
+}
+
 export interface ShippingQuoteResponse {
   quotedAt: string
   freeShipping: boolean
   options: ShippingOption[]
+  // Endereço da loja, presente quando há a opção "Retirar na loja".
+  pickupAddress?: PickupAddress | null
+  // true quando não há entrega nem retirada: o checkout deixa finalizar sem
+  // frete ("a combinar") em vez de mostrar erro.
+  noShippingAvailable?: boolean
 }
 
 export interface SelectShippingMethodRequest {

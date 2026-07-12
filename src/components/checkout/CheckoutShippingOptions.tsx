@@ -313,9 +313,12 @@ function ShippingOptionsRow({
   badgeLabel,
 }: ShippingOptionsRowProps) {
   const unavailable = !option.available
+  const isPickup = option.provider === "pickup"
   const chargedCents = option.priceCents
   const realCents = option.realPriceCents
-  const logoSrc = resolveCarrierLogo(option.carrier, option.carrierLogoUrl)
+  const logoSrc = isPickup
+    ? null
+    : resolveCarrierLogo(option.carrier, option.carrierLogoUrl)
 
   return (
     <button
@@ -354,11 +357,17 @@ function ShippingOptionsRow({
           <span className="text-sm font-semibold text-gray-900">
             {option.service}
           </span>
-          <span className="text-xs text-gray-500">· {option.carrier}</span>
+          {!isPickup && (
+            <span className="text-xs text-gray-500">· {option.carrier}</span>
+          )}
         </div>
         {unavailable ? (
           <p className="mt-0.5 text-xs text-red-500">
             {option.error || "Indisponível"}
+          </p>
+        ) : isPickup ? (
+          <p className="mt-0.5 text-xs text-gray-500">
+            Retire no endereço da loja
           </p>
         ) : (
           <p className="mt-0.5 text-xs text-gray-500">

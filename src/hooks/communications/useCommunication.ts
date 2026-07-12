@@ -114,6 +114,7 @@ export function useCommunication(type: CartNotificationType): UseCommunicationRe
           enabled: cart.enabled,
           expirationMinutes: cart.expirationMinutes,
           reserveStock: cart.reserveStock,
+          allowStorePickup: cart.allowStorePickup ?? false,
           maxQuantityPerItem: cart.maxQuantityPerItem,
           allowEdit: cart.allowEdit,
           checkoutSendMethods: cart.checkoutSendMethods,

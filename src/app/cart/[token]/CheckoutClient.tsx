@@ -90,6 +90,7 @@ import type {
   ProcessCardPaymentResponse,
   CheckoutCustomerInfo,
   ShippingOption,
+  PickupAddress,
   PublicCheckoutSummary,
 } from "@/types"
 import type { ApiError } from "@/types/api.types"
@@ -99,6 +100,16 @@ function formatCurrency(cents: number): string {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100)
+}
+
+function formatPickupAddress(addr: PickupAddress): string {
+  const line1 = [addr.street, addr.number].filter(Boolean).join(", ")
+  const withComplement = [line1, addr.complement].filter(Boolean).join(" - ")
+  const cityState = [addr.district, addr.city && addr.state ? `${addr.city}/${addr.state}` : addr.city || addr.state]
+    .filter(Boolean)
+    .join(", ")
+  const zip = addr.zip ? `CEP ${addr.zip}` : ""
+  return [withComplement, cityState, zip].filter(Boolean).join(" — ")
 }
 
 function FailedScreen({ onRetry }: { onRetry: () => void }) {
@@ -197,6 +208,11 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const [quotedZip, setQuotedZip] = useState<string | null>(null)
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null)
   const [shippingSummary, setShippingSummary] = useState<PublicCheckoutSummary | null>(null)
+  // "Retirar na loja": endereço da loja mostrado junto das opções de frete.
+  const [pickupAddress, setPickupAddress] = useState<PickupAddress | null>(null)
+  // Sem entrega nem retirada: o cliente finaliza sem frete ("a combinar"),
+  // nunca vê o erro cru de cotação.
+  const [noShippingAvailable, setNoShippingAvailable] = useState(false)
   // Locked while ViaCEP (or returning-buyer prefill) holds a known city/state
   // for this CEP. Street and neighborhood stay editable so single-CEP cities
   // (where ViaCEP returns empty logradouro/bairro) still work.
@@ -220,7 +236,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     customerPhone,
   })
   const addressComplete = isShippingAddressComplete(shippingAddress)
-  const shippingComplete = selectedShippingId !== null
+  // "A combinar" (sem entrega nem retirada) libera o pagamento sem seleção —
+  // o frete é acertado com a loja após o pagamento.
+  const shippingComplete = selectedShippingId !== null || noShippingAvailable
   const canProceedToPayment = customerInfoComplete && addressComplete && shippingComplete
 
   const customerPayload = useMemo<CheckoutCustomerInfo | null>(() => {
@@ -311,6 +329,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         const quote = await shippingQuote.mutateAsync({ token, zipCode: cleaned })
         setShippingOptions(quote.options)
         setShippingFreeByEvent(quote.freeShipping)
+        setPickupAddress(quote.pickupAddress ?? null)
+        setNoShippingAvailable(quote.noShippingAvailable ?? false)
         setQuotedZip(cleaned)
         setShippingQuoteError(null)
         setShippingReselectNotice(null)
@@ -323,6 +343,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               "Não foi possível cotar o frete. Tente novamente."
         setShippingOptions([])
         setShippingFreeByEvent(false)
+        setPickupAddress(null)
+        setNoShippingAvailable(false)
         setQuotedZip(cleaned)
         setShippingQuoteError(message)
       }
@@ -366,6 +388,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       setSelectedShippingId(null)
       setShippingSummary(null)
       setShippingReselectNotice(null)
+      setNoShippingAvailable(false)
+      setPickupAddress(null)
     }
 
     if (cleaned.length === 8) {
@@ -1127,6 +1151,23 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                         </p>
                       </div>
                     </div>
+                  ) : noShippingAvailable ? (
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                          <Truck className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-900">
+                            Frete a combinar
+                          </p>
+                          <p className="text-sm text-blue-800/80">
+                            Você pode finalizar o pedido normalmente. A loja vai
+                            combinar o envio com você após o pagamento.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       {isFreeShipping && (
@@ -1160,6 +1201,16 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                         freeShipping={isFreeShipping}
                         formatCurrency={formatCurrency}
                       />
+                      {pickupAddress && selectedShippingId === "pickup" && (
+                        <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3">
+                          <p className="text-sm font-medium text-gray-900">
+                            Endereço para retirada
+                          </p>
+                          <p className="mt-1 text-sm text-gray-600">
+                            {formatPickupAddress(pickupAddress)}
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
                 </CheckoutSection>

@@ -6,6 +6,7 @@ export interface CartSettings {
   enabled: boolean
   expirationMinutes: number
   reserveStock: boolean
+  allowStorePickup: boolean
   maxQuantityPerItem: number
   allowEdit: boolean
   checkoutSendMethods: CheckoutSendMethod[]
@@ -20,6 +21,7 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   enabled: true,
   expirationMinutes: 30,
   reserveStock: true,
+  allowStorePickup: false,
   maxQuantityPerItem: 5,
   allowEdit: true,
   checkoutSendMethods: ['public_link', 'manual'],
@@ -99,6 +101,7 @@ export interface UpdateCartSettingsPayload {
   enabled: boolean
   expirationMinutes: number
   reserveStock: boolean
+  allowStorePickup: boolean
   maxQuantityPerItem: number
   allowEdit: boolean
   checkoutSendMethods: CheckoutSendMethod[]
