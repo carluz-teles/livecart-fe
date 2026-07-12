@@ -5,6 +5,9 @@ export interface ApiResponse<T> {
 export interface ApiError {
   status: number
   error?: string
+  // Stable machine code accompanying an error (e.g. "payment_not_configured"),
+  // set by the backend so the UI can branch without matching the message.
+  reason?: string
   message?: string
   fields?: Record<string, string>
 }

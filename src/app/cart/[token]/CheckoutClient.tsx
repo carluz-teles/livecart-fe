@@ -314,6 +314,13 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   }, [checkoutConfig?.availableMethods])
   const methodsCount = availableMethods.length
 
+  // Loja sem gateway de pagamento (ou nenhum respondendo): não é erro do
+  // cliente. Mostramos um aviso amigável em vez do erro cru.
+  const configApiError = configError as unknown as ApiError | null
+  const paymentNotConfigured =
+    configApiError?.reason === "payment_not_configured" ||
+    configApiError?.reason === "payment_unavailable"
+
   useEffect(() => {
     if (!availableMethods.includes(selectedMethod)) {
       setSelectedMethod(
@@ -1242,13 +1249,31 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                       <span className="text-sm text-gray-500">Carregando opções de pagamento...</span>
                     </div>
                   </div>
+                ) : paymentNotConfigured ? (
+                  <div className="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                        <CreditCard className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-amber-900">
+                          Pagamento indisponível no momento
+                        </p>
+                        <p className="text-sm text-amber-800/80">
+                          A loja ainda não finalizou a configuração dos
+                          pagamentos. Entre em contato com o vendedor para
+                          concluir a compra.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 ) : configError ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
                       <AlertCircle className="h-6 w-6 text-red-500" />
                     </div>
                     <p className="mt-4 text-sm text-red-600">
-                      {(configError as Error)?.message || "Erro ao carregar pagamento"}
+                      {configApiError?.error || "Erro ao carregar pagamento"}
                     </p>
                     <Button variant="outline" className="mt-4" onClick={() => refetchConfig()}>
                       Tentar novamente
