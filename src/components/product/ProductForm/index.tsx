@@ -308,8 +308,10 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         </SheetTrigger>
       )}
       {/* Largura FIXA (a maior, do modo variações): alternar Simples ↔ Com
-          variações não fica mais redimensionando o sheet */}
-      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+          variações não fica mais redimensionando o sheet. Layout em coluna
+          flex sem padding — cada etapa monta cabeçalho fixo + corpo rolável +
+          rodapé fixo, garantindo que o botão de salvar fique sempre acessível. */}
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-3xl">
         {isEditing ? (
           <EditView
             form={form}
@@ -382,14 +384,14 @@ function OriginStep({
 
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-left">
         <SheetTitle>Novo Produto</SheetTitle>
         <SheetDescription>
           Selecione a origem do produto para começar.
         </SheetDescription>
       </SheetHeader>
 
-      <div className="mt-6 space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
         <div className="space-y-2">
           <label className="text-sm font-medium">
             Origem <span className="text-destructive">*</span>
@@ -421,12 +423,12 @@ function OriginStep({
             />
           </>
         )}
+      </div>
 
-        <div className="flex justify-end pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-        </div>
+      <div className="flex shrink-0 items-center justify-end border-t px-6 py-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
       </div>
     </>
   )
@@ -464,7 +466,7 @@ function ManualFormStep({
 }: ManualFormStepProps) {
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-left">
         <SheetTitle>Novo Produto</SheetTitle>
         <SheetDescription>
           {productType === "simple"
@@ -473,7 +475,7 @@ function ManualFormStep({
         </SheetDescription>
       </SheetHeader>
 
-      <div className="mt-6 space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
         {showERPHint && (
           <div className="flex items-start gap-2.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs">
             <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
@@ -621,14 +623,14 @@ function FormStep({ form, selectedSource, isPending, onSubmit, onBack, onCancel 
 
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="shrink-0 border-b px-6 py-4 text-left">
         <div className="flex items-center gap-2">
           {onBack && (
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
-          <div>
+          <div className="space-y-1">
             <SheetTitle>Novo Produto</SheetTitle>
             <SheetDescription>
               {isFromERP
@@ -640,10 +642,12 @@ function FormStep({ form, selectedSource, isPending, onSubmit, onBack, onCancel 
       </SheetHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
-          <ProductFormFields form={form} />
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
+            <ProductFormFields form={form} readOnlyFromERP={isFromERP} />
+          </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
               Cancelar
             </Button>
@@ -670,39 +674,43 @@ interface EditViewProps {
 }
 
 function EditView({ form, isPending, onSubmit, onCancel }: EditViewProps) {
+  const isFromERP = ERP_SOURCES.includes(form.watch("externalSource") as ProductSource)
+
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-left">
         <SheetTitle>Editar Produto</SheetTitle>
         <SheetDescription>Atualize os dados do produto.</SheetDescription>
       </SheetHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
-          <ProductFormFields form={form} />
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
+            <ProductFormFields form={form} readOnlyFromERP={isFromERP} />
 
-          <FormField
-            control={form.control}
-            name="active"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Produto ativo</FormLabel>
-                  <FormDescription>
-                    Produtos inativos não aparecem para compra
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Produto ativo</FormLabel>
+                    <FormDescription>
+                      Produtos inativos não aparecem para compra
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
               Cancelar
             </Button>
@@ -723,9 +731,12 @@ function EditView({ form, isPending, onSubmit, onCancel }: EditViewProps) {
 
 interface ProductFormFieldsProps {
   form: ReturnType<typeof useForm<CreateProductFormData | UpdateProductFormData>>
+  // Produto importado do ERP: preço e estoque são somente-leitura (a fonte da
+  // verdade é o ERP) e a imagem é gerenciada por lá.
+  readOnlyFromERP?: boolean
 }
 
-function ProductFormFields({ form }: ProductFormFieldsProps) {
+function ProductFormFields({ form, readOnlyFromERP = false }: ProductFormFieldsProps) {
   return (
     <>
       <FormField
@@ -755,6 +766,7 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
+              readOnly={readOnlyFromERP}
             />
           )}
         />
@@ -765,7 +777,7 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Estoque <span className="text-destructive">*</span>
+                Estoque {!readOnlyFromERP && <span className="text-destructive">*</span>}
               </FormLabel>
               <FormControl>
                 <Input
@@ -777,9 +789,17 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
                   onBlur={field.onBlur}
                   name={field.name}
                   ref={field.ref}
+                  readOnly={readOnlyFromERP}
+                  tabIndex={readOnlyFromERP ? -1 : undefined}
+                  aria-readonly={readOnlyFromERP}
+                  className={cn(readOnlyFromERP && "cursor-not-allowed bg-muted/50 text-muted-foreground")}
                 />
               </FormControl>
-              <FormMessage />
+              {readOnlyFromERP ? (
+                <FormDescription>Sincronizado do ERP</FormDescription>
+              ) : (
+                <FormMessage />
+              )}
             </FormItem>
           )}
         />
@@ -789,24 +809,28 @@ function ProductFormFields({ form }: ProductFormFieldsProps) {
         control={form.control}
         name="imageUrl"
         render={({ field }) => {
-          // Produto importado do ERP: a imagem vem de lá — mostra a imagem em
-          // si, sem campo de URL editável
-          const isImported = form.watch("externalSource") !== "manual"
-          if (isImported) {
+          if (readOnlyFromERP) {
             return (
               <FormItem>
                 <FormLabel>Imagem do produto</FormLabel>
                 {field.value ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={field.value}
-                    alt="Imagem do produto importado"
-                    className="h-28 w-28 rounded-lg border object-cover"
-                  />
+                  <div className="flex aspect-[4/3] w-full max-w-sm items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                    {/* <img> puro (não next/image): URL externa do ERP, sem
+                        remotePatterns configurados. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={field.value}
+                      alt="Imagem do produto importado"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    O produto importado não tem imagem cadastrada no ERP.
-                  </p>
+                  <div className="flex aspect-[4/3] w-full max-w-sm items-center justify-center rounded-lg border border-dashed bg-muted/40">
+                    <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                      <Package className="h-6 w-6" aria-hidden="true" />
+                      <span className="text-xs">Sem imagem no ERP</span>
+                    </div>
+                  </div>
                 )}
                 <FormDescription>Importada do ERP — gerencie a imagem por lá.</FormDescription>
               </FormItem>
@@ -843,10 +867,11 @@ interface CurrencyInputProps {
   onChange: (cents: number) => void
   onBlur: () => void
   name: string
+  readOnly?: boolean
 }
 
 const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
-  function CurrencyInput({ value, onChange, onBlur, name }, ref) {
+  function CurrencyInput({ value, onChange, onBlur, name, readOnly = false }, ref) {
     const [displayValue, setDisplayValue] = useState(() =>
       value > 0 ? (value / 100).toFixed(2).replace(".", ",") : ""
     )
@@ -896,7 +921,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
     return (
       <FormItem>
         <FormLabel>
-          Preço <span className="text-destructive">*</span>
+          Preço {!readOnly && <span className="text-destructive">*</span>}
         </FormLabel>
         <FormControl>
           <div className="relative">
@@ -907,16 +932,23 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
               type="text"
               inputMode="decimal"
               placeholder="0,00"
-              className="pl-10"
+              className={cn("pl-10", readOnly && "cursor-not-allowed bg-muted/50 text-muted-foreground")}
               value={displayValue}
               onChange={handleChange}
               onBlur={handleBlur}
               name={name}
               ref={ref}
+              readOnly={readOnly}
+              tabIndex={readOnly ? -1 : undefined}
+              aria-readonly={readOnly}
             />
           </div>
         </FormControl>
-        <FormMessage />
+        {readOnly ? (
+          <FormDescription>Sincronizado do ERP</FormDescription>
+        ) : (
+          <FormMessage />
+        )}
       </FormItem>
     )
   }
