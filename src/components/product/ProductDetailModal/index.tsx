@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import {
   Package,
@@ -13,6 +14,7 @@ import {
   Scale,
   Ruler,
   Shield,
+  Expand,
 } from "lucide-react"
 
 import {
@@ -25,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ImageLightbox } from "@/components/shared/ImageLightbox"
 import {
   formatCurrency,
   formatDateTime,
@@ -79,22 +82,37 @@ export function ProductDetailModal({
   isSyncing = false,
   canSync = false,
 }: ProductDetailModalProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
   if (!product) return null
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl overflow-hidden p-0">
         <div className="relative">
           {/* Product Image */}
           <div className="relative h-64 w-full bg-muted">
             {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 672px) 100vw, 672px"
-              />
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                aria-label="Ampliar imagem"
+                className="group absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              >
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 672px) 100vw, 672px"
+                />
+                {/* Dica de ampliar — aparece no hover */}
+                <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Expand className="h-3.5 w-3.5" />
+                  Ampliar
+                </span>
+              </button>
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <Avatar className="h-24 w-24 rounded-xl">
@@ -237,6 +255,16 @@ export function ProductDetailModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {product.imageUrl && (
+      <ImageLightbox
+        src={product.imageUrl}
+        alt={product.name}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
+    )}
+    </>
   )
 }
 
