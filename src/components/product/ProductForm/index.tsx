@@ -145,28 +145,38 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
     }
   }, [open, isEditing, form])
 
-  // Auto-progress past the origin step when "manual" is the default. Radix's
-  // Select doesn't fire onValueChange when the user re-picks the value that's
-  // already selected, so without this the form fields never appear for the
-  // most common path. We auto-skip only once per sheet-open so users with ERP
-  // integrations can use the "Trocar origem" action in ManualFormStep to go
-  // back without immediately bouncing to form again.
-  const autoSkippedRef = useRef(false)
+  // Default de origem inteligente, resolvido uma vez por abertura assim que as
+  // integrações carregam:
+  //  • loja COM ERP ativo → começa já na importação do ERP (esses clientes
+  //    quase nunca cadastram produto na mão), com a busca de produtos aberta;
+  //  • loja SEM ERP → vai direto pro formulário manual (Radix Select não
+  //    dispara onValueChange ao re-selecionar "manual", então sem isso os
+  //    campos nunca apareceriam no caminho mais comum).
+  // Aplicado só uma vez por abertura para não sobrescrever a escolha do
+  // usuário depois (ele pode trocar via "Trocar origem" / seletor de origem).
+  const defaultAppliedRef = useRef(false)
   useEffect(() => {
     if (!open) {
-      autoSkippedRef.current = false
+      defaultAppliedRef.current = false
       return
     }
-    if (
-      !isEditing &&
-      step === "origin" &&
-      selectedSource === "manual" &&
-      !autoSkippedRef.current
-    ) {
-      autoSkippedRef.current = true
+    if (isEditing || defaultAppliedRef.current) return
+    if (integrationsData === undefined) return // ainda carregando
+
+    defaultAppliedRef.current = true
+    const firstERP = activeERPIntegrations[0]
+    if (firstERP) {
+      const provider = firstERP.provider as ProductSource
+      setSelectedSource(provider)
+      setSelectedIntegration(firstERP)
+      form.setValue("externalSource", provider)
+      setStep("origin")
+    } else {
+      setSelectedSource("manual")
+      form.setValue("externalSource", "manual")
       setStep("form")
     }
-  }, [open, isEditing, step, selectedSource])
+  }, [open, isEditing, integrationsData, activeERPIntegrations, form])
 
   const isPending = createProduct.isPending || updateProduct.isPending
 
