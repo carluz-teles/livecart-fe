@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {
@@ -23,6 +24,13 @@ interface PagarmeWebhookProbeProps {
   integrationId: string
 }
 
+interface PagarmeWebhookRealTestProps {
+  integrationId: string
+  // When true (sheet opened right after connecting), fire the test once on
+  // mount so the merchant gets an immediate verdict without clicking.
+  autoRun?: boolean
+}
+
 // Three complementary checks, most-conclusive first:
 //
 //   1. Real end-to-end test (creates a throwaway order so Pagar.me fires a REAL
@@ -32,10 +40,13 @@ interface PagarmeWebhookProbeProps {
 //      that real events have been landing. Only meaningful after a delivery.
 //   3. Loopback self-test (POSTs to our own URL) — quick check that just our
 //      side is up. Secondary, since it doesn't exercise the Pagar.me config.
-export function PagarmeWebhookProbe({ integrationId }: PagarmeWebhookProbeProps) {
+export function PagarmeWebhookProbe({
+  integrationId,
+  autoRunLiveTest,
+}: PagarmeWebhookProbeProps & { autoRunLiveTest?: boolean }) {
   return (
     <div className="space-y-3">
-      <PagarmeWebhookRealTest integrationId={integrationId} />
+      <PagarmeWebhookRealTest integrationId={integrationId} autoRun={autoRunLiveTest} />
       <PagarmeWebhookHistory integrationId={integrationId} />
       <PagarmeWebhookLoopbackTest integrationId={integrationId} />
     </div>
@@ -44,9 +55,19 @@ export function PagarmeWebhookProbe({ integrationId }: PagarmeWebhookProbeProps)
 
 // The real one: triggers an actual Pagar.me webhook via a throwaway order and
 // confirms it reached us. This is what proves the merchant wired it correctly.
-function PagarmeWebhookRealTest({ integrationId }: PagarmeWebhookProbeProps) {
+function PagarmeWebhookRealTest({ integrationId, autoRun }: PagarmeWebhookRealTestProps) {
   const { mutate, data, isPending, isError, reset } =
     useRunPagarmeWebhookLiveTest(integrationId)
+
+  // Fire once on mount when opened right after connecting. The ref guards
+  // against React StrictMode's double-invoke and re-renders.
+  const autoRanRef = useRef(false)
+  useEffect(() => {
+    if (autoRun && !autoRanRef.current) {
+      autoRanRef.current = true
+      mutate()
+    }
+  }, [autoRun, mutate])
 
   return (
     <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
@@ -55,10 +76,8 @@ function PagarmeWebhookRealTest({ integrationId }: PagarmeWebhookProbeProps) {
         <div className="flex-1">
           <p className="text-sm font-medium">Testar webhook de verdade</p>
           <p className="text-xs text-muted-foreground">
-            Criamos um pedido de teste (R$ 1, cancelado na hora) só para a
-            Pagar.me disparar um webhook real no seu endpoint — e confirmamos que
-            chegou. Valida a configuração de ponta a ponta, sem precisar de uma
-            venda.
+            Dispara um webhook real (com um pedido de teste de R$ 1, cancelado na
+            hora) e confirma que chegou. Sem precisar de uma venda.
           </p>
         </div>
         <Button

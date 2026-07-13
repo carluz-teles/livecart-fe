@@ -348,6 +348,10 @@ function IntegrationsContent() {
   const [detailsSheet, setDetailsSheet] = useState<{
     integration: Integration
     provider: ProviderConfig
+    // Set when the sheet is opened right after connecting, so the Pagar.me
+    // probe runs the real webhook test automatically instead of waiting for a
+    // manual click.
+    autoTestWebhook?: boolean
   } | null>(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [detailsData, setDetailsData] = useState<{
@@ -515,7 +519,7 @@ function IntegrationsContent() {
             (p) => p.id === "pagarme"
           )
           if (integration && pagarmeProvider) {
-            handleOpenDetails(integration, pagarmeProvider)
+            handleOpenDetails(integration, pagarmeProvider, true)
           }
         },
         onError: (err) => {
@@ -654,8 +658,12 @@ function IntegrationsContent() {
     })
   }
 
-  const handleOpenDetails = (integration: Integration, provider: ProviderConfig) => {
-    setDetailsSheet({ integration, provider })
+  const handleOpenDetails = (
+    integration: Integration,
+    provider: ProviderConfig,
+    autoTestWebhook = false
+  ) => {
+    setDetailsSheet({ integration, provider, autoTestWebhook })
     setDetailsLoading(true)
     setDetailsData(null)
 
@@ -1254,7 +1262,7 @@ function IntegrationsContent() {
 
       {/* Integration Details Sheet */}
       <Sheet open={!!detailsSheet} onOpenChange={handleCloseDetails}>
-        <SheetContent className="w-[400px] overflow-y-auto overflow-x-hidden sm:w-[540px]">
+        <SheetContent className="w-full overflow-y-auto overflow-x-hidden sm:w-[640px] sm:max-w-[92vw] lg:w-[760px]">
           <SheetHeader>
             <div className="flex items-center gap-3">
               {detailsSheet && (
@@ -1327,8 +1335,12 @@ function IntegrationsContent() {
                     {/* Webhook health — only meaningful when the provider
                         actually pings us back (Tiny). For providers that
                         don't ping on save we hide the badge so the section
-                        doesn't read "não confirmado" forever. */}
-                    {providerCopy.showHealth && isActive ? (
+                        doesn't read "não confirmado" forever. Pagar.me is
+                        skipped entirely: its dedicated probe below is the single
+                        source of truth (real test + delivery history), so this
+                        generic block would only duplicate and contradict it. */}
+                    {detailsSheet.provider.id === "pagarme" ? null : providerCopy.showHealth &&
+                      isActive ? (
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
                           <Webhook className="h-3 w-3 text-emerald-600" />
@@ -1362,9 +1374,9 @@ function IntegrationsContent() {
                       </div>
                     ) : null}
 
-                    {providerCopy.showHealth && (webhookUrl || redirectUrl) && (
-                      <Separator />
-                    )}
+                    {detailsSheet.provider.id !== "pagarme" &&
+                      providerCopy.showHealth &&
+                      (webhookUrl || redirectUrl) && <Separator />}
 
                     {/* Pagar.me-specific probe: queries the gateway's hooks
                         history to confirm the merchant cadastrou a URL no
@@ -1374,6 +1386,7 @@ function IntegrationsContent() {
                       currentDetailsIntegration?.id && (
                         <PagarmeWebhookProbe
                           integrationId={currentDetailsIntegration.id}
+                          autoRunLiveTest={detailsSheet.autoTestWebhook}
                         />
                       )}
 
