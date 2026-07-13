@@ -505,9 +505,18 @@ function IntegrationsContent() {
         webhookPassword: pagarmeWebhookPass.trim() || undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (integration) => {
           toast.success("Pagar.me conectada com sucesso!")
           closePagarmeDialog()
+          // Drop the merchant straight into the details sheet so they can
+          // validate the webhook right after connecting, instead of hunting
+          // for it later.
+          const pagarmeProvider = AVAILABLE_PROVIDERS.find(
+            (p) => p.id === "pagarme"
+          )
+          if (integration && pagarmeProvider) {
+            handleOpenDetails(integration, pagarmeProvider)
+          }
         },
         onError: (err) => {
           const apiErr = err as unknown as ApiError

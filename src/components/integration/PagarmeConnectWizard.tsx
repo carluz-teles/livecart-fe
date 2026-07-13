@@ -81,7 +81,12 @@ export function PagarmeConnectWizard({ webhookUrl }: PagarmeConnectWizardProps) 
           title="Marque os eventos"
         >
           <div className="flex flex-wrap gap-1.5">
-            {["order.paid", "order.payment_failed", "order.canceled"].map((evt) => (
+            {[
+              "order.created",
+              "order.paid",
+              "order.payment_failed",
+              "order.canceled",
+            ].map((evt) => (
               <code
                 key={evt}
                 className="rounded bg-background px-1.5 py-0.5 text-[11px] font-mono"
@@ -90,6 +95,10 @@ export function PagarmeConnectWizard({ webhookUrl }: PagarmeConnectWizardProps) 
               </code>
             ))}
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            <code className="font-mono">order.created</code> permite validar o
+            webhook sem esperar uma venda.
+          </p>
         </Step>
 
       </ol>
