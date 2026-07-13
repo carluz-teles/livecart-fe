@@ -16,6 +16,7 @@ import type {
   ConnectSmartEnviosPayload,
   ConnectPagarmePayload,
   PagarmeWebhookStatus,
+  PagarmeWebhookTest,
   ProviderURLs,
   ERPHealthCheckResponse,
   WhatsAppStatus,
@@ -197,6 +198,20 @@ export const integrationService = {
   ) =>
     apiClient.get<PagarmeWebhookStatus>(
       `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-status`,
+      token
+    ),
+
+  // Loopback self-test: LiveCart POSTs a synthetic event to its own public
+  // webhook URL and reports whether the endpoint is reachable/healthy. Lets the
+  // merchant validate the webhook without waiting for a real customer payment.
+  testPagarmeWebhook: (
+    storeId: string,
+    integrationId: string,
+    token?: string | null
+  ) =>
+    apiClient.post<PagarmeWebhookTest>(
+      `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-test`,
+      {},
       token
     ),
 

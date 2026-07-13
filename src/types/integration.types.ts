@@ -307,6 +307,19 @@ export interface PagarmeWebhookStatus {
   lastEvent: string
 }
 
+// Result of the loopback self-test: LiveCart POSTs a synthetic event to its own
+// public webhook URL to prove the endpoint is reachable/healthy — without a
+// real Pagar.me delivery. Lets the merchant validate right after configuring.
+export interface PagarmeWebhookTest {
+  url: string
+  reachable: boolean
+  healthy: boolean
+  httpStatus: number
+  authConfigured: boolean
+  latencyMs: number
+  message: string
+}
+
 // A carrier service that the store's shipping embarcador has enabled for use.
 // Returned by GET /integrations/shipping/:provider/carriers.
 export interface ShippingCarrier {
