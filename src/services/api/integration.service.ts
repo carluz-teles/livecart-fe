@@ -17,6 +17,7 @@ import type {
   ConnectPagarmePayload,
   PagarmeWebhookStatus,
   PagarmeWebhookTest,
+  PagarmeWebhookLiveTest,
   ProviderURLs,
   ERPHealthCheckResponse,
   WhatsAppStatus,
@@ -213,6 +214,21 @@ export const integrationService = {
       `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-test`,
       {},
       token
+    ),
+
+  // Real end-to-end test: creates a throwaway PIX order so Pagar.me fires a
+  // real webhook to the configured endpoint, then confirms delivery. Validates
+  // the actual delivery path without a real sale. Can take up to ~20s.
+  runPagarmeWebhookLiveTest: (
+    storeId: string,
+    integrationId: string,
+    token?: string | null
+  ) =>
+    apiClient.post<PagarmeWebhookLiveTest>(
+      `/stores/${storeId}/integrations/${integrationId}/pagarme/webhook-live-test`,
+      {},
+      token,
+      30000 // backend polls Pagar.me's delivery history for up to ~18s
     ),
 
   // ===========================================================================

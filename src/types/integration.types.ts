@@ -320,6 +320,22 @@ export interface PagarmeWebhookTest {
   message: string
 }
 
+// Result of the REAL end-to-end test: LiveCart creates a throwaway PIX order so
+// Pagar.me fires a real order.created webhook to the configured endpoint, then
+// confirms delivery via Pagar.me's own history. Validates the actual delivery
+// path (dashboard config + URL + Basic Auth) without waiting for a sale.
+export interface PagarmeWebhookLiveTest {
+  expectedUrl: string
+  orderCode: string
+  delivered: boolean
+  healthy: boolean
+  httpStatus: number
+  event: string
+  deliveredUrl: string
+  responseRaw: string
+  message: string
+}
+
 // A carrier service that the store's shipping embarcador has enabled for use.
 // Returned by GET /integrations/shipping/:provider/carriers.
 export interface ShippingCarrier {

@@ -16,6 +16,7 @@ export { useProviderURLs, providerURLsKeys } from "./useProviderURLs"
 export { useERPHealthCheck, erpHealthCheckKeys } from "./useERPHealthCheck"
 export { usePagarmeWebhookStatus, pagarmeWebhookStatusKeys } from "./usePagarmeWebhookStatus"
 export { useTestPagarmeWebhook } from "./useTestPagarmeWebhook"
+export { useRunPagarmeWebhookLiveTest } from "./useRunPagarmeWebhookLiveTest"
 export { useInstagramMedia, instagramMediaKeys } from "./useInstagramMedia"
 export {
   useWhatsAppStatus,
