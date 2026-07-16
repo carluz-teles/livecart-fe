@@ -22,9 +22,16 @@ export const notificationService = {
   previewTemplate: (storeId: string, template: string, token?: string | null) =>
     apiClient.post<PreviewTemplateResponse>(`/stores/${storeId}/notifications/preview`, { template }, token),
 
-  // Get available template variables
-  getVariables: (storeId: string, token?: string | null) =>
-    apiClient.get<AvailableVariablesResponse>(`/stores/${storeId}/notifications/variables`, token),
+  // Get available template variables. When templateType is provided, the
+  // backend scopes the catalog to that template's variables (compat: omit
+  // the param to receive every variable).
+  getVariables: (storeId: string, token?: string | null, templateType?: string) =>
+    apiClient.get<AvailableVariablesResponse>(
+      `/stores/${storeId}/notifications/variables${
+        templateType ? `?type=${encodeURIComponent(templateType)}` : ""
+      }`,
+      token,
+    ),
 
   // Test recipient: read current state (configured handle + active setup code)
   getTestRecipient: (storeId: string, token?: string | null) =>

@@ -62,10 +62,10 @@ export function useEmailCommunication(
   })
 
   const variablesQuery = useQuery<AvailableVariablesResponse>({
-    queryKey: [...communicationsKeys.variables(), storeId ?? ""],
+    queryKey: [...communicationsKeys.variables(type), storeId ?? ""],
     queryFn: async () => {
       const token = await getToken()
-      return notificationService.getVariables(storeId!, token)
+      return notificationService.getVariables(storeId!, token, type)
     },
     enabled: !!storeId,
     staleTime: 1000 * 60 * 30,
