@@ -1,17 +1,10 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { CreditCard, Instagram } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useStoreSetup, type StoreRequirement } from "@/hooks/integration"
 
 interface StoreSetupGateProps {
@@ -40,44 +33,54 @@ const REQUIREMENT_COPY: Record<
 }
 
 // Blocks an area until the store can both receive and charge for orders: the
-// page is blurred and inert behind a modal listing exactly what's missing —
+// page is blurred and inert behind a card listing exactly what's missing —
 // one reason, or both — in the merchant's words.
 //
-// The modal is deliberately not dismissable (a dismissed one would leave an
-// unexplained blur) but always offers two ways out, so nobody gets trapped.
+// Deliberately NOT a modal: it renders inside the content area, so the sidebar
+// and header stay usable and the merchant can navigate away freely. A
+// full-screen dialog would block the whole app to state a local rule.
 export function StoreSetupGate({ purpose, children }: StoreSetupGateProps) {
   const { missing, isLoading, isError } = useStoreSetup()
 
-  // Render the page untouched while we don't know yet, and if the check itself
+  // Let the page through while we don't know yet, and if the check itself
   // fails — flashing a wrong gate at a fully configured store is worse than
-  // letting the page through.
-  if (isLoading || isError || missing.length === 0) return <>{children}</>
+  // letting it through.
+  const blocked = !isLoading && !isError && missing.length > 0
+
+  // `inert` takes the blurred page out of the tab order and the a11y tree.
+  // pointer-events-none alone would still let keyboard users land inside it.
+  const contentRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el || !blocked) return
+    el.setAttribute("inert", "")
+    return () => el.removeAttribute("inert")
+  }, [blocked])
+
+  if (!blocked) return <>{children}</>
 
   return (
-    <>
+    <div className="relative min-h-[60vh]">
       <div
+        ref={contentRef}
         aria-hidden="true"
         className="pointer-events-none select-none opacity-60 blur-sm"
       >
         {children}
       </div>
 
-      <Dialog open>
-        <DialogContent
-          className="sm:max-w-md [&>button]:hidden"
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader className="space-y-2">
-            <DialogTitle className="text-left">
+      <div className="absolute inset-0 flex items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-4 rounded-lg border bg-background p-6 shadow-lg">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold tracking-tight">
               {missing.length > 1
                 ? `Faltam dois passos para ${purpose}`
                 : `Falta um passo para ${purpose}`}
-            </DialogTitle>
-            <DialogDescription className="text-left leading-relaxed">
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Sem isso, as suas lives não viram venda. Falta configurar:
-            </DialogDescription>
-          </DialogHeader>
+            </p>
+          </div>
 
           <ul className="space-y-3">
             {missing.map((item) => {
@@ -98,16 +101,11 @@ export function StoreSetupGate({ purpose, children }: StoreSetupGateProps) {
             })}
           </ul>
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/dashboard">Voltar ao painel</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/settings/integrations">Ir para integrações</Link>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <Button asChild className="w-full">
+            <Link href="/settings/integrations">Ir para integrações</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
