@@ -58,14 +58,16 @@ export const checkoutFormSchema = z.object({
     .string()
     .min(1, "CPF é obrigatório")
     .refine(isValidCPF, { message: "CPF inválido" }),
+  // Obrigatório: contas PSP do Pagar.me exigem telefone no customer (412
+  // "At least one customer phone is required") e a recuperação de carrinho
+  // via WhatsApp depende dele.
   customerPhone: z
     .string()
-    .optional()
+    .min(1, "Celular é obrigatório")
     .refine(
       (val) => {
-        if (!val) return true
         const cleaned = val.replace(/\D/g, "")
-        return cleaned.length === 0 || (cleaned.length >= 10 && cleaned.length <= 11)
+        return cleaned.length >= 10 && cleaned.length <= 11
       },
       { message: "Telefone inválido" }
     ),

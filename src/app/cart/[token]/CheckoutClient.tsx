@@ -873,9 +873,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                       name="customerPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>
-                            Celular <span className="text-xs font-normal text-gray-500">(opcional)</span>
-                          </FormLabel>
+                          <FormLabel>Celular *</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
