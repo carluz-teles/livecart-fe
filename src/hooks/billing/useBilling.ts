@@ -9,7 +9,12 @@ export const billingKeys = {
   subscription: (storeId: string) => ["billing", "subscription", storeId] as const,
 }
 
-export function useSubscription() {
+interface UseSubscriptionOptions {
+  // Polling (ex.: aguardando o webhook da Stripe ativar a assinatura)
+  refetchInterval?: number | false
+}
+
+export function useSubscription(options?: UseSubscriptionOptions) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
 
@@ -20,6 +25,7 @@ export function useSubscription() {
       return billingService.getSubscription(storeId!, token)
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
+    refetchInterval: options?.refetchInterval ?? false,
   })
 }
 

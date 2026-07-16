@@ -1,7 +1,6 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { Suspense } from "react"
 import { Check, CreditCard, ExternalLink, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
@@ -17,10 +16,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import {
+  useBillingActivation,
   useChangePlan,
   useOpenPortal,
   useStartCheckout,
-  useSubscription,
 } from "@/hooks/billing"
 import type { ApiError } from "@/types"
 
@@ -42,24 +41,12 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
 }
 
 function BillingContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { data: sub, isLoading } = useSubscription()
+  // Retorno do Stripe Checkout (?billing=success): o hook cuida do toast,
+  // do polling até a ativação e do re-sync do usuário.
+  const { subscription: sub, isLoading, isActivating } = useBillingActivation()
   const checkout = useStartCheckout()
   const portal = useOpenPortal()
   const changePlan = useChangePlan()
-
-  // Retorno do Stripe Checkout
-  useEffect(() => {
-    const result = searchParams.get("billing")
-    if (result === "success") {
-      toast.success("Pagamento configurado! Sua assinatura está sendo ativada.")
-      router.replace("/settings/billing")
-    } else if (result === "cancelled") {
-      toast.info("Pagamento cancelado. Você pode tentar de novo quando quiser.")
-      router.replace("/settings/billing")
-    }
-  }, [searchParams, router])
 
   const badge = statusBadge[sub?.status ?? ""] ?? { label: sub?.status ?? "—", variant: "outline" as const }
   const isTrial = sub?.status === "trialing" || sub?.status === "paused"
@@ -115,12 +102,25 @@ function BillingContent() {
               {isTrial ? "Teste grátis" : planName}
             </span>
             <Badge variant={badge.variant}>{badge.label}</Badge>
+            {isActivating && (
+              <Badge variant="secondary" className="gap-1.5">
+                <Loader2 className="size-3 animate-spin" />
+                Ativando assinatura…
+              </Badge>
+            )}
             {sub?.cancelAtPeriodEnd && (
               <Badge variant="outline">Cancela no fim do ciclo</Badge>
             )}
           </div>
 
-          {isTrial && (
+          {isActivating && (
+            <p className="text-sm text-muted-foreground">
+              Pagamento configurado! Estamos confirmando sua assinatura com a
+              operadora — isso leva só alguns segundos.
+            </p>
+          )}
+
+          {isTrial && !isActivating && (
             <div className="space-y-1">
               <p className="flex items-center gap-2 text-sm">
                 <Sparkles className="size-4 text-primary" />

@@ -15,6 +15,12 @@ const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)"])
 
 const isOnboardingRoute = createRouteMatcher(["/onboarding"])
 
+// Billing continua acessível com a assinatura bloqueada — é onde o lojista
+// paga e acompanha a ativação (mesma allowlist que o backend aplica em /billing).
+// Sem isto, o retorno do Stripe Checkout (?billing=success) quica pro /paywall
+// antes do webhook ativar a assinatura e o lojista nunca vê o feedback.
+const isBillingRoute = createRouteMatcher(["/settings/billing(.*)"])
+
 export default clerkMiddleware(async (auth, req) => {
   const { userId, getToken, redirectToSignIn } = await auth()
 
@@ -67,7 +73,7 @@ export default clerkMiddleware(async (auth, req) => {
       // Paywall (PRD 007): assinatura bloqueada prende o usuário no /paywall
       const blocked = data.subscription?.blocked === true
       const onPaywall = req.nextUrl.pathname === "/paywall"
-      if (blocked && !onPaywall) {
+      if (blocked && !onPaywall && !isBillingRoute(req)) {
         return NextResponse.redirect(new URL("/paywall", req.url))
       }
       if (!blocked && onPaywall && data.subscription?.status === "active") {

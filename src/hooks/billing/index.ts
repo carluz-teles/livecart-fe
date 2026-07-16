@@ -7,3 +7,4 @@ export {
   useStatement,
   billingKeys,
 } from "./useBilling"
+export { useBillingActivation } from "./useBillingActivation"
