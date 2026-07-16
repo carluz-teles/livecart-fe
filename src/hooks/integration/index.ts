@@ -1,5 +1,4 @@
 export { useIntegrations, integrationKeys } from "./useIntegrations"
-export { useInstagramConnected } from "./useInstagramConnected"
 export {
   useConnectOAuth,
   useConnectApiKey,
