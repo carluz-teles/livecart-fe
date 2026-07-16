@@ -95,7 +95,8 @@ export default function PagarmeDocPage() {
             <code className="font-mono text-xs">sk_test_</code> / <code className="font-mono text-xs">pk_test_</code> — ambiente sandbox (testes)
           </li>
           <li>
-            <code className="font-mono text-xs">sk_live_</code> / <code className="font-mono text-xs">pk_live_</code> — ambiente de produção (cobra de verdade)
+            <code className="font-mono text-xs">sk_</code> / <code className="font-mono text-xs">pk_</code> (sem o{" "}
+            <code className="font-mono text-xs">test_</code>) — ambiente de produção (cobra de verdade)
           </li>
         </ul>
         <p>
@@ -229,7 +230,7 @@ export default function PagarmeDocPage() {
             <p className="leading-relaxed text-muted-foreground">
               O simulador Pix do sandbox da Pagar.me só processa valores até
               cerca de R$ 500. Para testar valores reais, use a chave de
-              produção (sk_live_) com um Pix de valor pequeno (R$ 0,50).
+              produção (sk_ sem o test_) com um Pix de valor pequeno (R$ 0,50).
             </p>
           </div>
           <div className="space-y-1">

@@ -476,27 +476,30 @@ function IntegrationsContent() {
 
     setPagarmeError(null)
 
-    const secretEnv = secret.startsWith("sk_test_")
-      ? "test"
-      : secret.startsWith("sk_live_")
-        ? "live"
-        : null
-    const publicEnv = publicKey.startsWith("pk_test_")
-      ? "test"
-      : publicKey.startsWith("pk_live_")
-        ? "live"
-        : null
+    // Pagar.me only tags sandbox keys (sk_test_/pk_test_). Production keys are
+    // plain sk_/pk_ + token — there is no sk_live_ (that's Stripe). Assuming
+    // there was blocked every real production key at this form. The backend
+    // still validates the keys for real against the gateway.
+    const keyEnv = (key: string, scope: string) =>
+      !key.startsWith(scope) || key.length <= scope.length
+        ? null
+        : key.startsWith(`${scope}test_`)
+          ? "test"
+          : "live"
+
+    const secretEnv = keyEnv(secret, "sk_")
+    const publicEnv = keyEnv(publicKey, "pk_")
     if (!secretEnv) {
-      setPagarmeError("Chave secreta deve começar com sk_test_ ou sk_live_.")
+      setPagarmeError("Chave secreta deve começar com sk_.")
       return
     }
     if (!publicEnv) {
-      setPagarmeError("Chave pública deve começar com pk_test_ ou pk_live_.")
+      setPagarmeError("Chave pública deve começar com pk_.")
       return
     }
     if (secretEnv !== publicEnv) {
       setPagarmeError(
-        "As chaves precisam ser do mesmo ambiente (ambas test ou ambas live)."
+        "As chaves precisam ser do mesmo ambiente (ambas de teste ou ambas de produção)."
       )
       return
     }
@@ -1185,7 +1188,7 @@ function IntegrationsContent() {
               <Input
                 id="pagarme-secret"
                 type="password"
-                placeholder="sk_test_... ou sk_live_..."
+                placeholder="sk_..."
                 value={pagarmeSecretKey}
                 onChange={(e) => {
                   setPagarmeSecretKey(e.target.value)
@@ -1200,7 +1203,7 @@ function IntegrationsContent() {
               </Label>
               <Input
                 id="pagarme-public"
-                placeholder="pk_test_... ou pk_live_..."
+                placeholder="pk_..."
                 value={pagarmePublicKey}
                 onChange={(e) => {
                   setPagarmePublicKey(e.target.value)
