@@ -39,13 +39,19 @@ const REQUIREMENT_COPY: Record<
 // Deliberately NOT a modal: it renders inside the content area, so the sidebar
 // and header stay usable and the merchant can navigate away freely. A
 // full-screen dialog would block the whole app to state a local rule.
+//
+// Enforced ONLY in production: staging and local run E2E with simulated
+// webhooks (no real Instagram account or live payment), so the gate would
+// block every test event there.
+const GATE_ENFORCED = process.env.NEXT_PUBLIC_APP_ENV === "production"
+
 export function StoreSetupGate({ purpose, children }: StoreSetupGateProps) {
   const { missing, isLoading, isError } = useStoreSetup()
 
   // Let the page through while we don't know yet, and if the check itself
   // fails — flashing a wrong gate at a fully configured store is worse than
   // letting it through.
-  const blocked = !isLoading && !isError && missing.length > 0
+  const blocked = GATE_ENFORCED && !isLoading && !isError && missing.length > 0
 
   // `inert` takes the blurred page out of the tab order and the a11y tree.
   // pointer-events-none alone would still let keyboard users land inside it.

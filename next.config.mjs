@@ -7,6 +7,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const nextConfig = {
   // Only use standalone output in production
   ...(process.env.NODE_ENV === "production" && { output: "standalone" }),
+  // Ambiente de DEPLOY (production/staging/development), distinto do NODE_ENV
+  // (que é "production" em qualquer build). Vem do Railway; fora dele,
+  // development. Inlined no bundle do client — usado p/ regras que só valem
+  // em produção (ex.: StoreSetupGate).
+  env: {
+    NEXT_PUBLIC_APP_ENV: process.env.RAILWAY_ENVIRONMENT ?? "development",
+  },
   // Pin the workspace root so Next.js doesn't get confused by other lockfiles
   // up the tree (e.g. ~/pnpm-lock.yaml).
   outputFileTracingRoot: __dirname,
