@@ -1,4 +1,6 @@
 export { useIntegrations, integrationKeys } from "./useIntegrations"
+export { useStoreSetup } from "./useStoreSetup"
+export type { StoreRequirement } from "./useStoreSetup"
 export {
   useConnectOAuth,
   useConnectApiKey,
