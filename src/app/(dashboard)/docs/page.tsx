@@ -56,6 +56,14 @@ const CATEGORIES: DocCategory[] = [
         estimatedTime: "2 minutos",
       },
       {
+        slug: "pagarme",
+        title: "Integrar com a Pagar.me",
+        description:
+          "Aceite Pix e cartão de crédito no checkout criando o webhook e as chaves de API na sua conta Pagar.me.",
+        href: "/docs/integrations/pagarme",
+        estimatedTime: "~10 minutos",
+      },
+      {
         slug: "instagram",
         title: "Integrar com o Instagram",
         description:

@@ -36,6 +36,12 @@ const ARTICLES: SupportArticle[] = [
     estimatedTime: "2 min",
   },
   {
+    title: "Integrar com a Pagar.me",
+    href: "/docs/integrations/pagarme",
+    category: "Pagamentos",
+    estimatedTime: "10 min",
+  },
+  {
     title: "Integrar com a Tiny (Olist)",
     href: "/docs/integrations/tiny",
     category: "ERP",
