@@ -93,8 +93,12 @@ export function ProductFormERPSearch({
             </div>
           )}
 
+          {/* A lista não tem scroll próprio: ela já vive dentro da área
+              rolável do formulário, e um segundo overflow fazia aparecer duas
+              barras de rolagem lado a lado quando o ERP retornava muitos
+              produtos. */}
           {!isLoading && !isError && products.length > 0 && (
-            <ul className="max-h-[320px] overflow-y-auto divide-y">
+            <ul className="divide-y">
               {products.map((product) => {
                 const parent = isVariantParent(product)
                 const imported = product.alreadyImported === true

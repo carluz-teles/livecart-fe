@@ -209,8 +209,12 @@ export function EventCouponsForm({
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+          {/* min-h-0 em toda a cadeia flex: sem isso o filho não encolhe
+              abaixo do conteúdo (min-height:auto), o overflow-y-auto nunca
+              ativa e o rodapé é empurrado para fora da tela — era o motivo
+              de o formulário de cupom não rolar. */}
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
               <FormField
                 control={form.control}
                 name="code"
