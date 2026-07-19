@@ -19,7 +19,13 @@ export default function DashboardLayout({
   return (
     <AppProviders>
       <OnboardingGuard>
-      <div className="flex h-screen overflow-hidden">
+      {/* fixed inset-0 em vez de h-screen: 100vh não é exatamente a altura
+          visível do viewport, e a sobra (8px medidos em produção) fazia o
+          documento rolar junto com o <main> — duas barras de rolagem lado a
+          lado no canto direito. Fora do fluxo, o shell é sempre o viewport
+          exato e só o <main> rola. print:static devolve o fluxo normal na
+          impressão, senão só a primeira página sairia. */}
+      <div className="fixed inset-0 flex overflow-hidden print:static print:h-auto print:overflow-visible">
         <div className="print:hidden">
           <Sidebar />
         </div>

@@ -60,7 +60,7 @@ export function Sidebar() {
   const { user, isLoading } = useUser()
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-sidebar">
+    <aside className="flex h-full w-64 flex-col border-r bg-sidebar">
       {/* Organization Header */}
       <div className="flex h-16 items-center gap-3 border-b px-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
