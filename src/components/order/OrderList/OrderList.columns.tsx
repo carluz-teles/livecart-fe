@@ -6,6 +6,8 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Ban,
+  Clock,
   Facebook,
   Instagram,
   Package,
@@ -73,17 +75,67 @@ export function isOrderERPFailed(order: Order): boolean {
   return order.erpFinalisationStatus === "failed"
 }
 
+// Pedido que morreu: cancelado pela loja ou vencido sem pagamento. Não há mais
+// nada a fazer com ele — a linha inteira é tratada como histórico (texto
+// esmaecido) e ganha um selo explícito, porque sem isso um carrinho cancelado
+// lê exatamente como um pedido vivo aguardando pagamento.
+export function isOrderTerminal(order: Order): boolean {
+  return order.status === "cancelled" || order.status === "expired"
+}
+
+// Selo do estado terminal. Ícone + palavra: quem não distingue as cores (ou
+// está imprimindo em preto e branco) continua lendo o que aconteceu.
+const TERMINAL_BADGE: Record<string, { label: string; Icon: LucideIcon; hint: string }> = {
+  cancelled: {
+    label: "Cancelado",
+    Icon: Ban,
+    hint: "Cancelado pela loja. O estoque voltou para o catálogo e o link do cliente não aceita mais pagamento.",
+  },
+  expired: {
+    label: "Expirado",
+    Icon: Clock,
+    hint: "O prazo de pagamento acabou. O estoque voltou para o catálogo e o link do cliente não aceita mais pagamento.",
+  },
+}
+
 export const orderColumns: ColumnDef<Order>[] = [
   {
     id: "shortId",
     header: ({ column }) => <SortHeader column={column}>Pedido</SortHeader>,
     enableSorting: true,
     meta: { sortKey: "short_id" },
-    cell: ({ row }) => (
-      <span className="font-mono text-sm font-medium tabular-nums">
-        #{row.original.shortId}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const terminal = TERMINAL_BADGE[row.original.status]
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-medium tabular-nums">
+            #{row.original.shortId}
+          </span>
+          {terminal && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  // O token --destructive puro fica em ~3.7:1 sobre o fundo
+                  // claro e reprova no AA para 11px. red-700/red-100 dá ~6.3:1
+                  // (e red-300/red-950 no escuro), mantendo a mesma leitura.
+                  // Mesmo motivo pelo qual a tabela já usa emerald direto: o
+                  // design system ainda não tem token semântico com contraste
+                  // garantido para texto pequeno.
+                  className="gap-1 border-transparent bg-red-100 px-1.5 py-0 text-[11px] font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
+                >
+                  <terminal.Icon className="h-3 w-3" aria-hidden="true" />
+                  {terminal.label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[16rem] text-xs">
+                {terminal.hint}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      )
+    },
   },
   {
     id: "customer",
@@ -172,9 +224,21 @@ export const orderColumns: ColumnDef<Order>[] = [
         order.paymentStatus,
         "pending",
       )
+      // "Pendente" num pedido morto é mentira: ninguém está esperando esse
+      // pagamento cair. Vira "Não pago", em tom neutro. Pago/estornado/falhou
+      // continuam como estão — esses aconteceram de verdade.
+      const isDeadPending =
+        isOrderTerminal(order) &&
+        (order.paymentStatus === "pending" || !order.paymentStatus)
       return (
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          {isDeadPending ? (
+            <Badge variant="outline" className="text-muted-foreground">
+              Não pago
+            </Badge>
+          ) : (
+            <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          )}
           {isOrderERPFailed(order) && (
             // Sits next to the payment-status badge so the row reads "Pago,
             // ERP falhou" at a glance — generic across providers (Tiny,

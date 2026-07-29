@@ -14,6 +14,7 @@ import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
 import { OrderDetailERPRetryBanner } from "./OrderDetail.ERPRetryBanner"
+import { OrderDetailStatusBanner } from "./OrderDetail.StatusBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
@@ -41,6 +42,10 @@ export function OrderDetailBody() {
           Lives above the grid so it's the first thing the merchant sees on
           opening the page — the action it surfaces (retry) blocks fulfilment. */}
       <OrderDetailERPRetryBanner />
+
+      {/* Estado terminal (cancelado/expirado) ou cancelamento revertido pelo
+          pagamento: explica a consequência antes de o lojista ler os cards. */}
+      <OrderDetailStatusBanner />
 
       {/* Mobile stacks the rail above the items because those cards carry the
           highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
