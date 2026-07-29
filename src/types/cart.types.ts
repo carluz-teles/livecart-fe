@@ -2,8 +2,21 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 import type { PackageFormat } from "./product.types"
 import type { Shipment, ShipmentStatus } from "./shipment.types"
 
-export type CartStatus = "active" | "checkout" | "completed" | "expired"
-export type OrderStatus = "active" | "checkout" | "completed" | "expired"
+// 'cancelled' cobre tanto o cancelamento manual do lojista quanto o cart morto
+// por bloqueio do comprador — o backend usa a mesma coluna status para os dois
+// (o motivo fica em carts.cancelled_reason, que não é exposto publicamente).
+export type CartStatus =
+  | "active"
+  | "checkout"
+  | "completed"
+  | "expired"
+  | "cancelled"
+export type OrderStatus =
+  | "active"
+  | "checkout"
+  | "completed"
+  | "expired"
+  | "cancelled"
 export type PaymentStatus =
   | "pending"
   | "paid"
@@ -162,6 +175,10 @@ export interface OrderDetail extends Order {
   // the "Cliente bloqueado" badge on the order detail page. Informational
   // only — past orders stay fully visible.
   customerBlocked: boolean
+  // Preenchido quando a loja cancelou este pedido e o pagamento entrou assim
+  // mesmo: o cancelamento foi revertido e o pedido seguiu o fluxo normal
+  // (pedido no ERP, métricas). Vira uma entrada no histórico do pedido.
+  cancellationRevertedAt?: string | null
 }
 
 // Mirror of integration.Service finalisation state. Status `failed` means

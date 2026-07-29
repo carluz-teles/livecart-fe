@@ -1,7 +1,6 @@
 "use client"
 
 import { use } from "react"
-import Link from "next/link"
 import {
   AlertTriangle,
   ArrowDown,
@@ -9,26 +8,17 @@ import {
   ArrowUpDown,
   Facebook,
   Instagram,
-  MoreHorizontal,
   Package,
   type LucideIcon,
 } from "lucide-react"
 import type { Column, ColumnDef, RowData } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { OrderListRowActions } from "./OrderList.RowActions"
 import {
   FIRST_PURCHASE_BADGE,
   PAYMENT_STATUS_CONFIG,
@@ -234,26 +224,7 @@ export const orderColumns: ColumnDef<Order>[] = [
   {
     id: "actions",
     header: () => null,
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">Abrir menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href={`/orders/${row.original.id}`}>Ver detalhes</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => <OrderListRowActions order={row.original} />,
   },
 ]
 

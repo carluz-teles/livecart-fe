@@ -75,6 +75,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   checkout: { label: "Checkout", variant: "secondary" },
   completed: { label: "Completo", variant: "default" },
   expired: { label: "Expirado", variant: "destructive" },
+  cancelled: { label: "Cancelado", variant: "destructive" },
 }
 
 /**

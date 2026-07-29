@@ -1,7 +1,7 @@
 "use client"
 
 import { use, useState } from "react"
-import { CheckCircle2, Hash, Link2, MoreHorizontal, Printer, RefreshCw } from "lucide-react"
+import { Ban, CheckCircle2, Hash, Link2, MoreHorizontal, Printer, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -35,6 +35,7 @@ async function copyToClipboard(value: string): Promise<boolean> {
 export function OrderDetailActions() {
   const ctx = use(OrderDetailContext)
   const [refundOpen, setRefundOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   if (!ctx) return null
   const { order } = ctx.state
   const {
@@ -44,7 +45,18 @@ export function OrderDetailActions() {
     requestRegenerate,
     markDelivered,
     isMarkingDelivered,
+    cancelOrder,
+    isCancelling,
   } = ctx.actions
+
+  // Cancelar só faz sentido enquanto o pedido está vivo e não pago. O backend
+  // reforça isso com 409 (inclusive contra a corrida do pagamento) — esconder
+  // a entrada só evita oferecer uma ação que já sabemos que será recusada.
+  const canCancel =
+    order.paymentStatus !== "paid" &&
+    order.paymentStatus !== "refunded" &&
+    order.status !== "cancelled" &&
+    order.status !== "expired"
 
   // Show "Marcar como entregue" only when the order has been paid AND there
   // is a shipment, AND it hasn't already been marked delivered. The BE is
@@ -62,7 +74,12 @@ export function OrderDetailActions() {
   // Both link entries only make sense before payment / shipment — backend
   // returns 409 in those states anyway, but hiding the entries keeps the
   // menu honest about what's available.
-  const canShareLink = order.paymentStatus !== "paid" && !order.shipment
+  // Cancelado também some daqui: o link não aceita mais pagamento e o BE
+  // recusa o regenerate (o estoque já voltou ao catálogo).
+  const canShareLink =
+    order.paymentStatus !== "paid" &&
+    !order.shipment &&
+    order.status !== "cancelled"
 
   const handleCopyShortId = async () => {
     const ok = await copyToClipboard(`#${order.shortId}`)
@@ -80,6 +97,11 @@ export function OrderDetailActions() {
   const handleRefundConfirm = () => {
     refund()
     setRefundOpen(false)
+  }
+
+  const handleCancelConfirm = () => {
+    cancelOrder()
+    setCancelOpen(false)
   }
 
   return (
@@ -125,6 +147,19 @@ export function OrderDetailActions() {
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </DropdownMenuItem>
+          {canCancel && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setCancelOpen(true)}
+                disabled={isCancelling}
+                className="text-destructive focus:text-destructive"
+              >
+                <Ban className="mr-2 h-4 w-4" />
+                Cancelar carrinho
+              </DropdownMenuItem>
+            </>
+          )}
           {order.paymentStatus === "paid" && (
             <>
               <DropdownMenuSeparator />
@@ -138,6 +173,32 @@ export function OrderDetailActions() {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar este carrinho?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O pedido #{order.shortId} passa a constar como{" "}
+              <strong>cancelado</strong>: o estoque dos itens volta para o
+              catálogo, a reserva no ERP é estornada e o link do cliente deixa de
+              aceitar pagamento — ele verá que a loja cancelou, não que expirou.
+              Se o cliente pagar exatamente neste instante, o pagamento vence e o
+              pedido continua pago.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelConfirm}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? "Cancelando..." : "Cancelar carrinho"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={refundOpen} onOpenChange={setRefundOpen}>
         <AlertDialogContent>

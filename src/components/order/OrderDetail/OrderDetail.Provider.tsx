@@ -2,7 +2,13 @@
 
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { useMarkDelivered, useRegenerateCheckout, useUpdateOrder } from "@/hooks/order"
+import {
+  useCancelOrder,
+  useMarkDelivered,
+  useRegenerateCheckout,
+  useUpdateOrder,
+} from "@/hooks/order"
+import type { ApiError } from "@/types/api.types"
 import { useStoreId } from "@/hooks/useUser"
 import type { OrderDetail } from "@/types/cart.types"
 import {
@@ -21,6 +27,7 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
   const updateOrder = useUpdateOrder()
   const regenerate = useRegenerateCheckout()
   const markDeliveredMutation = useMarkDelivered()
+  const cancelOrderMutation = useCancelOrder()
   const { storeId } = useStoreId()
 
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false)
@@ -80,6 +87,32 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
     )
   }, [order.id, markDeliveredMutation])
 
+  // O 409 aqui não é erro de sistema: é a corrida cancelamento × pagamento
+  // sendo resolvida a favor do pagamento. A mensagem vem pronta do backend
+  // ("já foi pago", "pagamento em processamento") e é o que o lojista precisa
+  // ler para entender por que o pedido continua de pé.
+  const cancelOrder = useCallback(() => {
+    cancelOrderMutation.mutate(
+      { id: order.id },
+      {
+        onSuccess: () =>
+          toast.success("Carrinho cancelado", {
+            description: "O estoque foi devolvido e o link não aceita mais pagamento.",
+          }),
+        onError: (error) => {
+          const apiError = error as unknown as ApiError
+          if (apiError?.status === 409) {
+            toast.error("Não foi possível cancelar", {
+              description: apiError.message || apiError.error,
+            })
+            return
+          }
+          toast.error("Falha ao cancelar o carrinho")
+        },
+      },
+    )
+  }, [order.id, cancelOrderMutation])
+
   const value: OrderDetailContextValue = {
     state: {
       order,
@@ -99,6 +132,8 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
       closeRegenerateShare,
       markDelivered,
       isMarkingDelivered: markDeliveredMutation.isPending,
+      cancelOrder,
+      isCancelling: cancelOrderMutation.isPending,
     },
     meta: { storeId: storeId ?? "" },
   }
