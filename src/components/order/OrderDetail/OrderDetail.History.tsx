@@ -9,6 +9,7 @@ import {
   CreditCard,
   MessageCircle,
   Package,
+  RotateCcw,
   Truck,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -46,6 +47,7 @@ type EventKind =
   | "shipment_event"
   | "delivered"
   | "issue"
+  | "cancel_reverted"
 
 interface TimelineEvent {
   category: EventCategory
@@ -77,6 +79,7 @@ const ICON: Record<EventKind, React.ComponentType<{ className?: string }>> = {
   shipment_event: Truck,
   delivered: CheckCircle2,
   issue: AlertTriangle,
+  cancel_reverted: RotateCcw,
 }
 
 const SUCCESS_TONE =
@@ -93,6 +96,7 @@ const TONE: Record<EventKind, string> = {
   shipment_created: "bg-muted text-muted-foreground",
   shipment_event: "bg-muted text-muted-foreground",
   issue: "bg-destructive/15 text-destructive",
+  cancel_reverted: "bg-destructive/15 text-destructive",
 }
 
 const SHIPMENT_ISSUE_STATUSES: ShipmentStatus[] = [
@@ -138,6 +142,21 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
       description: order.shipping
         ? `${order.shipping.serviceName} contratado`
         : undefined,
+    })
+  }
+
+  // Cancelamento revertido pelo pagamento: a loja cancelou e o comprador pagou
+  // assim mesmo (antes ou durante o cancelamento). Não há nada a corrigir — o
+  // pedido seguiu o fluxo normal; a entrada existe para o lojista entender por
+  // que um pedido que ele cancelou está pago.
+  if (order.cancellationRevertedAt) {
+    out.push({
+      category: "payment",
+      kind: "cancel_reverted",
+      date: order.cancellationRevertedAt,
+      title: "Cancelamento revertido — o comprador pagou",
+      description:
+        "Este pedido foi cancelado, mas o pagamento entrou assim mesmo e o pedido voltou a valer. O estoque foi retomado e o pedido seguiu para o ERP normalmente. Para devolver o dinheiro, faça o estorno pelo provedor de pagamento.",
     })
   }
 

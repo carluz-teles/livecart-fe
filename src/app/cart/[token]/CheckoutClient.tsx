@@ -649,10 +649,16 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     toast.warning(message)
   }, [cart?.appliedCoupon])
 
+  // Cobre também a loja cancelando com o comprador na tela: o refetch passa a
+  // receber 422 e a mensagem do backend ("cancelado pela loja") aparece aqui.
+  // O envelope da API traz a mensagem em `error`; `message` é o fallback.
   if (cartError || !cart) {
+    const apiError = cartError as unknown as ApiError | null
     return (
       <CheckoutErrorScreen
-        message={(cartError as Error)?.message || "Carrinho não encontrado"}
+        message={
+          apiError?.error || apiError?.message || "Carrinho não encontrado"
+        }
         retryHref={`/cart/${token}`}
       />
     )

@@ -105,6 +105,18 @@ export const orderService = {
       token,
     ),
 
+  // Cancela um pedido ainda não pago. O carrinho continua existindo com
+  // status 'cancelled' (o link público mostra "cancelado", não "expirado"),
+  // o estoque volta e a reserva no ERP é estornada. Responde 409 quando o
+  // pedido já foi pago ou está com um pagamento sendo finalizado — nessa
+  // corrida o pagamento vence. Retorna o OrderDetail atualizado.
+  cancel: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<OrderDetail>(
+      `/stores/${storeId}/orders/${id}/cancel`,
+      {},
+      token,
+    ),
+
   // Replays the post-payment Tiny order creation for an order whose
   // finalisation previously failed. Returns the refreshed OrderDetail so
   // the FE can swap the banner state in-place.
