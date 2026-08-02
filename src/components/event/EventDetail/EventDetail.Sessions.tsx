@@ -2,16 +2,27 @@
 
 import { use } from "react"
 import { SessionsTable } from "@/components/event/SessionsTable"
+import { useSessionMetrics } from "@/hooks/event"
 import { isPostLikeEvent } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
 
 export function EventDetailSessions() {
   const ctx = use(EventDetailContext)
+  const { data: metrics } = useSessionMetrics(ctx?.state.event.id ?? "")
   if (!ctx) return null
   const { event } = ctx.state
 
   // Post and story events have no broadcast sessions to manage.
   if (isPostLikeEvent(event.type)) return null
 
-  return <SessionsTable sessions={event.sessions ?? []} isLoading={false} />
+  // A quebra por transmissão já viaja dentro de cada sessão do detalhe. O que
+  // só existe no endpoint de métrica é o balde "sem transmissão" — e sem ele a
+  // coluna de receita não soma o faturamento do evento.
+  return (
+    <SessionsTable
+      sessions={event.sessions ?? []}
+      isLoading={false}
+      unattributed={metrics?.unattributed ?? null}
+    />
+  )
 }

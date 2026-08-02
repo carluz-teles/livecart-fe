@@ -108,14 +108,17 @@ export function EventDetailCarts() {
                 </TableRow>
               ) : (
                 carts.map((cart) => {
-                  const sessionIndex =
-                    event.sessions?.findIndex((s) => s.id === cart.sessionId) ?? -1
+                  // sequenceOrder e a ordem da transmissao na campanha; a
+                  // posicao na lista nao e, porque ela vem por created_at DESC.
+                  // Usar o indice fazia o mesmo "S{n}" apontar para sessoes
+                  // diferentes nesta tabela e na de Sessoes.
+                  const session = event.sessions?.find((s) => s.id === cart.sessionId)
                   return (
                     <CartRow
                       key={cart.id}
                       cart={cart}
                       eventId={event.id}
-                      sessionNumber={sessionIndex >= 0 ? sessionIndex + 1 : null}
+                      sessionNumber={session?.sequenceOrder ?? null}
                     />
                   )
                 })

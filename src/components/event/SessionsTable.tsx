@@ -13,11 +13,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { PLATFORM_LABELS } from "@/lib/constants"
-import type { EventSession, Platform } from "@/types/event.types"
+import { formatCurrency } from "@/lib/format"
+import type { EventSession, Platform, SessionMetrics } from "@/types/event.types"
 
 interface SessionsTableProps {
   sessions: EventSession[]
   isLoading?: boolean
+  /** Receita que não pôde ser creditada a nenhuma transmissão — item posto pelo
+   *  painel, ou carrinho anterior ao log de adições. Vem separada porque não é
+   *  uma sessão; e aparece porque sem ela a soma da coluna não fecha com o
+   *  faturamento do evento. */
+  unattributed?: SessionMetrics | null
 }
 
 function formatDuration(startedAt: string | null, endedAt: string | null): string {
@@ -67,7 +73,7 @@ function getPlatformIcon(platform: string) {
   }
 }
 
-export function SessionsTable({ sessions, isLoading }: SessionsTableProps) {
+export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTableProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -84,6 +90,8 @@ export function SessionsTable({ sessions, isLoading }: SessionsTableProps) {
                 <TableHead className="w-20">Sessao</TableHead>
                 <TableHead>Plataforma</TableHead>
                 <TableHead>Duracao</TableHead>
+                <TableHead className="text-right">Vendido</TableHead>
+                <TableHead className="text-right">Em carrinho</TableHead>
                 <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -94,17 +102,19 @@ export function SessionsTable({ sessions, isLoading }: SessionsTableProps) {
                     <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-16 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-16 text-center text-muted-foreground">
                     Nenhuma sessao
                   </TableCell>
                 </TableRow>
               ) : (
-                sessions.map((session, index) => {
+                sessions.map((session) => {
                   const platform = session.platforms?.[0]
                   const platformName = platform
                     ? PLATFORM_LABELS[platform.platform as Platform] || platform.platform
@@ -114,7 +124,7 @@ export function SessionsTable({ sessions, isLoading }: SessionsTableProps) {
                     <TableRow key={session.id}>
                       <TableCell>
                         <Badge variant="outline" className="font-mono">
-                          S{index + 1}
+                          S{session.sequenceOrder}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -126,12 +136,37 @@ export function SessionsTable({ sessions, isLoading }: SessionsTableProps) {
                       <TableCell className="tabular-nums">
                         {formatDuration(session.startedAt, session.endedAt)}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">
+                        {formatCurrency(session.confirmedRevenue)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {formatCurrency(session.projectedRevenue)}
+                      </TableCell>
                       <TableCell className="text-right">
                         {getStatusBadge(session.status)}
                       </TableCell>
                     </TableRow>
                   )
                 })
+              )}
+              {!isLoading && unattributed && (
+                <TableRow className="bg-muted/30">
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      —
+                    </Badge>
+                  </TableCell>
+                  <TableCell colSpan={2} className="text-muted-foreground">
+                    Sem transmissao
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">
+                    {formatCurrency(unattributed.confirmedRevenue)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {formatCurrency(unattributed.projectedRevenue)}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
               )}
             </TableBody>
           </Table>

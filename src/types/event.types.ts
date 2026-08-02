@@ -35,21 +35,59 @@ export interface SessionComment {
   text: string
 }
 
-export interface EventSession {
+/** Métrica de UMA transmissão, nos dois níveis (Fatia 5).
+ *
+ *  Confirmado é o congelado do pedido pago; projetado é o que está nos
+ *  carrinhos abertos. Sempre em GMV bruto: cupom é do evento e frete é do
+ *  carrinho, então nenhum dos dois tem transmissão.
+ *
+ *  Substitui `totalRevenue`/`paidRevenue`/`totalCarts`, que somavam o carrinho
+ *  INTEIRO na transmissão em que ele nasceu — numa campanha de uma semana isso
+ *  creditava a semana toda à primeira live. */
+export interface SessionRevenue {
+  paidCarts: number
+  soldUnits: number
+  confirmedRevenue: number
+  openCarts: number
+  projectedUnits: number
+  projectedRevenue: number
+}
+
+export interface EventSession extends SessionRevenue {
   id: string
   eventId: string
+  type: string // live, post, reel, story
   status: string // active, live, ended
+  sequenceOrder: number
   startedAt: string | null
   endedAt: string | null
   totalComments: number
-  totalCarts: number
-  paidCarts: number
-  totalRevenue: number
-  paidRevenue: number
   platforms: EventPlatform[]
   comments?: SessionComment[]
   createdAt: string
   updatedAt: string
+}
+
+/** Uma linha do relatório por transmissão. `sessionId` nulo é o balde "sem
+ *  transmissão" (item posto pelo painel, ou carrinho anterior ao log de
+ *  adições) — ele existe de propósito: escondê-lo faz a soma das transmissões
+ *  não fechar com o total do evento. */
+export interface SessionMetrics extends SessionRevenue {
+  sessionId: string | null
+  sequenceOrder: number
+  type: string
+  status: string
+}
+
+/** Métrica do evento com a quebra por transmissão. `confirmedRevenue` e
+ *  `projectedRevenue` são, por construção, a soma exata de `sessions` +
+ *  `unattributed`, e batem com os mesmos campos de `EventDetailStats`. */
+export interface EventSessionMetrics {
+  eventId: string
+  confirmedRevenue: number
+  projectedRevenue: number
+  sessions: SessionMetrics[]
+  unattributed: SessionMetrics | null
 }
 
 // =============================================================================
