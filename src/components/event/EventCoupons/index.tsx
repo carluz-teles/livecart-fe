@@ -103,12 +103,15 @@ export function EventCoupons({ eventId }: EventCouponsProps) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                Cupons da live
+                Cupons da campanha
               </CardTitle>
               <CardDescription>
+                {/* O cupom é da CAMPANHA, não de uma transmissão: quem ganhou o
+                    código na live de segunda usa no story de quinta, porque é o
+                    mesmo carrinho. E vale uma vez por comprador no evento. */}
                 {hasCoupons
-                  ? `${list.length} ${list.length === 1 ? "cupom" : "cupons"} criado${list.length === 1 ? "" : "s"} para esta live.`
-                  : "Crie códigos promocionais que valem só durante esta transmissão."}
+                  ? `${list.length} ${list.length === 1 ? "cupom vale" : "cupons valem"} para todas as sessões desta campanha — uma vez por cliente.`
+                  : "Crie códigos promocionais que valem em todas as sessões desta campanha. Cada cliente usa o cupom uma vez só no evento."}
               </CardDescription>
             </div>
             {hasCoupons && (

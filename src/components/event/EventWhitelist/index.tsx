@@ -46,11 +46,16 @@ export function EventWhitelist({ eventId }: EventWhitelistProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Produtos do Evento</CardTitle>
+              <CardTitle>Produtos da campanha</CardTitle>
               <CardDescription>
+                {/* Lista vazia libera o catálogo inteiro — é o comportamento
+                    padrão, porque a maioria dos lojistas fala o código durante
+                    a transmissão em vez de configurar produto. A sessão nova
+                    HERDA esta lista; sem a herança, criar uma sessão zeraria a
+                    barreira do evento inteiro pela regra de união. */}
                 {hasProducts
-                  ? `${whitelistProducts.length} produto(s) configurado(s) para este evento`
-                  : "Sem produtos configurados = todos os produtos da loja são aceitos"}
+                  ? `${whitelistProducts.length} produto(s) liberado(s). Toda sessão nova desta campanha herda esta lista.`
+                  : "Sem produtos configurados, todos os produtos da loja são aceitos em qualquer sessão desta campanha."}
               </CardDescription>
             </div>
             <Button onClick={() => setIsPickerOpen(true)}>

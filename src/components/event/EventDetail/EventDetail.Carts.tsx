@@ -61,7 +61,12 @@ export function EventDetailCarts() {
               <ShoppingCart className="h-4 w-4" />
               Pedidos
             </CardTitle>
-            <CardDescription>Todos os carrinhos do evento</CardDescription>
+            <CardDescription>
+              Uma linha por carrinho. Como o carrinho é um só por cliente na campanha, a
+              mesma pessoa aparece uma vez — com os itens de todas as sessões somados. Se
+              ela já pagou e voltou a comprar, aparece um segundo carrinho, com link
+              próprio.
+            </CardDescription>
           </div>
           {carts.length > 0 && (
             <Badge variant="secondary">{carts.length} carrinho(s)</Badge>
@@ -195,7 +200,11 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
       </TableCell>
       <TableCell>
         {sessionNumber ? (
-          <Badge variant="outline" className="font-mono text-xs">
+          <Badge
+            variant="outline"
+            className="font-mono text-xs"
+            title="A sessão em que este carrinho nasceu. Os itens dele podem ter vindo de várias sessões diferentes."
+          >
             S{sessionNumber}
           </Badge>
         ) : (
