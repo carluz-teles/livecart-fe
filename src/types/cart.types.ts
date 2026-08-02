@@ -71,7 +71,15 @@ export interface Order {
   // surfaces it as "#{shortId}". The UUID still owns the URL key — short_id is
   // only the human-friendly handle.
   shortId: number
+  /** Id da CAMPANHA a que este pedido pertence. */
+  eventId: string
+  /** Título da campanha (não da transmissão). */
+  eventTitle: string
+  /** @deprecated nunca carregou id de sessão — sempre foi o event_id. Nome que
+   *  engana ativamente: quem implementar contra ele passa um id de
+   *  `live_sessions` e recebe zero linhas, sem erro. Use `eventId`. */
   liveSessionId: string
+  /** @deprecated é o título do evento. Use `eventTitle`. */
   liveTitle: string
   livePlatform: string
   customerHandle: string
@@ -228,6 +236,9 @@ export interface CartCheckoutPayload {
 export interface OrderFilters {
   status?: OrderStatus[]
   paymentStatus?: PaymentStatus[]
+  /** Filtra por CAMPANHA. O backend sempre casou `carts.event_id` aqui. */
+  eventId?: string
+  /** @deprecated sinônimo de `eventId`. */
   liveSessionId?: string
   dateFrom?: string
   dateTo?: string
@@ -350,7 +361,10 @@ export interface PublicCheckoutItem {
 export interface PublicCheckoutEvent {
   id: string
   title: string
-  /** 'single' | 'multi' | 'post'. Used to show post-appropriate wording. */
+  /** Espécie da transmissão desta campanha: 'live' | 'post' | 'reel' | 'story'.
+   *  Sai de `live_sessions.type`, com precedência para live — "Live em
+   *  andamento" continua verdade enquanto UMA estiver no ar, mesmo numa
+   *  campanha que também tem post. Vazio = campanha sem transmissão. */
   type?: string
   freeShipping: boolean
   /** Discount percent (0-100) applied at checkout when the buyer pays with

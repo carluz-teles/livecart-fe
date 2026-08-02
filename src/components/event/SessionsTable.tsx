@@ -1,8 +1,9 @@
 "use client"
 
-import { Radio, Instagram, Youtube } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Radio, Instagram, Youtube, Aperture, Film, Plus } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { PLATFORM_LABELS } from "@/lib/constants"
+import { PLATFORM_LABELS, SESSION_STATUS_CONFIG } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 import type { EventSession, Platform, SessionMetrics } from "@/types/event.types"
 
@@ -24,6 +25,23 @@ interface SessionsTableProps {
    *  uma sessão; e aparece porque sem ela a soma da coluna não fecha com o
    *  faturamento do evento. */
   unattributed?: SessionMetrics | null
+  /** Quando presente, mostra o botão de adicionar transmissão. Ausente = a
+   *  campanha não aceita sessão nova (encerrada). */
+  onAddSession?: () => void
+}
+
+/** Tooltip da coluna de receita — copy deck §5.3. */
+const REVENUE_HINT =
+  "Receita atribuída a esta sessão: cada item conta para a sessão em que foi adicionado, mesmo que o pagamento tenha acontecido dias depois."
+
+const UNATTRIBUTED_HINT =
+  "Itens que não puderam ser creditados a nenhuma transmissão — postos pelo painel, ou de carrinhos anteriores ao registro por sessão. Aparecem aqui porque sem eles a soma das sessões não fecha com o total do evento."
+
+const SESSION_TYPE_META: Record<string, { label: string; Icon: typeof Radio }> = {
+  live: { label: "Live", Icon: Radio },
+  post: { label: "Post", Icon: Instagram },
+  reel: { label: "Reel", Icon: Film },
+  story: { label: "Story", Icon: Aperture },
 }
 
 function formatDuration(startedAt: string | null, endedAt: string | null): string {
@@ -43,23 +61,24 @@ function formatDuration(startedAt: string | null, endedAt: string | null): strin
 }
 
 function getStatusBadge(status: string) {
-  switch (status) {
-    case "active":
-    case "live":
-      return (
-        <Badge variant="default" className="gap-1 bg-green-600">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
-          </span>
-          Ativa
-        </Badge>
-      )
-    case "ended":
-      return <Badge variant="secondary">Encerrada</Badge>
-    default:
-      return <Badge variant="outline">{status}</Badge>
+  const cfg = SESSION_STATUS_CONFIG[status]
+  if (!cfg) return <Badge variant="outline">{status}</Badge>
+  if (status === "live") {
+    return (
+      <Badge variant="default" className="gap-1 bg-green-600" title={cfg.hint}>
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+        </span>
+        {cfg.label}
+      </Badge>
+    )
   }
+  return (
+    <Badge variant={cfg.variant} title={cfg.hint}>
+      {cfg.label}
+    </Badge>
+  )
 }
 
 function getPlatformIcon(platform: string) {
@@ -73,25 +92,51 @@ function getPlatformIcon(platform: string) {
   }
 }
 
-export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTableProps) {
+export function SessionsTable({
+  sessions,
+  isLoading,
+  unattributed,
+  onAddSession,
+}: SessionsTableProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Radio className="h-4 w-4 text-muted-foreground" />
-          Sessoes
-        </CardTitle>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base font-medium">
+              <Radio className="h-4 w-4 text-muted-foreground" />
+              Sessões do evento
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Cada linha é uma transmissão desta campanha. Você pode adicionar sessões
+              enquanto o evento estiver aberto, de tipos diferentes. A campanha só fecha na
+              data de fim ou quando você clicar em &quot;Finalizar evento&quot; — nenhuma
+              sessão sozinha fecha carrinho.
+            </CardDescription>
+          </div>
+          {onAddSession && (
+            <Button variant="outline" size="sm" className="shrink-0" onClick={onAddSession}>
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar sessão
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">Sessao</TableHead>
+                <TableHead className="w-20">Sessão</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Plataforma</TableHead>
-                <TableHead>Duracao</TableHead>
-                <TableHead className="text-right">Vendido</TableHead>
-                <TableHead className="text-right">Em carrinho</TableHead>
+                <TableHead>Duração</TableHead>
+                <TableHead className="text-right" title={REVENUE_HINT}>
+                  Vendido
+                </TableHead>
+                <TableHead className="text-right" title={REVENUE_HINT}>
+                  Em carrinho
+                </TableHead>
                 <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -100,6 +145,7 @@ export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTab
                 Array.from({ length: 2 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
@@ -109,8 +155,13 @@ export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTab
                 ))
               ) : sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-16 text-center text-muted-foreground">
-                    Nenhuma sessao
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <p className="font-medium">Nenhuma sessão ainda</p>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                      Adicione a primeira transmissão desta campanha. Pode ser uma live que
+                      você vai conectar na hora, um post que já existe no seu perfil, ou uma
+                      publicação que o LiveCart cria para você.
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -119,12 +170,23 @@ export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTab
                   const platformName = platform
                     ? PLATFORM_LABELS[platform.platform as Platform] || platform.platform
                     : "-"
+                  const typeMeta = SESSION_TYPE_META[session.type] ?? {
+                    label: session.type || "—",
+                    Icon: Radio,
+                  }
+                  const TypeIcon = typeMeta.Icon
 
                   return (
                     <TableRow key={session.id}>
                       <TableCell>
                         <Badge variant="outline" className="font-mono">
                           S{session.sequenceOrder}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="gap-1">
+                          <TypeIcon className="h-3 w-3" />
+                          {typeMeta.label}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -136,10 +198,16 @@ export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTab
                       <TableCell className="tabular-nums">
                         {formatDuration(session.startedAt, session.endedAt)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-medium">
+                      <TableCell
+                        className="text-right font-medium tabular-nums"
+                        title={REVENUE_HINT}
+                      >
                         {formatCurrency(session.confirmedRevenue)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell
+                        className="text-right tabular-nums text-muted-foreground"
+                        title={REVENUE_HINT}
+                      >
                         {formatCurrency(session.projectedRevenue)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -156,10 +224,10 @@ export function SessionsTable({ sessions, isLoading, unattributed }: SessionsTab
                       —
                     </Badge>
                   </TableCell>
-                  <TableCell colSpan={2} className="text-muted-foreground">
-                    Sem transmissao
+                  <TableCell colSpan={3} className="text-muted-foreground" title={UNATTRIBUTED_HINT}>
+                    Sem transmissão
                   </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">
+                  <TableCell className="text-right font-medium tabular-nums">
                     {formatCurrency(unattributed.confirmedRevenue)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">

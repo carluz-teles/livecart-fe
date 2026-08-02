@@ -41,7 +41,7 @@ export function useOnboardingStatus(): OnboardingStatus {
     const hasInstagram = active.some((i) => i.provider === "instagram")
     const hasPayment = active.some((i) => i.type === "payment")
     const hasProduct = (productStats?.totalProducts ?? 0) > 0
-    const hasEvents = (eventStats?.totalLives ?? 0) > 0
+    const hasEvents = (eventStats?.totalEvents ?? eventStats?.totalLives ?? 0) > 0
 
     return [
       {

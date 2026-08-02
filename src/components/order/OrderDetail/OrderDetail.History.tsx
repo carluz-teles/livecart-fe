@@ -118,8 +118,8 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
     kind: "created",
     date: order.createdAt,
     title: "Pedido criado",
-    description: order.liveTitle
-      ? `A partir da live "${order.liveTitle}"`
+    description: (order.eventTitle || order.liveTitle)
+      ? `A partir do evento "${order.eventTitle || order.liveTitle}"`
       : undefined,
   })
 

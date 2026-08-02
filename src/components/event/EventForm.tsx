@@ -45,6 +45,17 @@ import {
 import { createEventSchema, type CreateEventFormData } from "@/schemas/event.schema"
 import { useCreateEvent } from "@/hooks/event"
 import { useInstagramLives } from "@/hooks/integration"
+import { FieldHint } from "@/components/shared/FieldHint"
+import {
+  EVENT_COPY,
+  CART_EXPIRATION_OPTIONS,
+  MAX_QUANTITY_OPTIONS,
+  WAITLIST_TTL_OPTIONS,
+  isLongCampaign,
+  campaignDuration,
+  LONG_CAMPAIGN_WARNING,
+} from "@/lib/event-copy"
+import { DateTimeField } from "@/components/shared/DateTimeField"
 import type { Event, CreateEventPayload } from "@/types/event.types"
 
 interface EventFormProps {
@@ -55,24 +66,13 @@ interface EventFormProps {
   trigger?: React.ReactNode
 }
 
-// Cart expiration options
-const expirationOptions = [
-  { value: "inherit", label: "Usar padrao da loja" },
-  { value: "15", label: "15 minutos" },
-  { value: "30", label: "30 minutos" },
-  { value: "60", label: "1 hora" },
-  { value: "120", label: "2 horas" },
-  { value: "1440", label: "24 horas" },
-]
-
-// Max quantity per item options
-const maxQuantityOptions = [
-  { value: "inherit", label: "Usar padrao da loja" },
-  { value: "1", label: "1 unidade" },
-  { value: "3", label: "3 unidades" },
-  { value: "5", label: "5 unidades" },
-  { value: "10", label: "10 unidades" },
-]
+/** Fim padrão: 24h à frente, às 23h59 — o formato que o lojista digitaria. */
+function defaultEndsAt(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(23, 59, 0, 0)
+  return d.toISOString()
+}
 
 export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: EventFormProps) {
   const isEditing = !!event
@@ -95,11 +95,16 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       type: "single",
       platform: undefined,
       platformLiveId: "",
-      scheduledAt: null,
+      startsAt: null,
+      // Padrão de 24h à frente: endsAt é obrigatório no backend, e abrir o
+      // formulário vazio num campo obrigatório é o caminho mais curto para o
+      // lojista levar 422 sem entender por quê.
+      endsAt: defaultEndsAt(),
       description: null,
       closeCartOnEventEnd: true,
       cartExpirationMinutes: null,
       cartMaxQuantityPerItem: null,
+      waitlistNotifiedTtlMinutes: null,
       freeShipping: false,
       pixDiscountPercent: 0,
     },
@@ -110,15 +115,19 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     if (event) {
       form.reset({
         title: event.title || "",
-        // EventForm only handles live events; a post event never reaches here.
-        type: event.type === "multi" ? "multi" : "single",
+        // O tipo do container não é mais lido de lugar nenhum: a espécie da
+        // campanha vem das sessões. Aqui `single`/`multi` é só a intenção de
+        // criação, e um evento existente já tem as sessões que tem.
+        type: "multi",
         platform: undefined,
         platformLiveId: "",
-        scheduledAt: event.scheduledAt,
+        startsAt: event.scheduledAt,
+        endsAt: event.endsAt ?? defaultEndsAt(),
         description: event.description,
         closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
         cartExpirationMinutes: event.cartExpirationMinutes,
         cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
+        waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes ?? null,
         freeShipping: event.freeShipping ?? false,
         pixDiscountPercent: event.pixDiscountPercent ?? 0,
       })
@@ -128,11 +137,13 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
         type: "single",
         platform: undefined,
         platformLiveId: "",
-        scheduledAt: null,
+        startsAt: null,
+        endsAt: defaultEndsAt(),
         description: null,
         closeCartOnEventEnd: true,
         cartExpirationMinutes: null,
         cartMaxQuantityPerItem: null,
+        waitlistNotifiedTtlMinutes: null,
         freeShipping: false,
         pixDiscountPercent: 0,
       })
@@ -140,6 +151,11 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
   }, [event, form])
 
   const platformLiveId = form.watch("platformLiveId")
+  const watchStartsAt = form.watch("startsAt")
+  const watchEndsAt = form.watch("endsAt")
+  // Só avisa sobre o teto quando a campanha passa de 24h — numa live de duas
+  // horas "máximo 2" é trava anti-abuso saudável, e o aviso viraria ruído.
+  const longCampaignDuration = campaignDuration(watchStartsAt, watchEndsAt)
   const isPending = createEvent.isPending
 
   async function onSubmit(data: CreateEventFormData) {
@@ -149,13 +165,15 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       // Only include platform if platformLiveId is provided
       platform: data.platformLiveId ? "instagram" : undefined,
       platformLiveId: data.platformLiveId || undefined,
-      // Scheduling
-      scheduledAt: data.scheduledAt || undefined,
+      // Janela comercial. endsAt é obrigatório — sem ele o POST responde 422.
+      startsAt: data.startsAt || undefined,
+      endsAt: data.endsAt,
       description: data.description || undefined,
       // Cart settings
       closeCartOnEventEnd: data.closeCartOnEventEnd,
       cartExpirationMinutes: data.cartExpirationMinutes,
       cartMaxQuantityPerItem: data.cartMaxQuantityPerItem,
+      waitlistNotifiedTtlMinutes: data.waitlistNotifiedTtlMinutes,
       freeShipping: data.freeShipping,
       pixDiscountPercent: data.pixDiscountPercent ?? 0,
     }
@@ -209,14 +227,16 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Titulo <span className="text-destructive">*</span>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.title.label} <span className="text-destructive">*</span>
+                    <FieldHint text={EVENT_COPY.title.hint} />
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Live de Sabado" {...field} />
+                    <Input placeholder={EVENT_COPY.title.placeholder} {...field} />
                   </FormControl>
                   <FormDescription>
-                    Nome do evento para identificacao
+                    Ex: &quot;Semana Black&quot; ou &quot;Coleção Verão&quot; — e não
+                    &quot;Live de segunda&quot;, que é nome de sessão.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -325,9 +345,77 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
             <div className="relative py-2">
               <Separator />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                Configuracoes do carrinho
+                Janela da campanha
               </span>
             </div>
+
+            <p className="text-sm text-muted-foreground">
+              Quando a campanha abre e quando fecha. Fora dessa janela, comentários não
+              viram carrinho — o comprador recebe um aviso automático em vez de ficar sem
+              resposta.
+            </p>
+
+            <FormField
+              control={form.control}
+              name="startsAt"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.startsAt.label}
+                    <FieldHint text={EVENT_COPY.startsAt.hint} />
+                  </FormLabel>
+                  <DateTimeField
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Começa agora"
+                  />
+                  <FormDescription>{EVENT_COPY.startsAt.empty}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endsAt"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
+                    <FieldHint text={EVENT_COPY.endsAt.hint} />
+                  </FormLabel>
+                  <DateTimeField
+                    value={field.value}
+                    onChange={(iso) => field.onChange(iso ?? "")}
+                    clearable={false}
+                    defaultHour={23}
+                    defaultMinute={59}
+                  />
+                  <FormDescription>{EVENT_COPY.endsAt.help}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {isLongCampaign(watchStartsAt, watchEndsAt) && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  {LONG_CAMPAIGN_WARNING}
+                </p>
+              </div>
+            )}
+
+            <div className="relative py-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                Configurações do carrinho
+              </span>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Estas regras valem para o carrinho da campanha inteira. Como o cliente tem um
+              carrinho só, elas não se repetem por sessão.
+            </p>
 
             <FormField
               control={form.control}
@@ -335,11 +423,15 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-sm font-medium">
-                      Fechar carrinho ao finalizar
+                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
+                      Fechar o carrinho logo depois da campanha
+                      <FieldHint text={EVENT_COPY.closeCartOnEventEnd.hint} />
                     </FormLabel>
                     <FormDescription className="text-xs">
-                      Carrinho para de aceitar itens quando o evento termina
+                      Ligado: o prazo abaixo começa a correr assim que a campanha fecha —
+                      é o que gira estoque mais rápido. Desligado: o carrinho continua
+                      aberto por um prazo bem maior. Os dois lados expiram; nada fica
+                      eterno.
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -358,8 +450,9 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-sm font-medium">
-                      Frete grátis neste evento
+                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
+                      {EVENT_COPY.freeShipping.label}
+                      <FieldHint text={EVENT_COPY.freeShipping.hint} />
                     </FormLabel>
                     <FormDescription className="text-xs">
                       O cliente vê as opções de transportadora e prazo, mas paga
@@ -387,8 +480,9 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                   <FormItem className="rounded-lg border p-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-0.5 flex-1">
-                        <FormLabel className="text-sm font-medium">
-                          Desconto no PIX
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
+                          {EVENT_COPY.pixDiscount.label}
+                          <FieldHint text={EVENT_COPY.pixDiscount.hint} />
                         </FormLabel>
                         <FormDescription className="text-xs">
                           Aplicado automaticamente no checkout quando o cliente
@@ -441,7 +535,10 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               name="cartExpirationMinutes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expiracao do carrinho</FormLabel>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.cartExpiration.label}
+                    <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value === "inherit" ? null : parseInt(value, 10))
@@ -454,16 +551,14 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {expirationOptions.map((option) => (
+                      {CART_EXPIRATION_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Tempo ate o carrinho expirar apos inatividade
-                  </FormDescription>
+                  <FormDescription>{EVENT_COPY.cartExpiration.help}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -474,7 +569,10 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               name="cartMaxQuantityPerItem"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantidade maxima por item</FormLabel>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.maxQuantity.label}
+                    <FieldHint text={EVENT_COPY.maxQuantity.hint} />
+                  </FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value === "inherit" ? null : parseInt(value, 10))
@@ -487,117 +585,64 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {maxQuantityOptions.map((option) => (
+                      {MAX_QUANTITY_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Limite maximo de unidades por produto no carrinho
-                  </FormDescription>
+                  {/* O texto longo NÃO pode virar tooltip: é o contrato de
+                      aceitação do risco R2 — o teto vale para a campanha
+                      inteira, e é isso que bloqueia uma compra legítima na
+                      sessão seguinte. */}
+                  <FormDescription>{EVENT_COPY.maxQuantity.help}</FormDescription>
+                  {field.value != null && longCampaignDuration && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <strong>Atenção ao limite numa campanha de vários dias.</strong>{" "}
+                        Você definiu {field.value} unidade(s) por produto, e esta campanha
+                        dura {longCampaignDuration}. Esse limite vale para o período
+                        inteiro: quem atingir o teto na primeira sessão fica bloqueado até
+                        a campanha terminar.
+                      </p>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="relative py-2">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                Agendamento (opcional)
-              </span>
-            </div>
-
             <FormField
               control={form.control}
-              name="scheduledAt"
-              render={({ field }) => {
-                const selectedDate = field.value ? new Date(field.value) : undefined
-                const timeValue = selectedDate
-                  ? format(selectedDate, "HH:mm")
-                  : ""
-
-                const handleDateSelect = (date: Date | undefined) => {
-                  if (!date) {
-                    field.onChange(null)
-                    return
-                  }
-                  // Preserve time if already set
-                  if (selectedDate) {
-                    date.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-                  } else {
-                    // Default to 10:00
-                    date.setHours(10, 0)
-                  }
-                  field.onChange(date.toISOString())
-                }
-
-                const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                  const [hours, minutes] = e.target.value.split(":").map(Number)
-                  const date = selectedDate ? new Date(selectedDate) : new Date()
-                  date.setHours(hours, minutes, 0, 0)
-                  field.onChange(date.toISOString())
-                }
-
-                return (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data e hora do evento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value
-                              ? format(new Date(field.value), "PPP 'às' HH:mm", { locale: ptBR })
-                              : "Selecione data e hora"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          disabled={(date) => date < new Date()}
-                          locale={ptBR}
-                        />
-                        <div className="border-t p-3">
-                          <Label className="text-sm">Horário</Label>
-                          <Input
-                            type="time"
-                            value={timeValue}
-                            onChange={handleTimeChange}
-                            className="mt-1"
-                          />
-                        </div>
-                        {field.value && (
-                          <div className="border-t p-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => field.onChange(null)}
-                            >
-                              Limpar data
-                            </Button>
-                          </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Agende para iniciar o evento automaticamente nesta data
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
+              name="waitlistNotifiedTtlMinutes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.waitlistTtl.label}
+                    <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
+                  </FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                    value={field.value == null ? "30" : String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {WAITLIST_TTL_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField

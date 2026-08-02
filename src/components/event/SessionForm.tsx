@@ -50,6 +50,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     resolver: zodResolver(createSessionSchema),
     defaultValues: {
       platform: "instagram",
+      type: "live",
       platformLiveId: "",
     },
   })
@@ -66,6 +67,10 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         eventId,
         payload: {
           platform: "instagram", // Only Instagram supported
+          // Sem `type` o backend grava 'live'. Como post/reel/story agora SÃO
+          // sessões, omitir aqui fazia toda transmissão nascer rotulada
+          // errado — e a métrica por sessão herdava o rótulo errado junto.
+          type: data.type ?? "live",
           platformLiveId: data.platformLiveId,
         },
       },
@@ -91,16 +96,45 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Nova Sessao
+            Nova sessão
           </DialogTitle>
           <DialogDescription>
-            Adicione uma nova sessao de transmissao ao evento. Isso permite continuar
-            capturando pedidos em uma nova live.
+            Adicione uma transmissão a esta campanha. Os carrinhos já abertos continuam
+            como estão — a sessão nova soma no mesmo carrinho de cada cliente, e herda a
+            lista de produtos do evento.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo da sessão</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? "live"}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="post">Post</SelectItem>
+                      <SelectItem value="reel">Reel</SelectItem>
+                      <SelectItem value="story">Story</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    O que esta transmissão é. Define como o comprador demonstra interesse:
+                    comentário no post e na live, resposta por DM no story.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormItem>
               <FormLabel>Plataforma</FormLabel>
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">

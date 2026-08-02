@@ -81,7 +81,9 @@ export function OrderDetailHeader() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {order.liveTitle && <span>{order.liveTitle} · </span>}
+              {(order.eventTitle || order.liveTitle) && (
+                <span>{order.eventTitle || order.liveTitle} · </span>
+              )}
               {formatDateTime(order.createdAt)}
             </p>
           </div>

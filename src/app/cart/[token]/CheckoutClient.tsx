@@ -688,9 +688,11 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   }
 
   const isLiveActive = cart.status === "active"
-  // Stories share the post-commerce checkout copy ("Promoção ativa!"), not the
-  // live wording.
-  const isPost = cart.event?.type === "post" || cart.event?.type === "story"
+  // Publicação (post/reel/story) usa o copy de promoção; só a live usa "Live em
+  // andamento". O campo vem de live_sessions.type — live_events.type não existe
+  // mais —, então a lista de espécies é aberta: qualquer coisa que NÃO seja
+  // live é publicação.
+  const isPost = !!cart.event?.type && cart.event.type !== "live"
 
   const availableItems = cart.items.filter((item) => {
     const availableQty = item.quantity - item.waitlistedQuantity

@@ -83,13 +83,13 @@ function SummaryLiveCard({ order }: LiveCardProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <Radio className="h-4 w-4" />
-          Live de origem
+          Evento de origem
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
           <p className="text-sm font-medium leading-tight">
-            {order.liveTitle || "Sem título"}
+            {order.eventTitle || order.liveTitle || "Sem título"}
           </p>
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             {PlatformIcon && (

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { isPostLikeEvent } from "@/types/event.types"
+import { getEventKind } from "@/lib/event-kind"
 import { EventDetailContext } from "./EventDetailContext"
 
 export function EventDetailActions() {
@@ -23,8 +23,9 @@ export function EventDetailActions() {
   // Ações só fazem sentido com evento ativo.
   if (event.status !== "active") return null
 
-  // Live-only actions (sessions / crash recovery) don't apply to post/story events.
-  const isPost = isPostLikeEvent(event.type)
+  // Sessão nova / crash recovery são de transmissão ao vivo. A espécie sai das
+  // sessões da campanha, não de event.type (coluna removida pela 000119).
+  const kind = getEventKind(event)
 
   return (
     <DropdownMenu>
@@ -35,7 +36,7 @@ export function EventDetailActions() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {!isPost && (
+        {!kind.isPublicationOnly && (
           <>
             <DropdownMenuItem onClick={() => setCreateSessionOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -53,7 +54,7 @@ export function EventDetailActions() {
           className="text-destructive focus:text-destructive"
         >
           <StopCircle className="mr-2 h-4 w-4" />
-          {isPost ? "Encerrar promoção" : "Finalizar evento"}
+          {kind.isPublicationOnly ? "Encerrar promoção" : "Finalizar evento"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

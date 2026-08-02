@@ -38,33 +38,64 @@ export interface EventStatusConfig extends StatusConfig {
 }
 
 /**
- * Event status configuration (live events)
+ * Status da campanha quando ela tem transmissão ao vivo.
  */
 export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
-  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
-  active: { label: "Ao Vivo", variant: "destructive", icon: "radio" },
-  ended: { label: "Finalizado", variant: "secondary", icon: "check-circle" },
+  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
+  active: { label: "No ar", variant: "destructive", icon: "radio" },
+  ended: { label: "Encerrada", variant: "secondary", icon: "check-circle" },
 }
 
 /**
- * Event status configuration for POST events — an active post is not "live".
+ * Status da campanha que só tem publicações — um post ativo não está "ao vivo".
  */
 export const POST_EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
-  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
-  active: { label: "Ativo", variant: "default", icon: "instagram" },
-  ended: { label: "Encerrado", variant: "secondary", icon: "check-circle" },
+  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
+  active: { label: "Ativa", variant: "default", icon: "instagram" },
+  ended: { label: "Encerrada", variant: "secondary", icon: "check-circle" },
+}
+
+/** Tooltip de cada status do evento (copy deck §8.2). */
+export const EVENT_STATUS_HINT: Record<EventStatus, string> = {
+  scheduled:
+    "A campanha ainda não abriu. Comentários recebem um aviso automático em vez de virar carrinho.",
+  active:
+    "A campanha está vendendo. Os carrinhos ficam abertos e não expiram enquanto ela durar.",
+  ended: "A campanha fechou. Os carrinhos estão com prazo correndo ou já expiraram.",
 }
 
 /**
- * Picks the status display for an event based on its type.
+ * Escolhe o rótulo de status a partir do que existe DENTRO da campanha.
+ *
+ * Antes isto recebia `event.type` — a coluna que a 000119 remove. O parâmetro
+ * agora é o predicado derivado das sessões (`getEventKind(...).isPublicationOnly`),
+ * então nada aqui depende do tipo do container.
  */
 export function getEventStatusDisplay(
   status: EventStatus,
-  type?: string
+  isPublicationOnly = false
 ): EventStatusConfig {
-  const map =
-    type === "post" || type === "story" ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
+  const map = isPublicationOnly ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
   return map[status] ?? map.ended
+}
+
+/** Rótulos de status de uma SESSÃO (copy deck §8.3). */
+export const SESSION_STATUS_CONFIG: Record<string, StatusConfig & { hint: string }> = {
+  active: {
+    label: "Aguardando",
+    variant: "outline",
+    hint: "Sessão criada, ainda sem publicação vinculada ou sem transmissão no ar.",
+  },
+  live: {
+    label: "Capturando",
+    variant: "default",
+    hint: "Os comentários desta publicação estão virando carrinho agora.",
+  },
+  ended: {
+    label: "Encerrada",
+    variant: "secondary",
+    hint: "Esta sessão parou de capturar. A campanha pode continuar aberta nas outras sessões.",
+  },
 }
 
 /**
