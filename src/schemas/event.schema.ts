@@ -48,7 +48,10 @@ export const createEventSchema = z.object({
   description: z.string().max(1000).nullable().optional(),
   // Cart settings (override store defaults)
   closeCartOnEventEnd: z.boolean().optional(),
-  cartExpirationMinutes: z.number().min(5).max(1440).nullable().optional(),
+  // Piso 15: espelha o CHECK live_events_cart_expiration_minutes_check
+  // (migration 000104). Abaixo disso o banco rejeita, então validar aqui
+  // devolve erro de campo em vez de 500. null = herda a config da loja.
+  cartExpirationMinutes: z.number().min(15).max(1440).nullable().optional(),
   cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
   freeShipping: z.boolean().optional(),
   // Pix discount in whole percent (0-100). 0 disables the feature.
