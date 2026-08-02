@@ -117,7 +117,7 @@ export default function CheckoutSettingsPage() {
             <Input
               id="expirationMinutes"
               type="number"
-              min={5}
+              min={15}
               max={1440}
               {...register("expirationMinutes", { valueAsNumber: true })}
             />
@@ -127,7 +127,7 @@ export default function CheckoutSettingsPage() {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              5 minutos até 24 horas. O link de checkout usa o mesmo tempo.
+              15 minutos até 24 horas. O link de checkout usa o mesmo tempo.
             </p>
           </div>
         </CardContent>

@@ -21,6 +21,8 @@ interface MetricCardProps {
   value: string | number
   subValue?: string
   subLabel?: string
+  /** Tooltip nativo do rótulo — explica de onde o número sai. */
+  hint?: string
   color: string
   bgColor: string
   isLoading?: boolean
@@ -32,6 +34,7 @@ function MetricCard({
   value,
   subValue,
   subLabel,
+  hint,
   color,
   bgColor,
   isLoading,
@@ -41,7 +44,9 @@ function MetricCard({
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p className="text-sm font-medium text-muted-foreground" title={hint}>
+              {label}
+            </p>
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
@@ -85,25 +90,27 @@ export function EventMetricCards({
   const metrics = [
     {
       icon: DollarSign,
-      label: "Faturamento",
+      label: "Receita confirmada",
       value: formatCurrency(confirmedRevenue),
       subValue: projectedRevenue > confirmedRevenue ? formatCurrency(projectedRevenue) : undefined,
       subLabel: projectedRevenue > confirmedRevenue ? "projetado" : undefined,
+      hint: "Só pedidos efetivamente pagos. Sai da tabela de pedidos, que é a fonte da verdade do faturamento. O valor menor ao lado é a receita projetada: carrinhos abertos que ainda não foram pagos — expectativa, não faturamento.",
       color: "text-green-600",
       bgColor: "bg-green-500/10",
     },
     {
       icon: TrendingUp,
-      label: "Conversao",
+      label: "Conversão",
       value: `${conversionRate}%`,
       subValue: `${paidCarts} de ${totalCarts}`,
+      hint: "Carrinhos pagos sobre carrinhos criados na campanha. Como o carrinho é um só por cliente, cada pessoa conta uma vez — mesmo tendo comprado em várias transmissões.",
       subLabel: undefined,
       color: conversionRate >= 50 ? "text-green-600" : conversionRate >= 25 ? "text-amber-600" : "text-red-500",
       bgColor: conversionRate >= 50 ? "bg-green-500/10" : conversionRate >= 25 ? "bg-amber-500/10" : "bg-red-500/10",
     },
     {
       icon: Receipt,
-      label: "Ticket Medio",
+      label: "Ticket médio",
       value: formatCurrency(averageTicket),
       subValue: "por venda",
       subLabel: undefined,
@@ -113,6 +120,7 @@ export function EventMetricCards({
     {
       icon: Package,
       label: "Unidades",
+      hint: "Unidades efetivamente vendidas na campanha inteira, somando todas as transmissões.",
       value: totalProductsSold,
       subValue: "vendidas",
       subLabel: undefined,
@@ -131,6 +139,7 @@ export function EventMetricCards({
           value={metric.value}
           subValue={metric.subValue}
           subLabel={metric.subLabel}
+          hint={"hint" in metric ? (metric.hint as string | undefined) : undefined}
           color={metric.color}
           bgColor={metric.bgColor}
           isLoading={isLoading}

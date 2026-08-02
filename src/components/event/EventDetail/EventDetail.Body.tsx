@@ -15,6 +15,8 @@ import { EventDetailFunnel } from "./EventDetail.Funnel"
 import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
+import { EventDetailMetrics } from "./EventDetail.Metrics"
+import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
 import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
@@ -53,12 +55,17 @@ export function EventDetailBody() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="metrics">Métricas</TabsTrigger>
           <TabsTrigger value="coupons">Cupons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
           {/* High-priority banner: only shows when event is active. */}
           <EventDetailLiveControl />
+
+          {/* RN-38 — quem o Instagram não deixou avisar. Some quando não há
+              ninguém: é o caso normal e não pode sugerir problema. */}
+          <EventDetailUndelivered />
 
           {/* KPIs full width above the split so they read as the headline
               numbers for the event. */}
@@ -78,6 +85,10 @@ export function EventDetailBody() {
               <EventDetailTopBuyers />
             </aside>
           </div>
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-6">
+          <EventDetailMetrics />
         </TabsContent>
 
         <TabsContent value="products" className="mt-6">

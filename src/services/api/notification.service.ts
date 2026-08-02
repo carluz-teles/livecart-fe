@@ -7,6 +7,7 @@ import type {
   TestRecipient,
   SendTestPayload,
   SendTestEmailPayload,
+  UndeliveredResponse,
 } from "@/types/notification.types"
 
 export const notificationService = {
@@ -17,6 +18,16 @@ export const notificationService = {
   // Update notification settings for a store
   updateSettings: (storeId: string, payload: UpdateNotificationSettingsPayload, token?: string | null) =>
     apiClient.put<NotificationSettings>(`/stores/${storeId}/notifications/settings`, payload, token),
+
+  // RN-38 — compradores que não puderam ser avisados numa campanha. O total
+  // vem junto da lista porque as duas perguntas do painel ("{n} compradores não
+  // puderam ser avisados" e a lista em si) são a mesma consulta: dois endpoints
+  // seriam duas fontes que podem discordar entre um render e outro.
+  listUndelivered: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<UndeliveredResponse>(
+      `/stores/${storeId}/notifications/undelivered?eventId=${encodeURIComponent(eventId)}`,
+      token,
+    ),
 
   // Preview a template with sample data
   previewTemplate: (storeId: string, template: string, token?: string | null) =>
