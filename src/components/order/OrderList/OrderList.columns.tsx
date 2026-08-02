@@ -172,11 +172,11 @@ export const orderColumns: ColumnDef<Order>[] = [
     },
   },
   {
-    id: "live",
-    header: () => "Live",
+    id: "event",
+    header: () => "Evento",
     cell: ({ row }) => (
       <span className="text-muted-foreground">
-        {row.original.liveTitle || "Sem título"}
+        {row.original.eventTitle || row.original.liveTitle || "Sem título"}
       </span>
     ),
   },

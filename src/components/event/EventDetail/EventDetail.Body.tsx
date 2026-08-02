@@ -7,6 +7,7 @@ import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
+import { EventWindowForm } from "@/components/event/EventWindowForm"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
 import { EventDetailKpis } from "./EventDetail.Kpis"
@@ -14,6 +15,8 @@ import { EventDetailFunnel } from "./EventDetail.Funnel"
 import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
+import { EventDetailMetrics } from "./EventDetail.Metrics"
+import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
 import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
@@ -28,8 +31,8 @@ import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialo
 export function EventDetailBody() {
   const ctx = use(EventDetailContext)
   if (!ctx) return null
-  const { event, crashRecoveryOpen } = ctx.state
-  const { setCrashRecoveryOpen, refresh } = ctx.actions
+  const { event, crashRecoveryOpen, editEventOpen } = ctx.state
+  const { setCrashRecoveryOpen, setEditEventOpen, refresh } = ctx.actions
 
   return (
     <>
@@ -52,12 +55,17 @@ export function EventDetailBody() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="metrics">Métricas</TabsTrigger>
           <TabsTrigger value="coupons">Cupons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
           {/* High-priority banner: only shows when event is active. */}
           <EventDetailLiveControl />
+
+          {/* RN-38 — quem o Instagram não deixou avisar. Some quando não há
+              ninguém: é o caso normal e não pode sugerir problema. */}
+          <EventDetailUndelivered />
 
           {/* KPIs full width above the split so they read as the headline
               numbers for the event. */}
@@ -77,6 +85,10 @@ export function EventDetailBody() {
               <EventDetailTopBuyers />
             </aside>
           </div>
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-6">
+          <EventDetailMetrics />
         </TabsContent>
 
         <TabsContent value="products" className="mt-6">
@@ -100,6 +112,12 @@ export function EventDetailBody() {
         eventId={event.id}
         open={crashRecoveryOpen}
         onOpenChange={setCrashRecoveryOpen}
+        onSuccess={refresh}
+      />
+      <EventWindowForm
+        event={event}
+        open={editEventOpen}
+        onOpenChange={setEditEventOpen}
         onSuccess={refresh}
       />
     </>

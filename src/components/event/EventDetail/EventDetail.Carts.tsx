@@ -61,7 +61,12 @@ export function EventDetailCarts() {
               <ShoppingCart className="h-4 w-4" />
               Pedidos
             </CardTitle>
-            <CardDescription>Todos os carrinhos do evento</CardDescription>
+            <CardDescription>
+              Uma linha por carrinho. Como o carrinho é um só por cliente na campanha, a
+              mesma pessoa aparece uma vez — com os itens de todas as sessões somados. Se
+              ela já pagou e voltou a comprar, aparece um segundo carrinho, com link
+              próprio.
+            </CardDescription>
           </div>
           {carts.length > 0 && (
             <Badge variant="secondary">{carts.length} carrinho(s)</Badge>
@@ -108,14 +113,17 @@ export function EventDetailCarts() {
                 </TableRow>
               ) : (
                 carts.map((cart) => {
-                  const sessionIndex =
-                    event.sessions?.findIndex((s) => s.id === cart.sessionId) ?? -1
+                  // sequenceOrder e a ordem da transmissao na campanha; a
+                  // posicao na lista nao e, porque ela vem por created_at DESC.
+                  // Usar o indice fazia o mesmo "S{n}" apontar para sessoes
+                  // diferentes nesta tabela e na de Sessoes.
+                  const session = event.sessions?.find((s) => s.id === cart.sessionId)
                   return (
                     <CartRow
                       key={cart.id}
                       cart={cart}
                       eventId={event.id}
-                      sessionNumber={sessionIndex >= 0 ? sessionIndex + 1 : null}
+                      sessionNumber={session?.sequenceOrder ?? null}
                     />
                   )
                 })
@@ -192,7 +200,11 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
       </TableCell>
       <TableCell>
         {sessionNumber ? (
-          <Badge variant="outline" className="font-mono text-xs">
+          <Badge
+            variant="outline"
+            className="font-mono text-xs"
+            title="A sessão em que este carrinho nasceu. Os itens dele podem ter vindo de várias sessões diferentes."
+          >
             S{sessionNumber}
           </Badge>
         ) : (

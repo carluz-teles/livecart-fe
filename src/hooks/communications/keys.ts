@@ -4,4 +4,6 @@ export const communicationsKeys = {
   variables: (type?: string) =>
     [...communicationsKeys.all, "variables", type ?? "all"] as const,
   testRecipient: () => [...communicationsKeys.all, "test-recipient"] as const,
+  undelivered: (storeId: string, eventId: string) =>
+    [...communicationsKeys.all, "undelivered", storeId, eventId] as const,
 }

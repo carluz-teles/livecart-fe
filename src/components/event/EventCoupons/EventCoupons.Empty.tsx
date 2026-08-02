@@ -20,7 +20,7 @@ export function EventCouponsEmpty({ onCreate }: EventCouponsEmptyProps) {
         Cupons
       </span>
       <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-        Cupons valem só para esta live — anuncie um código durante a transmissão
+        Cupons valem para toda a campanha — anuncie um código durante a transmissão
         para incentivar a compra na hora.
       </p>
       <Button onClick={onCreate} size="sm" className="mt-2">

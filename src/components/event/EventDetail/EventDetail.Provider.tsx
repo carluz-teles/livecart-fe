@@ -74,6 +74,7 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
   const [endEventOpen, setEndEventOpen] = useState(false)
   const [createSessionOpen, setCreateSessionOpen] = useState(false)
   const [crashRecoveryOpen, setCrashRecoveryOpen] = useState(false)
+  const [editEventOpen, setEditEventOpen] = useState(false)
 
   const refresh = useCallback(() => {
     // The event itself can change too (sessions list, status) — kick a fresh
@@ -107,6 +108,7 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
       endEventOpen,
       createSessionOpen,
       crashRecoveryOpen,
+      editEventOpen,
     },
     actions: {
       refresh,
@@ -115,6 +117,7 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
       setEndEventOpen,
       setCreateSessionOpen,
       setCrashRecoveryOpen,
+      setEditEventOpen,
     },
   }
 

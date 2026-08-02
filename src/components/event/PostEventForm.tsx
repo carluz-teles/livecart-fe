@@ -40,6 +40,13 @@ import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { FieldHint } from "@/components/shared/FieldHint"
+import {
+  EVENT_COPY,
+  defaultEndsAtLocal,
+  isLongCampaign,
+  LONG_CAMPAIGN_WARNING,
+} from "@/lib/event-copy"
 import type { InstagramMediaPost, Product } from "@/types"
 
 const MEDIA_TYPE_LABELS: Record<string, string> = {
@@ -72,7 +79,10 @@ export function PostEventForm({
   const [selectedPost, setSelectedPost] = useState<InstagramMediaPost | null>(null)
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
   const [startsAt, setStartsAt] = useState("")
-  const [endsAt, setEndsAt] = useState("")
+  // endsAt é OBRIGATÓRIO (RN-05): sem teto, o carrinho da promoção fica sem
+  // prazo para sempre. Nasce preenchido com 24h à frente para o lojista não
+  // esbarrar num campo obrigatório vazio.
+  const [endsAt, setEndsAt] = useState(defaultEndsAtLocal)
   const [cartExpirationMinutes, setCartExpirationMinutes] = useState<number | null>(null)
   const [maxQty, setMaxQty] = useState<number | null>(null)
   const [search, setSearch] = useState("")
@@ -99,7 +109,7 @@ export function PostEventForm({
     setSelectedPost(null)
     setSelectedProductIds([])
     setStartsAt("")
-    setEndsAt("")
+    setEndsAt(defaultEndsAtLocal())
     setCartExpirationMinutes(null)
     setMaxQty(null)
     setSearch("")
@@ -119,11 +129,13 @@ export function PostEventForm({
 
   const windowInvalid =
     !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
+  const endsAtMissing = !endsAt
 
   const canSubmit =
     !!selectedPost &&
     selectedProductIds.length > 0 &&
     !windowInvalid &&
+    !endsAtMissing &&
     !createPost.isPending
 
   // datetime-local gives a tz-less local string; interpret it in the merchant's
@@ -132,6 +144,13 @@ export function PostEventForm({
 
   const handleSubmit = () => {
     if (!selectedPost) return
+    if (endsAtMissing) {
+      toast.error("Informe quando a promoção encerra.", {
+        description:
+          "É o teto que faz o prazo do comprador começar a correr — sem ele o carrinho não expira nunca.",
+      })
+      return
+    }
     if (windowInvalid) {
       toast.error("A data de término deve ser depois da data de início.")
       return
@@ -145,7 +164,7 @@ export function PostEventForm({
         mediaCaption: selectedPost.caption,
         productIds: selectedProductIds,
         startsAt: toISO(startsAt),
-        endsAt: toISO(endsAt),
+        endsAt: new Date(endsAt).toISOString(),
         cartExpirationMinutes,
         cartMaxQuantityPerItem: maxQty,
       },
@@ -346,35 +365,54 @@ export function PostEventForm({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="post-starts">Início (opcional)</Label>
+                <Label htmlFor="post-starts" className="flex items-center gap-1.5">
+                  {EVENT_COPY.startsAt.label}
+                  <FieldHint text={EVENT_COPY.startsAt.hint} />
+                </Label>
                 <Input
                   id="post-starts"
                   type="datetime-local"
                   value={startsAt}
                   onChange={(e) => setStartsAt(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.startsAt.empty}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="post-ends">Término (opcional)</Label>
+                <Label htmlFor="post-ends" className="flex items-center gap-1.5">
+                  {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
+                  <FieldHint text={EVENT_COPY.endsAt.hint} />
+                </Label>
                 <Input
                   id="post-ends"
                   type="datetime-local"
                   value={endsAt}
                   onChange={(e) => setEndsAt(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.endsAt.help}</p>
               </div>
             </div>
+            {endsAtMissing && (
+              <p className="text-sm text-destructive">Informe quando a promoção encerra.</p>
+            )}
             {windowInvalid && (
               <p className="text-sm text-destructive">
                 O término deve ser depois do início.
               </p>
             )}
+            {isLongCampaign(startsAt || null, endsAt || null) && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-xs text-amber-800 dark:text-amber-200">
+                  {LONG_CAMPAIGN_WARNING}
+                </p>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Expiração do carrinho</Label>
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.cartExpiration.label}
+                  <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                </Label>
                 <Select
                   value={cartExpirationMinutes === null ? "inherit" : String(cartExpirationMinutes)}
                   onValueChange={(v) =>
@@ -395,7 +433,10 @@ export function PostEventForm({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Máximo por item</Label>
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.maxQuantity.label}
+                  <FieldHint text={EVENT_COPY.maxQuantity.hint} />
+                </Label>
                 <Select
                   value={maxQty === null ? "inherit" : String(maxQty)}
                   onValueChange={(v) => setMaxQty(v === "inherit" ? null : parseInt(v, 10))}
@@ -411,6 +452,11 @@ export function PostEventForm({
                     <SelectItem value="10">10 unidades</SelectItem>
                   </SelectContent>
                 </Select>
+                {maxQty !== null && (
+                  <p className="text-xs text-muted-foreground">
+                    {EVENT_COPY.maxQuantity.help}
+                  </p>
+                )}
               </div>
             </div>
           </section>

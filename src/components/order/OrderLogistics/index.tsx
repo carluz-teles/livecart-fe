@@ -54,6 +54,7 @@ import {
   shipmentStatusLabel,
   SHIPMENT_BUCKET_LABEL,
 } from "@/lib/shipment"
+import { groupOrderItemsByProduct } from "@/lib/order-items"
 import { cn } from "@/lib/utils"
 import type {
   CreateShipmentPayload,
@@ -365,7 +366,7 @@ function collectBlockers(order: OrderDetail): string[] {
     messages.push("Cliente não concluiu o checkout")
   }
 
-  const missingDims = order.items.filter(hasMissingDimensions)
+  const missingDims = groupOrderItemsByProduct(order.items).filter(hasMissingDimensions)
   for (const item of missingDims) {
     messages.push(
       `Produto "${item.productName}" sem dimensões (cadastre em Produtos antes de criar o envio)`
@@ -575,7 +576,10 @@ function buildCreatePayload(order: OrderDetail): CreateShipmentPayload | null {
     email: order.customer.email,
   }
 
-  const items: ShipmentItemPayload[] = order.items.map((item) => ({
+  // Agrupado por produto: a quebra por sessão existe para a receita fechar por
+  // transmissão, e mandá-la para a transportadora despacharia o mesmo produto
+  // em duas linhas da mesma remessa.
+  const items: ShipmentItemPayload[] = groupOrderItemsByProduct(order.items).map((item) => ({
     id: item.id,
     name: item.productName,
     quantity: item.quantity,

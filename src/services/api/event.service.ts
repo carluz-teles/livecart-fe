@@ -16,6 +16,7 @@ import type {
   EventSession,
   EventPlatform,
   EventDetailStatsResponse,
+  EventSessionMetrics,
   EventPulse,
   EventCart,
   EventCartsResponse,
@@ -86,6 +87,11 @@ export const eventService = {
   // Event Details - Stats for a specific event
   getEventStats: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventDetailStatsResponse>(`/stores/${storeId}/lives/${eventId}/event-stats`, token),
+
+  // Event Details - Métrica em dois níveis: quebra por transmissão + o balde
+  // "sem transmissão". A soma das linhas fecha com o event-stats do evento.
+  getSessionMetrics: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventSessionMetrics>(`/stores/${storeId}/lives/${eventId}/session-metrics`, token),
 
   // Event Details - Cheap change-signal for near-real-time refresh
   getPulse: (storeId: string, eventId: string, token?: string | null) =>

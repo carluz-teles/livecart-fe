@@ -13,12 +13,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/format"
+import { groupOrderItemsByProduct } from "@/lib/order-items"
 import { OrderDetailContext } from "./OrderDetailContext"
 
 export function OrderDetailItems() {
   const ctx = use(OrderDetailContext)
   if (!ctx) return null
   const { order } = ctx.state
+
+  // Desde a 000107 o pedido tem uma linha por (produto, sessão): o mesmo
+  // produto comprado na live de segunda e no story de quinta chega em DUAS
+  // linhas. Sem agrupar, o lojista vê "Vestido Preto" repetido e lê como bug.
+  const items = groupOrderItemsByProduct(order.items)
 
   return (
     <Card>
@@ -41,7 +47,7 @@ export function OrderDetailItems() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {order.items.map((item) => (
+              {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     {item.productImage ? (

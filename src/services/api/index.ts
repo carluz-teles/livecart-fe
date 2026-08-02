@@ -1,6 +1,5 @@
 export { apiClient } from "./client"
 export { productService } from "./product.service"
-export { liveService } from "./live.service"
 export { eventService } from "./event.service"
 export { cartService } from "./cart.service"
 export { orderService } from "./order.service"

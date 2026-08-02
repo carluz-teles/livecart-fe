@@ -1,19 +1,22 @@
 import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
+import type { SessionType } from "@/lib/event-kind"
+
+export type { SessionType }
 
 // =============================================================================
 // EVENT STATUS & PLATFORM
 // =============================================================================
 
 export type EventStatus = "scheduled" | "active" | "ended"
-export type EventType = "single" | "multi" | "post" | "story"
 export type Platform = "instagram" // Only Instagram supported for now
 
-// Post and Story events share the same commerce model (mapped Instagram media,
-// no live sessions/control, window-derived status) — only the buyer channel
-// differs (post comments vs story DMs). Use this wherever the UI should treat
-// them alike instead of checking just "post".
-export const isPostLikeEvent = (type: EventType): boolean =>
-  type === "post" || type === "story"
+/** Vocabulário LEGADO de `live_events.type`, dropado pela migration 000120.
+ *
+ *  Sobrevive só no payload de criação de live, onde `single`/`multi` ainda
+ *  descrevem a intenção do lojista ao abrir a campanha. **Nenhuma tela pode
+ *  decidir nada com ele** — a espécie de um evento vem das sessões, via
+ *  `getEventKind` em `@/lib/event-kind`. */
+export type LegacyEventType = "single" | "multi"
 
 // =============================================================================
 // PLATFORM - Platform IDs associated with sessions
@@ -35,21 +38,68 @@ export interface SessionComment {
   text: string
 }
 
-export interface EventSession {
+/** Métrica de UMA transmissão, nos dois níveis (Fatia 5).
+ *
+ *  Confirmado é o congelado do pedido pago; projetado é o que está nos
+ *  carrinhos abertos. Sempre em GMV bruto: cupom é do evento e frete é do
+ *  carrinho, então nenhum dos dois tem transmissão.
+ *
+ *  Substitui `totalRevenue`/`paidRevenue`/`totalCarts`, que somavam o carrinho
+ *  INTEIRO na transmissão em que ele nasceu — numa campanha de uma semana isso
+ *  creditava a semana toda à primeira live. */
+export interface SessionRevenue {
+  paidCarts: number
+  soldUnits: number
+  confirmedRevenue: number
+  openCarts: number
+  projectedUnits: number
+  projectedRevenue: number
+}
+
+export interface EventSession extends SessionRevenue {
   id: string
   eventId: string
+  type: string // live, post, reel, story
   status: string // active, live, ended
+  sequenceOrder: number
   startedAt: string | null
   endedAt: string | null
   totalComments: number
-  totalCarts: number
-  paidCarts: number
-  totalRevenue: number
-  paidRevenue: number
   platforms: EventPlatform[]
   comments?: SessionComment[]
   createdAt: string
   updatedAt: string
+}
+
+/** Uma linha do relatório por transmissão. `sessionId` nulo é o balde "sem
+ *  transmissão" (item posto pelo painel, ou carrinho anterior ao log de
+ *  adições) — ele existe de propósito: escondê-lo faz a soma das transmissões
+ *  não fechar com o total do evento. */
+export interface SessionMetrics extends SessionRevenue {
+  sessionId: string | null
+  sequenceOrder: number
+  type: string
+  status: string
+  /** `"first_touch"` = esta transmissão já existia antes do corte da atribuição
+   *  (migration 000119), então os números dela incluem período em que o produto
+   *  inteiro era creditado à sessão da PRIMEIRA adição. `"addition_log"` = ela
+   *  nasceu depois do corte e é 100% derivada do log de adições. */
+  attributionSource: string
+}
+
+/** Métrica do evento com a quebra por transmissão. `confirmedRevenue` e
+ *  `projectedRevenue` são, por construção, a soma exata de `sessions` +
+ *  `unattributed`, e batem com os mesmos campos de `EventDetailStats`. */
+export interface EventSessionMetrics {
+  eventId: string
+  confirmedRevenue: number
+  projectedRevenue: number
+  sessions: SessionMetrics[]
+  unattributed: SessionMetrics | null
+  /** Instante em que "receita por transmissão" mudou de definição (D26). Nulo
+   *  só se o marcador não existir no banco. */
+  attributionCutoverAt: string | null
+  attributionCutoverNote?: string
 }
 
 // =============================================================================
@@ -59,7 +109,11 @@ export interface EventSession {
 export interface Event {
   id: string
   title: string
-  type: EventType
+  /** Espécies distintas das transmissões desta campanha ({live, post, reel,
+   *  story}). É a fonte de "que evento é este" — `live_events.type` não existe
+   *  mais a partir da 000120. Lista vazia = campanha ainda sem transmissão.
+   *  Sempre consumir via `getEventKind` (`@/lib/event-kind`). */
+  sessionTypes: string[]
   status: EventStatus
   totalOrders: number
   closeCartOnEventEnd: boolean
@@ -69,8 +123,16 @@ export interface Event {
   /** Discount percent (0-100) applied at checkout when the buyer pays with
    *  Pix. 0 disables the feature. Stacks with coupons. */
   pixDiscountPercent: number
+  /** Abertura da janela comercial. Fora dela comentário não vira carrinho. */
   scheduledAt: string | null
+  /** Fechamento da janela comercial (RN-05, obrigatório na criação). É o teto
+   *  que garante que nenhum carrinho fica sem prazo: durante a campanha o
+   *  carrinho não expira, e o relógio só começa quando ela fecha. */
   endsAt: string | null
+  /** RN-10 — minutos extras que quem é promovido da fila ganha para pagar,
+   *  contados a partir do momento em que o produto liberou. Vale para o
+   *  carrinho inteiro e não acumula. */
+  waitlistNotifiedTtlMinutes: number
   description: string | null
   productCount: number
   upsellCount: number
@@ -86,16 +148,23 @@ export interface Event {
 // Create Event (with optional session + platform)
 export interface CreateEventPayload {
   title: string
-  type?: EventType
+  type?: LegacyEventType
   platform?: Platform
   platformLiveId?: string
-  // Scheduling
+  // Janela comercial da campanha (RN-05).
+  startsAt?: string | null
+  /** OBRIGATÓRIO no backend (`validate:"required"`). Sem ele o POST responde
+   *  422 — foi assim que a criação de evento ficou quebrada. */
+  endsAt: string
+  /** Sinônimo legado de `startsAt`. Continua aceito pelo backend; o formulário
+   *  escreve `startsAt`. */
   scheduledAt?: string | null
   description?: string | null
   // Cart settings (override store defaults)
   closeCartOnEventEnd?: boolean
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
+  waitlistNotifiedTtlMinutes?: number | null
   freeShipping?: boolean
   pixDiscountPercent?: number
 }
@@ -108,7 +177,8 @@ export interface CreateInstagramPostPayload {
   title?: string
   productIds: string[]
   startsAt?: string | null
-  endsAt?: string | null
+  /** OBRIGATÓRIO — mesma regra do evento de live (RN-05). */
+  endsAt: string
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
   // Stable per selected media so a retried submit (after a client timeout)
@@ -125,7 +195,8 @@ export interface CreatePostEventPayload {
   mediaCaption?: string
   productIds: string[]
   startsAt?: string | null
-  endsAt?: string | null
+  /** OBRIGATÓRIO — mesma regra do evento de live (RN-05). */
+  endsAt: string
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
 }
@@ -133,16 +204,19 @@ export interface CreatePostEventPayload {
 export interface CreateEventResponse {
   id: string
   title: string
-  type: EventType
   platform: string
   status: string
   createdAt: string
 }
 
-// Update Event
+/** Edição do evento. Campo ausente = "não mexer"; string vazia em `startsAt` =
+ *  "limpar". `endsAt` não aceita vazio — o backend recusa remover o teto. */
 export interface UpdateEventPayload {
   title: string
   pixDiscountPercent?: number
+  startsAt?: string | null
+  endsAt?: string
+  waitlistNotifiedTtlMinutes?: number
 }
 
 // End Event - payload is now empty since auto-send is handled via Private Reply during the live
@@ -159,6 +233,9 @@ export interface EndEventResponse {
 export interface CreateSessionPayload {
   platform: Platform
   platformLiveId: string
+  /** Espécie da transmissão. Omitir grava `live` — foi assim que toda sessão
+   *  criada pelo painel nasceu `live`, inclusive as de post. */
+  type?: SessionType
 }
 
 // Add Platform (reconnect - add platform ID to existing session)
@@ -167,10 +244,19 @@ export interface AddPlatformPayload {
   platformLiveId: string
 }
 
-// Stats
+/** Contadores do topo de /events.
+ *
+ *  `totalLives`/`activeLives` sempre contaram EVENTOS — o nome mentia desde
+ *  antes do guarda-chuva e agora mente de forma visível, porque uma campanha
+ *  tem live, post e story ao mesmo tempo. O backend emite os dois pares com o
+ *  MESMO valor durante a transição. */
 export interface EventStats {
-  totalLives: number   // totalEvents
-  activeLives: number  // activeEvents
+  totalEvents: number
+  activeEvents: number
+  /** @deprecated conta eventos, não lives. Use `totalEvents`. */
+  totalLives?: number
+  /** @deprecated conta eventos, não lives. Use `activeEvents`. */
+  activeLives?: number
   totalOrders: number
   totalRevenue: number // cents
 }
