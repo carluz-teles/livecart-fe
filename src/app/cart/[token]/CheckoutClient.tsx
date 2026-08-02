@@ -316,8 +316,14 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
 
   // Loja sem gateway de pagamento (ou nenhum respondendo): não é erro do
   // cliente. Mostramos um aviso amigável em vez do erro cru.
+  //
+  // Tolerância dupla durante a migração do sistema de erros do BE (D1c): os
+  // códigos passam de lower_snake para UPPER_SNAKE. Aceitamos os dois enquanto
+  // BE e FE não estão no mesmo deploy; o ramo lower_snake sai numa leva seguinte.
   const configApiError = configError as unknown as ApiError | null
   const paymentNotConfigured =
+    configApiError?.reason === "PAYMENT_NOT_CONFIGURED" ||
+    configApiError?.reason === "PAYMENT_UNAVAILABLE" ||
     configApiError?.reason === "payment_not_configured" ||
     configApiError?.reason === "payment_unavailable"
 
