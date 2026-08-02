@@ -53,7 +53,7 @@ export function useOnboardingStatus(): OnboardingStatus {
       {
         id: "instagram",
         title: "Conectar o Instagram",
-        description: "Pra detectar os pedidos nos comentários da live",
+        description: "Pra detectar os pedidos nos comentários das suas publicações e lives",
         completed: hasInstagram,
         href: "/settings/integrations",
       },

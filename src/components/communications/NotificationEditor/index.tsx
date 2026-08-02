@@ -160,6 +160,11 @@ NotificationEditor.Footer = NotificationEditorFooter
 export { NotificationEditor }
 
 // Sample values used to render the live preview. Mirrors BE notification.SampleVariables.
+// Valores de exemplo da PRÉ-VISUALIZAÇÃO. Toda variável oferecida pelo menu
+// precisa estar aqui: o que falta sai literal no preview, e era o caso de
+// {evento}, {sessao}, {prazo_final} e {comeca_em} — as variáveis da campanha,
+// oferecidas pelo backend e mostradas cruas justamente nos textos que existem
+// para explicar o modelo. Idem as de pós-pagamento.
 const SAMPLE: Record<string, string> = {
   handle: "@julia",
   produto: "Vestido Linho",
@@ -170,7 +175,24 @@ const SAMPLE: Record<string, string> = {
   link: "livecart.io/c/A8K2",
   loja: "Minha Loja",
   expira_em: "15 minutos",
-  live_titulo: "Black Friday 2026",
+  // Campanha e transmissão.
+  evento: "Semana Black",
+  live_titulo: "Semana Black",
+  sessao: "Live de segunda",
+  prazo_final: "09/11 às 23h59",
+  comeca_em: "03/11 às 20h",
+  tempo_extra: "30 minutos",
+  // Pós-pagamento (e-mail).
+  nome_cliente: "Ana Reis",
+  numero_pedido: "1234",
+  lista_produtos: "2× Vestido Linho — R$ 247,80",
+  forma_pagamento: "PIX",
+  link_pedido: "livecart.app/order/1234",
+  transportadora: "Sedex via Correios",
+  tracking_code: "BR123456789BR",
+  prazo_entrega: "até 5 dias úteis",
+  endereco_entrega: "Rua das Flores, 123 — São Paulo/SP",
+  valor_frete: "R$ 18,90",
 }
 
 function renderWithSamples(template: string): string {

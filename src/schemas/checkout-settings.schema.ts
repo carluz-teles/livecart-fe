@@ -32,8 +32,12 @@ export type CheckoutSettingsFormData = z.infer<typeof checkoutSettingsSchema>
 // Post-payment (email) types intentionally have empty defaults — the BE owns
 // the polished default content; the merchant only sees their own override.
 export const defaultTemplates: Record<string, string> = {
+  // Sem "⏰ Válido por {expira_em}": durante a campanha o carrinho NÃO expira
+  // (RN-04, expires_at fica NULL), então o texto padrão prometia um relógio que
+  // não está correndo e apressava o comprador com uma urgência falsa — o mesmo
+  // erro que o comentário abaixo diz ter aprendido.
   checkout_immediate:
-    "Oi {handle}! 🛒\n\nAnotei seu pedido de {produto}!\n\nTotal: {total}\n\nFinalize aqui: {link}\n\n⏰ Válido por {expira_em}",
+    "Oi {handle}! 🛒\n\nAnotei seu pedido de {produto}!\n\nTotal: {total}\n\nFinalize aqui: {link}\n\nGuarde este link — tudo que você pedir até o fim da {evento} entra neste mesmo carrinho.",
   item_added:
     "Oi {handle}! ➕\n\nAdicionei {produto} ao seu carrinho!\n\nAgora são {total_itens} itens - {total}\n\nFinalize: {link}",
   checkout_reminder:
@@ -54,7 +58,14 @@ export const defaultTemplates: Record<string, string> = {
   delivered: "",
 }
 
-// Friendly names for template variables — read by the Communications editor.
+// Nomes amigáveis das variáveis — usados pelo chip dentro do editor, e como
+// FALLBACK do menu (que prefere a descrição vinda do backend, dono do catálogo).
+//
+// As variáveis da campanha faltavam todas aqui, e são justamente as que o modelo
+// guarda-chuva introduziu: o chip de {evento} aparecia escrito "evento" e o do
+// {prazo_final}, "prazo final". Pior era {live_titulo}, que dizia "Título da
+// live" para um valor que é o nome da CAMPANHA — o único rótulo da tela ainda
+// ensinando que evento é live.
 export const variableFriendlyNames: Record<string, string> = {
   "{handle}": "@ Perfil",
   "{produto}": "Produto",
@@ -65,5 +76,23 @@ export const variableFriendlyNames: Record<string, string> = {
   "{link}": "Link",
   "{loja}": "Nome da loja",
   "{expira_em}": "Tempo restante",
-  "{live_titulo}": "Título da live",
+  // Campanha e transmissão.
+  "{evento}": "Nome da campanha",
+  "{sessao}": "Transmissão",
+  "{prazo_final}": "Prazo para finalizar",
+  "{comeca_em}": "Quando a campanha abre",
+  "{tempo_extra}": "Prazo extra da fila",
+  // Nome antigo de {evento}, mantido para templates já salvos.
+  "{live_titulo}": "Nome da campanha",
+  // Pós-pagamento (e-mail).
+  "{nome_cliente}": "Nome do cliente",
+  "{numero_pedido}": "Número do pedido",
+  "{lista_produtos}": "Itens do pedido",
+  "{forma_pagamento}": "Forma de pagamento",
+  "{link_pedido}": "Link do pedido",
+  "{transportadora}": "Transportadora",
+  "{tracking_code}": "Código de rastreio",
+  "{prazo_entrega}": "Prazo de entrega",
+  "{endereco_entrega}": "Endereço de entrega",
+  "{valor_frete}": "Valor do frete",
 }
