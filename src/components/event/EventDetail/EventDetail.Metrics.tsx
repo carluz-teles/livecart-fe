@@ -1,7 +1,7 @@
 "use client"
 
 import { use } from "react"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, Info } from "lucide-react"
 import { SessionsTable } from "@/components/event/SessionsTable"
 import { useSessionMetrics } from "@/hooks/event"
 import { formatCurrency } from "@/lib/format"
@@ -36,6 +36,16 @@ export function EventDetailMetrics() {
   const mismatch =
     !isLoading && !!metrics && !!stats && eventConfirmed !== breakdownConfirmed
 
+  // O aviso do corte da atribuição (migration 000119) só aparece quando ALGUMA
+  // transmissão desta campanha é anterior ao corte. Mostrá-lo em toda campanha
+  // treinaria o lojista a ignorá-lo — e aí ele não serve para nada justamente
+  // no evento em que os números mudaram de significado.
+  const preCutoverSessions =
+    metrics?.sessions.filter((s) => s.attributionSource === "first_touch") ?? []
+  const cutoverAt = metrics?.attributionCutoverAt
+    ? new Date(metrics.attributionCutoverAt)
+    : null
+
   return (
     <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-sm text-muted-foreground">
@@ -55,6 +65,25 @@ export function EventDetailMetrics() {
             evento soma {formatCurrency(eventConfirmed)} e a quebra por transmissão soma{" "}
             {formatCurrency(breakdownConfirmed)}. Isso não deveria acontecer — registre o
             evento <span className="font-mono">{event.id}</span> no suporte.
+          </p>
+        </div>
+      )}
+
+      {preCutoverSessions.length > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">
+              {preCutoverSessions.length === 1
+                ? "Uma transmissão desta campanha é anterior"
+                : `${preCutoverSessions.length} transmissões desta campanha são anteriores`}{" "}
+              à mudança de cálculo
+              {cutoverAt ? ` de ${cutoverAt.toLocaleDateString("pt-BR")}` : ""}.
+            </strong>{" "}
+            Até essa data, toda a quantidade de um produto era creditada à transmissão em
+            que ele foi pedido <em>pela primeira vez</em>. A partir dela, cada adição é
+            creditada à transmissão que a gerou. Comparar os dois lados compara duas
+            definições, não o mesmo número em dois períodos.
           </p>
         </div>
       )}

@@ -10,7 +10,7 @@ export type { SessionType }
 export type EventStatus = "scheduled" | "active" | "ended"
 export type Platform = "instagram" // Only Instagram supported for now
 
-/** Vocabulário LEGADO de `live_events.type`, dropado pela migration 000119.
+/** Vocabulário LEGADO de `live_events.type`, dropado pela migration 000120.
  *
  *  Sobrevive só no payload de criação de live, onde `single`/`multi` ainda
  *  descrevem a intenção do lojista ao abrir a campanha. **Nenhuma tela pode
@@ -80,6 +80,11 @@ export interface SessionMetrics extends SessionRevenue {
   sequenceOrder: number
   type: string
   status: string
+  /** `"first_touch"` = esta transmissão já existia antes do corte da atribuição
+   *  (migration 000119), então os números dela incluem período em que o produto
+   *  inteiro era creditado à sessão da PRIMEIRA adição. `"addition_log"` = ela
+   *  nasceu depois do corte e é 100% derivada do log de adições. */
+  attributionSource: string
 }
 
 /** Métrica do evento com a quebra por transmissão. `confirmedRevenue` e
@@ -91,6 +96,10 @@ export interface EventSessionMetrics {
   projectedRevenue: number
   sessions: SessionMetrics[]
   unattributed: SessionMetrics | null
+  /** Instante em que "receita por transmissão" mudou de definição (D26). Nulo
+   *  só se o marcador não existir no banco. */
+  attributionCutoverAt: string | null
+  attributionCutoverNote?: string
 }
 
 // =============================================================================
@@ -102,7 +111,7 @@ export interface Event {
   title: string
   /** Espécies distintas das transmissões desta campanha ({live, post, reel,
    *  story}). É a fonte de "que evento é este" — `live_events.type` não existe
-   *  mais a partir da 000119. Lista vazia = campanha ainda sem transmissão.
+   *  mais a partir da 000120. Lista vazia = campanha ainda sem transmissão.
    *  Sempre consumir via `getEventKind` (`@/lib/event-kind`). */
   sessionTypes: string[]
   status: EventStatus
