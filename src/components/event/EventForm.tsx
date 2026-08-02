@@ -345,7 +345,7 @@ export function EventForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
-                      {SESSION_COPY.media.label}
+                      {SESSION_COPY.media.liveLabel}
                       <FieldHint text={SESSION_COPY.media.hint} />
                     </FormLabel>
                     <Select
@@ -758,7 +758,7 @@ export function EventForm({
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Criando..." : "Criar campanha"}
+                {isPending ? "Criando..." : "Criar evento"}
               </Button>
             </div>
           </form>

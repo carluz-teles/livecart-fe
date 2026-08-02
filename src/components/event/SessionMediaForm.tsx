@@ -129,7 +129,7 @@ export function SessionMediaForm({
         <div className="space-y-4">
           {isLive && (
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">{SESSION_COPY.media.label}</Label>
+              <Label className="flex items-center gap-1.5">{SESSION_COPY.media.liveLabel}</Label>
               <Select onValueChange={setLiveId} value={liveId}>
                 <SelectTrigger>
                   <SelectValue

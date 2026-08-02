@@ -223,7 +223,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
-                      {SESSION_COPY.media.label}
+                      {SESSION_COPY.media.liveLabel}
                       <FieldHint text={SESSION_COPY.media.hint} />
                     </FormLabel>
                     <Select

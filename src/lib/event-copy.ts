@@ -210,6 +210,9 @@ export const SESSION_COPY = {
   },
   media: {
     label: "Publicação vinculada",
+    /** Rótulo quando a transmissão é uma live: ela não é uma "publicação", e
+     *  este é o nome que o roteiro do App Review da Meta clica no passo 7. */
+    liveLabel: "Live ativa",
     hint: "A publicação do Instagram que esta sessão monitora. Uma mídia só pode estar em um evento ativo por vez.",
     help: "Você pode criar a sessão agora e vincular a publicação depois, pelo botão “Vincular” na aba Sessões.",
     later: "Vincular depois",
