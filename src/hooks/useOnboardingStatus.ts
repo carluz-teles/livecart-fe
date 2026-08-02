@@ -67,14 +67,14 @@ export function useOnboardingStatus(): OnboardingStatus {
       {
         id: "product",
         title: "Cadastrar o primeiro produto",
-        description: "Com a palavra-chave que o público comenta na live",
+        description: "Com a palavra-chave que o público comenta na transmissão",
         completed: hasProduct,
         href: "/products",
       },
       {
         id: "event",
-        title: "Criar a primeira live",
-        description: "Agende o evento da sua primeira transmissão",
+        title: "Criar a primeira campanha",
+        description: "Um evento agrupa as transmissões — live, post, reel, story",
         completed: hasEvents,
         href: "/events",
       },

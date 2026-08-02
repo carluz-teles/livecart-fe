@@ -26,6 +26,9 @@ export function useCreateSession() {
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId!, eventId) })
+      // A quebra por transmissão ganhou uma linha: sem isto a sessão nova só
+      // aparece na tabela do detalhe e some da coluna de receita.
+      queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId!, eventId) })
     },
   })
 }

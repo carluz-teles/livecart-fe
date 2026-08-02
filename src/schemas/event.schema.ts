@@ -1,47 +1,25 @@
 import { z } from "zod"
 
 // =============================================================================
-// MULTI-STEP FORM SCHEMAS
+// EVENT (CAMPANHA)
 // =============================================================================
+//
+// Os schemas `eventTypeSchema` / `eventDetailsSchema` /
+// `platformConnectionSchema` saíram daqui. Eram os passos de um wizard que não
+// existe mais e o primeiro deles perguntava `single | multi` — o vocabulário
+// que a 000122 apagou do banco e que nenhuma tela lê. Manter um schema morto
+// que ensina o modelo antigo é como o modelo antigo volta.
 
-// Step 1: Event Type Selection
-export const eventTypeSchema = z.object({
-  type: z.enum(["single", "multi"], {
-    message: "Selecione o tipo de evento",
-  }),
-})
-
-export type EventTypeFormData = z.infer<typeof eventTypeSchema>
-
-// Step 2: Event Details
-export const eventDetailsSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Titulo e obrigatorio")
-    .max(200, "Titulo deve ter no maximo 200 caracteres"),
-})
-
-export type EventDetailsFormData = z.infer<typeof eventDetailsSchema>
-
-// Step 3: Platform Connection (optional) - Only Instagram supported
-export const platformConnectionSchema = z.object({
-  platform: z.literal("instagram").optional(),
-  platformLiveId: z
-    .string()
-    .min(1, "ID da live e obrigatorio")
-    .max(100, "ID da live deve ter no maximo 100 caracteres"),
-})
-
-export type PlatformConnectionFormData = z.infer<typeof platformConnectionSchema>
-
-// Combined schema for full event creation (used by API)
+// Criação da campanha. `type` aqui é o tipo da PRIMEIRA SESSÃO.
 export const createEventSchema = z
   .object({
     title: z
       .string()
       .min(1, "Titulo e obrigatorio")
       .max(200, "Titulo deve ter no maximo 200 caracteres"),
-    type: z.enum(["single", "multi"]).optional(),
+    // Espécie da primeira transmissão (live/post/reel/story) — o backend
+    // repassa direto para `live_sessions.type`. A campanha em si não tem tipo.
+    type: z.enum(["live", "post", "reel", "story"]).optional(),
     platform: z.literal("instagram").optional(), // Only Instagram supported
     platformLiveId: z.string().max(100).optional(),
     // Janela comercial da campanha.
@@ -110,10 +88,17 @@ export const createSessionSchema = z.object({
   // nascia `live`, inclusive as de post — e a whitelist herdada, o modo live e
   // a métrica por sessão passam a rotular errado a partir daí.
   type: z.enum(["live", "post", "reel", "story"]).optional(),
+  // A mídia é OPCIONAL. Era obrigatória, e isso fechava justamente o caso que
+  // define o evento guarda-chuva: marcar a campanha antes de a transmissão
+  // existir. Sem mídia a sessão nasce sem capturar nada — e a tabela avisa
+  // isso com o badge "Sem publicação vinculada".
   platformLiveId: z
     .string()
-    .min(1, "ID da live e obrigatorio")
-    .max(100, "ID da live deve ter no maximo 100 caracteres"),
+    .max(100, "ID da publicação deve ter no maximo 100 caracteres")
+    .optional(),
+  mediaPermalink: z.string().optional(),
+  mediaThumbnailUrl: z.string().optional(),
+  mediaCaption: z.string().optional(),
 })
 
 export type CreateSessionFormData = z.infer<typeof createSessionSchema>

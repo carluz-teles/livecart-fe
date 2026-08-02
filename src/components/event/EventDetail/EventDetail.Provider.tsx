@@ -59,10 +59,18 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     prevPulse.current = pulse
     if (!prev) return // first reading is the baseline — nothing to refetch yet
     // New cart or a cart edit/payment → orders + sold products + stats.
+    //
+    // `sessionMetrics` entra JUNTO de propósito. Ele nunca era invalidado em
+    // lugar nenhum e, com `staleTime` de 30s e sem refetch no foco, a quebra
+    // por transmissão congelava enquanto o total do evento andava a cada
+    // pagamento. O resultado é que o banner de divergência — o alarme que
+    // deveria provar que a métrica fecha — disparava como comportamento
+    // normal, e o lojista aprendia a ignorá-lo.
     if (pulse.orders !== prev.orders || pulse.ordersChangedAt !== prev.ordersChangedAt) {
       queryClient.invalidateQueries({ queryKey: eventKeys.detailCarts(storeId, id) })
       queryClient.invalidateQueries({ queryKey: eventKeys.detailProducts(storeId, id) })
       queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId, id) })
     }
     // New comment / DM reply → comments feed + stats.
     if (pulse.comments !== prev.comments) {
@@ -79,8 +87,11 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
   const refresh = useCallback(() => {
     // The event itself can change too (sessions list, status) — kick a fresh
     // load by invalidating its detail key, then refetch the dependent slices.
+    // A quebra por transmissão sai da mesma virada: quem clica em "Atualizar"
+    // depois de adicionar uma sessão espera ver a sessão nova nas duas fontes.
     if (storeId) {
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId, id) })
     }
     refetchStats()
     refetchCarts()

@@ -160,8 +160,14 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null
 
+  // O badge de "Pago" vem de `payment_status`: `carts.status` nunca recebe o
+  // valor 'paid', então um carrinho pago continua em 'active'/'checkout'.
   const displayConfig =
     paymentConfig && cart.paymentStatus === "paid" ? paymentConfig : statusConfig
+  const displayHint =
+    paymentConfig && cart.paymentStatus === "paid"
+      ? "Pagamento confirmado. Se o cliente comprar de novo nesta campanha, abre um carrinho novo com link próprio."
+      : statusConfig.hint
 
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -212,7 +218,9 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={displayConfig.variant}>{displayConfig.label}</Badge>
+        <Badge variant={displayConfig.variant} title={displayHint}>
+          {displayConfig.label}
+        </Badge>
       </TableCell>
       <TableCell className="text-center">
         {cart.waitlistedItems > 0 ? (

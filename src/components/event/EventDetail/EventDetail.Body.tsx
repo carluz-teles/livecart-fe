@@ -23,6 +23,7 @@ import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
 import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialog"
+import { EventDetailModelBanner } from "./EventDetail.ModelBanner"
 
 // Single Tabs root drives the four sub-screens. Visão geral is the dense
 // one: it leans on the OrderDetail 8/4 grid — operational stuff in the main
@@ -33,12 +34,24 @@ export function EventDetailBody() {
   if (!ctx) return null
   const { event, crashRecoveryOpen, editEventOpen } = ctx.state
   const { setCrashRecoveryOpen, setEditEventOpen, refresh } = ctx.actions
+  const sessionCount = event.sessions?.length ?? 0
 
   return (
     <>
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          {/* Aba própria (copy deck §5.3). A tabela vivia enterrada no meio da
+              visão geral e DUPLICADA dentro de Métricas — duas cópias da mesma
+              lista, e nenhuma delas parecendo o segundo nível da campanha. */}
+          <TabsTrigger value="sessions">
+            Sessões
+            {sessionCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {sessionCount}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="products">
             Produtos
             {event.productCount > 0 && (
@@ -60,6 +73,11 @@ export function EventDetailBody() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
+          {/* Antes dos números: o que estes números são. A tela abria direto
+              em cards de métrica, e numa campanha de uma sessão só isso lia
+              como "a métrica daquele post". */}
+          <EventDetailModelBanner />
+
           {/* High-priority banner: only shows when event is active. */}
           <EventDetailLiveControl />
 
@@ -73,7 +91,6 @@ export function EventDetailBody() {
 
           <div className="grid gap-4 lg:grid-cols-12">
             <main className="flex flex-col gap-4 lg:col-span-8">
-              <EventDetailSessions />
               <EventDetailCarts />
               <EventDetailComments />
               <EventDetailActiveCheckouts />
@@ -85,6 +102,16 @@ export function EventDetailBody() {
               <EventDetailTopBuyers />
             </aside>
           </div>
+        </TabsContent>
+
+        <TabsContent value="sessions" className="mt-6 flex flex-col gap-4">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Cada linha é uma transmissão desta campanha. Você pode adicionar sessões
+            enquanto o evento estiver aberto, de tipos diferentes. A campanha só fecha na
+            data de fim ou quando você clicar em &quot;Finalizar evento&quot; — nenhuma
+            sessão sozinha fecha carrinho.
+          </p>
+          <EventDetailSessions />
         </TabsContent>
 
         <TabsContent value="metrics" className="mt-6">

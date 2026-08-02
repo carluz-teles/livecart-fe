@@ -43,7 +43,7 @@ export function GettingStartedCard() {
             </span>
             <div>
               <h2 className="font-semibold leading-tight">
-                Deixe sua loja pronta pra primeira live
+                Deixe sua loja pronta pra primeira campanha
               </h2>
               <p className="text-xs text-muted-foreground">
                 {completedCount} de {totalCount} passos concluídos

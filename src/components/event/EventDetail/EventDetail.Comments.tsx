@@ -104,7 +104,7 @@ export function EventDetailComments() {
             <CardDescription>
               {isStory
                 ? "Quem respondeu seu Story por DM e entrou no carrinho."
-                : "Responda, oculte ou exclua comentários da live no Instagram"}
+                : "Responda, oculte ou exclua os comentários desta transmissão no Instagram"}
             </CardDescription>
           </div>
           {comments && comments.length > 0 && (

@@ -12,10 +12,12 @@ export type Platform = "instagram" // Only Instagram supported for now
 
 /** Vocabulário LEGADO de `live_events.type`, dropado pela migration 000120.
  *
- *  Sobrevive só no payload de criação de live, onde `single`/`multi` ainda
- *  descrevem a intenção do lojista ao abrir a campanha. **Nenhuma tela pode
- *  decidir nada com ele** — a espécie de um evento vem das sessões, via
- *  `getEventKind` em `@/lib/event-kind`. */
+ *  `single`/`multi` nunca significaram espécie de mídia — significavam "uma
+ *  live ou várias" — e os dois caíam em sessão `live` no backend. O painel
+ *  parou de mandá-los: o campo `type` da criação passou a ser o tipo da
+ *  PRIMEIRA SESSÃO. O alias fica só para chamador externo que ainda envie o
+ *  vocabulário antigo. **Nenhuma tela pode decidir nada com ele** — a espécie
+ *  de um evento vem das sessões, via `getEventKind` em `@/lib/event-kind`. */
 export type LegacyEventType = "single" | "multi"
 
 // =============================================================================
@@ -148,7 +150,9 @@ export interface Event {
 // Create Event (with optional session + platform)
 export interface CreateEventPayload {
   title: string
-  type?: LegacyEventType
+  /** Tipo da PRIMEIRA SESSÃO — não do evento. A campanha não tem espécie: ela
+   *  é a soma das transmissões que couberem dentro dela. */
+  type?: SessionType | LegacyEventType
   platform?: Platform
   platformLiveId?: string
   // Janela comercial da campanha (RN-05).
@@ -189,6 +193,10 @@ export interface CreateInstagramPostPayload {
 // Payload to create a post-commerce event (maps an Instagram post + products)
 export interface CreatePostEventPayload {
   title?: string
+  /** Espécie da SESSÃO derivada do `media_type` da publicação escolhida.
+   *  Omitir grava `post` — foi assim que todo Reel escolhido na grade nasceu
+   *  rotulado como post. */
+  type?: "post" | "reel" | "story"
   mediaId: string
   mediaPermalink?: string
   mediaThumbnailUrl?: string
@@ -231,11 +239,21 @@ export interface EndEventResponse {
 
 // Create Session (add new session to existing event)
 export interface CreateSessionPayload {
-  platform: Platform
-  platformLiveId: string
+  /** Mídia é OPCIONAL, e o par tem de vir junto ou não vir: o backend recusa
+   *  meia mídia. É o que destrava "marco a campanha hoje e penduro a live de
+   *  segunda quando ela existir" — a sessão nasce sem capturar nada e passa a
+   *  capturar quando a publicação for vinculada. */
+  platform?: Platform
+  platformLiveId?: string
   /** Espécie da transmissão. Omitir grava `live` — foi assim que toda sessão
    *  criada pelo painel nasceu `live`, inclusive as de post. */
   type?: SessionType
+  /** Metadados da publicação. Sem eles a MESMA mídia ficava com permalink e
+   *  thumbnail quando entrava como evento novo e sem nada quando entrava como
+   *  sessão de um evento existente. */
+  mediaPermalink?: string
+  mediaThumbnailUrl?: string
+  mediaCaption?: string
 }
 
 // Add Platform (reconnect - add platform ID to existing session)
