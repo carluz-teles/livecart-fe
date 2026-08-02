@@ -7,6 +7,7 @@ import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
 import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
+import { EventWindowForm } from "@/components/event/EventWindowForm"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
 import { EventDetailKpis } from "./EventDetail.Kpis"
@@ -28,8 +29,8 @@ import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialo
 export function EventDetailBody() {
   const ctx = use(EventDetailContext)
   if (!ctx) return null
-  const { event, crashRecoveryOpen } = ctx.state
-  const { setCrashRecoveryOpen, refresh } = ctx.actions
+  const { event, crashRecoveryOpen, editEventOpen } = ctx.state
+  const { setCrashRecoveryOpen, setEditEventOpen, refresh } = ctx.actions
 
   return (
     <>
@@ -100,6 +101,12 @@ export function EventDetailBody() {
         eventId={event.id}
         open={crashRecoveryOpen}
         onOpenChange={setCrashRecoveryOpen}
+        onSuccess={refresh}
+      />
+      <EventWindowForm
+        event={event}
+        open={editEventOpen}
+        onOpenChange={setEditEventOpen}
         onSuccess={refresh}
       />
     </>

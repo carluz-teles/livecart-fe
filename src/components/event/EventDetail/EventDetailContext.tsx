@@ -23,6 +23,7 @@ export interface EventDetailState {
   endEventOpen: boolean
   createSessionOpen: boolean
   crashRecoveryOpen: boolean
+  editEventOpen: boolean
 }
 
 export interface EventDetailActions {
@@ -32,6 +33,7 @@ export interface EventDetailActions {
   setEndEventOpen: (open: boolean) => void
   setCreateSessionOpen: (open: boolean) => void
   setCrashRecoveryOpen: (open: boolean) => void
+  setEditEventOpen: (open: boolean) => void
 }
 
 export interface EventDetailContextValue {
