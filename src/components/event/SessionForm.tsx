@@ -8,6 +8,7 @@ import { Loader2, Plus, Instagram } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -56,6 +57,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
   })
 
   const isPending = createSession.isPending
+  const sessionType = form.watch("type") ?? "live"
 
   // Instagram lives dropdown
   const { data: livesData, isLoading: livesLoading } = useInstagramLives()
@@ -146,42 +148,55 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               </FormDescription>
             </FormItem>
 
+            {/* A mídia de uma live é escolhida entre as transmissões no ar; a
+                de uma publicação é um id que já existe no perfil. Oferecer a
+                lista de lives para uma sessão de post vincularia a mídia
+                errada — e o vínculo é único por evento ativo. */}
             <FormField
               control={form.control}
               name="platformLiveId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Live Ativa <span className="text-destructive">*</span>
+                    {sessionType === "live" ? "Live ativa" : "Publicação"}{" "}
+                    <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  {sessionType === "live" ? (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {lives.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Nenhuma live ativa no momento
+                          </div>
+                        ) : (
+                          lives.map((live) => {
+                            const startTime = live.timestamp
+                              ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                              : null
+                            return (
+                              <SelectItem key={live.id} value={live.id}>
+                                Live @{live.username}
+                                {startTime && ` (iniciada às ${startTime})`}
+                              </SelectItem>
+                            )
+                          })
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
-                      </SelectTrigger>
+                      <Input placeholder="Ex: 18043029837128493" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {lives.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          Nenhuma live ativa no momento
-                        </div>
-                      ) : (
-                        lives.map((live) => {
-                          const startTime = live.timestamp
-                            ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
-                            : null
-                          return (
-                            <SelectItem key={live.id} value={live.id}>
-                              Live @{live.username}
-                              {startTime && ` (iniciada às ${startTime})`}
-                            </SelectItem>
-                          )
-                        })
-                      )}
-                    </SelectContent>
-                  </Select>
+                  )}
                   <FormDescription>
-                    Selecione a live ativa do Instagram
+                    {sessionType === "live"
+                      ? "Selecione a live ativa do Instagram."
+                      : "O id da publicação no Instagram. Ela só pode estar vinculada a uma campanha ativa por vez."}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
