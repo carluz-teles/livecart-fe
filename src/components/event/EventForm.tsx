@@ -189,6 +189,14 @@ export function EventForm({
       // Only include platform if platformLiveId is provided
       platform: data.platformLiveId ? "instagram" : undefined,
       platformLiveId: data.platformLiveId || undefined,
+      // Metadados só existem quando a mídia veio da grade. Sem eles a MESMA
+      // publicação ficava com permalink e capa quando entrava pelo caminho de
+      // evento-de-post e sem nada quando entrava como primeira transmissão de
+      // uma campanha — a captura funcionava nos dois, só a tela empobrecia
+      // conforme a porta.
+      mediaPermalink: selectedMedia?.permalink,
+      mediaThumbnailUrl: selectedMedia?.thumbnail_url || selectedMedia?.media_url,
+      mediaCaption: selectedMedia?.caption,
       // Janela comercial. endsAt é obrigatório — sem ele o POST responde 422.
       startsAt: data.startsAt || undefined,
       endsAt: data.endsAt,
@@ -375,7 +383,7 @@ export function EventForm({
               />
             )}
 
-            {(sessionType === "post" || sessionType === "reel") && (
+            {sessionType !== "live" && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   {SESSION_COPY.media.label}
@@ -390,11 +398,13 @@ export function EventForm({
               </div>
             )}
 
-            {sessionType === "story" && (
-              <div className="rounded-lg border bg-muted/40 p-3">
-                <p className="text-sm text-muted-foreground">{SESSION_COPY.storyNoPicker}</p>
-              </div>
-            )}
+            {/* Story não é opção aqui: ele só vira venda publicado PELO
+                LiveCart, e o atalho que faz isso monta campanha e transmissão
+                juntas. Oferecer a espécie neste menu criaria uma transmissão
+                que nunca captura nada, e a falha é muda. */}
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm text-muted-foreground">{SESSION_COPY.storyElsewhere}</p>
+            </div>
 
             {platformLiveId && sessionType === "live" && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
@@ -408,8 +418,7 @@ export function EventForm({
 
             {!platformLiveId && (
               <p className="text-sm text-muted-foreground">
-                Sem publicação vinculada, a transmissão nasce sem capturar nada — ela
-                aparece na aba Sessões com o aviso, e você vincula quando a mídia existir.
+                {SESSION_COPY.noMedia.hintForm}
               </p>
             )}
 

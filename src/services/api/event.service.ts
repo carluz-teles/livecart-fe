@@ -11,6 +11,7 @@ import type {
   EndEventResponse,
   CreateSessionPayload,
   AddPlatformPayload,
+  LinkSessionMediaPayload,
   EventListParams,
   EventListResponse,
   EventSession,
@@ -83,6 +84,22 @@ export const eventService = {
   // Add platform to active session (crash recovery)
   addPlatform: (storeId: string, eventId: string, payload: AddPlatformPayload, token?: string | null) =>
     apiClient.post<EventPlatform>(`/stores/${storeId}/lives/${eventId}/platforms`, payload, token),
+
+  // Vincula a publicação a UMA transmissão nomeada — o "vincular depois" da
+  // sessão criada sem mídia. A rota acima resolve a sessão sozinha e por isso
+  // não serve a uma campanha com mais de uma transmissão.
+  linkSessionMedia: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    payload: LinkSessionMediaPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<EventPlatform>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/platforms`,
+      payload,
+      token
+    ),
 
   // Event Details - Stats for a specific event
   getEventStats: (storeId: string, eventId: string, token?: string | null) =>

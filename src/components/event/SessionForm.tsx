@@ -259,7 +259,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               />
             )}
 
-            {(sessionType === "post" || sessionType === "reel") && (
+            {sessionType !== "live" && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   {SESSION_COPY.media.label}
@@ -274,15 +274,16 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               </div>
             )}
 
-            {sessionType === "story" && (
-              <div className="rounded-lg border bg-muted/40 p-3">
-                <p className="text-sm text-muted-foreground">{SESSION_COPY.storyNoPicker}</p>
-              </div>
-            )}
+            {/* Story sai do menu de tipos porque não há como vinculá-lo aqui —
+                mas o lojista que quer vender por Story precisa saber para onde
+                ir, senão procura a opção que não existe. */}
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm text-muted-foreground">{SESSION_COPY.storyElsewhere}</p>
+            </div>
 
             {!platformLiveId && (
               <p className="text-sm text-muted-foreground">
-                {SESSION_COPY.noMedia.hint}
+                {SESSION_COPY.noMedia.hintForm}
               </p>
             )}
 

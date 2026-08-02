@@ -155,6 +155,12 @@ export interface CreateEventPayload {
   type?: SessionType | LegacyEventType
   platform?: Platform
   platformLiveId?: string
+  /** Metadados da publicação escolhida como primeira transmissão. Sem eles a
+   *  MESMA mídia nasce sem permalink/capa/legenda quando entra por aqui e com
+   *  tudo quando entra pelo caminho de evento-de-post. */
+  mediaPermalink?: string
+  mediaThumbnailUrl?: string
+  mediaCaption?: string
   // Janela comercial da campanha (RN-05).
   startsAt?: string | null
   /** OBRIGATÓRIO no backend (`validate:"required"`). Sem ele o POST responde
@@ -260,6 +266,21 @@ export interface CreateSessionPayload {
 export interface AddPlatformPayload {
   platform: Platform
   platformLiveId: string
+}
+
+/** Vincular a publicação a UMA transmissão nomeada.
+ *
+ *  Não confundir com `AddPlatformPayload`: aquela rota escolhe a sessão sozinha
+ *  (a mais recente no ar) e só serve para reconectar uma live que caiu. Numa
+ *  campanha com mais de uma transmissão ela vincula a errada em silêncio — o
+ *  comentário continua não virando carrinho e a tela jura que está vinculado.
+ *  Esta aqui é o "vincular depois" que a sessão sem mídia promete. */
+export interface LinkSessionMediaPayload {
+  platform?: Platform
+  platformLiveId: string
+  mediaPermalink?: string
+  mediaThumbnailUrl?: string
+  mediaCaption?: string
 }
 
 /** Contadores do topo de /events.

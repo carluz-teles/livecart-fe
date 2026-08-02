@@ -1,10 +1,12 @@
 "use client"
 
-import { use } from "react"
+import { use, useState } from "react"
 import { AlertTriangle, Info } from "lucide-react"
 import { SessionsTable } from "@/components/event/SessionsTable"
+import { SessionMediaForm } from "@/components/event/SessionMediaForm"
 import { useSessionMetrics } from "@/hooks/event"
 import { formatCurrency } from "@/lib/format"
+import type { EventSession } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
 
 /**
@@ -19,9 +21,11 @@ import { EventDetailContext } from "./EventDetailContext"
 export function EventDetailSessions() {
   const ctx = use(EventDetailContext)
   const { data: metrics, isLoading, isError } = useSessionMetrics(ctx?.state.event.id ?? "")
+  // A sessão que está recebendo a publicação. `null` = diálogo fechado.
+  const [linkingSession, setLinkingSession] = useState<EventSession | null>(null)
   if (!ctx) return null
   const { event, stats } = ctx.state
-  const { setCreateSessionOpen } = ctx.actions
+  const { setCreateSessionOpen, refresh } = ctx.actions
 
   // Campanha AGENDADA também aceita transmissão nova: é literalmente o caso de
   // uso do guarda-chuva ("marco a Semana Black hoje, penduro a live de segunda
@@ -106,6 +110,17 @@ export function EventDetailSessions() {
         isLoading={isLoading}
         unattributed={metrics?.unattributed ?? null}
         onAddSession={canAddSession ? () => setCreateSessionOpen(true) : undefined}
+        // Vincular a publicação só faz sentido enquanto a campanha ainda vende:
+        // numa campanha encerrada o comentário não viraria carrinho de qualquer
+        // jeito, e o botão prometeria captura que não vai acontecer.
+        onLinkMedia={canAddSession ? setLinkingSession : undefined}
+      />
+
+      <SessionMediaForm
+        eventId={event.id}
+        session={linkingSession}
+        onOpenChange={(open) => !open && setLinkingSession(null)}
+        onSuccess={refresh}
       />
     </div>
   )

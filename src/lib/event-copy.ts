@@ -162,7 +162,22 @@ export const EVENT_MODEL_COPY = {
     "Os números abaixo são da campanha inteira — a soma de todas as transmissões. A quebra por transmissão fica na aba Sessões.",
 } as const
 
-/** Tipo de sessão: rótulo e ajuda por opção — copy deck §4.1. */
+/**
+ * Tipo de sessão: rótulo e ajuda por opção — copy deck §4.1.
+ *
+ * Story NÃO está aqui, e a ausência é deliberada. Um Story só vira venda se for
+ * publicado PELO LiveCart (a intenção chega como resposta de DM, e o vínculo
+ * depende do id da mídia que a publicação devolve). O Instagram não lista
+ * stories numa grade, e não existe rota para publicar um Story dentro de uma
+ * campanha que já existe — o atalho "Criar um Story" cria campanha e
+ * transmissão juntas.
+ *
+ * Ou seja: oferecer "Story" aqui produziria uma transmissão que nunca captura
+ * nada, e a falha é MUDA — o comprador responde o story e não acontece nada.
+ * É a mesma armadilha do campo que pedia o id numérico da mídia. Enquanto a
+ * publicação de Story em campanha existente não existir, o menu não promete.
+ * Ver SESSION_COPY.storyElsewhere.
+ */
 export const SESSION_TYPE_OPTIONS = [
   {
     value: "live",
@@ -179,11 +194,6 @@ export const SESSION_TYPE_OPTIONS = [
     label: "Reel",
     help: "Funciona igual ao post: os comentários do reel viram carrinho.",
   },
-  {
-    value: "story",
-    label: "Story",
-    help: "A venda acontece pelas respostas ao story, que chegam como mensagem direta. O comprador precisa responder o Story — comentar em outro lugar não conta.",
-  },
 ] as const
 
 export type SessionTypeOptionValue = (typeof SESSION_TYPE_OPTIONS)[number]["value"]
@@ -196,19 +206,29 @@ export function sessionTypeHelp(value: string): string {
 export const SESSION_COPY = {
   type: {
     label: "Tipo da sessão",
-    hint: "O formato desta transmissão: live, post, reel ou story. Uma mesma campanha pode ter os quatro.",
+    hint: "O formato desta transmissão. Uma mesma campanha pode misturar live, post e reel — todos somam no mesmo carrinho de cada cliente.",
   },
   media: {
     label: "Publicação vinculada",
     hint: "A publicação do Instagram que esta sessão monitora. Uma mídia só pode estar em um evento ativo por vez.",
-    help: "Você pode criar a sessão antes de a publicação existir e vincular a mídia depois — inclusive trocar a mídia se publicar de novo.",
+    help: "Você pode criar a sessão agora e vincular a publicação depois, pelo botão “Vincular” na aba Sessões.",
     later: "Vincular depois",
   },
   /** Badge da sessão sem mídia (copy deck §4.4). */
   noMedia: {
     badge: "Sem publicação vinculada",
-    hint: "Esta sessão ainda não está capturando comentários. Vincule a publicação do Instagram para começar.",
+    hint: "Esta sessão ainda não está capturando comentários. Use o botão Vincular ao lado para escolher a publicação.",
+    /** Texto do formulário quando o lojista deixa a mídia para depois. */
+    hintForm:
+      "Sem publicação vinculada, a transmissão nasce sem capturar nada. Ela aparece na aba Sessões com o aviso e um botão “Vincular” — é por lá que você conecta a publicação quando ela existir.",
   },
-  storyNoPicker:
-    "Stories não aparecem na lista de publicações do Instagram. Publique o Story pelo LiveCart no atalho “Criar um Story” ou vincule a mídia depois.",
+  /**
+   * Story não é uma opção de "adicionar transmissão", e o lojista precisa saber
+   * para onde ir em vez de procurar um menu que não tem.
+   */
+  storyElsewhere:
+    "Para vender por Story, use o atalho “Criar um Story” em Novo Evento — o LiveCart publica o Story e monta a transmissão junto. Hoje o Story cria a própria campanha; ele ainda não pode ser acrescentado a uma campanha existente.",
+  /** Fallback do vínculo posterior numa sessão de story (que já nasce com mídia). */
+  storyNoLink:
+    "Stories não aparecem na lista de publicações do Instagram. Uma transmissão de Story recebe a mídia no momento em que o LiveCart publica o Story — não há como vinculá-la depois.",
 } as const
