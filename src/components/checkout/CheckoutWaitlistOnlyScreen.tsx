@@ -67,7 +67,7 @@ export function CheckoutWaitlistOnlyScreen({
         <div className="flex items-center justify-center gap-2 pb-4 text-amber-700">
           <Sparkles className="h-4 w-4" />
           <span className="text-sm font-medium">
-            Obrigado por participar da live
+            Obrigado por comprar com a gente
           </span>
         </div>
       </div>

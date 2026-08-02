@@ -71,7 +71,7 @@ export function OrderDetailStatusBanner() {
           O link do cliente não aceita mais pagamento — ele vê que o carrinho foi{" "}
           {cancelled ? "cancelado pela loja" : "encerrado por tempo"}.
           {cancelled &&
-            " Para vender de novo, peça que ele comente na live outra vez."}
+            " Para vender de novo, peça que ele comente de novo numa transmissão da campanha."}
         </p>
       </div>
     </div>

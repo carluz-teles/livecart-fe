@@ -18,6 +18,7 @@ import {
   DollarSign,
   ChevronRight,
   Layers,
+  BookOpen,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -26,7 +27,14 @@ import { getEventStatusDisplay, EVENT_STATUS_HINT } from "@/lib/constants"
 import { getEventKind, describeEventKind } from "@/lib/event-kind"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { EventFilters, EventTypeChooser, SessionForm, ReconnectForm } from "@/components/event"
+import {
+  EventFilters,
+  EventTypeChooser,
+  EventModelCallout,
+  EventModelDialog,
+  SessionForm,
+  ReconnectForm,
+} from "@/components/event"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
@@ -96,6 +104,7 @@ export default function EventsPage() {
     setSearch,
     filters,
     setFilters,
+    resetFilters,
     params,
   } = useListParams<EventFiltersType>()
 
@@ -105,6 +114,15 @@ export default function EventsPage() {
   const deleteEvent = useDeleteEvent()
 
   const events = data?.data ?? []
+
+  // Lista vazia tem duas causas muito diferentes — "você ainda não criou nada"
+  // e "seu filtro não achou nada" — e o mesmo texto para as duas manda o
+  // lojista criar um evento quando o que ele precisa é limpar o filtro.
+  const hasActiveFilters =
+    !!search ||
+    (filters.status?.length ?? 0) > 0 ||
+    !!filters.dateFrom ||
+    !!filters.dateTo
 
   function handleEndEvent(event: Event) {
     setEndingEvent(event)
@@ -175,8 +193,22 @@ export default function EventsPage() {
         title="Eventos"
         description="Cada evento é uma campanha. Dentro dele ficam as sessões — a live, o post, o reel, o story — e um carrinho único por cliente que soma tudo que ele pediu durante a campanha inteira."
       >
+        {/* Entrada permanente para a explicação: o banner abaixo é
+            dispensável, e depois de dispensado não pode levar o modelo junto. */}
+        <EventModelDialog
+          trigger={
+            <Button variant="ghost">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Como funciona um evento?
+            </Button>
+          }
+        />
         <EventTypeChooser />
       </PageHeader>
+
+      {/* Banner dispensável, nunca modal automático: um diálogo de primeira
+          visita apareceria numa regravação do roteiro do App Review da Meta. */}
+      <EventModelCallout />
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatsCard
@@ -263,12 +295,37 @@ export default function EventsPage() {
                 ) : events.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center">
-                      <p className="font-medium">Você ainda não tem eventos</p>
-                      <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                        Um evento é a sua campanha de vendas — pode ser uma live de duas horas
-                        ou uma semana inteira de publicações. Crie o evento primeiro e depois
-                        adicione as sessões: live, post, reel ou story.
-                      </p>
+                      {hasActiveFilters ? (
+                        <>
+                          <p className="font-medium">Nenhum evento com esses filtros</p>
+                          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                            Tente limpar os filtros ou mudar o período.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => {
+                              setSearch("")
+                              resetFilters()
+                            }}
+                          >
+                            Limpar filtros
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium">Você ainda não tem eventos</p>
+                          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                            Um evento é a sua campanha de vendas — pode ser uma live de duas
+                            horas ou uma semana inteira de publicações. Crie o evento primeiro
+                            e depois adicione as sessões: live, post, reel ou story.
+                          </p>
+                          <div className="mt-3">
+                            <EventTypeChooser />
+                          </div>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -339,27 +396,30 @@ export default function EventsPage() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acoes</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                {/* "Nova sessão" é a ação que faz o evento ser
+                                    guarda-chuva — ela não pode depender de a
+                                    campanha ter live, nem de já estar no ar.
+                                    Reconectar, sim: só há o que reconectar
+                                    onde existe transmissão ao vivo. */}
+                                {(event.status === "active" ||
+                                  event.status === "scheduled") && (
+                                  <DropdownMenuItem onClick={() => handleNewSession(event)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nova sessão
+                                  </DropdownMenuItem>
+                                )}
                                 {event.status === "active" && (
                                   <>
-                                    {/* Sessão nova / reconectar são de
-                                        transmissão ao vivo. Campanha só de
-                                        publicação não tem o que reconectar. */}
-                                    {!kind.isPublicationOnly && (
-                                      <>
-                                        <DropdownMenuItem onClick={() => handleNewSession(event)}>
-                                          <Plus className="mr-2 h-4 w-4" />
-                                          Nova Sessao
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleReconnect(event)}>
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Reconectar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                      </>
+                                    {kind.hasLive && (
+                                      <DropdownMenuItem onClick={() => handleReconnect(event)}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Reconectar
+                                      </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleEndEvent(event)}>
                                       <Square className="mr-2 h-4 w-4" />
-                                      {kind.isPublicationOnly ? "Encerrar promoção" : "Finalizar evento"}
+                                      Finalizar evento
                                     </DropdownMenuItem>
                                   </>
                                 )}

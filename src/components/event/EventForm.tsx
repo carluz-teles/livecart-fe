@@ -3,21 +3,16 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, Radio, Instagram, CalendarIcon } from "lucide-react"
+import { Plus, Loader2, Instagram, CalendarRange } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Sheet,
   SheetContent,
@@ -51,19 +46,34 @@ import {
   CART_EXPIRATION_OPTIONS,
   MAX_QUANTITY_OPTIONS,
   WAITLIST_TTL_OPTIONS,
+  SESSION_COPY,
+  SESSION_TYPE_OPTIONS,
+  sessionTypeHelp,
   isLongCampaign,
   campaignDuration,
   LONG_CAMPAIGN_WARNING,
 } from "@/lib/event-copy"
 import { DateTimeField } from "@/components/shared/DateTimeField"
-import type { Event, CreateEventPayload } from "@/types/event.types"
+import {
+  InstagramMediaPicker,
+  sessionTypeFromMediaType,
+} from "./InstagramMediaPicker"
+import type { SessionType } from "@/lib/event-kind"
+import type { CreateEventPayload } from "@/types/event.types"
+import type { InstagramMediaPost } from "@/types"
+
+/** Valor do select de mídia quando o lojista escolhe não vincular agora. */
+const LINK_LATER = "__later__"
 
 interface EventFormProps {
-  event?: Event
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onSuccess?: () => void
   trigger?: React.ReactNode
+  /** Tipo da PRIMEIRA transmissão sugerido pela porta de entrada. O atalho
+   *  "Live ao vivo" abre já em `live`; a criação de campanha abre igual, mas o
+   *  lojista troca sem sair do formulário. */
+  initialSessionType?: SessionType
 }
 
 /** Fim padrão: 24h à frente, às 23h59 — o formato que o lojista digitaria. */
@@ -74,13 +84,19 @@ function defaultEndsAt(): string {
   return d.toISOString()
 }
 
-export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: EventFormProps) {
-  const isEditing = !!event
+export function EventForm({
+  open,
+  onOpenChange,
+  onSuccess,
+  trigger,
+  initialSessionType = "live",
+}: EventFormProps) {
   const createEvent = useCreateEvent()
   const { data: livesData, isLoading: livesLoading } = useInstagramLives()
   const lives = livesData?.data ?? []
 
   const [internalOpen, setInternalOpen] = useState(false)
+  const [selectedMedia, setSelectedMedia] = useState<InstagramMediaPost | null>(null)
   const isControlled = open !== undefined
   const sheetOpen = isControlled ? open : internalOpen
   const handleOpenChange = (next: boolean) => {
@@ -92,7 +108,11 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     resolver: zodResolver(createEventSchema),
     defaultValues: {
       title: "",
-      type: "single",
+      // `type` é o tipo da PRIMEIRA SESSÃO. Era um radio "Live Única /
+      // Multi-sessão" que não mudava um byte no banco (os dois caíam em
+      // `live`) e era o último lugar da UI mostrando ao lojista um vocabulário
+      // que a 000122 apagou.
+      type: initialSessionType,
       platform: undefined,
       platformLiveId: "",
       startsAt: null,
@@ -110,49 +130,53 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
     },
   })
 
-  // Reset form when event changes (for edit mode)
+  // Reabrir o Sheet tem de reabrir limpo: o mesmo componente serve o card
+  // "Criar uma campanha" e o atalho "Live ao vivo", e o tipo sugerido muda
+  // entre os dois.
   useEffect(() => {
-    if (event) {
-      form.reset({
-        title: event.title || "",
-        // O tipo do container não é mais lido de lugar nenhum: a espécie da
-        // campanha vem das sessões. Aqui `single`/`multi` é só a intenção de
-        // criação, e um evento existente já tem as sessões que tem.
-        type: "multi",
-        platform: undefined,
-        platformLiveId: "",
-        startsAt: event.scheduledAt,
-        endsAt: event.endsAt ?? defaultEndsAt(),
-        description: event.description,
-        closeCartOnEventEnd: event.closeCartOnEventEnd ?? true,
-        cartExpirationMinutes: event.cartExpirationMinutes,
-        cartMaxQuantityPerItem: event.cartMaxQuantityPerItem,
-        waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes ?? null,
-        freeShipping: event.freeShipping ?? false,
-        pixDiscountPercent: event.pixDiscountPercent ?? 0,
-      })
-    } else {
-      form.reset({
-        title: "",
-        type: "single",
-        platform: undefined,
-        platformLiveId: "",
-        startsAt: null,
-        endsAt: defaultEndsAt(),
-        description: null,
-        closeCartOnEventEnd: true,
-        cartExpirationMinutes: null,
-        cartMaxQuantityPerItem: null,
-        waitlistNotifiedTtlMinutes: null,
-        freeShipping: false,
-        pixDiscountPercent: 0,
-      })
-    }
-  }, [event, form])
+    if (!sheetOpen) return
+    setSelectedMedia(null)
+    form.reset({
+      title: "",
+      type: initialSessionType,
+      platform: undefined,
+      platformLiveId: "",
+      startsAt: null,
+      endsAt: defaultEndsAt(),
+      description: null,
+      closeCartOnEventEnd: true,
+      cartExpirationMinutes: null,
+      cartMaxQuantityPerItem: null,
+      waitlistNotifiedTtlMinutes: null,
+      freeShipping: false,
+      pixDiscountPercent: 0,
+    })
+    // `form` é estável entre renders do react-hook-form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sheetOpen, initialSessionType])
 
   const platformLiveId = form.watch("platformLiveId")
+  const sessionType = form.watch("type") ?? "live"
   const watchStartsAt = form.watch("startsAt")
   const watchEndsAt = form.watch("endsAt")
+
+  // Trocar o tipo invalida a mídia escolhida: a lista de lives no ar e a grade
+  // de publicações não são intercambiáveis, e vincular a mídia errada é
+  // silencioso (o comentário simplesmente não vira carrinho).
+  const handleSessionTypeChange = (next: string) => {
+    form.setValue("type", next as SessionType)
+    form.setValue("platformLiveId", "")
+    setSelectedMedia(null)
+  }
+
+  const handleMediaSelect = (post: InstagramMediaPost) => {
+    setSelectedMedia(post)
+    form.setValue("platformLiveId", post.id)
+    // O card da grade sempre soube distinguir Reel de post; o evento é que
+    // nascia sempre 'post'. Deixar a mídia corrigir o tipo é o que impede duas
+    // publicações idênticas de terem rótulos diferentes.
+    form.setValue("type", sessionTypeFromMediaType(post.media_type))
+  }
   // Só avisa sobre o teto quando a campanha passa de 24h — numa live de duas
   // horas "máximo 2" é trava anti-abuso saudável, e o aviso viraria ruído.
   const longCampaignDuration = campaignDuration(watchStartsAt, watchEndsAt)
@@ -165,6 +189,14 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       // Only include platform if platformLiveId is provided
       platform: data.platformLiveId ? "instagram" : undefined,
       platformLiveId: data.platformLiveId || undefined,
+      // Metadados só existem quando a mídia veio da grade. Sem eles a MESMA
+      // publicação ficava com permalink e capa quando entrava pelo caminho de
+      // evento-de-post e sem nada quando entrava como primeira transmissão de
+      // uma campanha — a captura funcionava nos dois, só a tela empobrecia
+      // conforme a porta.
+      mediaPermalink: selectedMedia?.permalink,
+      mediaThumbnailUrl: selectedMedia?.thumbnail_url || selectedMedia?.media_url,
+      mediaCaption: selectedMedia?.caption,
       // Janela comercial. endsAt é obrigatório — sem ele o POST responde 422.
       startsAt: data.startsAt || undefined,
       endsAt: data.endsAt,
@@ -180,7 +212,10 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
 
     createEvent.mutate(payload, {
       onSuccess: () => {
-        toast.success("Evento criado com sucesso!")
+        toast.success("Campanha criada!", {
+          description:
+            "Abra o evento e use a aba Sessões para adicionar as transmissões — live, post, reel ou story.",
+        })
         form.reset()
         handleOpenChange(false)
         onSuccess?.()
@@ -210,13 +245,13 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
       <SheetContent className="w-[400px] sm:w-[480px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <Radio className="h-5 w-5 text-destructive" />
-            {isEditing ? "Editar Evento" : "Novo Evento"}
+            <CalendarRange className="h-5 w-5 text-primary" />
+            Novo evento
           </SheetTitle>
           <SheetDescription>
-            {isEditing
-              ? "Atualize os dados do evento."
-              : "Crie um novo evento e conecte-se a uma transmissao ao vivo para comecar a capturar pedidos."}
+            Defina a campanha: nome, quando abre, quando fecha e as regras comerciais. As
+            transmissões você adiciona no passo seguinte — e pode adicionar mais a
+            qualquer momento enquanto o evento estiver aberto.
           </SheetDescription>
         </SheetHeader>
 
@@ -243,43 +278,54 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               )}
             />
 
+            <div className="relative py-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                Primeira transmissão
+              </span>
+            </div>
+
+            {/* Toda campanha nasce com uma transmissão — é onde moram a lista
+                de produtos e o modo live. O que deixou de ser obrigatório é a
+                MÍDIA: dá para marcar a Semana Black hoje e pendurar a live de
+                segunda quando ela existir. */}
+            <p className="text-sm text-muted-foreground">
+              A campanha começa com uma transmissão, e você adiciona as outras pela aba
+              Sessões — live, post, reel ou story, todas somando no mesmo carrinho de cada
+              cliente.
+            </p>
+
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="single" id="type-single" />
-                        <Label htmlFor="type-single" className="font-normal cursor-pointer">
-                          Live Unica
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="multi" id="type-multi" />
-                        <Label htmlFor="type-multi" className="font-normal cursor-pointer">
-                          Multi-sessao
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {SESSION_COPY.type.label}
+                    <FieldHint text={SESSION_COPY.type.hint} />
+                  </FormLabel>
+                  <Select
+                    onValueChange={handleSessionTypeChange}
+                    value={field.value ?? "live"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {SESSION_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>{sessionTypeHelp(field.value ?? "live")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="relative py-2">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                Conectar a uma live (opcional)
-              </span>
-            </div>
 
             <div className="space-y-2">
               <Label>Plataforma</Label>
@@ -292,25 +338,32 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               </p>
             </div>
 
-            <FormField
-              control={form.control}
-              name="platformLiveId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Live Ativa</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {lives.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          Nenhuma live ativa no momento
-                        </div>
-                      ) : (
-                        lives.map((live) => {
+            {sessionType === "live" && (
+              <FormField
+                control={form.control}
+                name="platformLiveId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      {SESSION_COPY.media.liveLabel}
+                      <FieldHint text={SESSION_COPY.media.hint} />
+                    </FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(v === LINK_LATER ? "" : v)}
+                      value={field.value || LINK_LATER}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={livesLoading ? "Carregando..." : "Selecione uma live"}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={LINK_LATER}>
+                          {SESSION_COPY.media.later}
+                        </SelectItem>
+                        {lives.map((live) => {
                           const startTime = live.timestamp
                             ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
                             : null
@@ -320,19 +373,40 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                               {startTime && ` (iniciada às ${startTime})`}
                             </SelectItem>
                           )
-                        })
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Selecione a live ativa do Instagram para conectar
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>{SESSION_COPY.media.help}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-            {!isEditing && platformLiveId && (
+            {sessionType !== "live" && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  {SESSION_COPY.media.label}
+                  <FieldHint text={SESSION_COPY.media.hint} />
+                </Label>
+                <InstagramMediaPicker
+                  enabled={sheetOpen}
+                  selected={selectedMedia}
+                  onSelect={handleMediaSelect}
+                />
+                <p className="text-sm text-muted-foreground">{SESSION_COPY.media.help}</p>
+              </div>
+            )}
+
+            {/* Story não é opção aqui: ele só vira venda publicado PELO
+                LiveCart, e o atalho que faz isso monta campanha e transmissão
+                juntas. Oferecer a espécie neste menu criaria uma transmissão
+                que nunca captura nada, e a falha é muda. */}
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm text-muted-foreground">{SESSION_COPY.storyElsewhere}</p>
+            </div>
+
+            {platformLiveId && sessionType === "live" && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
                 <p className="text-sm text-amber-800 dark:text-amber-200">
                   <strong>Importante:</strong> Certifique-se de que a live esta ativa
@@ -340,6 +414,12 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
                   imediatamente apos a conexao.
                 </p>
               </div>
+            )}
+
+            {!platformLiveId && (
+              <p className="text-sm text-muted-foreground">
+                {SESSION_COPY.noMedia.hintForm}
+              </p>
             )}
 
             <div className="relative py-2">
@@ -678,7 +758,7 @@ export function EventForm({ event, open, onOpenChange, onSuccess, trigger }: Eve
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Criando..." : "Criar Evento"}
+                {isPending ? "Criando..." : "Criar evento"}
               </Button>
             </div>
           </form>

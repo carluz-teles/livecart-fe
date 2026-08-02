@@ -57,8 +57,13 @@ export function EventDetailHeader() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0">
+          {/* Só "Campanha". Era "Campanha · Post", e numa campanha de uma
+              sessão só isso vestia o evento com a identidade da transmissão —
+              o cabeçalho dizia "post" e o lojista lia a tela inteira como a de
+              um post. A espécie continua visível no badge ao lado, que é
+              informação da sessão, não do container. */}
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Campanha · {kind.label}
+            Campanha
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">

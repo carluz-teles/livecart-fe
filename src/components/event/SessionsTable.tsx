@@ -1,6 +1,6 @@
 "use client"
 
-import { Radio, Instagram, Youtube, Aperture, Film, Plus } from "lucide-react"
+import { Radio, Instagram, Youtube, Aperture, Film, Layers, Link2, Plus } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { PLATFORM_LABELS, SESSION_STATUS_CONFIG } from "@/lib/constants"
+import { SESSION_COPY } from "@/lib/event-copy"
 import { formatCurrency } from "@/lib/format"
 import type { EventSession, Platform, SessionMetrics } from "@/types/event.types"
 
@@ -28,6 +29,13 @@ interface SessionsTableProps {
   /** Quando presente, mostra o botão de adicionar transmissão. Ausente = a
    *  campanha não aceita sessão nova (encerrada). */
   onAddSession?: () => void
+  /** Quando presente, a sessão sem mídia ganha o botão "Vincular".
+   *
+   *  Sem isto o badge "Sem publicação vinculada" era um beco: ele avisava que a
+   *  transmissão não captura nada e não havia onde clicar para resolver — o
+   *  único vínculo posterior era o "Crash recovery", que só lista lives e nem
+   *  aparece em campanha sem live. */
+  onLinkMedia?: (session: EventSession) => void
 }
 
 /** Tooltip da coluna de receita — copy deck §5.3. */
@@ -97,14 +105,18 @@ export function SessionsTable({
   isLoading,
   unattributed,
   onAddSession,
+  onLinkMedia,
 }: SessionsTableProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div>
+            {/* Layers, não Radio: este card lista post, reel e story também —
+                o ícone de live rotulava a campanha inteira como transmissão ao
+                vivo. */}
             <CardTitle className="flex items-center gap-2 text-base font-medium">
-              <Radio className="h-4 w-4 text-muted-foreground" />
+              <Layers className="h-4 w-4 text-muted-foreground" />
               Sessões do evento
             </CardTitle>
             <CardDescription className="mt-1">
@@ -162,6 +174,17 @@ export function SessionsTable({
                       você vai conectar na hora, um post que já existe no seu perfil, ou uma
                       publicação que o LiveCart cria para você.
                     </p>
+                    {onAddSession && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={onAddSession}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar sessão
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -190,10 +213,37 @@ export function SessionsTable({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {platform && getPlatformIcon(platform.platform)}
-                          <span>{platformName}</span>
-                        </div>
+                        {/* Sessão sem mídia é caminho suportado — e antes ela
+                            aparecia como um "-" mudo, indistinguível de dado
+                            faltando. O badge diz o que está acontecendo:
+                            existe, mas não captura nada ainda. */}
+                        {platform ? (
+                          <div className="flex items-center gap-2">
+                            {getPlatformIcon(platform.platform)}
+                            <span>{platformName}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-muted-foreground"
+                              title={SESSION_COPY.noMedia.hint}
+                            >
+                              {SESSION_COPY.noMedia.badge}
+                            </Badge>
+                            {onLinkMedia && session.type !== "story" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2"
+                                onClick={() => onLinkMedia(session)}
+                              >
+                                <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                                Vincular
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="tabular-nums">
                         {formatDuration(session.startedAt, session.endedAt)}

@@ -124,3 +124,114 @@ export const MAX_QUANTITY_OPTIONS = [
   { value: "5", label: "5 unidades" },
   { value: "10", label: "10 unidades" },
 ]
+
+/**
+ * O modelo em uma página — copy deck §1.1.
+ *
+ * O dono do produto abriu um evento e leu a métrica de um post como se fosse a
+ * campanha. O produto nunca explicou a diferença: até aqui não havia UM texto
+ * no painel dizendo o que é evento, o que é sessão e por que o carrinho é um
+ * só. Estes textos ficam num módulo porque aparecem em três lugares (banner de
+ * /events, diálogo de ajuda e o aviso de campanha com uma sessão só) e
+ * divergirem entre si seria repetir o erro que os criou.
+ */
+export const EVENT_MODEL_COPY = {
+  title: "Um evento é a sua campanha — não uma publicação",
+  levels: [
+    {
+      term: "Evento",
+      text: "É a campanha inteira. “Semana Black”, de segunda a sábado. É aqui que você define cupom, frete grátis, desconto no PIX e o prazo para o cliente finalizar.",
+    },
+    {
+      term: "Sessão",
+      text: "É cada transmissão dentro da campanha: a live de segunda, o post de terça, o story de quarta, o reel de quinta. Um evento pode ter quantas quiser, de tipos diferentes.",
+    },
+    {
+      term: "Mídia",
+      text: "É a publicação real no Instagram que a sessão monitora. Você pode criar a sessão antes de a publicação existir e vincular a mídia depois.",
+    },
+  ],
+  cartRule:
+    "O carrinho é um só por cliente, por campanha. Se a Ana comentou na live de segunda e voltou a comentar no story de quarta, os dois produtos entram no mesmo carrinho, com o mesmo link.",
+  deadlineRule:
+    "O prazo para pagar só começa a correr quando o evento fecha. Enquanto a campanha estiver aberta nenhum carrinho expira — e nenhum estoque volta para a loja.",
+  maxQuantityRule:
+    "O teto de quantidade vale para a campanha inteira, não para cada transmissão. “Máximo 2 por produto” significa 2 unidades da segunda ao sábado: quem atingir o limite na primeira sessão fica bloqueado até a campanha terminar.",
+  /** Resumo de uma linha — cabe acima dos KPIs sem empurrar o número da dobra. */
+  shortIntro:
+    "Os números abaixo são da campanha inteira — a soma de todas as transmissões. A quebra por transmissão fica na aba Sessões.",
+} as const
+
+/**
+ * Tipo de sessão: rótulo e ajuda por opção — copy deck §4.1.
+ *
+ * Story NÃO está aqui, e a ausência é deliberada. Um Story só vira venda se for
+ * publicado PELO LiveCart (a intenção chega como resposta de DM, e o vínculo
+ * depende do id da mídia que a publicação devolve). O Instagram não lista
+ * stories numa grade, e não existe rota para publicar um Story dentro de uma
+ * campanha que já existe — o atalho "Criar um Story" cria campanha e
+ * transmissão juntas.
+ *
+ * Ou seja: oferecer "Story" aqui produziria uma transmissão que nunca captura
+ * nada, e a falha é MUDA — o comprador responde o story e não acontece nada.
+ * É a mesma armadilha do campo que pedia o id numérico da mídia. Enquanto a
+ * publicação de Story em campanha existente não existir, o menu não promete.
+ * Ver SESSION_COPY.storyElsewhere.
+ */
+export const SESSION_TYPE_OPTIONS = [
+  {
+    value: "live",
+    label: "Live ao vivo",
+    help: "Você conecta a transmissão do Instagram quando ela começar. Não dá para agendar a publicação de uma live.",
+  },
+  {
+    value: "post",
+    label: "Post no feed",
+    help: "Comentários no post viram carrinho. Pode ser um post que já existe ou um que o LiveCart publica para você.",
+  },
+  {
+    value: "reel",
+    label: "Reel",
+    help: "Funciona igual ao post: os comentários do reel viram carrinho.",
+  },
+] as const
+
+export type SessionTypeOptionValue = (typeof SESSION_TYPE_OPTIONS)[number]["value"]
+
+export function sessionTypeHelp(value: string): string {
+  return SESSION_TYPE_OPTIONS.find((o) => o.value === value)?.help ?? ""
+}
+
+/** Textos do formulário de Sessão — copy deck §4.1 e §4.4. */
+export const SESSION_COPY = {
+  type: {
+    label: "Tipo da sessão",
+    hint: "O formato desta transmissão. Uma mesma campanha pode misturar live, post e reel — todos somam no mesmo carrinho de cada cliente.",
+  },
+  media: {
+    label: "Publicação vinculada",
+    /** Rótulo quando a transmissão é uma live: ela não é uma "publicação", e
+     *  este é o nome que o roteiro do App Review da Meta clica no passo 7. */
+    liveLabel: "Live ativa",
+    hint: "A publicação do Instagram que esta sessão monitora. Uma mídia só pode estar em um evento ativo por vez.",
+    help: "Você pode criar a sessão agora e vincular a publicação depois, pelo botão “Vincular” na aba Sessões.",
+    later: "Vincular depois",
+  },
+  /** Badge da sessão sem mídia (copy deck §4.4). */
+  noMedia: {
+    badge: "Sem publicação vinculada",
+    hint: "Esta sessão ainda não está capturando comentários. Use o botão Vincular ao lado para escolher a publicação.",
+    /** Texto do formulário quando o lojista deixa a mídia para depois. */
+    hintForm:
+      "Sem publicação vinculada, a transmissão nasce sem capturar nada. Ela aparece na aba Sessões com o aviso e um botão “Vincular” — é por lá que você conecta a publicação quando ela existir.",
+  },
+  /**
+   * Story não é uma opção de "adicionar transmissão", e o lojista precisa saber
+   * para onde ir em vez de procurar um menu que não tem.
+   */
+  storyElsewhere:
+    "Para vender por Story, use o atalho “Criar um Story” em Novo Evento — o LiveCart publica o Story e monta a transmissão junto. Hoje o Story cria a própria campanha; ele ainda não pode ser acrescentado a uma campanha existente.",
+  /** Fallback do vínculo posterior numa sessão de story (que já nasce com mídia). */
+  storyNoLink:
+    "Stories não aparecem na lista de publicações do Instagram. Uma transmissão de Story recebe a mídia no momento em que o LiveCart publica o Story — não há como vinculá-la depois.",
+} as const

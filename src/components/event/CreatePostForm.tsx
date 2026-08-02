@@ -236,8 +236,8 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
           <SheetTitle>{isStory ? "Criar um Story no Instagram" : "Criar post no Instagram"}</SheetTitle>
           <SheetDescription>
             {isStory
-              ? "Publique um Story (foto ou vídeo) pelo LiveCart. Ele fica no ar por 24h e quem responder o Story por DM compra na hora."
-              : "Publique um post de foto direto pelo LiveCart e já comece a vender pelos comentários — sem sair daqui."}
+              ? "Atalho: publica o Story (foto ou vídeo) e cria a campanha de uma vez. Ele fica no ar por 24h e quem responder o Story por DM compra na hora — comentar em outro lugar não conta."
+              : "Atalho: publica o post pelo LiveCart e cria a campanha de uma vez, já vendendo pelos comentários. Você pode adicionar outras transmissões à mesma campanha depois."}
           </SheetDescription>
         </SheetHeader>
 
@@ -342,15 +342,23 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="post-title">Título do evento (opcional)</Label>
+              {/* Os três formulários chamavam este mesmo campo de três coisas
+                  diferentes ("Nome da campanha", "Título (opcional)", "Título
+                  do evento (opcional)"), e só um deles explicava que é o nome
+                  da CAMPANHA. */}
+              <Label htmlFor="post-title" className="flex items-center gap-1.5">
+                {EVENT_COPY.title.label}
+                <FieldHint text={EVENT_COPY.title.hint} />
+              </Label>
               <Input
                 id="post-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Promoção da Sexta"
+                placeholder={EVENT_COPY.title.placeholder}
               />
               <p className="text-xs text-muted-foreground">
-                Apenas para você identificar o evento no LiveCart.
+                Opcional. É o nome da campanha que o comprador vê nas mensagens — e esta
+                publicação é a primeira transmissão dela.
               </p>
             </div>
           </section>

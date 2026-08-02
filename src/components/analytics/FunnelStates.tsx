@@ -63,9 +63,12 @@ export function FunnelStates({ data, isLoading }: FunnelStatesProps) {
           <div>
             <CardTitle className="text-base">Funil do período</CardTitle>
             <CardDescription>
+              {/* `data.lives` conta EVENTOS (COUNT DISTINCT event_id), não
+                  transmissões — o nome do campo mente desde antes do
+                  guarda-chuva e uma campanha mista tem várias sessões. */}
               {data && data.lives > 0
-                ? `${data.lives} ${data.lives === 1 ? "live" : "lives"} no período`
-                : "Da live ao pagamento"}
+                ? `${data.lives} ${data.lives === 1 ? "campanha" : "campanhas"} no período`
+                : "Do comentário ao pagamento"}
             </CardDescription>
           </div>
           <Link

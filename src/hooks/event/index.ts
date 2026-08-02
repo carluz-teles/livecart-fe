@@ -22,6 +22,7 @@ export { useDeleteEvent } from "./useDeleteEvent"
 export { useEndEvent } from "./useEndEvent"
 export { useCreateSession } from "./useCreateSession"
 export { useAddPlatform } from "./useAddPlatform"
+export { useLinkSessionMedia } from "./useLinkSessionMedia"
 // Live mode
 export { useLiveModeState } from "./useLiveModeState"
 export { useSetActiveProduct } from "./useSetActiveProduct"

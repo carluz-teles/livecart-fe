@@ -28,7 +28,14 @@ export function VariableMenu({ variables, onPick }: VariableMenuProps) {
       <PopoverContent align="start" className="w-64 p-1.5">
         <ul className="flex flex-col">
           {variables.map((v) => {
-            const friendly = variableFriendlyNames[v.name] ?? v.name
+            // A descrição vem do BACKEND, que é o dono do catálogo. O mapa local
+            // é só o fallback: ele não conhece {evento}, {sessao}, {prazo_final}
+            // nem {comeca_em} — justamente as variáveis do modelo guarda-chuva —,
+            // então o menu mostrava "{evento}" cru para a variável mais
+            // importante da campanha. E onde ele conhecia, mentia: chamava
+            // {live_titulo} de "Título da live" quando o valor é o nome da
+            // campanha.
+            const friendly = v.description || variableFriendlyNames[v.name] || v.name
             const technical = v.name.replace(/[{}]/g, "")
             return (
               <li key={v.name}>

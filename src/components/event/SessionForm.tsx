@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
@@ -8,7 +9,7 @@ import { Loader2, Plus, Instagram } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,21 @@ import {
 import { createSessionSchema, type CreateSessionFormData } from "@/schemas/event.schema"
 import { useCreateSession } from "@/hooks/event"
 import { useInstagramLives } from "@/hooks/integration"
+import { FieldHint } from "@/components/shared/FieldHint"
+import {
+  SESSION_COPY,
+  SESSION_TYPE_OPTIONS,
+  sessionTypeHelp,
+} from "@/lib/event-copy"
+import {
+  InstagramMediaPicker,
+  sessionTypeFromMediaType,
+} from "./InstagramMediaPicker"
+import type { SessionType } from "@/lib/event-kind"
+import type { InstagramMediaPost } from "@/types"
+
+/** Valor do select de live quando o lojista escolhe não vincular agora. */
+const LINK_LATER = "__later__"
 
 interface SessionFormProps {
   eventId: string
@@ -44,8 +60,19 @@ interface SessionFormProps {
   onSuccess?: () => void
 }
 
+/**
+ * Adicionar uma transmissão a uma campanha que já existe.
+ *
+ * Este é o fluxo que dá sentido ao evento guarda-chuva, e ele estava
+ * inutilizável para publicação: para vincular um post o lojista tinha que
+ * digitar o id numérico da mídia ("Ex: 18043029837128493"), um número que o
+ * painel não mostra em lugar nenhum. Agora usa a MESMA grade de publicações do
+ * caminho de post — e a mídia deixou de ser obrigatória, porque marcar a
+ * campanha antes de a transmissão existir é o caso central do modelo.
+ */
 export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionFormProps) {
   const createSession = useCreateSession()
+  const [selectedMedia, setSelectedMedia] = useState<InstagramMediaPost | null>(null)
 
   const form = useForm<CreateSessionFormData>({
     resolver: zodResolver(createSessionSchema),
@@ -56,30 +83,64 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     },
   })
 
+  useEffect(() => {
+    if (!open) return
+    setSelectedMedia(null)
+    form.reset({ platform: "instagram", type: "live", platformLiveId: "" })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
   const isPending = createSession.isPending
   const sessionType = form.watch("type") ?? "live"
+  const platformLiveId = form.watch("platformLiveId")
 
   // Instagram lives dropdown
   const { data: livesData, isLoading: livesLoading } = useInstagramLives()
   const lives = livesData?.data ?? []
 
+  const handleTypeChange = (next: string) => {
+    form.setValue("type", next as SessionType)
+    form.setValue("platformLiveId", "")
+    setSelectedMedia(null)
+  }
+
+  const handleMediaSelect = (post: InstagramMediaPost) => {
+    setSelectedMedia(post)
+    form.setValue("platformLiveId", post.id)
+    form.setValue("type", sessionTypeFromMediaType(post.media_type))
+  }
+
   async function onSubmit(data: CreateSessionFormData) {
+    const mediaId = data.platformLiveId?.trim() || undefined
     createSession.mutate(
       {
         eventId,
         payload: {
-          platform: "instagram", // Only Instagram supported
+          // O backend recusa meia mídia (400 SESSION_MEDIA_INCOMPLETE): ou o
+          // par plataforma+id vem junto, ou nenhum dos dois.
+          platform: mediaId ? "instagram" : undefined,
+          platformLiveId: mediaId,
           // Sem `type` o backend grava 'live'. Como post/reel/story agora SÃO
           // sessões, omitir aqui fazia toda transmissão nascer rotulada
           // errado — e a métrica por sessão herdava o rótulo errado junto.
           type: data.type ?? "live",
-          platformLiveId: data.platformLiveId,
+          // Metadados só existem quando a mídia veio da grade. Sem eles a
+          // sessão nasce sem permalink nem thumbnail, enquanto a MESMA
+          // publicação criada como evento novo nasce com tudo.
+          mediaPermalink: selectedMedia?.permalink,
+          mediaThumbnailUrl: selectedMedia?.thumbnail_url || selectedMedia?.media_url,
+          mediaCaption: selectedMedia?.caption,
         },
       },
       {
         onSuccess: () => {
-          toast.success("Sessao criada com sucesso!")
+          toast.success("Transmissão adicionada à campanha!", {
+            description: mediaId
+              ? "Os comentários já começam a virar carrinho."
+              : "Ela ainda não captura nada — vincule a publicação quando ela existir.",
+          })
           form.reset()
+          setSelectedMedia(null)
           onOpenChange(false)
           onSuccess?.()
         },
@@ -94,7 +155,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
@@ -114,24 +175,29 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo da sessão</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? "live"}>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {SESSION_COPY.type.label}
+                    <FieldHint text={SESSION_COPY.type.hint} />
+                  </FormLabel>
+                  <Select onValueChange={handleTypeChange} value={field.value ?? "live"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="live">Live</SelectItem>
-                      <SelectItem value="post">Post</SelectItem>
-                      <SelectItem value="reel">Reel</SelectItem>
-                      <SelectItem value="story">Story</SelectItem>
+                      {SESSION_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    O que esta transmissão é. Define como o comprador demonstra interesse:
-                    comentário no post e na live, resposta por DM no story.
-                  </FormDescription>
+                  {/* A ajuda muda com a opção porque a diferença que importa
+                      não é o rótulo: no Story a venda só acontece se o
+                      comprador RESPONDER o story. Sem esse aviso o lojista
+                      divulga errado e a sessão não converte nada. */}
+                  <FormDescription>{sessionTypeHelp(field.value ?? "live")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -143,65 +209,83 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                 <Instagram className="h-5 w-5 text-pink-500" />
                 <span className="text-sm font-medium">Instagram</span>
               </div>
-              <FormDescription>
-                Apenas Instagram e suportado no momento
-              </FormDescription>
+              <FormDescription>Apenas Instagram e suportado no momento</FormDescription>
             </FormItem>
 
             {/* A mídia de uma live é escolhida entre as transmissões no ar; a
-                de uma publicação é um id que já existe no perfil. Oferecer a
-                lista de lives para uma sessão de post vincularia a mídia
-                errada — e o vínculo é único por evento ativo. */}
-            <FormField
-              control={form.control}
-              name="platformLiveId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {sessionType === "live" ? "Live ativa" : "Publicação"}{" "}
-                    <span className="text-destructive">*</span>
-                  </FormLabel>
-                  {sessionType === "live" ? (
-                    <Select onValueChange={field.onChange} value={field.value}>
+                de uma publicação vem da grade do perfil. Oferecer a lista de
+                lives para uma sessão de post vincularia a mídia errada — e o
+                vínculo é único por evento ativo. */}
+            {sessionType === "live" && (
+              <FormField
+                control={form.control}
+                name="platformLiveId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      {SESSION_COPY.media.liveLabel}
+                      <FieldHint text={SESSION_COPY.media.hint} />
+                    </FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(v === LINK_LATER ? "" : v)}
+                      value={field.value || LINK_LATER}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={livesLoading ? "Carregando..." : "Selecione uma live"} />
+                          <SelectValue
+                            placeholder={livesLoading ? "Carregando..." : "Selecione uma live"}
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {lives.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
-                            Nenhuma live ativa no momento
-                          </div>
-                        ) : (
-                          lives.map((live) => {
-                            const startTime = live.timestamp
-                              ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
-                              : null
-                            return (
-                              <SelectItem key={live.id} value={live.id}>
-                                Live @{live.username}
-                                {startTime && ` (iniciada às ${startTime})`}
-                              </SelectItem>
-                            )
-                          })
-                        )}
+                        <SelectItem value={LINK_LATER}>{SESSION_COPY.media.later}</SelectItem>
+                        {lives.map((live) => {
+                          const startTime = live.timestamp
+                            ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
+                            : null
+                          return (
+                            <SelectItem key={live.id} value={live.id}>
+                              Live @{live.username}
+                              {startTime && ` (iniciada às ${startTime})`}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <FormControl>
-                      <Input placeholder="Ex: 18043029837128493" {...field} />
-                    </FormControl>
-                  )}
-                  <FormDescription>
-                    {sessionType === "live"
-                      ? "Selecione a live ativa do Instagram."
-                      : "O id da publicação no Instagram. Ela só pode estar vinculada a uma campanha ativa por vez."}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormDescription>{SESSION_COPY.media.help}</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {sessionType !== "live" && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  {SESSION_COPY.media.label}
+                  <FieldHint text={SESSION_COPY.media.hint} />
+                </Label>
+                <InstagramMediaPicker
+                  enabled={open}
+                  selected={selectedMedia}
+                  onSelect={handleMediaSelect}
+                />
+                <p className="text-sm text-muted-foreground">{SESSION_COPY.media.help}</p>
+              </div>
+            )}
+
+            {/* Story sai do menu de tipos porque não há como vinculá-lo aqui —
+                mas o lojista que quer vender por Story precisa saber para onde
+                ir, senão procura a opção que não existe. */}
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm text-muted-foreground">{SESSION_COPY.storyElsewhere}</p>
+            </div>
+
+            {!platformLiveId && (
+              <p className="text-sm text-muted-foreground">
+                {SESSION_COPY.noMedia.hintForm}
+              </p>
+            )}
 
             <DialogFooter>
               <Button
@@ -214,7 +298,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Criando..." : "Criar Sessao"}
+                {isPending ? "Criando..." : "Criar sessão"}
               </Button>
             </DialogFooter>
           </form>

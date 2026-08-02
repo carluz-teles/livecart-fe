@@ -3,7 +3,7 @@
  * Use these instead of hardcoding values in components.
  */
 
-import type { LiveStatus, LivePlatform } from "@/types/live.types"
+import type { LivePlatform } from "@/types/live.types"
 import type { EventStatus } from "@/types/event.types"
 import type { OrderStatus, PaymentStatus } from "@/types/cart.types"
 
@@ -18,20 +18,8 @@ export interface StatusConfig {
   variant: BadgeVariant
 }
 
-export interface LiveStatusConfig extends StatusConfig {
-  icon: "calendar" | "play" | "eye" | "clock"
-}
-
-/**
- * Live session status configuration
- */
-export const LIVE_STATUS_CONFIG: Record<LiveStatus, LiveStatusConfig> = {
-  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
-  active: { label: "Ao Vivo", variant: "destructive", icon: "play" },
-  live: { label: "Ao Vivo", variant: "destructive", icon: "play" },
-  ended: { label: "Finalizada", variant: "secondary", icon: "eye" },
-  cancelled: { label: "Cancelada", variant: "outline", icon: "clock" },
-}
+// `LIVE_STATUS_CONFIG` saiu daqui: era órfão e falava de "live" onde hoje o
+// objeto é uma SESSÃO. Quem rotula sessão é SESSION_STATUS_CONFIG, abaixo.
 
 export interface EventStatusConfig extends StatusConfig {
   icon: "radio" | "check-circle" | "calendar" | "instagram"
@@ -99,14 +87,40 @@ export const SESSION_STATUS_CONFIG: Record<string, StatusConfig & { hint: string
 }
 
 /**
- * Order status configuration
+ * Status do carrinho — copy deck §8.4.
+ *
+ * "Ativo/Checkout/Completo" era o vocabulário interno do banco vazando para a
+ * tela: no modelo guarda-chuva `checkout` não significa "o cliente está
+ * finalizando", significa "a campanha fechou e o prazo dele começou a correr".
+ * Sem essa distinção o lojista lê o status errado exatamente no momento em que
+ * a decisão depende dele.
  */
-export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
-  active: { label: "Ativo", variant: "outline" },
-  checkout: { label: "Checkout", variant: "secondary" },
-  completed: { label: "Completo", variant: "default" },
-  expired: { label: "Expirado", variant: "destructive" },
-  cancelled: { label: "Cancelado", variant: "destructive" },
+export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig & { hint: string }> = {
+  active: {
+    label: "Aberto",
+    variant: "outline",
+    hint: "Aceitando itens novos. O link de pagamento já funciona — mas ainda não há prazo correndo.",
+  },
+  checkout: {
+    label: "Aguardando pagamento",
+    variant: "secondary",
+    hint: "A campanha encerrou. O cliente tem prazo para finalizar; depois disso os produtos voltam ao estoque.",
+  },
+  completed: {
+    label: "Concluído",
+    variant: "default",
+    hint: "Pedido fechado. Nada mais entra neste carrinho.",
+  },
+  expired: {
+    label: "Expirado",
+    variant: "destructive",
+    hint: "O prazo acabou sem pagamento. Os produtos voltaram para a loja e para a fila de espera.",
+  },
+  cancelled: {
+    label: "Cancelado",
+    variant: "destructive",
+    hint: "Cancelado por você ou pelo cliente. O estoque foi devolvido.",
+  },
 }
 
 /**
@@ -150,10 +164,10 @@ export const PLATFORM_LABELS: Record<LivePlatform, string> = {
 /**
  * Get status config with fallback
  */
-export function getStatusConfig<T extends string>(
-  config: Record<T, StatusConfig>,
+export function getStatusConfig<T extends string, C extends StatusConfig>(
+  config: Record<T, C>,
   status: string,
   fallback: T
-): StatusConfig {
+): C {
   return config[status as T] || config[fallback]
 }
