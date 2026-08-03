@@ -57,6 +57,12 @@ interface InstagramMediaPickerProps {
   onSelect: (post: InstagramMediaPost) => void
   /** Resumo da mídia escolhida abaixo da grade. */
   showSelectedSummary?: boolean
+  /** Mostra só as publicações da espécie escolhida.
+   *
+   *  Sem isto, escolher "Reels" na sessão abria a grade inteira do perfil, com
+   *  posts de foto no meio — e vincular um post a uma sessão de Reel grava a
+   *  espécie errada, que a métrica por transmissão herda. Ausente = tudo. */
+  filterType?: "post" | "reel"
 }
 
 export function InstagramMediaPicker({
@@ -64,12 +70,14 @@ export function InstagramMediaPicker({
   selected,
   onSelect,
   showSelectedSummary = true,
+  filterType,
 }: InstagramMediaPickerProps) {
   const media = useInstagramMedia(enabled)
-  const posts = useMemo(
-    () => media.data?.pages.flatMap((p) => p.data) ?? [],
-    [media.data]
-  )
+  const posts = useMemo(() => {
+    const all = media.data?.pages.flatMap((p) => p.data) ?? []
+    if (!filterType) return all
+    return all.filter((p) => sessionTypeFromMediaType(p.media_type) === filterType)
+  }, [media.data, filterType])
 
   return (
     <div className="space-y-3">

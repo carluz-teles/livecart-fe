@@ -46,14 +46,31 @@ interface CreatePostFormProps {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
-  // "post" publishes to the feed (photo/Reels, buyers comment to buy); "story"
-  // publishes a 24h Story (buyers reply via DM to buy). The form reuses the same
-  // media + products UI, hiding the caption/window for Stories.
-  variant?: "post" | "story"
+  // "post" publishes to the feed (photo, buyers comment to buy); "reel" publishes
+  // a Reels video; "story" publishes a 24h Story (buyers reply via DM to buy).
+  // The form reuses the same media + products UI, hiding the caption/window for
+  // Stories.
+  variant?: "post" | "reel" | "story"
+  /** Quando presente, a publicação entra como SESSÃO deste evento em vez de
+   *  criar um evento próprio.
+   *
+   *  É o que liga o "publicar pelo LiveCart" ao guarda-chuva: sem isto, o post
+   *  de terça nascia num evento separado da live de segunda e o mesmo comprador
+   *  terminava com dois carrinhos. Com o evento, as regras comerciais (janela,
+   *  expiração, teto) são DELE — por isso os campos somem do formulário. */
+  eventId?: string
 }
 
-export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: CreatePostFormProps) {
+export function CreatePostForm({
+  open,
+  onClose,
+  onSuccess,
+  variant = "post",
+  eventId,
+}: CreatePostFormProps) {
   const isStory = variant === "story"
+  // Dentro de um evento, quem manda na janela e nas regras de carrinho é ele.
+  const insideEvent = !!eventId
   const fileInputRef = useRef<HTMLInputElement>(null)
   const submittingRef = useRef(false)
   // Stable per selected media: sent with every submit so a retry after a client
@@ -64,7 +81,9 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
   // then "processing" is indeterminate (Instagram has no progress to report).
   const [phase, setPhase] = useState<"idle" | "uploading" | "processing">("idle")
   const [uploadPercent, setUploadPercent] = useState(0)
-  const [mediaType, setMediaType] = useState<"image" | "reel">("image")
+  const [mediaType, setMediaType] = useState<"image" | "reel">(
+    variant === "reel" ? "reel" : "image"
+  )
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
@@ -190,10 +209,17 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
       caption: caption.trim() || undefined,
       title: title.trim() || undefined,
       productIds: selectedProductIds,
-      startsAt: toISO(startsAt),
-      endsAt: new Date(endsAt).toISOString(),
-      cartExpirationMinutes,
-      cartMaxQuantityPerItem: maxQty,
+      // Dentro de um evento, janela e regras de carrinho NÃO são enviadas: são
+      // do evento, e mandá-las daqui deixaria uma publicação redefinir a
+      // campanha inteira pelas costas.
+      ...(insideEvent
+        ? { eventId }
+        : {
+            startsAt: toISO(startsAt),
+            endsAt: new Date(endsAt).toISOString(),
+            cartExpirationMinutes,
+            cartMaxQuantityPerItem: maxQty,
+          }),
       idempotencyKey: idempotencyKeyRef.current || undefined,
       onProgress: (pct: number) => {
         setUploadPercent(pct)
@@ -414,7 +440,21 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
             </ScrollArea>
           </section>
 
-          {/* Step 3 — window + cart */}
+          {/* Step 3 — window + cart.
+              Some inteira dentro de um evento: janela, expiração e teto são do
+              EVENTO. Mostrá-los aqui convidaria o lojista a definir, numa
+              publicação, regra que vale para a campanha toda — e a publicação
+              nem as envia mais. */}
+          {insideEvent ? (
+            <section className="space-y-3">
+              <SectionTitle n={3} title="Janela e carrinho" />
+              <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                Esta publicação entra no evento que você já abriu. O prazo de
+                pagamento, a expiração do carrinho e o limite por produto são os
+                do evento — e valem igual para todas as transmissões dele.
+              </p>
+            </section>
+          ) : (
           <section className="space-y-3">
             <SectionTitle n={3} title="Janela e carrinho" />
             {isStory && (
@@ -496,6 +536,7 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
               </div>
             </div>
           </section>
+          )}
         </div>
 
         {isPending && (

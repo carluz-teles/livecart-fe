@@ -187,14 +187,19 @@ export interface CreateEventPayload {
 
 // Payload to publish an image post on Instagram and create its post event
 export interface CreateInstagramPostPayload {
+  /** Quando presente, a publicação entra como SESSÃO deste evento em vez de
+   *  criar um evento próprio. Janela, expiração e teto passam a ser do evento —
+   *  por isso os campos correspondentes deixam de ser enviados. */
+  eventId?: string
   imageUrl: string
   imageKey?: string
   caption?: string
   title?: string
   productIds: string[]
   startsAt?: string | null
-  /** OBRIGATÓRIO — mesma regra do evento de live (RN-05). */
-  endsAt: string
+  /** OBRIGATÓRIO quando cria evento próprio (RN-05). Publicando dentro de um
+   *  evento existente o prazo é o dele, e este campo não vai. */
+  endsAt?: string
   cartExpirationMinutes?: number | null
   cartMaxQuantityPerItem?: number | null
   // Stable per selected media so a retried submit (after a client timeout)

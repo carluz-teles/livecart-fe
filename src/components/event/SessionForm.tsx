@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Loader2, Plus, Instagram } from "lucide-react"
+import { Loader2, Plus, Instagram, Upload, Link2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -43,15 +43,33 @@ import {
   SESSION_TYPE_OPTIONS,
   sessionTypeHelp,
 } from "@/lib/event-copy"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   InstagramMediaPicker,
   sessionTypeFromMediaType,
 } from "./InstagramMediaPicker"
+import { CreatePostForm } from "./CreatePostForm"
 import type { SessionType } from "@/lib/event-kind"
 import type { InstagramMediaPost } from "@/types"
 
 /** Valor do select de live quando o lojista escolhe não vincular agora. */
 const LINK_LATER = "__later__"
+
+/** Rótulo do botão de publicar, por espécie. */
+function publishLabel(type: string): string {
+  if (type === "reel") return "Publicar um Reel"
+  if (type === "story") return "Publicar um Story"
+  return "Publicar um post"
+}
+
+/** O que cada espécie exige do comprador — a diferença que decide a venda. */
+function publishHelp(type: string): string {
+  if (type === "reel")
+    return "Envie o vídeo e escolha os produtos. O LiveCart publica o Reel e os comentários dele viram carrinho."
+  if (type === "story")
+    return "Envie a mídia e escolha os produtos. O LiveCart publica o Story — e a venda acontece quando o comprador RESPONDE o story por DM."
+  return "Envie a imagem e escolha os produtos. O LiveCart publica o post e os comentários dele viram carrinho."
+}
 
 interface SessionFormProps {
   eventId: string
@@ -73,6 +91,10 @@ interface SessionFormProps {
 export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionFormProps) {
   const createSession = useCreateSession()
   const [selectedMedia, setSelectedMedia] = useState<InstagramMediaPost | null>(null)
+  // "publish" primeiro porque é o caminho que faltava e o que o lojista procura
+  // quando escolhe post/reel: ele quer PUBLICAR, não caçar um id de mídia.
+  const [mediaMode, setMediaMode] = useState<"publish" | "existing">("publish")
+  const [publishOpen, setPublishOpen] = useState(false)
 
   const form = useForm<CreateSessionFormData>({
     resolver: zodResolver(createSessionSchema),
@@ -86,6 +108,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
   useEffect(() => {
     if (!open) return
     setSelectedMedia(null)
+    setMediaMode("publish")
     form.reset({ platform: "instagram", type: "live", platformLiveId: "" })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -287,26 +310,61 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
             )}
 
             {sessionType !== "live" && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  {SESSION_COPY.media.label}
-                  <FieldHint text={SESSION_COPY.media.hint} />
-                </Label>
-                <InstagramMediaPicker
-                  enabled={open}
-                  selected={selectedMedia}
-                  onSelect={handleMediaSelect}
-                />
-                <p className="text-sm text-muted-foreground">{SESSION_COPY.media.help}</p>
+              <div className="space-y-3">
+                {/* DOIS caminhos, e o de publicar faltava.
+                    Só existia "vincular publicação existente", então não havia
+                    como fazer um post ou um Reel PELO LiveCart dentro de um
+                    evento — o formulário de publicar existia, mas só era
+                    alcançável pelo fluxo antigo, que criava evento próprio. */}
+                <Tabs
+                  value={mediaMode}
+                  onValueChange={(v) => setMediaMode(v as "publish" | "existing")}
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="publish">
+                      <Upload className="mr-1.5 h-3.5 w-3.5" />
+                      Publicar agora
+                    </TabsTrigger>
+                    <TabsTrigger value="existing">
+                      <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                      Já publiquei
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="publish" className="mt-3 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {publishHelp(sessionType)}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setPublishOpen(true)}
+                    >
+                      <Upload className="mr-1.5 h-4 w-4" />
+                      {publishLabel(sessionType)}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="existing" className="mt-3 space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      {SESSION_COPY.media.label}
+                      <FieldHint text={SESSION_COPY.media.hint} />
+                    </Label>
+                    {/* O picker filtra pela espécie escolhida: escolher Reels e
+                        receber a grade de posts é o que fazia o lojista vincular
+                        a mídia errada. */}
+                    <InstagramMediaPicker
+                      enabled={open && mediaMode === "existing"}
+                      selected={selectedMedia}
+                      onSelect={handleMediaSelect}
+                      filterType={sessionType === "reel" ? "reel" : "post"}
+                    />
+                    <p className="text-sm text-muted-foreground">{SESSION_COPY.media.help}</p>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
-
-            {/* Story sai do menu de tipos porque não há como vinculá-lo aqui —
-                mas o lojista que quer vender por Story precisa saber para onde
-                ir, senão procura a opção que não existe. */}
-            <div className="rounded-lg border bg-muted/40 p-3">
-              <p className="text-sm text-muted-foreground">{SESSION_COPY.storyElsewhere}</p>
-            </div>
 
             {!platformLiveId && (
               <p className="text-sm text-muted-foreground">
@@ -333,6 +391,22 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
           </form>
         </Form>
       </DialogContent>
+
+      {/* Publicar pelo LiveCart, DENTRO deste evento.
+          Ao publicar, o backend já cria a sessão vinculada à mídia — por isso
+          aqui só fechamos os dois diálogos e avisamos quem nos abriu. Criar a
+          sessão de novo pelo formulário duplicaria a transmissão. */}
+      <CreatePostForm
+        open={publishOpen}
+        variant={sessionType === "reel" ? "reel" : sessionType === "story" ? "story" : "post"}
+        eventId={eventId}
+        onClose={() => setPublishOpen(false)}
+        onSuccess={() => {
+          setPublishOpen(false)
+          onOpenChange(false)
+          onSuccess?.()
+        }}
+      />
     </Dialog>
   )
 }
