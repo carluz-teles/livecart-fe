@@ -164,6 +164,10 @@ export const EVENT_MODEL_COPY = {
     "O prazo para pagar só começa a correr quando o evento fecha. Enquanto a campanha estiver aberta nenhum carrinho expira — e nenhum estoque volta para a loja.",
   maxQuantityRule:
     "O teto de quantidade vale para a campanha inteira, não para cada transmissão. “Máximo 2 por produto” significa 2 unidades da segunda ao sábado: quem atingir o limite na primeira sessão fica bloqueado até a campanha terminar.",
+  /** A exceção da regra acima — e a única. Sem ela o lojista procura os
+   *  produtos no lugar em que tudo o mais mora: a campanha. */
+  productRule:
+    "Cupom, frete, prazo e teto de quantidade são da campanha. Os produtos são a única coisa que é de cada transmissão: a live pode vender a loja toda enquanto o story vende só uma peça. Você configura a lista na aba Sessões, no botão “Produtos” da transmissão.",
   /** Resumo de uma linha — cabe acima dos KPIs sem empurrar o número da dobra. */
   shortIntro:
     "Os números abaixo são da campanha inteira — a soma de todas as transmissões. A quebra por transmissão fica na aba Sessões.",
@@ -241,4 +245,44 @@ export const SESSION_COPY = {
   /** Fallback do vínculo posterior numa sessão de story (que já nasce com mídia). */
   storyNoLink:
     "Stories não aparecem na lista de publicações do Instagram. Uma transmissão de Story recebe a mídia no momento em que o LiveCart publica o Story — não há como vinculá-la depois.",
+  /**
+   * A transmissão nova nasce vendendo tudo. Fica no "?" do diálogo, não num
+   * parágrafo: é a regra completa, e quem já entendeu o modelo não precisa
+   * relê-la toda vez que cria uma sessão.
+   */
+  bornOpen: {
+    short: "Ela nasce vendendo todos os produtos da loja.",
+    hint: "As restrições de produto das outras transmissões não são copiadas para cá. Se quiser restringir esta, configure os produtos dela depois de criar, pelo botão “Produtos” na aba Sessões.",
+  },
+} as const
+
+/**
+ * Produtos vendáveis de uma transmissão — decisão 15 / N2.
+ *
+ * A lista é da TRANSMISSÃO: a campanha não tem lista, e por isso não existe
+ * mais aba "Produtos" no evento. "Whitelist" é nome de tabela e não aparece
+ * para o lojista em lugar nenhum.
+ */
+export const SESSION_PRODUCTS_COPY = {
+  title: "Produtos desta transmissão",
+  /** Tooltip do "?": a regra inteira, sob demanda. */
+  hint: "Cada transmissão da campanha tem a própria lista — a live pode vender a loja toda enquanto o story vende uma peça só. Sem produto selecionado, esta transmissão vende qualquer produto ativo da loja.",
+  /** Linha de status quando a lista tem produtos. */
+  restricted: (count: number) =>
+    count === 1
+      ? "1 produto liberado. Só ele pode ser vendido nesta transmissão."
+      : `${count} produtos liberados. Só eles podem ser vendidos nesta transmissão.`,
+  /** Linha de status quando a lista está vazia — o caso da live. */
+  open: "Sem produto selecionado: esta transmissão vende qualquer produto da loja.",
+  add: "Adicionar produto",
+  addFirst: "Adicionar primeiro produto",
+  emptyTitle: "Nenhum produto configurado",
+  emptyBody:
+    "Com a lista vazia, todos os produtos ativos da loja podem ser vendidos nesta transmissão. Adicione produtos para restringir a venda apenas aos itens selecionados.",
+  pickerHelp: "Busque e selecione os produtos que poderão ser vendidos nesta transmissão.",
+  pickerExhausted: "Todos os produtos ativos já estão nesta transmissão",
+  /** Badge da tabela de sessões quando a transmissão não restringe nada. */
+  allBadge: "Todos",
+  allBadgeHint:
+    "Esta transmissão não tem lista: qualquer produto ativo da loja pode ser vendido nela.",
 } as const

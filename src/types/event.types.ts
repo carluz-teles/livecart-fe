@@ -67,6 +67,11 @@ export interface EventSession extends SessionRevenue {
   startedAt: string | null
   endedAt: string | null
   totalComments: number
+  /** Quantos produtos ESTA transmissão libera. Zero significa "vende todos os
+   *  produtos ativos da loja" — a contagem existe justamente para a tabela
+   *  poder dizer isso, em vez de deixar o lojista achar que esqueceu de
+   *  configurar. A lista é da transmissão: a campanha não tem lista. */
+  productCount: number
   platforms: EventPlatform[]
   comments?: SessionComment[]
   createdAt: string
@@ -136,7 +141,8 @@ export interface Event {
    *  carrinho inteiro e não acumula. */
   waitlistNotifiedTtlMinutes: number
   description: string | null
-  productCount: number
+  /** `productCount` SAIU do evento: a lista de produtos vendáveis é da
+   *  transmissão, não da campanha. A contagem mora em `EventSession`. */
   upsellCount: number
   sessions?: EventSession[]
   createdAt: string
@@ -429,10 +435,15 @@ export interface EventSoldProductsResponse {
 }
 
 // =============================================================================
-// EVENT WHITELIST - Products allowed for sale in an event
+// SESSION PRODUCTS - Products this broadcast can sell
+//
+// A lista é da TRANSMISSÃO, não da campanha: uma live pode vender qualquer
+// coisa enquanto o post da mesma campanha vende só o produto X e o story só o
+// produto Y. Lista vazia = todos os produtos ativos da loja liberados naquela
+// transmissão. Sessão nova nasce vazia — nada é copiado de outra transmissão.
 // =============================================================================
 
-export interface EventWhitelistProduct {
+export interface SessionProduct {
   id: string
   productId: string
   name: string
@@ -448,7 +459,7 @@ export interface EventWhitelistProduct {
   productActive: boolean
 }
 
-export interface AddEventProductPayload {
+export interface AddSessionProductPayload {
   productId: string
   specialPrice?: number | null
   maxQuantity?: number | null
@@ -456,15 +467,15 @@ export interface AddEventProductPayload {
   featured?: boolean
 }
 
-export interface UpdateEventProductPayload {
+export interface UpdateSessionProductPayload {
   specialPrice?: number | null
   maxQuantity?: number | null
   displayOrder?: number
   featured?: boolean
 }
 
-export interface EventWhitelistResponse {
-  data: EventWhitelistProduct[]
+export interface SessionProductsResponse {
+  data: SessionProduct[]
 }
 
 // =============================================================================

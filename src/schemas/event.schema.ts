@@ -90,8 +90,8 @@ export type UpdateEventFormData = z.infer<typeof updateEventSchema>
 export const createSessionSchema = z.object({
   platform: z.literal("instagram").optional(), // Only Instagram supported
   // Espécie da transmissão. Sem este campo toda sessão criada pelo painel
-  // nascia `live`, inclusive as de post — e a whitelist herdada, o modo live e
-  // a métrica por sessão passam a rotular errado a partir daí.
+  // nascia `live`, inclusive as de post — e a lista de produtos da sessão, o
+  // modo live e a métrica por sessão passam a rotular errado a partir daí.
   type: z.enum(["live", "post", "reel", "story"]).optional(),
   // A mídia é OPCIONAL. Era obrigatória, e isso fechava justamente o caso que
   // define o evento guarda-chuva: marcar a campanha antes de a transmissão

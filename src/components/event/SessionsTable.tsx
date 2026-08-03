@@ -1,6 +1,16 @@
 "use client"
 
-import { Radio, Instagram, Youtube, Aperture, Film, Layers, Link2, Plus } from "lucide-react"
+import {
+  Radio,
+  Instagram,
+  Youtube,
+  Aperture,
+  Film,
+  Layers,
+  Link2,
+  Package,
+  Plus,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { PLATFORM_LABELS, SESSION_STATUS_CONFIG } from "@/lib/constants"
-import { SESSION_COPY } from "@/lib/event-copy"
+import { SESSION_COPY, SESSION_PRODUCTS_COPY } from "@/lib/event-copy"
 import { formatCurrency } from "@/lib/format"
 import type { EventSession, Platform, SessionMetrics } from "@/types/event.types"
 
@@ -36,6 +46,9 @@ interface SessionsTableProps {
    *  único vínculo posterior era o "Crash recovery", que só lista lives e nem
    *  aparece em campanha sem live. */
   onLinkMedia?: (session: EventSession) => void
+  /** Quando presente, cada linha ganha o botão que abre os produtos DAQUELA
+   *  transmissão. Ausente = campanha encerrada, nada mais a configurar. */
+  onOpenProducts?: (session: EventSession) => void
 }
 
 /** Tooltip da coluna de receita — copy deck §5.3. */
@@ -89,6 +102,50 @@ function getStatusBadge(status: string) {
   )
 }
 
+/**
+ * O que esta transmissão vende, em uma olhada.
+ *
+ * O rótulo sozinho não distinguia "vende tudo" de "esqueci de configurar" — e
+ * as duas coisas têm o MESMO desfecho na tela antiga (lista vazia) e desfechos
+ * opostos na cabeça do lojista. Por isso a contagem sempre aparece: um número,
+ * ou "Todos".
+ */
+function SessionProductsCell({
+  session,
+  onOpenProducts,
+}: {
+  session: EventSession
+  onOpenProducts?: (session: EventSession) => void
+}) {
+  const count = session.productCount ?? 0
+  const label = count > 0 ? String(count) : SESSION_PRODUCTS_COPY.allBadge
+  const hint = count > 0 ? SESSION_PRODUCTS_COPY.hint : SESSION_PRODUCTS_COPY.allBadgeHint
+
+  if (!onOpenProducts) {
+    return (
+      <Badge variant="outline" className="text-muted-foreground" title={hint}>
+        {label}
+      </Badge>
+    )
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 px-2"
+      title={hint}
+      onClick={() => onOpenProducts(session)}
+    >
+      <Package className="mr-1.5 h-3.5 w-3.5" />
+      Produtos
+      <Badge variant={count > 0 ? "secondary" : "outline"} className="ml-1.5">
+        {label}
+      </Badge>
+    </Button>
+  )
+}
+
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
     case "instagram":
@@ -106,6 +163,7 @@ export function SessionsTable({
   unattributed,
   onAddSession,
   onLinkMedia,
+  onOpenProducts,
 }: SessionsTableProps) {
   return (
     <Card>
@@ -150,6 +208,10 @@ export function SessionsTable({
                   Em carrinho
                 </TableHead>
                 <TableHead className="text-right">Status</TableHead>
+                {/* A coluna existe sempre — inclusive em campanha encerrada,
+                    onde ela vira leitura. É o único lugar do painel que responde
+                    "o que ESTA transmissão vende". */}
+                <TableHead className="text-right">Produtos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -163,11 +225,12 @@ export function SessionsTable({
                     <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     <p className="font-medium">Nenhuma sessão ainda</p>
                     <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
                       Adicione a primeira transmissão desta campanha. Pode ser uma live que
@@ -263,6 +326,12 @@ export function SessionsTable({
                       <TableCell className="text-right">
                         {getStatusBadge(session.status)}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <SessionProductsCell
+                          session={session}
+                          onOpenProducts={onOpenProducts}
+                        />
+                      </TableCell>
                     </TableRow>
                   )
                 })
@@ -283,6 +352,7 @@ export function SessionsTable({
                   <TableCell className="text-right tabular-nums text-muted-foreground">
                     {formatCurrency(unattributed.projectedRevenue)}
                   </TableCell>
+                  <TableCell />
                   <TableCell />
                 </TableRow>
               )}

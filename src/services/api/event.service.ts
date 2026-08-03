@@ -23,10 +23,10 @@ import type {
   EventCartsResponse,
   EventCommentsResponse,
   EventSoldProductsResponse,
-  EventWhitelistProduct,
-  EventWhitelistResponse,
-  AddEventProductPayload,
-  UpdateEventProductPayload,
+  SessionProduct,
+  SessionProductsResponse,
+  AddSessionProductPayload,
+  UpdateSessionProductPayload,
   EventUpsell,
   EventUpsellsResponse,
   AddEventUpsellPayload,
@@ -180,34 +180,63 @@ export const eventService = {
     apiClient.patch<void>(`/stores/${storeId}/lives/${eventId}/pause-processing`, payload, token),
 
   // ==========================================================================
-  // EVENT WHITELIST - Products allowed for sale in this event
+  // SESSION PRODUCTS - o que ESTA transmissão pode vender
+  //
+  // As quatro rotas equivalentes por evento saíram do backend: elas escreviam
+  // em todas as sessões de uma vez, que é justamente o contrário do que o
+  // lojista quer — a live vende qualquer coisa, o story vende uma peça só.
   // ==========================================================================
 
-  // List whitelist products
-  listWhitelist: (storeId: string, eventId: string, token?: string | null) =>
-    apiClient.get<EventWhitelistResponse>(`/stores/${storeId}/lives/${eventId}/whitelist`, token),
-
-  // Add product to whitelist
-  addToWhitelist: (storeId: string, eventId: string, payload: AddEventProductPayload, token?: string | null) =>
-    apiClient.post<EventWhitelistProduct>(`/stores/${storeId}/lives/${eventId}/whitelist`, payload, token),
-
-  // Update whitelist product config
-  updateWhitelistProduct: (
+  listSessionProducts: (
     storeId: string,
     eventId: string,
-    productId: string,
-    payload: UpdateEventProductPayload,
+    sessionId: string,
     token?: string | null
   ) =>
-    apiClient.put<EventWhitelistProduct>(
-      `/stores/${storeId}/lives/${eventId}/whitelist/${productId}`,
+    apiClient.get<SessionProductsResponse>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist`,
+      token
+    ),
+
+  addSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    payload: AddSessionProductPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<SessionProduct>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist`,
       payload,
       token
     ),
 
-  // Remove from whitelist
-  removeFromWhitelist: (storeId: string, eventId: string, productId: string, token?: string | null) =>
-    apiClient.delete<void>(`/stores/${storeId}/lives/${eventId}/whitelist/${productId}`, token),
+  // Chaveado por productId — nunca pelo id da linha da lista.
+  updateSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    productId: string,
+    payload: UpdateSessionProductPayload,
+    token?: string | null
+  ) =>
+    apiClient.put<SessionProduct>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist/${productId}`,
+      payload,
+      token
+    ),
+
+  removeSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    productId: string,
+    token?: string | null
+  ) =>
+    apiClient.delete<void>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist/${productId}`,
+      token
+    ),
 
   // ==========================================================================
   // EVENT UPSELLS - Suggested products at checkout

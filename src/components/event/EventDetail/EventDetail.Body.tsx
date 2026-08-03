@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
-import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
 import { EventWindowForm } from "@/components/event/EventWindowForm"
 import { EventDetailContext } from "./EventDetailContext"
@@ -51,14 +50,10 @@ export function EventDetailBody() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="products">
-            Produtos
-            {event.productCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {event.productCount}
-              </Badge>
-            )}
-          </TabsTrigger>
+          {/* A aba "Produtos" da campanha SAIU: a lista de produtos vendáveis é
+              de cada transmissão. Uma lista aqui escrevia em todas as sessões
+              de uma vez — o contrário de "a live vende tudo e o story vende uma
+              peça". Agora ela mora na aba Sessões, na linha da transmissão. */}
           <TabsTrigger value="upsells">
             Upsells
             {event.upsellCount > 0 && (
@@ -107,21 +102,18 @@ export function EventDetailBody() {
         </TabsContent>
 
         <TabsContent value="sessions" className="mt-6 flex flex-col gap-4">
+          {/* A regra da campanha já está na descrição do card abaixo, palavra
+              por palavra. Aqui fica só o que a aba ganhou de novo: os produtos
+              são configurados por transmissão. */}
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Cada linha é uma transmissão desta campanha. Você pode adicionar sessões
-            enquanto o evento estiver aberto, de tipos diferentes. A campanha só fecha na
-            data de fim ou quando você clicar em &quot;Finalizar evento&quot; — nenhuma
-            sessão sozinha fecha carrinho.
+            Cada linha é uma transmissão desta campanha. Os produtos que cada uma pode
+            vender são configurados nela mesma, no botão &quot;Produtos&quot; da linha.
           </p>
           <EventDetailSessions />
         </TabsContent>
 
         <TabsContent value="metrics" className="mt-6">
           <EventDetailMetrics />
-        </TabsContent>
-
-        <TabsContent value="products" className="mt-6">
-          <EventWhitelist eventId={event.id} />
         </TabsContent>
 
         <TabsContent value="upsells" className="mt-6">

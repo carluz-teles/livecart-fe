@@ -160,11 +160,13 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Nova sessão
+            {/* A regra inteira mora no "?", não num parágrafo: quem já conhece o
+                modelo não precisa relê-la a cada sessão criada. */}
+            <FieldHint text={SESSION_COPY.bornOpen.hint} />
           </DialogTitle>
           <DialogDescription>
             Adicione uma transmissão a esta campanha. Os carrinhos já abertos continuam
-            como estão — a sessão nova soma no mesmo carrinho de cada cliente, e herda a
-            lista de produtos do evento.
+            como estão. {SESSION_COPY.bornOpen.short}
           </DialogDescription>
         </DialogHeader>
 

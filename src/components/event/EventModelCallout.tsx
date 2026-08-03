@@ -121,6 +121,13 @@ export function EventModelDialog({ trigger }: { trigger: React.ReactNode }) {
             </p>
           </div>
 
+          <div className="rounded-lg border p-3">
+            <p className="text-sm font-medium">Os produtos são de cada transmissão</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {EVENT_MODEL_COPY.productRule}
+            </p>
+          </div>
+
           {/* O teto de quantidade tem tratamento próprio porque é a regra que
               bloqueia uma venda legítima sem avisar: o comprador atinge o
               limite na primeira sessão e não consegue comprar mais até a

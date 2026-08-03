@@ -25,55 +25,66 @@ import {
 } from "@/components/ui/alert-dialog"
 import { formatCurrency } from "@/lib/format"
 import { useDebounce } from "@/hooks/shared"
-import { useUpdateWhitelistProduct, useRemoveFromWhitelist } from "@/hooks/event"
-import type { EventWhitelistProduct } from "@/types"
+import { useUpdateSessionProduct, useRemoveSessionProduct } from "@/hooks/event"
+import type { SessionProduct } from "@/types"
 import { cn } from "@/lib/utils"
 
-interface EventWhitelistTableProps {
-  products: EventWhitelistProduct[]
+interface SessionProductsTableProps {
+  products: SessionProduct[]
   eventId: string
+  sessionId: string
 }
 
-export function EventWhitelistTable({ products, eventId }: EventWhitelistTableProps) {
+export function SessionProductsTable({
+  products,
+  eventId,
+  sessionId,
+}: SessionProductsTableProps) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[300px]">Produto</TableHead>
-          <TableHead>Keyword</TableHead>
-          <TableHead>Preço Original</TableHead>
-          <TableHead>Preço Especial</TableHead>
-          <TableHead>Qtd Máx</TableHead>
-          <TableHead>Estoque</TableHead>
-          <TableHead className="w-[100px]">Ações</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {products.map((product) => (
-          <WhitelistRow key={product.id} product={product} eventId={eventId} />
-        ))}
-      </TableBody>
-    </Table>
+    <div className="overflow-x-auto rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[260px]">Produto</TableHead>
+            <TableHead>Keyword</TableHead>
+            <TableHead>Preço original</TableHead>
+            <TableHead>Preço especial</TableHead>
+            <TableHead>Qtd máx</TableHead>
+            <TableHead>Estoque</TableHead>
+            <TableHead className="w-[80px]">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {products.map((product) => (
+            <SessionProductRow
+              key={product.id}
+              product={product}
+              eventId={eventId}
+              sessionId={sessionId}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   )
 }
 
-interface WhitelistRowProps {
-  product: EventWhitelistProduct
+interface SessionProductRowProps {
+  product: SessionProduct
   eventId: string
+  sessionId: string
 }
 
-function WhitelistRow({ product, eventId }: WhitelistRowProps) {
+function SessionProductRow({ product, eventId, sessionId }: SessionProductRowProps) {
   const [editingField, setEditingField] = useState<"price" | "qty" | null>(null)
   const [localPrice, setLocalPrice] = useState<string>(
     product.specialPrice ? (product.specialPrice / 100).toFixed(2).replace(".", ",") : ""
   )
-  const [localQty, setLocalQty] = useState<string>(
-    product.maxQuantity?.toString() ?? ""
-  )
+  const [localQty, setLocalQty] = useState<string>(product.maxQuantity?.toString() ?? "")
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const updateMutation = useUpdateWhitelistProduct(eventId)
-  const removeMutation = useRemoveFromWhitelist(eventId)
+  const updateMutation = useUpdateSessionProduct(eventId, sessionId)
+  const removeMutation = useRemoveSessionProduct(eventId, sessionId)
 
   const debouncedPrice = useDebounce(localPrice, 500)
   const debouncedQty = useDebounce(localQty, 500)
@@ -94,6 +105,7 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
         payload: { specialPrice: priceInCents },
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedPrice])
 
   // Handle debounced qty update
@@ -109,6 +121,7 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
         payload: { maxQuantity: qty },
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQty])
 
   const handleDelete = () => {
@@ -130,12 +143,12 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
                 className="h-10 w-10 rounded object-cover"
               />
             ) : (
-              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
                 <Package className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
             <div>
-              <p className="font-medium truncate max-w-[200px]" title={product.name}>
+              <p className="max-w-[180px] truncate font-medium" title={product.name}>
                 {product.name}
               </p>
               {product.featured && (
@@ -149,7 +162,7 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
         </TableCell>
 
         <TableCell>
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
             {product.keyword}
           </code>
         </TableCell>
@@ -173,13 +186,15 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
               />
             </div>
           ) : (
-            <span className={cn(
-              "hover:underline",
-              product.specialPrice ? "font-medium text-green-600" : "text-muted-foreground"
-            )}>
-              {product.specialPrice
-                ? formatCurrency(product.specialPrice)
-                : "Preço base"}
+            <span
+              className={cn(
+                "hover:underline",
+                product.specialPrice
+                  ? "font-medium text-green-600"
+                  : "text-muted-foreground"
+              )}
+            >
+              {product.specialPrice ? formatCurrency(product.specialPrice) : "Preço base"}
             </span>
           )}
         </TableCell>
@@ -198,20 +213,24 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
               placeholder="-"
             />
           ) : (
-            <span className={cn(
-              "hover:underline",
-              product.maxQuantity ? "font-medium" : "text-muted-foreground"
-            )}>
+            <span
+              className={cn(
+                "hover:underline",
+                product.maxQuantity ? "font-medium" : "text-muted-foreground"
+              )}
+            >
               {product.maxQuantity ?? "Padrão"}
             </span>
           )}
         </TableCell>
 
         <TableCell>
-          <span className={cn(
-            product.stock <= 0 && "text-destructive",
-            product.stock <= 5 && product.stock > 0 && "text-amber-600"
-          )}>
+          <span
+            className={cn(
+              product.stock <= 0 && "text-destructive",
+              product.stock <= 5 && product.stock > 0 && "text-amber-600"
+            )}
+          >
             {product.stock}
           </span>
         </TableCell>
@@ -232,9 +251,12 @@ function WhitelistRow({ product, eventId }: WhitelistRowProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remover produto</AlertDialogTitle>
+            {/* Remover o ÚLTIMO produto não restringe mais: libera a loja
+                inteira nesta transmissão. Avisar aqui é a diferença entre uma
+                remoção e uma abertura acidental do catálogo. */}
             <AlertDialogDescription>
-              Tem certeza que deseja remover &ldquo;{product.name}&rdquo; da whitelist?
-              O produto ainda poderá ser vendido se nenhum outro produto estiver na lista.
+              Remover &ldquo;{product.name}&rdquo; dos produtos desta transmissão? Se a
+              lista ficar vazia, todos os produtos da loja voltam a ser aceitos aqui.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

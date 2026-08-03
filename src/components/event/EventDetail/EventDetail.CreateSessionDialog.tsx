@@ -10,8 +10,7 @@ import { EventDetailContext } from "./EventDetailContext"
  * Era um stub: o handler fechava o diálogo e não criava nada
  * (`// TODO: wire to createSession mutation when BE ships it`). O backend já
  * tinha a rota, e a lista de eventos já usava o `SessionForm` real — havia dois
- * caminhos para a mesma ação, um deles mudo. Com a whitelist herdada pela
- * sessão nova, este é justamente o caminho que exercita a herança.
+ * caminhos para a mesma ação, um deles mudo.
  *
  * Não há formulário próprio aqui de propósito: duplicá-lo era o que mantinha o
  * diálogo oferecendo TikTok/YouTube/Facebook, que nem o schema nem o backend

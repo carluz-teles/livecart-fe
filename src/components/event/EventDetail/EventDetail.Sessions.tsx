@@ -4,6 +4,7 @@ import { use, useState } from "react"
 import { AlertTriangle, Info } from "lucide-react"
 import { SessionsTable } from "@/components/event/SessionsTable"
 import { SessionMediaForm } from "@/components/event/SessionMediaForm"
+import { SessionProductsSheet } from "@/components/event/SessionProducts/SessionProducts.Sheet"
 import { useSessionMetrics } from "@/hooks/event"
 import { formatCurrency } from "@/lib/format"
 import type { EventSession } from "@/types/event.types"
@@ -23,6 +24,10 @@ export function EventDetailSessions() {
   const { data: metrics, isLoading, isError } = useSessionMetrics(ctx?.state.event.id ?? "")
   // A sessão que está recebendo a publicação. `null` = diálogo fechado.
   const [linkingSession, setLinkingSession] = useState<EventSession | null>(null)
+  // A sessão cujos produtos estão abertos. Não existe rota de sessão, e não
+  // vamos criar uma: a lista abre numa gaveta a partir da linha, ao lado da
+  // transmissão que ela configura.
+  const [productsSession, setProductsSession] = useState<EventSession | null>(null)
   if (!ctx) return null
   const { event, stats } = ctx.state
   const { setCreateSessionOpen, refresh } = ctx.actions
@@ -114,6 +119,9 @@ export function EventDetailSessions() {
         // numa campanha encerrada o comentário não viraria carrinho de qualquer
         // jeito, e o botão prometeria captura que não vai acontecer.
         onLinkMedia={canAddSession ? setLinkingSession : undefined}
+        // Mesmo gate do vínculo: numa campanha encerrada a lista vira leitura,
+        // porque nada que for configurado ali chegaria a vender.
+        onOpenProducts={canAddSession ? setProductsSession : undefined}
       />
 
       <SessionMediaForm
@@ -121,6 +129,14 @@ export function EventDetailSessions() {
         session={linkingSession}
         onOpenChange={(open) => !open && setLinkingSession(null)}
         onSuccess={refresh}
+      />
+
+      <SessionProductsSheet
+        eventId={event.id}
+        session={productsSession}
+        // A contagem da coluna se atualiza sozinha: as mutações da lista
+        // invalidam o detalhe do evento, que é de onde `productCount` vem.
+        onOpenChange={(open) => !open && setProductsSession(null)}
       />
     </div>
   )

@@ -27,9 +27,13 @@ export { useLinkSessionMedia } from "./useLinkSessionMedia"
 export { useLiveModeState } from "./useLiveModeState"
 export { useSetActiveProduct } from "./useSetActiveProduct"
 export { useSetProcessingPaused } from "./useSetProcessingPaused"
-// Whitelist
-export { useEventWhitelist } from "./useEventWhitelist"
-export { useAddToWhitelist, useUpdateWhitelistProduct, useRemoveFromWhitelist } from "./useEventWhitelistMutations"
+// Produtos vendáveis — da TRANSMISSÃO, não da campanha
+export { useSessionProducts } from "./useSessionProducts"
+export {
+  useAddSessionProduct,
+  useUpdateSessionProduct,
+  useRemoveSessionProduct,
+} from "./useSessionProductMutations"
 // Upsells
 export { useEventUpsells } from "./useEventUpsells"
 export { useAddUpsell, useUpdateUpsell, useRemoveUpsell } from "./useEventUpsellMutations"

@@ -22,8 +22,13 @@ export const eventKeys = {
   detailPulse: (storeId: string, eventId: string) => [...eventKeys.all, "detail-pulse", storeId, eventId] as const,
   // Live mode
   liveMode: (storeId: string, eventId: string) => [...eventKeys.all, "live-mode", storeId, eventId] as const,
-  // Whitelist & Upsells
-  whitelist: (storeId: string, eventId: string) => [...eventKeys.all, "whitelist", storeId, eventId] as const,
+  // Produtos vendáveis & Upsells
+  //
+  // O eixo da sessão é obrigatório: sem ele, editar os produtos de UMA
+  // transmissão invalidaria o cache de todas as outras da campanha — que é
+  // exatamente a confusão que a lista por evento causava.
+  sessionProducts: (storeId: string, eventId: string, sessionId: string) =>
+    [...eventKeys.all, "session-products", storeId, eventId, sessionId] as const,
   upsells: (storeId: string, eventId: string) => [...eventKeys.all, "upsells", storeId, eventId] as const,
 }
 

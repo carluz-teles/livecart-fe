@@ -31,9 +31,10 @@ export function EventDetailModelBanner() {
   const sessions = event.sessions ?? []
   const sessionCount = sessions.length
   // Uma campanha criada sem transmissão nasce com a sessão-marcador: ela existe
-  // no banco porque whitelist e modo live moram em live_sessions, mas ainda não
-  // é transmissão nenhuma. Anunciá-la como "Live 1" afirma algo que o lojista
-  // não criou — e "Live" é so o default da coluna, não uma escolha dele.
+  // no banco porque a lista de produtos e o modo live moram em live_sessions,
+  // mas ainda não é transmissão nenhuma. Anunciá-la como "Live 1" afirma algo
+  // que o lojista não criou — e "Live" é so o default da coluna, não uma
+  // escolha dele.
   const onlyPlaceholder =
     sessionCount === 1 && !(sessions[0]?.platforms?.length ?? 0)
   const canAddSession = event.status === "active" || event.status === "scheduled"
