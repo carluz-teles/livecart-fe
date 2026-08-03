@@ -2,10 +2,11 @@
 
 import { use, useState } from "react"
 import { AlertTriangle, Info } from "lucide-react"
+import { toast } from "sonner"
 import { SessionsTable } from "@/components/event/SessionsTable"
 import { SessionMediaForm } from "@/components/event/SessionMediaForm"
 import { SessionProductsSheet } from "@/components/event/SessionProducts/SessionProducts.Sheet"
-import { useSessionMetrics } from "@/hooks/event"
+import { useSessionMetrics, useEndSession } from "@/hooks/event"
 import { formatCurrency } from "@/lib/format"
 import type { EventSession } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
@@ -28,6 +29,7 @@ export function EventDetailSessions() {
   // vamos criar uma: a lista abre numa gaveta a partir da linha, ao lado da
   // transmissão que ela configura.
   const [productsSession, setProductsSession] = useState<EventSession | null>(null)
+  const endSession = useEndSession()
   if (!ctx) return null
   const { event, stats } = ctx.state
   const { setCreateSessionOpen, refresh } = ctx.actions
@@ -122,6 +124,30 @@ export function EventDetailSessions() {
         // Mesmo gate do vínculo: numa campanha encerrada a lista vira leitura,
         // porque nada que for configurado ali chegaria a vender.
         onOpenProducts={canAddSession ? setProductsSession : undefined}
+        // Encerrar a sessão NÃO encerra o evento e não finaliza carrinho — por
+        // isso não há diálogo de confirmação: não há nada a perder, e o
+        // lojista clica isto no segundo em que a live acaba.
+        onEndSession={
+          canAddSession
+            ? (session) =>
+                endSession.mutate(
+                  { eventId: event.id, sessionId: session.id },
+                  {
+                    onSuccess: () => {
+                      toast.success("Sessão encerrada", {
+                        description:
+                          "O evento continua aberto e os carrinhos seguem valendo até a data de fim.",
+                      })
+                      refresh()
+                    },
+                    onError: () =>
+                      toast.error("Não foi possível encerrar a sessão", {
+                        description: "Tente de novo em instantes.",
+                      }),
+                  }
+                )
+            : undefined
+        }
       />
 
       <SessionMediaForm

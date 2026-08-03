@@ -9,6 +9,7 @@ import type {
   UpdateEventPayload,
   EndEventPayload,
   EndEventResponse,
+  EndSessionResponse,
   CreateSessionPayload,
   AddPlatformPayload,
   LinkSessionMediaPayload,
@@ -80,6 +81,19 @@ export const eventService = {
   // Create new session on existing event
   createSession: (storeId: string, eventId: string, payload: CreateSessionPayload, token?: string | null) =>
     apiClient.post<EventSession>(`/stores/${storeId}/lives/${eventId}/sessions`, payload, token),
+
+  // Encerra UMA sessão sem encerrar o evento.
+  //
+  // Não confundir com `end` acima, que é do evento: aquele encerra o evento,
+  // encerra todas as sessões e finaliza os carrinhos. Este só para a live/post
+  // que acabou — o evento segue no ar e os carrinhos continuam valendo, que é o
+  // que faz um comprador de segunda e de terça ter um pedido só.
+  endSession: (storeId: string, eventId: string, sessionId: string, token?: string | null) =>
+    apiClient.post<EndSessionResponse>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/end`,
+      {},
+      token
+    ),
 
   // Add platform to active session (crash recovery)
   addPlatform: (storeId: string, eventId: string, payload: AddPlatformPayload, token?: string | null) =>

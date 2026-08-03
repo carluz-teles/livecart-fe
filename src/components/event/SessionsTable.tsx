@@ -10,6 +10,7 @@ import {
   Link2,
   Package,
   Plus,
+  Square,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -49,7 +50,20 @@ interface SessionsTableProps {
   /** Quando presente, cada linha ganha o botão que abre os produtos DAQUELA
    *  transmissão. Ausente = campanha encerrada, nada mais a configurar. */
   onOpenProducts?: (session: EventSession) => void
+  /** Quando presente, a sessão ainda no ar ganha o botão "Encerrar".
+   *
+   *  Encerra só a SESSÃO: o evento segue aberto e os carrinhos continuam
+   *  valendo até a data de fim dele. É diferente de "Encerrar evento", que
+   *  finaliza os carrinhos de todo mundo. */
+  onEndSession?: (session: EventSession) => void
 }
+
+/**
+ * Os dois estados em que a sessão ainda pode ser encerrada — os mesmos que o
+ * backend aceita: `active` é a sessão criada e aguardando, `live` é a que está
+ * capturando comentário agora. Encerrada não reabre.
+ */
+const SESSION_IS_OPEN = new Set(["active", "live"])
 
 /** Tooltip da coluna de receita — copy deck §5.3. */
 const REVENUE_HINT =
@@ -172,6 +186,7 @@ export function SessionsTable({
   onAddSession,
   onLinkMedia,
   onOpenProducts,
+  onEndSession,
 }: SessionsTableProps) {
   return (
     <Card>
@@ -335,10 +350,29 @@ export function SessionsTable({
                         {getStatusBadge(session.status)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <SessionProductsCell
-                          session={session}
-                          onOpenProducts={onOpenProducts}
-                        />
+                        <div className="flex items-center justify-end gap-1">
+                          <SessionProductsCell
+                            session={session}
+                            onOpenProducts={onOpenProducts}
+                          />
+                          {/* "Encerrar" só na sessão que ainda está no ar.
+                              Encerra a SESSÃO, não o evento: os carrinhos
+                              continuam abertos até o fim do evento, e é por
+                              isso que ele não pergunta nada — não há nada a
+                              perder. Quem comentar depois recebe a DM de
+                              "essa sessão acabou, mas o evento continua". */}
+                          {onEndSession && SESSION_IS_OPEN.has(session.status) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => onEndSession(session)}
+                            >
+                              <Square className="mr-1.5 h-3.5 w-3.5" />
+                              Encerrar
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )

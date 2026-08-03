@@ -249,6 +249,20 @@ export interface EndEventResponse {
   autoSendLinks: boolean
 }
 
+/**
+ * Resposta de encerrar UMA sessão.
+ *
+ * Não devolve carrinho nem evento de propósito: encerrar a sessão não mexe em
+ * nenhum dos dois. Compare com `EndEventResponse`, que traz `cartsFinalized` —
+ * lá os carrinhos são fechados, aqui eles seguem abertos até o fim do evento.
+ */
+export interface EndSessionResponse {
+  id: string
+  eventId: string
+  type: string
+  status: string
+}
+
 // Create Session (add new session to existing event)
 export interface CreateSessionPayload {
   /** Mídia é OPCIONAL, e o par tem de vir junto ou não vir: o backend recusa
