@@ -12,7 +12,6 @@ export const EVENT_COPY = {
   title: {
     label: "Nome da campanha",
     placeholder: "Ex: Semana Black",
-    hint: "O nome da campanha, não da publicação. Ele agrupa todas as sessões e aparece nas mensagens que o comprador recebe.",
   },
   startsAt: {
     label: "Início da campanha",

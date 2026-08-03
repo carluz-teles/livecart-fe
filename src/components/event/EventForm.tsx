@@ -264,7 +264,6 @@ export function EventForm({
                 <FormItem>
                   <FormLabel className="flex items-center gap-1.5">
                     {EVENT_COPY.title.label} <span className="text-destructive">*</span>
-                    <FieldHint text={EVENT_COPY.title.hint} />
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={EVENT_COPY.title.placeholder} {...field} />

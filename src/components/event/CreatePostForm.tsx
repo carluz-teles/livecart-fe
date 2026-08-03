@@ -348,7 +348,6 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
                   da CAMPANHA. */}
               <Label htmlFor="post-title" className="flex items-center gap-1.5">
                 {EVENT_COPY.title.label}
-                <FieldHint text={EVENT_COPY.title.hint} />
               </Label>
               <Input
                 id="post-title"

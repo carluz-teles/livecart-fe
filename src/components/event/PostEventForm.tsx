@@ -205,7 +205,6 @@ export function PostEventForm({
           <div className="space-y-2">
             <Label htmlFor="post-title" className="flex items-center gap-1.5">
               {EVENT_COPY.title.label}
-              <FieldHint text={EVENT_COPY.title.hint} />
             </Label>
             <Input
               id="post-title"
