@@ -71,7 +71,21 @@ export function SessionProductsProductPicker({
         />
       </div>
 
-      <ScrollArea className="h-[calc(100vh-340px)]">
+      {/* O Viewport do Radix embrulha o conteúdo num <div style="display:table;
+          min-width:100%">. Tabela cresce com o conteúdo: a linha ficava mais
+          larga que a área visível, o `truncate` do nome nunca era acionado e o
+          botão "Adicionar" era empurrado para fora da borda direita.
+
+          O override vai aqui, e não no componente: `components/ui/` é shadcn e
+          não se edita. O seletor mira o div do viewport pelo data-attribute do
+          próprio Radix — `[&>div>div]` pegaria também a barra de rolagem. */}
+      <ScrollArea
+        className={cn(
+          "h-[calc(100vh-340px)]",
+          "[&_[data-radix-scroll-area-viewport]>div]:!block",
+          "[&_[data-radix-scroll-area-viewport]>div]:!w-full"
+        )}
+      >
         <div className="space-y-2 pr-4">
           {isLoading ? (
             <>
@@ -133,16 +147,18 @@ function ProductPickerItem({ product, onAdd, isAdding }: ProductPickerItemProps)
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium" title={product.name}>
-          {product.name}
-        </p>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {/* Quebra em vez de cortar: o nome do produto é o que o lojista usa
+            para reconhecer o item, e "Console PlayStation® 5 Slim Edição..."
+            não distingue nada. Nomes de marketplace passam de 60 caracteres,
+            então cabem em duas linhas sem esticar a linha inteira. */}
+        <p className="break-words font-medium leading-snug">{product.name}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
             {product.keyword}
           </code>
-          <span>•</span>
+          <span aria-hidden>•</span>
           <span>{formatCurrency(product.price)}</span>
-          <span>•</span>
+          <span aria-hidden>•</span>
           <span className={cn(product.stock <= 0 && "text-destructive")}>
             {product.stock} em estoque
           </span>

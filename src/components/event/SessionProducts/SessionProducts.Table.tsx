@@ -147,10 +147,11 @@ function SessionProductRow({ product, eventId, sessionId }: SessionProductRowPro
                 <Package className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
-            <div>
-              <p className="max-w-[180px] truncate font-medium" title={product.name}>
-                {product.name}
-              </p>
+            {/* min-w-0 para o filho poder encolher dentro do flex, e quebra em
+                vez de corte: cortar em 180px transformava nomes de marketplace
+                em prefixos idênticos entre si. */}
+            <div className="min-w-0">
+              <p className="break-words font-medium leading-snug">{product.name}</p>
               {product.featured && (
                 <span className="inline-flex items-center text-xs text-amber-600">
                   <Star className="mr-1 h-3 w-3 fill-amber-500" />
