@@ -9,6 +9,14 @@
  */
 
 export const EVENT_COPY = {
+  /** Regra da janela comercial, no "?" do separador. */
+  windowSection: {
+    hint: "A campanha só vende dentro desta janela. Antes do início ou depois do fim, o comentário não vira carrinho — o comprador recebe um aviso automático em vez de ficar sem resposta. O fim é obrigatório: é ele que garante que nenhum carrinho fica sem prazo.",
+  },
+  /** Regra das configurações de carrinho, no "?" do separador. */
+  cartSection: {
+    hint: "Valem para a campanha inteira. Como cada cliente tem um carrinho só, somando o que ele compra em todas as transmissões, estas regras não se repetem por transmissão. O prazo de expiração só começa a contar quando a campanha fecha.",
+  },
   title: {
     label: "Nome da campanha",
     placeholder: "Ex: Semana Black",
