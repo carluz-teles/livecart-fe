@@ -200,8 +200,18 @@ export function EventForm({
           {trigger || defaultTrigger}
         </SheetTrigger>
       )}
-      <SheetContent className="w-[400px] sm:w-[480px] overflow-y-auto">
-        <SheetHeader>
+      {/* Coluna flex com o scroll NUM FILHO, não no painel inteiro.
+          Antes era `overflow-y-auto` no SheetContent: o rodapé com "Criar
+          evento" rolava junto com o formulário e sumia da tela, e o painel
+          inteiro virava a área de rolagem — que é o comportamento que
+          desaparecia sozinho conforme o conteúdo cabia ou não.
+
+          `sm:max-w-[480px]` é obrigatório junto com `sm:w-[480px]`: a base do
+          SheetContent traz `sm:max-w-sm` (384px) e o twMerge não reconcilia
+          `max-w-*` com `w-*` — são propriedades diferentes. Sem isto o painel
+          ficava preso em 384px e o `sm:w-[480px]` não valia nada. */}
+      <SheetContent className="flex w-[400px] flex-col gap-0 p-0 sm:w-[480px] sm:max-w-[480px]">
+        <SheetHeader className="px-6 pb-4 pt-6">
           <SheetTitle className="flex items-center gap-2">
             <CalendarRange className="h-5 w-5 text-primary" />
             Novo evento
@@ -214,7 +224,13 @@ export function EventForm({
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          {/* min-h-0 no filho que rola: sem ele o item flex adota a altura do
+              conteúdo em vez de encolher, e o overflow-y-auto nunca dispara. */}
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
             <FormField
               control={form.control}
               name="title"
@@ -514,7 +530,10 @@ export function EventForm({
               )}
             />
 
-            <div className="flex justify-end gap-3 pt-4">
+            </div>
+
+            {/* Fora da área que rola: os botões ficam sempre à vista. */}
+            <div className="flex shrink-0 justify-end gap-3 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"

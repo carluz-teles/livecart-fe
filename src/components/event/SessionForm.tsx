@@ -155,8 +155,10 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
-        <DialogHeader>
+      {/* Mesma estrutura do EventForm: o scroll fica num filho, não no diálogo
+          inteiro — senão o rodapé com "Criar sessão" rola para fora da tela. */}
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-[560px]">
+        <DialogHeader className="px-6 pb-4 pt-6">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Nova sessão
@@ -171,7 +173,11 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-6">
             <FormField
               control={form.control}
               name="type"
@@ -205,14 +211,23 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               )}
             />
 
-            <FormItem>
-              <FormLabel>Plataforma</FormLabel>
+            {/* Markup puro, não FormItem/FormLabel/FormDescription: este bloco é
+                decorativo — não há campo de formulário "plataforma", porque só
+                existe um valor possível. FormLabel e FormDescription chamam
+                useFormField(), que EXIGE o contexto de um <FormField> e explode
+                com "useFormField should be used within <FormField>" quando não
+                acha. O sheet inteiro morria em "Erro ao carregar" por causa
+                deste rótulo. */}
+            <div className="space-y-2">
+              <Label>Plataforma</Label>
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
                 <Instagram className="h-5 w-5 text-pink-500" />
                 <span className="text-sm font-medium">Instagram</span>
               </div>
-              <FormDescription>Apenas Instagram e suportado no momento</FormDescription>
-            </FormItem>
+              <p className="text-sm text-muted-foreground">
+                Apenas Instagram é suportado no momento
+              </p>
+            </div>
 
             {/* A mídia de uma live é escolhida entre as transmissões no ar; a
                 de uma publicação vem da grade do perfil. Oferecer a lista de
@@ -299,7 +314,9 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               </p>
             )}
 
-            <DialogFooter>
+            </div>
+
+            <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"
