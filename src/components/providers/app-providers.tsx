@@ -5,6 +5,7 @@ import { ptBR } from "@clerk/localizations"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { UserProvider } from "@/components/providers/user-provider"
+import { AuthTokenBridge } from "@/components/providers/auth-token-bridge"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { clerkAppearance } from "@/lib/clerk-theme"
@@ -21,6 +22,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
+        {/* Dentro do ClerkProvider (precisa de useAuth) e ACIMA do
+            QueryProvider: as consultas do React Query passam pelo cliente
+            HTTP, e ele só sabe renovar token se a ponte já estiver
+            registrada quando a primeira requisição sair. */}
+        <AuthTokenBridge />
         <QueryProvider>
           {/* Provider único de tooltip para o painel inteiro. Cada componente
               montar o seu deixava o delay de abertura inconsistente entre
