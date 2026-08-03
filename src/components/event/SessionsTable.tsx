@@ -119,7 +119,15 @@ function SessionProductsCell({
 }) {
   const count = session.productCount ?? 0
   const label = count > 0 ? String(count) : SESSION_PRODUCTS_COPY.allBadge
-  const hint = count > 0 ? SESSION_PRODUCTS_COPY.hint : SESSION_PRODUCTS_COPY.allBadgeHint
+  // Numa live com lista, a contagem sozinha mente: a ingestão não filtra
+  // comentário por lista em live, só em post/reel/story. O tooltip diz isso
+  // antes de o lojista clicar achando que configurou uma barreira.
+  const hint =
+    count > 0
+      ? session.type === "live"
+        ? `${SESSION_PRODUCTS_COPY.liveNotEnforced} ${SESSION_PRODUCTS_COPY.liveNotEnforcedHint}`
+        : SESSION_PRODUCTS_COPY.hint
+      : SESSION_PRODUCTS_COPY.allBadgeHint
 
   if (!onOpenProducts) {
     return (

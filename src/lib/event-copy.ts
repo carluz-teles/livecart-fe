@@ -285,4 +285,18 @@ export const SESSION_PRODUCTS_COPY = {
   allBadge: "Todos",
   allBadgeHint:
     "Esta transmissão não tem lista: qualquer produto ativo da loja pode ser vendido nela.",
+  /**
+   * LIVE é a exceção, e a tela não pode fingir que não é.
+   *
+   * A ingestão de comentário só aplica a lista em post, reel e story. Numa live
+   * o comentário nunca é filtrado — é a própria definição do dono ("tem live que
+   * o cliente quer vender qualquer coisa"), e mudar isso restringiria em
+   * silêncio as lives que hoje vendem tudo. Sem este aviso, o lojista lê "só
+   * eles podem ser vendidos" na linha da live e configura uma barreira que não
+   * existe.
+   */
+  liveNotEnforced:
+    "Numa live, o comentário não passa por esta lista: a live vende qualquer produto da loja.",
+  liveNotEnforcedHint:
+    "A lista de uma live não filtra comentários — ela só limita o que o comprador consegue acrescentar sozinho na página do checkout. Para restringir o que é vendido, use uma transmissão de post, reel ou story.",
 } as const

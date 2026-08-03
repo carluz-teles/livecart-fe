@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { AlertTriangle, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,6 +16,8 @@ import { SessionProductsProductPicker } from "./SessionProducts.ProductPicker"
 interface SessionProductsProps {
   eventId: string
   sessionId: string
+  /** Tipo da transmissão: só `live` escapa da barreira na ingestão. */
+  sessionType?: string
 }
 
 /**
@@ -26,7 +28,11 @@ interface SessionProductsProps {
  * lacuna — significa "vende qualquer produto da loja", que é o caso normal da
  * live. Por isso o estado vazio explica a regra em vez de só oferecer um botão.
  */
-export function SessionProducts({ eventId, sessionId }: SessionProductsProps) {
+export function SessionProducts({
+  eventId,
+  sessionId,
+  sessionType,
+}: SessionProductsProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false)
 
   const { data: products, isLoading } = useSessionProducts(eventId, sessionId)
@@ -43,6 +49,8 @@ export function SessionProducts({ eventId, sessionId }: SessionProductsProps) {
 
   const list = products ?? []
   const hasProducts = list.length > 0
+  // Só a live escapa: a ingestão aplica a lista em post, reel e story.
+  const isLive = sessionType === "live"
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,6 +71,21 @@ export function SessionProducts({ eventId, sessionId }: SessionProductsProps) {
           </Button>
         )}
       </div>
+
+      {/* O aviso só aparece quando há lista: numa live SEM lista a linha de
+          status acima ("vende qualquer produto da loja") já é verdade, e repetir
+          a exceção treinaria o lojista a ignorá-la. */}
+      {isLive && hasProducts && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">
+              {SESSION_PRODUCTS_COPY.liveNotEnforced}
+            </strong>{" "}
+            {SESSION_PRODUCTS_COPY.liveNotEnforcedHint}
+          </p>
+        </div>
+      )}
 
       {isPickerOpen ? (
         <SessionProductsProductPicker

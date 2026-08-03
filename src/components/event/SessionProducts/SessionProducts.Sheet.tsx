@@ -56,7 +56,13 @@ export function SessionProductsSheet({
         </SheetHeader>
 
         <div className="mt-6">
-          {session && <SessionProducts eventId={eventId} sessionId={session.id} />}
+          {session && (
+            <SessionProducts
+              eventId={eventId}
+              sessionId={session.id}
+              sessionType={session.type}
+            />
+          )}
         </div>
       </SheetContent>
     </Sheet>
