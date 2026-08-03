@@ -34,8 +34,13 @@ export const createEventSchema = z
     // Piso 15: espelha o CHECK live_events_cart_expiration_minutes_check
     // (migration 000104). Abaixo disso o banco rejeita, então validar aqui
     // devolve erro de campo em vez de 500. null = herda a config da loja.
-    cartExpirationMinutes: z.number().min(15).max(1440).nullable().optional(),
-    cartMaxQuantityPerItem: z.number().min(1).max(100).nullable().optional(),
+    // Piso 15 espelha o CHECK do banco. NÃO há teto: o limite de 1440 vinha da
+    // lista fixa do select, não de nenhuma regra — uma campanha de vários dias
+    // pode querer um prazo maior que 24h.
+    cartExpirationMinutes: z.number().int().min(15).nullable().optional(),
+    // cart_max_quantity_per_item não tem CHECK no banco: aceita qualquer inteiro
+    // positivo. O teto de 100 era invenção da tela.
+    cartMaxQuantityPerItem: z.number().int().min(1).nullable().optional(),
     // RN-10 — espelha o CHECK 5..240 da migration 000073.
     waitlistNotifiedTtlMinutes: z.number().int().min(5).max(240).nullable().optional(),
     freeShipping: z.boolean().optional(),

@@ -37,6 +37,7 @@ import {
 import { createEventSchema, type CreateEventFormData } from "@/schemas/event.schema"
 import { useCreateEvent } from "@/hooks/event"
 import { FieldHint } from "@/components/shared/FieldHint"
+import { InheritableNumberField } from "@/components/shared/InheritableNumberField"
 import {
   EVENT_COPY,
   CART_EXPIRATION_OPTIONS,
@@ -418,25 +419,14 @@ export function EventForm({
                     {EVENT_COPY.cartExpiration.label}
                     <FieldHint text={EVENT_COPY.cartExpiration.hint} />
                   </FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value === "inherit" ? null : parseInt(value, 10))
-                    }}
-                    value={field.value === null ? "inherit" : field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a expiracao" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CART_EXPIRATION_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={15}
+                      unit={"minutos"}
+                    />
+                  </FormControl>
                   <FormDescription>{EVENT_COPY.cartExpiration.help}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -452,25 +442,14 @@ export function EventForm({
                     {EVENT_COPY.maxQuantity.label}
                     <FieldHint text={EVENT_COPY.maxQuantity.hint} />
                   </FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value === "inherit" ? null : parseInt(value, 10))
-                    }}
-                    value={field.value === null ? "inherit" : field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a quantidade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {MAX_QUANTITY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={1}
+                      unit={"unidades por produto"}
+                    />
+                  </FormControl>
                   {/* O texto longo NÃO pode virar tooltip: é o contrato de
                       aceitação do risco R2 — o teto vale para a campanha
                       inteira, e é isso que bloqueia uma compra legítima na
@@ -501,23 +480,14 @@ export function EventForm({
                     {EVENT_COPY.waitlistTtl.label}
                     <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
                   </FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                    value={field.value == null ? "30" : String(field.value)}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {WAITLIST_TTL_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={5} max={240}
+                      unit={"minutos"}
+                    />
+                  </FormControl>
                   <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
                   <FormMessage />
                 </FormItem>

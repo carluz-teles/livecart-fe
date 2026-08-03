@@ -28,7 +28,14 @@ export function EventDetailModelBanner() {
   const { setCreateSessionOpen } = ctx.actions
 
   const kind = getEventKind(event)
-  const sessionCount = event.sessions?.length ?? 0
+  const sessions = event.sessions ?? []
+  const sessionCount = sessions.length
+  // Uma campanha criada sem transmissão nasce com a sessão-marcador: ela existe
+  // no banco porque whitelist e modo live moram em live_sessions, mas ainda não
+  // é transmissão nenhuma. Anunciá-la como "Live 1" afirma algo que o lojista
+  // não criou — e "Live" é so o default da coluna, não uma escolha dele.
+  const onlyPlaceholder =
+    sessionCount === 1 && !(sessions[0]?.platforms?.length ?? 0)
   const canAddSession = event.status === "active" || event.status === "scheduled"
 
   // Campanha já mista não precisa da explicação: ela é a prova viva do modelo.
@@ -42,13 +49,13 @@ export function EventDetailModelBanner() {
           <p className="text-sm text-muted-foreground">{EVENT_MODEL_COPY.shortIntro}</p>
           {needsExplanation && (
             <p className="text-sm text-muted-foreground">
-              {sessionCount === 0 ? (
+              {sessionCount === 0 || onlyPlaceholder ? (
                 <>
                   <strong className="text-foreground">
-                    Esta campanha ainda não tem transmissão.
+                    Esta campanha ainda não tem transmissão configurada.
                   </strong>{" "}
-                  Adicione uma live, um post, um reel ou um story — é a transmissão que
-                  captura os comentários.
+                  Vincule uma live, um post ou um reel na aba Sessões — é a transmissão
+                  que captura os comentários.
                 </>
               ) : (
                 <>

@@ -239,10 +239,20 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={LINK_LATER}>{SESSION_COPY.media.later}</SelectItem>
-                        {lives.map((live) => {
-                          const startTime = live.timestamp
-                            ? format(new Date(live.timestamp), "HH:mm", { locale: ptBR })
-                            : null
+                        {lives
+                          // Item sem value derruba o Radix com exceção, e a
+                          // tela inteira cai no boundary de erro em vez de
+                          // mostrar um select vazio.
+                          .filter((live) => !!live.id)
+                          .map((live) => {
+                          // format() lança RangeError em data inválida. Um
+                          // horário estranho vindo do Instagram não pode
+                          // derrubar a página de criar sessão.
+                          const parsed = live.timestamp ? new Date(live.timestamp) : null
+                          const startTime =
+                            parsed && !Number.isNaN(parsed.getTime())
+                              ? format(parsed, "HH:mm", { locale: ptBR })
+                              : null
                           return (
                             <SelectItem key={live.id} value={live.id}>
                               Live @{live.username}

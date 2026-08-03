@@ -18,7 +18,6 @@ import { EventDetailSessions } from "./EventDetail.Sessions"
 import { EventDetailMetrics } from "./EventDetail.Metrics"
 import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
-import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
@@ -92,7 +91,10 @@ export function EventDetailBody() {
           <div className="grid gap-4 lg:grid-cols-12">
             <main className="flex flex-col gap-4 lg:col-span-8">
               <EventDetailCarts />
-              <EventDetailComments />
+              {/* Comentário é da TRANSMISSÃO, não da campanha: na visão geral
+                  ele mistura o que veio da live de segunda com o do post de
+                  quarta e não responde nada. Mora na aba Sessões, ao lado da
+                  transmissão que o produziu. */}
               <EventDetailActiveCheckouts />
               <EventDetailCheckoutUpsell />
             </main>
