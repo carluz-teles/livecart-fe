@@ -4,6 +4,7 @@ import Image from "next/image"
 
 // Casca visual do fluxo de convite — espelho do onboarding: gradiente âmbar
 // suave, brilho da marca e logo no topo, com o conteúdo centralizado.
+// Compartilhada por /accept-invite e /pending-invite.
 export function InviteShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-amber-50/80 via-background to-background">
