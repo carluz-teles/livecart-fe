@@ -97,6 +97,8 @@ function pickCardSummary(
       return summaryFromTemplate(settings.out_of_window_event_ended)
     case "event_deadline_started":
       return summaryFromTemplate(settings.event_deadline_started)
+    case "waitlist_joined":
+      return summaryFromTemplate(settings.waitlist_joined)
     case "waitlist_notified":
       return summaryFromTemplate(settings.waitlist_notified)
     case "waitlist_unfulfilled":

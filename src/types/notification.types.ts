@@ -40,6 +40,7 @@ export interface NotificationSettings {
   out_of_window_event_ended?: TemplateSettings | null
   event_deadline_started?: TemplateSettings | null
   waitlist_unfulfilled?: TemplateSettings | null
+  waitlist_joined?: TemplateSettings | null
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
@@ -62,6 +63,7 @@ export interface UpdateNotificationSettingsPayload {
   out_of_window_event_ended?: TemplateSettings | null
   event_deadline_started?: TemplateSettings | null
   waitlist_unfulfilled?: TemplateSettings | null
+  waitlist_joined?: TemplateSettings | null
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
@@ -100,6 +102,7 @@ export const CART_NOTIFICATION_TYPES = [
   "out_of_window_session_ended",
   "out_of_window_event_ended",
   "event_deadline_started",
+  "waitlist_joined",
   "waitlist_notified",
   "waitlist_unfulfilled",
 ] as const

@@ -11,6 +11,7 @@ import {
   Timer,
   BellRing,
   HeartCrack,
+  Hourglass,
   type LucideIcon,
 } from "lucide-react"
 
@@ -96,6 +97,15 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     triggerLabel: () => "Quando a campanha fecha e o prazo de pagamento arma",
     Icon: Timer,
   },
+  waitlist_joined: {
+    type: "waitlist_joined",
+    channel: "instagram_dm",
+    title: "Entrou na fila de espera",
+    description:
+      "O produto pedido acabou. Sem esta mensagem o comprador recebe o texto de item adicionado e acha que comprou.",
+    triggerLabel: () => "Quando o estoque não cobre o pedido e o item vai para a fila",
+    Icon: Hourglass,
+  },
   waitlist_notified: {
     type: "waitlist_notified",
     channel: "instagram_dm",
@@ -148,6 +158,7 @@ export const NOTIFICATION_ORDER: NotificationType[] = [
   "out_of_window_scheduled",
   "out_of_window_session_ended",
   "out_of_window_event_ended",
+  "waitlist_joined",
   "waitlist_notified",
   "waitlist_unfulfilled",
   "payment_confirmed",
@@ -163,6 +174,7 @@ export const CART_NOTIFICATION_ORDER: NotificationType[] = [
   "out_of_window_scheduled",
   "out_of_window_session_ended",
   "out_of_window_event_ended",
+  "waitlist_joined",
   "waitlist_notified",
   "waitlist_unfulfilled",
 ]

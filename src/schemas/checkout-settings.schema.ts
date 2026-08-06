@@ -51,6 +51,7 @@ export const defaultTemplates: Record<string, string> = {
   out_of_window_session_ended: "",
   out_of_window_event_ended: "",
   event_deadline_started: "",
+  waitlist_joined: "",
   waitlist_notified: "",
   waitlist_unfulfilled: "",
   payment_confirmed: "",
