@@ -31,6 +31,8 @@ export interface OrderDetailActions {
   closeRegenerateShare: () => void
   markDelivered: () => void
   isMarkingDelivered: boolean
+  cancelOrder: () => void
+  isCancelling: boolean
 }
 
 export interface OrderDetailMeta {

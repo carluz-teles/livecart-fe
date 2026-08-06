@@ -2,8 +2,21 @@ import type { Pagination, Sorting, PaginatedResponse } from "./api.types"
 import type { PackageFormat } from "./product.types"
 import type { Shipment, ShipmentStatus } from "./shipment.types"
 
-export type CartStatus = "active" | "checkout" | "completed" | "expired"
-export type OrderStatus = "active" | "checkout" | "completed" | "expired"
+// 'cancelled' cobre tanto o cancelamento manual do lojista quanto o cart morto
+// por bloqueio do comprador — o backend usa a mesma coluna status para os dois
+// (o motivo fica em carts.cancelled_reason, que não é exposto publicamente).
+export type CartStatus =
+  | "active"
+  | "checkout"
+  | "completed"
+  | "expired"
+  | "cancelled"
+export type OrderStatus =
+  | "active"
+  | "checkout"
+  | "completed"
+  | "expired"
+  | "cancelled"
 export type PaymentStatus =
   | "pending"
   | "paid"
@@ -58,7 +71,15 @@ export interface Order {
   // surfaces it as "#{shortId}". The UUID still owns the URL key — short_id is
   // only the human-friendly handle.
   shortId: number
+  /** Id da CAMPANHA a que este pedido pertence. */
+  eventId: string
+  /** Título da campanha (não da transmissão). */
+  eventTitle: string
+  /** @deprecated nunca carregou id de sessão — sempre foi o event_id. Nome que
+   *  engana ativamente: quem implementar contra ele passa um id de
+   *  `live_sessions` e recebe zero linhas, sem erro. Use `eventId`. */
   liveSessionId: string
+  /** @deprecated é o título do evento. Use `eventTitle`. */
   liveTitle: string
   livePlatform: string
   customerHandle: string
@@ -162,6 +183,10 @@ export interface OrderDetail extends Order {
   // the "Cliente bloqueado" badge on the order detail page. Informational
   // only — past orders stay fully visible.
   customerBlocked: boolean
+  // Preenchido quando a loja cancelou este pedido e o pagamento entrou assim
+  // mesmo: o cancelamento foi revertido e o pedido seguiu o fluxo normal
+  // (pedido no ERP, métricas). Vira uma entrada no histórico do pedido.
+  cancellationRevertedAt?: string | null
 }
 
 // Mirror of integration.Service finalisation state. Status `failed` means
@@ -211,6 +236,9 @@ export interface CartCheckoutPayload {
 export interface OrderFilters {
   status?: OrderStatus[]
   paymentStatus?: PaymentStatus[]
+  /** Filtra por CAMPANHA. O backend sempre casou `carts.event_id` aqui. */
+  eventId?: string
+  /** @deprecated sinônimo de `eventId`. */
   liveSessionId?: string
   dateFrom?: string
   dateTo?: string
@@ -333,7 +361,10 @@ export interface PublicCheckoutItem {
 export interface PublicCheckoutEvent {
   id: string
   title: string
-  /** 'single' | 'multi' | 'post'. Used to show post-appropriate wording. */
+  /** Espécie da transmissão desta campanha: 'live' | 'post' | 'reel' | 'story'.
+   *  Sai de `live_sessions.type`, com precedência para live — "Live em
+   *  andamento" continua verdade enquanto UMA estiver no ar, mesmo numa
+   *  campanha que também tem post. Vazio = campanha sem transmissão. */
   type?: string
   freeShipping: boolean
   /** Discount percent (0-100) applied at checkout when the buyer pays with

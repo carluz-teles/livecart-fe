@@ -28,6 +28,8 @@ export function useCreateInstagramReel() {
       const token = await getToken()
       const fd = new FormData()
       fd.append("file", file)
+      // Publicar DENTRO de um evento existente: a mídia vira sessão dele.
+      if (rest.eventId) fd.append("eventId", rest.eventId)
       if (rest.caption) fd.append("caption", rest.caption)
       if (rest.title) fd.append("title", rest.title)
       fd.append("productIds", JSON.stringify(rest.productIds))

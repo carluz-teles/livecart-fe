@@ -29,6 +29,8 @@ export function useCreateInstagramStory() {
       const token = await getToken()
       const fd = new FormData()
       fd.append("file", file)
+      // Publicar DENTRO de um evento existente: a mídia vira sessão dele.
+      if (rest.eventId) fd.append("eventId", rest.eventId)
       if (rest.title) fd.append("title", rest.title)
       fd.append("productIds", JSON.stringify(rest.productIds))
       if (rest.cartExpirationMinutes != null)

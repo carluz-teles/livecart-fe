@@ -81,27 +81,17 @@ export function useCommunication(type: CartNotificationType): UseCommunicationRe
       const token = await getToken()
 
       const current = settingsQuery.data
-      const merged = {
-        checkout_immediate: current?.checkout_immediate ?? null,
-        item_added: current?.item_added ?? null,
-        checkout_reminder: current?.checkout_reminder ?? null,
-        payment_confirmed: current?.payment_confirmed ?? null,
-        shipped: current?.shipped ?? null,
-        delivered: current?.delivered ?? null,
-      }
-      merged[type] = { enabled: payload.enabled, template: payload.template }
 
-      // Save the templates (preserves email-side fields untouched).
+      // Manda SÓ a chave editada. O PUT é merge parcial no backend: chave
+      // ausente significa "não mexer". Montar um payload fixo com N chaves era
+      // o bug original — cada save reescrevia a lista inteira e apagava tudo
+      // que não estivesse nela (waitlist_notified, cart_recovery,
+      // payment_cancelled, payment_refunded sumiam a cada clique). Com os
+      // gatilhos novos a lista fixa seria de doze, e a próxima chave a nascer
+      // repetiria a história.
       await notificationService.updateSettings(
         storeId,
-        {
-          checkout_immediate: merged.checkout_immediate,
-          item_added: merged.item_added,
-          checkout_reminder: merged.checkout_reminder,
-          payment_confirmed: merged.payment_confirmed,
-          shipped: merged.shipped,
-          delivered: merged.delivered,
-        },
+        { [type]: { enabled: payload.enabled, template: payload.template } },
         token,
       )
 
@@ -118,10 +108,19 @@ export function useCommunication(type: CartNotificationType): UseCommunicationRe
           maxQuantityPerItem: cart.maxQuantityPerItem,
           allowEdit: cart.allowEdit,
           checkoutSendMethods: cart.checkoutSendMethods,
+          // Os toggles derivados continuam olhando o estado atual, com o
+          // valor recém-salvo sobrepondo o da chave que acabou de mudar.
           realTimeCart:
-            (merged.checkout_immediate?.enabled ?? false) ||
-            (merged.item_added?.enabled ?? false),
-          sendExpirationReminder: merged.checkout_reminder?.enabled ?? false,
+            (type === "checkout_immediate"
+              ? payload.enabled
+              : (current?.checkout_immediate?.enabled ?? false)) ||
+            (type === "item_added"
+              ? payload.enabled
+              : (current?.item_added?.enabled ?? false)),
+          sendExpirationReminder:
+            type === "checkout_reminder"
+              ? payload.enabled
+              : (current?.checkout_reminder?.enabled ?? false),
           expirationReminderMinutes:
             type === "checkout_reminder" && payload.expirationReminderMinutes != null
               ? payload.expirationReminderMinutes

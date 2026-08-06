@@ -6,5 +6,6 @@ export {
   useStartTestSetup,
   useTestNotification,
 } from "./useTestRecipient"
+export { useUndelivered } from "./useUndelivered"
 export { communicationsKeys } from "./keys"
 export type { CommunicationCard } from "./useCommunications"

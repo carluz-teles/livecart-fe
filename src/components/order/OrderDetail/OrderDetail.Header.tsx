@@ -58,7 +58,9 @@ export function OrderDetailHeader() {
               <h1 className="text-2xl font-semibold tracking-tight">
                 Pedido #{order.shortId}
               </h1>
-              <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+              <Badge variant={statusCfg.variant} title={statusCfg.hint}>
+                {statusCfg.label}
+              </Badge>
               <Badge variant={paymentCfg.variant}>{paymentCfg.label}</Badge>
               {order.isFirstPurchase && (
                 <Badge variant={FIRST_PURCHASE_BADGE.variant}>
@@ -81,7 +83,9 @@ export function OrderDetailHeader() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {order.liveTitle && <span>{order.liveTitle} · </span>}
+              {(order.eventTitle || order.liveTitle) && (
+                <span>{order.eventTitle || order.liveTitle} · </span>
+              )}
               {formatDateTime(order.createdAt)}
             </p>
           </div>

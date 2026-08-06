@@ -13,6 +13,25 @@ export interface Membership {
   createdAt: string
 }
 
+// PendingInvitation — convite que aguarda o e-mail do usuário autenticado.
+// O backend acha o convite pelo e-mail, então ele aparece mesmo para quem nunca
+// clicou no link do e-mail (ex.: entrou direto com "Login com Google").
+export interface PendingInvitation {
+  id: string
+  storeId: string
+  storeName: string
+  storeSlug: string
+  email: string
+  role: string
+  token: string
+  inviterName: string | null
+  expiresAt: string
+}
+
+// Estado de onboarding do usuário no /users/sync.
+// "pending_invitation" = sem loja, mas com convite esperando por ele.
+export type UserState = "no_store" | "pending_invitation" | "ready"
+
 // SyncUserResponse from POST /users/sync
 // Single store model: returns one membership (or null)
 export interface SyncUserResponse {
@@ -22,8 +41,9 @@ export interface SyncUserResponse {
   name: string | null
   avatarUrl: string | null
   membership: Membership | null // Single membership (1 user = 1 store)
-  state: "no_store" | "ready"
+  state: UserState
   subscription?: SubscriptionState | null // paywall (PRD 007)
+  pendingInvitations?: PendingInvitation[] // só no estado "pending_invitation"
 }
 
 // SubscriptionState — snapshot do paywall/assinatura (PRD 007)
@@ -48,8 +68,10 @@ export interface User {
   // Current membership (or null if no store)
   membership: Membership | null
   // State
-  state: "no_store" | "ready"
+  state: UserState
   subscription?: SubscriptionState | null // paywall (PRD 007)
+  // Convites esperando este usuário — vazio fora do estado "pending_invitation"
+  pendingInvitations: PendingInvitation[]
 }
 
 // Legacy alias for backward compatibility

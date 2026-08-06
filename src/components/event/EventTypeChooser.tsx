@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   Aperture,
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   ImagePlus,
@@ -10,6 +11,7 @@ import {
   LayoutGrid,
   Plus,
   Radio,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,13 +25,25 @@ import { EventForm } from "./EventForm"
 import { PostEventForm } from "./PostEventForm"
 import { CreatePostForm } from "./CreatePostForm"
 
-type Choice = "live" | "select-post" | "create-post" | "create-story"
+type Choice = "campaign" | "live" | "select-post" | "create-post" | "create-story"
 type Step = "root" | "post"
 
 /**
- * Single entry point to create an event. Opens a chooser dialog (Live vs Post),
- * and for Post a second step (select an existing post vs create a new one),
- * then defers to the matching form.
+ * Porta de entrada da criação.
+ *
+ * O que ela fazia de errado: perguntava "live, post ou story?" ANTES de a
+ * campanha existir. A resposta virava o tipo da PRIMEIRA SESSÃO, então
+ * funcionava — mas ensinava que evento é uma publicação. E como três dos
+ * quatro caminhos produziam uma campanha só de publicação, a própria UI passava
+ * a se declarar incapaz de receber outra transmissão. Foi assim que o dono do
+ * produto criou um evento, abriu, e leu a métrica de um post.
+ *
+ * O que muda: o primeiro card é a CAMPANHA — nome, janela, regras do carrinho,
+ * transmissões depois. Os caminhos de publicação continuam existindo, com os
+ * MESMOS rótulos e os mesmos cliques (o roteiro do App Review da Meta grava
+ * "Novo Evento" > "Evento de post" > "Criar um post" e "Novo Evento" > "Criar
+ * um Story"), agrupados e rotulados como o que sempre foram: atalhos que criam
+ * campanha e primeira transmissão de uma vez.
  */
 export function EventTypeChooser() {
   const [chooserOpen, setChooserOpen] = useState(false)
@@ -55,14 +69,38 @@ export function EventTypeChooser() {
       </Button>
 
       <Dialog open={chooserOpen} onOpenChange={setChooserOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-[520px]">
           {step === "root" ? (
             <>
               <DialogHeader>
                 <DialogTitle>Criar evento</DialogTitle>
-                <DialogDescription>Escolha como você vai vender desta vez.</DialogDescription>
+                <DialogDescription>
+                  Um evento é a sua campanha — a live, o post, o reel e o story cabem
+                  dentro dele, com um carrinho único por cliente.
+                </DialogDescription>
               </DialogHeader>
+
               <div className="grid gap-3 pt-2">
+                <ChooserCard
+                  icon={<CalendarRange className="h-5 w-5 text-primary" />}
+                  title="Criar uma campanha"
+                  description="Dê nome, defina a janela e as regras do carrinho. As transmissões — live, post, reel, story — você adiciona depois, quantas quiser."
+                  onClick={() => pick("campaign")}
+                  highlight
+                />
+
+                <div className="flex items-center gap-2 pt-2">
+                  <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Atalhos: publicar e já vender
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Criam a campanha e a primeira transmissão de uma vez. Você continua
+                  podendo adicionar outras transmissões à mesma campanha depois.
+                </p>
+
                 <ChooserCard
                   icon={<Radio className="h-5 w-5 text-destructive" />}
                   title="Live ao vivo"
@@ -118,8 +156,20 @@ export function EventTypeChooser() {
         </DialogContent>
       </Dialog>
 
-      {choice === "live" && (
+      {/* A campanha e o atalho de live abrem o MESMO formulário. A diferença é
+          só o ponto de partida da primeira transmissão: quem entrou por "Live
+          ao vivo" já quer conectar uma live, quem entrou por "Criar uma
+          campanha" costuma decidir isso depois. */}
+      {choice === "campaign" && (
         <EventForm open trigger={null} onOpenChange={(o) => !o && setChoice(null)} />
+      )}
+      {choice === "live" && (
+        <EventForm
+          open
+          trigger={null}
+          initialSessionType="live"
+          onOpenChange={(o) => !o && setChoice(null)}
+        />
       )}
       {choice === "select-post" && (
         <PostEventForm open trigger={null} onClose={() => setChoice(null)} />
@@ -139,17 +189,22 @@ function ChooserCard({
   title,
   description,
   onClick,
+  highlight = false,
 }: {
   icon: React.ReactNode
   title: string
   description: string
   onClick: () => void
+  highlight?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center gap-4 rounded-lg border p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/50"
+      className={
+        "group flex items-center gap-4 rounded-lg border p-4 text-left transition-colors hover:border-primary/40 hover:bg-muted/50" +
+        (highlight ? " border-primary/40 bg-primary/5" : "")
+      }
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
         {icon}

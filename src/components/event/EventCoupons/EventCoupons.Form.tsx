@@ -203,7 +203,7 @@ export function EventCouponsForm({
         <SheetHeader className="border-b px-6 py-4">
           <SheetTitle>{isEditing ? "Editar cupom" : "Novo cupom"}</SheetTitle>
           <SheetDescription>
-            Cupons valem só para esta live. Códigos não podem ser editados
+            Cupons valem em todas as sessões desta campanha, uma vez por cliente. Códigos não podem ser editados
             depois de criados — desative e crie outro caso precise mudar.
           </SheetDescription>
         </SheetHeader>

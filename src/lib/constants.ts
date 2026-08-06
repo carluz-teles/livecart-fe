@@ -3,7 +3,7 @@
  * Use these instead of hardcoding values in components.
  */
 
-import type { LiveStatus, LivePlatform } from "@/types/live.types"
+import type { LivePlatform } from "@/types/live.types"
 import type { EventStatus } from "@/types/event.types"
 import type { OrderStatus, PaymentStatus } from "@/types/cart.types"
 
@@ -18,63 +18,109 @@ export interface StatusConfig {
   variant: BadgeVariant
 }
 
-export interface LiveStatusConfig extends StatusConfig {
-  icon: "calendar" | "play" | "eye" | "clock"
-}
-
-/**
- * Live session status configuration
- */
-export const LIVE_STATUS_CONFIG: Record<LiveStatus, LiveStatusConfig> = {
-  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
-  active: { label: "Ao Vivo", variant: "destructive", icon: "play" },
-  live: { label: "Ao Vivo", variant: "destructive", icon: "play" },
-  ended: { label: "Finalizada", variant: "secondary", icon: "eye" },
-  cancelled: { label: "Cancelada", variant: "outline", icon: "clock" },
-}
+// `LIVE_STATUS_CONFIG` saiu daqui: era órfão e falava de "live" onde hoje o
+// objeto é uma SESSÃO. Quem rotula sessão é SESSION_STATUS_CONFIG, abaixo.
 
 export interface EventStatusConfig extends StatusConfig {
   icon: "radio" | "check-circle" | "calendar" | "instagram"
 }
 
 /**
- * Event status configuration (live events)
+ * Status da campanha quando ela tem transmissão ao vivo.
  */
 export const EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
-  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
-  active: { label: "Ao Vivo", variant: "destructive", icon: "radio" },
-  ended: { label: "Finalizado", variant: "secondary", icon: "check-circle" },
+  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
+  active: { label: "No ar", variant: "destructive", icon: "radio" },
+  ended: { label: "Encerrada", variant: "secondary", icon: "check-circle" },
 }
 
 /**
- * Event status configuration for POST events — an active post is not "live".
+ * Status da campanha que só tem publicações — um post ativo não está "ao vivo".
  */
 export const POST_EVENT_STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
-  scheduled: { label: "Agendado", variant: "outline", icon: "calendar" },
-  active: { label: "Ativo", variant: "default", icon: "instagram" },
-  ended: { label: "Encerrado", variant: "secondary", icon: "check-circle" },
+  scheduled: { label: "Agendada", variant: "outline", icon: "calendar" },
+  active: { label: "Ativa", variant: "default", icon: "instagram" },
+  ended: { label: "Encerrada", variant: "secondary", icon: "check-circle" },
+}
+
+/** Tooltip de cada status do evento (copy deck §8.2). */
+export const EVENT_STATUS_HINT: Record<EventStatus, string> = {
+  scheduled:
+    "A campanha ainda não abriu. Comentários recebem um aviso automático em vez de virar carrinho.",
+  active:
+    "A campanha está vendendo. Os carrinhos ficam abertos e não expiram enquanto ela durar.",
+  ended: "A campanha fechou. Os carrinhos estão com prazo correndo ou já expiraram.",
 }
 
 /**
- * Picks the status display for an event based on its type.
+ * Escolhe o rótulo de status a partir do que existe DENTRO da campanha.
+ *
+ * Antes isto recebia `event.type` — a coluna que a 000119 remove. O parâmetro
+ * agora é o predicado derivado das sessões (`getEventKind(...).isPublicationOnly`),
+ * então nada aqui depende do tipo do container.
  */
 export function getEventStatusDisplay(
   status: EventStatus,
-  type?: string
+  isPublicationOnly = false
 ): EventStatusConfig {
-  const map =
-    type === "post" || type === "story" ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
+  const map = isPublicationOnly ? POST_EVENT_STATUS_CONFIG : EVENT_STATUS_CONFIG
   return map[status] ?? map.ended
 }
 
+/** Rótulos de status de uma SESSÃO (copy deck §8.3). */
+export const SESSION_STATUS_CONFIG: Record<string, StatusConfig & { hint: string }> = {
+  active: {
+    label: "Aguardando",
+    variant: "outline",
+    hint: "Sessão criada, ainda sem publicação vinculada ou sem transmissão no ar.",
+  },
+  live: {
+    label: "Capturando",
+    variant: "default",
+    hint: "Os comentários desta publicação estão virando carrinho agora.",
+  },
+  ended: {
+    label: "Encerrada",
+    variant: "secondary",
+    hint: "Esta sessão parou de capturar. A campanha pode continuar aberta nas outras sessões.",
+  },
+}
+
 /**
- * Order status configuration
+ * Status do carrinho — copy deck §8.4.
+ *
+ * "Ativo/Checkout/Completo" era o vocabulário interno do banco vazando para a
+ * tela: no modelo guarda-chuva `checkout` não significa "o cliente está
+ * finalizando", significa "a campanha fechou e o prazo dele começou a correr".
+ * Sem essa distinção o lojista lê o status errado exatamente no momento em que
+ * a decisão depende dele.
  */
-export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
-  active: { label: "Ativo", variant: "outline" },
-  checkout: { label: "Checkout", variant: "secondary" },
-  completed: { label: "Completo", variant: "default" },
-  expired: { label: "Expirado", variant: "destructive" },
+export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig & { hint: string }> = {
+  active: {
+    label: "Aberto",
+    variant: "outline",
+    hint: "Aceitando itens novos. O link de pagamento já funciona — mas ainda não há prazo correndo.",
+  },
+  checkout: {
+    label: "Aguardando pagamento",
+    variant: "secondary",
+    hint: "A campanha encerrou. O cliente tem prazo para finalizar; depois disso os produtos voltam ao estoque.",
+  },
+  completed: {
+    label: "Concluído",
+    variant: "default",
+    hint: "Pedido fechado. Nada mais entra neste carrinho.",
+  },
+  expired: {
+    label: "Expirado",
+    variant: "destructive",
+    hint: "O prazo acabou sem pagamento. Os produtos voltaram para a loja e para a fila de espera.",
+  },
+  cancelled: {
+    label: "Cancelado",
+    variant: "destructive",
+    hint: "Cancelado por você ou pelo cliente. O estoque foi devolvido.",
+  },
 }
 
 /**
@@ -118,10 +164,10 @@ export const PLATFORM_LABELS: Record<LivePlatform, string> = {
 /**
  * Get status config with fallback
  */
-export function getStatusConfig<T extends string>(
-  config: Record<T, StatusConfig>,
+export function getStatusConfig<T extends string, C extends StatusConfig>(
+  config: Record<T, C>,
   status: string,
   fallback: T
-): StatusConfig {
+): C {
   return config[status as T] || config[fallback]
 }

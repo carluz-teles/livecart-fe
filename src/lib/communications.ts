@@ -5,6 +5,13 @@ import {
   CheckCircle2,
   XCircle,
   Undo2,
+  CalendarClock,
+  MessageSquareOff,
+  DoorClosed,
+  Timer,
+  BellRing,
+  HeartCrack,
+  Hourglass,
   type LucideIcon,
 } from "lucide-react"
 
@@ -51,6 +58,72 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
       `${expirationReminderMinutes ?? 15} minutos antes do carrinho expirar`,
     Icon: Clock,
   },
+  // ===========================================================================
+  // Os cinco gatilhos da RN-28 (+ waitlist_notified, que existia no domínio e
+  // não existia em UI nenhuma). Todos por Instagram DM.
+  // ===========================================================================
+  out_of_window_scheduled: {
+    type: "out_of_window_scheduled",
+    channel: "instagram_dm",
+    title: "Comentou antes da campanha abrir",
+    description:
+      "Quem comenta antes do início recebe a data de abertura em vez de ficar sem resposta.",
+    triggerLabel: () => "Quando o comentário chega antes do início da campanha",
+    Icon: CalendarClock,
+  },
+  out_of_window_session_ended: {
+    type: "out_of_window_session_ended",
+    channel: "instagram_dm",
+    title: "Comentou em transmissão encerrada",
+    description:
+      "A campanha continua aberta, mas aquela transmissão já acabou. Avisa e aponta para as outras.",
+    triggerLabel: () => "Quando a sessão acabou e a campanha segue aberta",
+    Icon: MessageSquareOff,
+  },
+  out_of_window_event_ended: {
+    type: "out_of_window_event_ended",
+    channel: "instagram_dm",
+    title: "Comentou depois da campanha fechar",
+    description: "Evita o descarte silencioso: o comprador sabe que a promoção terminou.",
+    triggerLabel: () => "Quando o comentário chega com a campanha já encerrada",
+    Icon: DoorClosed,
+  },
+  event_deadline_started: {
+    type: "event_deadline_started",
+    channel: "instagram_dm",
+    title: "Campanha encerrada, o prazo começou",
+    description:
+      "O momento de maior impacto em conversão: o relógio para finalizar começa a correr agora.",
+    triggerLabel: () => "Quando a campanha fecha e o prazo de pagamento arma",
+    Icon: Timer,
+  },
+  waitlist_joined: {
+    type: "waitlist_joined",
+    channel: "instagram_dm",
+    title: "Entrou na fila de espera",
+    description:
+      "O produto pedido acabou. Sem esta mensagem o comprador recebe o texto de item adicionado e acha que comprou.",
+    triggerLabel: () => "Quando o estoque não cobre o pedido e o item vai para a fila",
+    Icon: Hourglass,
+  },
+  waitlist_notified: {
+    type: "waitlist_notified",
+    channel: "instagram_dm",
+    title: "Produto liberou para quem esperava",
+    description:
+      "Quem estava na fila é promovido e ganha o prazo extra configurado no evento.",
+    triggerLabel: () => "Quando o produto libera para quem estava na fila",
+    Icon: BellRing,
+  },
+  waitlist_unfulfilled: {
+    type: "waitlist_unfulfilled",
+    channel: "instagram_dm",
+    title: "Não conseguimos liberar o produto",
+    description:
+      "A campanha fechou e o item da fila nunca liberou. Sem esta mensagem, a espera termina em silêncio.",
+    triggerLabel: () => "Quando a fila fecha sem o produto ter liberado",
+    Icon: HeartCrack,
+  },
   payment_confirmed: {
     type: "payment_confirmed",
     channel: "email",
@@ -80,7 +153,14 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
 export const NOTIFICATION_ORDER: NotificationType[] = [
   "checkout_immediate",
   "item_added",
+  "event_deadline_started",
   "checkout_reminder",
+  "out_of_window_scheduled",
+  "out_of_window_session_ended",
+  "out_of_window_event_ended",
+  "waitlist_joined",
+  "waitlist_notified",
+  "waitlist_unfulfilled",
   "payment_confirmed",
   "payment_cancelled",
   "payment_refunded",
@@ -89,7 +169,14 @@ export const NOTIFICATION_ORDER: NotificationType[] = [
 export const CART_NOTIFICATION_ORDER: NotificationType[] = [
   "checkout_immediate",
   "item_added",
+  "event_deadline_started",
   "checkout_reminder",
+  "out_of_window_scheduled",
+  "out_of_window_session_ended",
+  "out_of_window_event_ended",
+  "waitlist_joined",
+  "waitlist_notified",
+  "waitlist_unfulfilled",
 ]
 
 export const POST_PAYMENT_NOTIFICATION_ORDER: NotificationType[] = [

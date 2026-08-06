@@ -9,6 +9,7 @@ function toUser(response: SyncUserResponse): User {
     state: response.state,
     // Paywall (PRD 007): sem isto o TrialBanner nunca vê a assinatura
     subscription: response.subscription ?? null,
+    pendingInvitations: response.pendingInvitations ?? [],
   }
 }
 

@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
-import { EventWhitelist } from "@/components/event/EventWhitelist"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
+import { EventWindowForm } from "@/components/event/EventWindowForm"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
 import { EventDetailKpis } from "./EventDetail.Kpis"
@@ -14,12 +14,14 @@ import { EventDetailFunnel } from "./EventDetail.Funnel"
 import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
+import { EventDetailMetrics } from "./EventDetail.Metrics"
+import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
-import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
 import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialog"
+import { EventDetailModelBanner } from "./EventDetail.ModelBanner"
 
 // Single Tabs root drives the four sub-screens. Visão geral is the dense
 // one: it leans on the OrderDetail 8/4 grid — operational stuff in the main
@@ -28,22 +30,30 @@ import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialo
 export function EventDetailBody() {
   const ctx = use(EventDetailContext)
   if (!ctx) return null
-  const { event, crashRecoveryOpen } = ctx.state
-  const { setCrashRecoveryOpen, refresh } = ctx.actions
+  const { event, crashRecoveryOpen, editEventOpen } = ctx.state
+  const { setCrashRecoveryOpen, setEditEventOpen, refresh } = ctx.actions
+  const sessionCount = event.sessions?.length ?? 0
 
   return (
     <>
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          <TabsTrigger value="products">
-            Produtos
-            {event.productCount > 0 && (
+          {/* Aba própria (copy deck §5.3). A tabela vivia enterrada no meio da
+              visão geral e DUPLICADA dentro de Métricas — duas cópias da mesma
+              lista, e nenhuma delas parecendo o segundo nível da campanha. */}
+          <TabsTrigger value="sessions">
+            Sessões
+            {sessionCount > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {event.productCount}
+                {sessionCount}
               </Badge>
             )}
           </TabsTrigger>
+          {/* A aba "Produtos" da campanha SAIU: a lista de produtos vendáveis é
+              de cada transmissão. Uma lista aqui escrevia em todas as sessões
+              de uma vez — o contrário de "a live vende tudo e o story vende uma
+              peça". Agora ela mora na aba Sessões, na linha da transmissão. */}
           <TabsTrigger value="upsells">
             Upsells
             {event.upsellCount > 0 && (
@@ -52,12 +62,22 @@ export function EventDetailBody() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="metrics">Métricas</TabsTrigger>
           <TabsTrigger value="coupons">Cupons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
+          {/* Antes dos números: o que estes números são. A tela abria direto
+              em cards de métrica, e numa campanha de uma sessão só isso lia
+              como "a métrica daquele post". */}
+          <EventDetailModelBanner />
+
           {/* High-priority banner: only shows when event is active. */}
           <EventDetailLiveControl />
+
+          {/* RN-38 — quem o Instagram não deixou avisar. Some quando não há
+              ninguém: é o caso normal e não pode sugerir problema. */}
+          <EventDetailUndelivered />
 
           {/* KPIs full width above the split so they read as the headline
               numbers for the event. */}
@@ -65,9 +85,11 @@ export function EventDetailBody() {
 
           <div className="grid gap-4 lg:grid-cols-12">
             <main className="flex flex-col gap-4 lg:col-span-8">
-              <EventDetailSessions />
               <EventDetailCarts />
-              <EventDetailComments />
+              {/* Comentário é da TRANSMISSÃO, não da campanha: na visão geral
+                  ele mistura o que veio da live de segunda com o do post de
+                  quarta e não responde nada. Mora na aba Sessões, ao lado da
+                  transmissão que o produziu. */}
               <EventDetailActiveCheckouts />
               <EventDetailCheckoutUpsell />
             </main>
@@ -79,8 +101,19 @@ export function EventDetailBody() {
           </div>
         </TabsContent>
 
-        <TabsContent value="products" className="mt-6">
-          <EventWhitelist eventId={event.id} />
+        <TabsContent value="sessions" className="mt-6 flex flex-col gap-4">
+          {/* A regra da campanha já está na descrição do card abaixo, palavra
+              por palavra. Aqui fica só o que a aba ganhou de novo: os produtos
+              são configurados por transmissão. */}
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Cada linha é uma transmissão desta campanha. Os produtos que cada uma pode
+            vender são configurados nela mesma, no botão &quot;Produtos&quot; da linha.
+          </p>
+          <EventDetailSessions />
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-6">
+          <EventDetailMetrics />
         </TabsContent>
 
         <TabsContent value="upsells" className="mt-6">
@@ -100,6 +133,12 @@ export function EventDetailBody() {
         eventId={event.id}
         open={crashRecoveryOpen}
         onOpenChange={setCrashRecoveryOpen}
+        onSuccess={refresh}
+      />
+      <EventWindowForm
+        event={event}
+        open={editEventOpen}
+        onOpenChange={setEditEventOpen}
         onSuccess={refresh}
       />
     </>

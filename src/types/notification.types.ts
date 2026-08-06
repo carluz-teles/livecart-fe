@@ -31,6 +31,16 @@ export interface NotificationSettings {
   checkout_immediate: TemplateSettings | null
   item_added: TemplateSettings | null
   checkout_reminder: TemplateSettings | null
+  // Os cinco gatilhos da RN-28 mais o waitlist_notified. Este era o buraco que
+  // deixava `waitlist_notified` existir no domínio há meses sem nenhuma UI
+  // conseguir ler ou escrever: chave sem entrada aqui é chave morta.
+  waitlist_notified?: TemplateSettings | null
+  out_of_window_scheduled?: TemplateSettings | null
+  out_of_window_session_ended?: TemplateSettings | null
+  out_of_window_event_ended?: TemplateSettings | null
+  event_deadline_started?: TemplateSettings | null
+  waitlist_unfulfilled?: TemplateSettings | null
+  waitlist_joined?: TemplateSettings | null
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
@@ -40,10 +50,20 @@ export interface NotificationSettings {
 }
 
 // Request payload for updating notification settings
+/** O PUT é MERGE PARCIAL no backend: chave ausente significa "não mexer".
+ *  Mandar só o que mudou é o contrato — montar um payload fixo com N chaves foi
+ *  o que apagava as configurações que não estavam na lista. */
 export interface UpdateNotificationSettingsPayload {
   checkout_immediate?: TemplateSettings | null
   item_added?: TemplateSettings | null
   checkout_reminder?: TemplateSettings | null
+  waitlist_notified?: TemplateSettings | null
+  out_of_window_scheduled?: TemplateSettings | null
+  out_of_window_session_ended?: TemplateSettings | null
+  out_of_window_event_ended?: TemplateSettings | null
+  event_deadline_started?: TemplateSettings | null
+  waitlist_unfulfilled?: TemplateSettings | null
+  waitlist_joined?: TemplateSettings | null
   payment_confirmed?: EmailTemplateSettings | null
   shipped?: EmailTemplateSettings | null
   delivered?: EmailTemplateSettings | null
@@ -78,6 +98,13 @@ export const CART_NOTIFICATION_TYPES = [
   "checkout_immediate",
   "item_added",
   "checkout_reminder",
+  "out_of_window_scheduled",
+  "out_of_window_session_ended",
+  "out_of_window_event_ended",
+  "event_deadline_started",
+  "waitlist_joined",
+  "waitlist_notified",
+  "waitlist_unfulfilled",
 ] as const
 export type CartNotificationType = (typeof CART_NOTIFICATION_TYPES)[number]
 
@@ -125,4 +152,39 @@ export interface SendTestEmailPayload {
   subject: string
   body_html: string
   recipient_email: string
+}
+
+// =============================================================================
+// RN-38 — COMPRADORES NÃO AVISADOS
+// =============================================================================
+
+/** Motivo pelo qual a mensagem não pôde ser entregue. Espelha o vocabulário do
+ *  backend; texto legível vem pronto em `reasonText`, para que a lista, o
+ *  alerta e qualquer outra superfície digam a mesma coisa. */
+export type UndeliverableReason =
+  | "comment_too_old"
+  | "private_reply_used"
+  | "no_eligible_comment"
+  | "comment_deleted"
+  | "instagram_rejected"
+
+/** Uma PESSOA que não pôde ser avisada — não uma tentativa. O backend colapsa
+ *  por comprador porque o lojista precisa de "quem eu chamo na mão". */
+export interface UndeliveredEntry {
+  platformUserId: string
+  platformHandle: string
+  notificationType: string
+  reason: UndeliverableReason | string
+  /** Frase pronta para o painel, vinda do domínio. */
+  reasonText: string
+  cartId?: string
+  cartToken?: string
+  cartTotalCents: number
+  cartTotalItems: number
+  createdAt: string
+}
+
+export interface UndeliveredResponse {
+  total: number
+  entries: UndeliveredEntry[]
 }

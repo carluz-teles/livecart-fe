@@ -2,8 +2,10 @@ export { useEvents, eventKeys } from "./useEvents"
 export { useEvent } from "./useEvent"
 export { useEventStats } from "./useEventStats"
 export { useEventDetailStats } from "./useEventDetailStats"
+export { useSessionMetrics } from "./useSessionMetrics"
 export { useEventCarts } from "./useEventCarts"
 export { useResendCartMessage } from "./useResendCartMessage"
+export { useCancelEventCart } from "./useCancelEventCart"
 export { useEventComments } from "./useEventComments"
 export { useReplyComment, useHideComment, useDeleteComment } from "./useCommentModeration"
 export { useEventActiveCheckouts } from "./useEventActiveCheckouts"
@@ -18,15 +20,21 @@ export { useCreateInstagramStory } from "./useCreateInstagramStory"
 export { useUpdateEvent } from "./useUpdateEvent"
 export { useDeleteEvent } from "./useDeleteEvent"
 export { useEndEvent } from "./useEndEvent"
+export { useEndSession } from "./useEndSession"
 export { useCreateSession } from "./useCreateSession"
 export { useAddPlatform } from "./useAddPlatform"
+export { useLinkSessionMedia } from "./useLinkSessionMedia"
 // Live mode
 export { useLiveModeState } from "./useLiveModeState"
 export { useSetActiveProduct } from "./useSetActiveProduct"
 export { useSetProcessingPaused } from "./useSetProcessingPaused"
-// Whitelist
-export { useEventWhitelist } from "./useEventWhitelist"
-export { useAddToWhitelist, useUpdateWhitelistProduct, useRemoveFromWhitelist } from "./useEventWhitelistMutations"
+// Produtos vendáveis — da TRANSMISSÃO, não da campanha
+export { useSessionProducts } from "./useSessionProducts"
+export {
+  useAddSessionProduct,
+  useUpdateSessionProduct,
+  useRemoveSessionProduct,
+} from "./useSessionProductMutations"
 // Upsells
 export { useEventUpsells } from "./useEventUpsells"
 export { useAddUpsell, useUpdateUpsell, useRemoveUpsell } from "./useEventUpsellMutations"

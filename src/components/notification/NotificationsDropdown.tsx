@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Bell, MessageSquare, CornerDownRight, Tag, Check } from "lucide-react"
+import { Bell, MessageSquare, CornerDownRight, Tag, Check, RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ const TYPE_ICON: Record<InboxNotification["type"], typeof MessageSquare> = {
   idea_comment: MessageSquare,
   idea_reply: CornerDownRight,
   idea_status_change: Tag,
+  order_cancellation_reverted: RotateCcw,
 }
 
 function buildText(n: InboxNotification): string {
@@ -40,6 +41,11 @@ function buildText(n: InboxNotification): string {
     case "idea_reply": {
       const actor = n.actorName ?? "Alguém"
       return `${actor} respondeu um comentário em ${numberRef}`
+    }
+    case "order_cancellation_reverted": {
+      const shortId = n.payload?.short_id as number | undefined
+      const orderRef = shortId ? `#${shortId}` : "um pedido"
+      return `Pedido ${orderRef} foi cancelado, mas o comprador pagou — o pedido voltou a valer`
     }
     case "idea_status_change": {
       const oldStatus = (n.payload?.old_status as string) ?? ""
@@ -72,6 +78,10 @@ export function NotificationsDropdown({ unreadCount }: NotificationsDropdownProp
       markRead.mutate(n.id)
     }
     setOpen(false)
+    if (n.cartId) {
+      router.push(`/orders/${n.cartId}`)
+      return
+    }
     if (n.ideaId) {
       const hash = n.commentId ? `#comment-${n.commentId}` : ""
       router.push(`/ideas/${n.ideaId}${hash}`)

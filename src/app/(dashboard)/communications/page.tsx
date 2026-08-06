@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 
+import { Info } from "lucide-react"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotificationCard } from "@/components/communications/NotificationCard"
 import { useCommunications, type CommunicationCard as CommunicationCardData } from "@/hooks/communications"
@@ -21,10 +23,26 @@ export default function CommunicationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Comunicações</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Mensagens automáticas que sua loja envia em cada momento da jornada
-            do cliente — antes, durante e depois da compra.
+            Estas são as mensagens automáticas que o LiveCart envia ao comprador. As de
+            carrinho vão por mensagem direta no Instagram; as de pós-venda, por e-mail.
+            Você pode editar o texto de todas e usar as variáveis para personalizar.
           </p>
         </div>
+      </div>
+
+      {/* N10 — o prazo do Instagram é o motivo pelo qual algumas mensagens não
+          saem. Sem este aviso, "não entregue" parece falha do LiveCart. */}
+      <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          <strong className="text-foreground">Sobre o prazo do Instagram.</strong> O
+          Instagram só permite responder um comprador por <strong>7 dias</strong> depois do
+          comentário dele, e <strong>uma única vez por comentário</strong>. Em campanhas
+          longas, quem comentou no primeiro dia pode estar fora desse prazo quando a
+          campanha encerrar. Quando isso acontece, o LiveCart <strong>não envia</strong> —
+          marca a mensagem como não entregue, com o motivo, e mostra a lista na página do
+          evento para você chamar essas pessoas na mão.
+        </p>
       </div>
 
       {isLoading ? (
@@ -36,8 +54,8 @@ export default function CommunicationsPage() {
       ) : (
         <div className="flex flex-col gap-10">
           <Section
-            title="Mensagens do carrinho"
-            subtitle="Instagram DM enquanto o cliente ainda está decidindo a compra."
+            title="Mensagens da campanha"
+            subtitle="Instagram DM enquanto o cliente ainda está decidindo a compra — e nos momentos em que o comentário dele não vira carrinho."
             cards={cartCards}
           />
           <Section

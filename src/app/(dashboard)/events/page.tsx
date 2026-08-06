@@ -17,20 +17,29 @@ import {
   CheckCircle,
   DollarSign,
   ChevronRight,
+  Layers,
+  BookOpen,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
-import { getEventStatusDisplay } from "@/lib/constants"
+import { getEventStatusDisplay, EVENT_STATUS_HINT } from "@/lib/constants"
+import { getEventKind, describeEventKind } from "@/lib/event-kind"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { EventFilters, EventTypeChooser, SessionForm, ReconnectForm } from "@/components/event"
+import {
+  EventFilters,
+  EventTypeChooser,
+  EventModelCallout,
+  EventModelDialog,
+  SessionForm,
+  ReconnectForm,
+} from "@/components/event"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useEvents, useEventStats, useEndEvent, useDeleteEvent } from "@/hooks/event"
 import type { Event, EventFilters as EventFiltersType } from "@/types/event.types"
-import { isPostLikeEvent } from "@/types/event.types"
 import {
   Card,
   CardContent,
@@ -75,6 +84,14 @@ const EVENT_STATUS_ICONS = {
   "instagram": Instagram,
 } as const
 
+// Ícone da espécie da campanha, derivada das sessões.
+const KIND_ICONS = {
+  radio: Radio,
+  instagram: Instagram,
+  aperture: Aperture,
+  layers: Layers,
+} as const
+
 export default function EventsPage() {
   const router = useRouter()
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
@@ -87,6 +104,7 @@ export default function EventsPage() {
     setSearch,
     filters,
     setFilters,
+    resetFilters,
     params,
   } = useListParams<EventFiltersType>()
 
@@ -96,6 +114,15 @@ export default function EventsPage() {
   const deleteEvent = useDeleteEvent()
 
   const events = data?.data ?? []
+
+  // Lista vazia tem duas causas muito diferentes — "você ainda não criou nada"
+  // e "seu filtro não achou nada" — e o mesmo texto para as duas manda o
+  // lojista criar um evento quando o que ele precisa é limpar o filtro.
+  const hasActiveFilters =
+    !!search ||
+    (filters.status?.length ?? 0) > 0 ||
+    !!filters.dateFrom ||
+    !!filters.dateTo
 
   function handleEndEvent(event: Event) {
     setEndingEvent(event)
@@ -164,23 +191,37 @@ export default function EventsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Eventos"
-        description="Gerencie seus eventos e acompanhe as vendas em tempo real"
+        description="Cada evento é uma campanha. Dentro dele ficam as sessões — a live, o post, o reel, o story — e um carrinho único por cliente que soma tudo que ele pediu durante a campanha inteira."
       >
+        {/* Entrada permanente para a explicação: o banner abaixo é
+            dispensável, e depois de dispensado não pode levar o modelo junto. */}
+        <EventModelDialog
+          trigger={
+            <Button variant="ghost">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Como funciona um evento?
+            </Button>
+          }
+        />
         <EventTypeChooser />
       </PageHeader>
+
+      {/* Banner dispensável, nunca modal automático: um diálogo de primeira
+          visita apareceria numa regravação do roteiro do App Review da Meta. */}
+      <EventModelCallout />
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatsCard
           title="Total de Eventos"
-          value={stats?.totalLives ?? 0}
-          description="eventos criados"
+          value={stats?.totalEvents ?? stats?.totalLives ?? 0}
+          description="campanhas criadas"
           icon={Calendar}
           isLoading={statsLoading}
         />
         <StatsCard
           title="Ativos Agora"
-          value={stats?.activeLives ?? 0}
-          description="ao vivo agora"
+          value={stats?.activeEvents ?? stats?.activeLives ?? 0}
+          description="campanhas vendendo"
           icon={Radio}
           isLoading={statsLoading}
           variant="success"
@@ -253,17 +294,48 @@ export default function EventsPage() {
                   </TableRow>
                 ) : events.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      Nenhum evento encontrado.
+                    <TableCell colSpan={5} className="h-32 text-center">
+                      {hasActiveFilters ? (
+                        <>
+                          <p className="font-medium">Nenhum evento com esses filtros</p>
+                          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                            Tente limpar os filtros ou mudar o período.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => {
+                              setSearch("")
+                              resetFilters()
+                            }}
+                          >
+                            Limpar filtros
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium">Você ainda não tem eventos</p>
+                          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                            Um evento é a sua campanha de vendas — pode ser uma live de duas
+                            horas ou uma semana inteira de publicações. Crie o evento primeiro
+                            e depois adicione as sessões: live, post, reel ou story.
+                          </p>
+                          <div className="mt-3">
+                            <EventTypeChooser />
+                          </div>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ) : (
                   events.map((event) => {
-                    const config = getEventStatusDisplay(event.status, event.type)
+                    // A espécie sai das SESSÕES da campanha (event.sessionTypes),
+                    // nunca de event.type — essa coluna deixa de existir.
+                    const kind = getEventKind(event)
+                    const config = getEventStatusDisplay(event.status, kind.isPublicationOnly)
                     const StatusIcon = EVENT_STATUS_ICONS[config.icon]
-                    const isStory = event.type === "story"
-                    const isPost = isPostLikeEvent(event.type)
-                    const kindLabel = isStory ? "Story" : isPost ? "Post" : "Live"
+                    const KindIcon = KIND_ICONS[kind.icon]
                     return (
                       <TableRow
                         key={event.id}
@@ -275,15 +347,14 @@ export default function EventsPage() {
                             <Badge
                               variant="outline"
                               className="gap-1 text-muted-foreground"
+                              title={
+                                kind.isMixed
+                                  ? `Campanha com transmissões de tipos diferentes: ${describeEventKind(kind)}.`
+                                  : undefined
+                              }
                             >
-                              {isStory ? (
-                                <Aperture className="h-3 w-3" />
-                              ) : isPost ? (
-                                <Instagram className="h-3 w-3" />
-                              ) : (
-                                <Radio className="h-3 w-3" />
-                              )}
-                              {kindLabel}
+                              <KindIcon className="h-3 w-3" />
+                              {kind.label}
                             </Badge>
                             <span className="transition-colors group-hover:text-primary">
                               {event.title || "Sem titulo"}
@@ -291,7 +362,11 @@ export default function EventsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={config.variant} className="gap-1">
+                          <Badge
+                            variant={config.variant}
+                            className="gap-1"
+                            title={EVENT_STATUS_HINT[event.status]}
+                          >
                             <StatusIcon className="h-3 w-3" />
                             {config.label}
                           </Badge>
@@ -321,26 +396,30 @@ export default function EventsPage() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acoes</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                {/* "Nova sessão" é a ação que faz o evento ser
+                                    guarda-chuva — ela não pode depender de a
+                                    campanha ter live, nem de já estar no ar.
+                                    Reconectar, sim: só há o que reconectar
+                                    onde existe transmissão ao vivo. */}
+                                {(event.status === "active" ||
+                                  event.status === "scheduled") && (
+                                  <DropdownMenuItem onClick={() => handleNewSession(event)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nova sessão
+                                  </DropdownMenuItem>
+                                )}
                                 {event.status === "active" && (
                                   <>
-                                    {/* Session / reconnect are live-only and
-                                        make no sense for a post/story event. */}
-                                    {!isPost && (
-                                      <>
-                                        <DropdownMenuItem onClick={() => handleNewSession(event)}>
-                                          <Plus className="mr-2 h-4 w-4" />
-                                          Nova Sessao
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleReconnect(event)}>
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Reconectar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                      </>
+                                    {kind.hasLive && (
+                                      <DropdownMenuItem onClick={() => handleReconnect(event)}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Reconectar
+                                      </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleEndEvent(event)}>
                                       <Square className="mr-2 h-4 w-4" />
-                                      {isPost ? "Encerrar promoção" : "Finalizar evento"}
+                                      Finalizar evento
                                     </DropdownMenuItem>
                                   </>
                                 )}

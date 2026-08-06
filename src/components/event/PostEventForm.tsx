@@ -1,17 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import {
-  Check,
-  ExternalLink,
-  Image as ImageIcon,
-  Instagram,
-  Loader2,
-  MessageCircle,
-  Package,
-  RefreshCw,
-  Search,
-} from "lucide-react"
+import { useState } from "react"
+import { Check, Instagram, Loader2, Package, Search } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,21 +24,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useInstagramMedia } from "@/hooks/integration"
 import { useCreatePostEvent } from "@/hooks/event"
 import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { FieldHint } from "@/components/shared/FieldHint"
+import {
+  EVENT_COPY,
+  defaultEndsAtLocal,
+  isLongCampaign,
+  LONG_CAMPAIGN_WARNING,
+} from "@/lib/event-copy"
+import {
+  InstagramMediaPicker,
+  sessionTypeFromMediaType,
+} from "./InstagramMediaPicker"
 import type { InstagramMediaPost, Product } from "@/types"
-
-const MEDIA_TYPE_LABELS: Record<string, string> = {
-  IMAGE: "Imagem",
-  VIDEO: "Vídeo",
-  CAROUSEL_ALBUM: "Carrossel",
-  REELS: "Reel",
-  REEL: "Reel",
-}
 
 interface PostEventFormProps {
   /** Controlled open state. When provided, the internal trigger is hidden. */
@@ -72,13 +64,15 @@ export function PostEventForm({
   const [selectedPost, setSelectedPost] = useState<InstagramMediaPost | null>(null)
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
   const [startsAt, setStartsAt] = useState("")
-  const [endsAt, setEndsAt] = useState("")
+  // endsAt é OBRIGATÓRIO (RN-05): sem teto, o carrinho da promoção fica sem
+  // prazo para sempre. Nasce preenchido com 24h à frente para o lojista não
+  // esbarrar num campo obrigatório vazio.
+  const [endsAt, setEndsAt] = useState(defaultEndsAtLocal)
   const [cartExpirationMinutes, setCartExpirationMinutes] = useState<number | null>(null)
   const [maxQty, setMaxQty] = useState<number | null>(null)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 300)
 
-  const media = useInstagramMedia(open)
   // Only promotable products: active AND in stock, ordered by name (variants of
   // the same product sit together).
   const { data: productsData, isLoading: productsLoading } = useProducts({
@@ -89,17 +83,13 @@ export function PostEventForm({
   const createPost = useCreatePostEvent()
 
   const products = productsData?.data ?? []
-  const posts = useMemo(
-    () => media.data?.pages.flatMap((p) => p.data) ?? [],
-    [media.data]
-  )
 
   const reset = () => {
     setTitle("")
     setSelectedPost(null)
     setSelectedProductIds([])
     setStartsAt("")
-    setEndsAt("")
+    setEndsAt(defaultEndsAtLocal())
     setCartExpirationMinutes(null)
     setMaxQty(null)
     setSearch("")
@@ -119,11 +109,13 @@ export function PostEventForm({
 
   const windowInvalid =
     !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
+  const endsAtMissing = !endsAt
 
   const canSubmit =
     !!selectedPost &&
     selectedProductIds.length > 0 &&
     !windowInvalid &&
+    !endsAtMissing &&
     !createPost.isPending
 
   // datetime-local gives a tz-less local string; interpret it in the merchant's
@@ -132,6 +124,13 @@ export function PostEventForm({
 
   const handleSubmit = () => {
     if (!selectedPost) return
+    if (endsAtMissing) {
+      toast.error("Informe quando a promoção encerra.", {
+        description:
+          "É o teto que faz o prazo do comprador começar a correr — sem ele o carrinho não expira nunca.",
+      })
+      return
+    }
     if (windowInvalid) {
       toast.error("A data de término deve ser depois da data de início.")
       return
@@ -139,13 +138,17 @@ export function PostEventForm({
     createPost.mutate(
       {
         title: title.trim() || undefined,
+        // A espécie sai do `media_type` da mídia escolhida. Sem isto o backend
+        // grava 'post' fixo, e um Reel selecionado aqui nascia com rótulo
+        // diferente do MESMO Reel publicado pelo LiveCart.
+        type: sessionTypeFromMediaType(selectedPost.media_type),
         mediaId: selectedPost.id,
         mediaPermalink: selectedPost.permalink,
         mediaThumbnailUrl: selectedPost.thumbnail_url || selectedPost.media_url,
         mediaCaption: selectedPost.caption,
         productIds: selectedProductIds,
         startsAt: toISO(startsAt),
-        endsAt: toISO(endsAt),
+        endsAt: new Date(endsAt).toISOString(),
         cartExpirationMinutes,
         cartMaxQuantityPerItem: maxQty,
       },
@@ -188,94 +191,47 @@ export function PostEventForm({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Instagram className="h-5 w-5" />
-            Novo evento de post
+            Vender por um post que já existe
           </SheetTitle>
           <SheetDescription>
-            Selecione um post do Instagram e os produtos da promoção. Capturamos os
-            comentários do post e montamos os carrinhos automaticamente.
+            Atalho: cria a campanha e a primeira transmissão de uma vez. Selecione o post
+            e os produtos — capturamos os comentários e montamos os carrinhos. Depois você
+            pode adicionar outras transmissões (live, reel, story) à mesma campanha.
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-8">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="post-title">Título (opcional)</Label>
+            <Label htmlFor="post-title" className="flex items-center gap-1.5">
+              {EVENT_COPY.title.label}
+            </Label>
             <Input
               id="post-title"
-              placeholder="Ex: Promoção da Sexta"
+              placeholder={EVENT_COPY.title.placeholder}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              Opcional. É o nome da campanha que o comprador vê nas mensagens — e esta
+              publicação é a primeira transmissão dela.
+            </p>
           </div>
 
           {/* Step 1 — post selector */}
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  1
-                </span>
-                <h3 className="text-sm font-medium">Selecione o post</h3>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => media.refetch()}
-                disabled={media.isFetching}
-              >
-                <RefreshCw className={cn("mr-2 h-3.5 w-3.5", media.isFetching && "animate-spin")} />
-                Atualizar
-              </Button>
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                1
+              </span>
+              <h3 className="text-sm font-medium">Selecione o post</h3>
             </div>
 
-            <PostGrid
-              posts={posts}
-              loading={media.isLoading}
-              error={media.isError}
-              selectedId={selectedPost?.id ?? null}
+            <InstagramMediaPicker
+              enabled={open}
+              selected={selectedPost}
               onSelect={setSelectedPost}
             />
-
-            {media.hasNextPage && (
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => media.fetchNextPage()}
-                  disabled={media.isFetchingNextPage}
-                >
-                  {media.isFetchingNextPage && (
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  )}
-                  Carregar mais posts
-                </Button>
-              </div>
-            )}
-
-            {selectedPost && (
-              <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
-                <PostThumb post={selectedPost} className="h-12 w-12" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {selectedPost.caption || "Post sem legenda"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Post selecionado</p>
-                </div>
-                {selectedPost.permalink && (
-                  <a
-                    href={selectedPost.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Ver no Instagram
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            )}
           </section>
 
           {/* Step 2 — products */}
@@ -346,35 +302,54 @@ export function PostEventForm({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="post-starts">Início (opcional)</Label>
+                <Label htmlFor="post-starts" className="flex items-center gap-1.5">
+                  {EVENT_COPY.startsAt.label}
+                  <FieldHint text={EVENT_COPY.startsAt.hint} />
+                </Label>
                 <Input
                   id="post-starts"
                   type="datetime-local"
                   value={startsAt}
                   onChange={(e) => setStartsAt(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.startsAt.empty}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="post-ends">Término (opcional)</Label>
+                <Label htmlFor="post-ends" className="flex items-center gap-1.5">
+                  {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
+                  <FieldHint text={EVENT_COPY.endsAt.hint} />
+                </Label>
                 <Input
                   id="post-ends"
                   type="datetime-local"
                   value={endsAt}
                   onChange={(e) => setEndsAt(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.endsAt.help}</p>
               </div>
             </div>
+            {endsAtMissing && (
+              <p className="text-sm text-destructive">Informe quando a promoção encerra.</p>
+            )}
             {windowInvalid && (
               <p className="text-sm text-destructive">
                 O término deve ser depois do início.
               </p>
             )}
+            {isLongCampaign(startsAt || null, endsAt || null) && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-xs text-amber-800 dark:text-amber-200">
+                  {LONG_CAMPAIGN_WARNING}
+                </p>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Expiração do carrinho</Label>
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.cartExpiration.label}
+                  <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                </Label>
                 <Select
                   value={cartExpirationMinutes === null ? "inherit" : String(cartExpirationMinutes)}
                   onValueChange={(v) =>
@@ -395,7 +370,10 @@ export function PostEventForm({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Máximo por item</Label>
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.maxQuantity.label}
+                  <FieldHint text={EVENT_COPY.maxQuantity.hint} />
+                </Label>
                 <Select
                   value={maxQty === null ? "inherit" : String(maxQty)}
                   onValueChange={(v) => setMaxQty(v === "inherit" ? null : parseInt(v, 10))}
@@ -411,6 +389,11 @@ export function PostEventForm({
                     <SelectItem value="10">10 unidades</SelectItem>
                   </SelectContent>
                 </Select>
+                {maxQty !== null && (
+                  <p className="text-xs text-muted-foreground">
+                    {EVENT_COPY.maxQuantity.help}
+                  </p>
+                )}
               </div>
             </div>
           </section>
@@ -432,107 +415,6 @@ export function PostEventForm({
 }
 
 // ---------------------------------------------------------------------------
-
-function PostThumb({ post, className }: { post: InstagramMediaPost; className?: string }) {
-  const src = post.thumbnail_url || post.media_url
-  return (
-    <div className={cn("relative shrink-0 overflow-hidden rounded-md bg-muted", className)}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface PostGridProps {
-  posts: InstagramMediaPost[]
-  loading: boolean
-  error: boolean
-  selectedId: string | null
-  onSelect: (post: InstagramMediaPost) => void
-}
-
-function PostGrid({ posts, loading, error, selectedId, onSelect }: PostGridProps) {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square w-full rounded-md" />
-        ))}
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed py-10 text-center">
-        <Instagram className="h-7 w-7 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">
-          Não foi possível carregar os posts. Verifique se o Instagram está conectado.
-        </p>
-      </div>
-    )
-  }
-
-  if (posts.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed py-10 text-center">
-        <Instagram className="h-7 w-7 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">Nenhum post encontrado nesta conta.</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {posts.map((post) => {
-        const selected = post.id === selectedId
-        return (
-          <button
-            type="button"
-            key={post.id}
-            onClick={() => onSelect(post)}
-            className={cn(
-              "group relative aspect-square overflow-hidden rounded-md border transition-all",
-              selected
-                ? "border-primary ring-2 ring-primary"
-                : "border-transparent hover:border-muted-foreground/30"
-            )}
-            aria-pressed={selected}
-          >
-            <PostThumb post={post} className="h-full w-full rounded-none" />
-
-            {/* gradient + meta */}
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
-              <div className="flex items-center justify-between gap-1">
-                <span className="truncate text-[10px] font-medium text-white">
-                  {MEDIA_TYPE_LABELS[post.media_type] || "Post"}
-                </span>
-                {typeof post.comments_count === "number" && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-white/90">
-                    <MessageCircle className="h-2.5 w-2.5" />
-                    {post.comments_count}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {selected && (
-              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Check className="h-3 w-3" />
-              </div>
-            )}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 interface ProductRowProps {
   product: Product

@@ -10,6 +10,8 @@ import { EventDetailKpis } from "./EventDetail.Kpis"
 import { EventDetailTopProducts } from "./EventDetail.TopProducts"
 import { EventDetailTopBuyers } from "./EventDetail.TopBuyers"
 import { EventDetailSessions } from "./EventDetail.Sessions"
+import { EventDetailMetrics } from "./EventDetail.Metrics"
+import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
 import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
@@ -32,6 +34,8 @@ export const EventDetail = {
   TopProducts: EventDetailTopProducts,
   TopBuyers: EventDetailTopBuyers,
   Sessions: EventDetailSessions,
+  Metrics: EventDetailMetrics,
+  Undelivered: EventDetailUndelivered,
   Carts: EventDetailCarts,
   Comments: EventDetailComments,
   ActiveCheckouts: EventDetailActiveCheckouts,

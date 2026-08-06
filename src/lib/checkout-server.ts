@@ -41,8 +41,13 @@ export async function getPublicCheckoutCart(
       const body = await res.json().catch(() => ({}))
       return {
         cart: null,
+        // O envelope de erro da API usa `error`; `message` fica como fallback
+        // para respostas de outras camadas (proxy/edge). Sem ler `error`, toda
+        // recusa explícita — carrinho cancelado pela loja, carrinho expirado —
+        // virava o genérico "Carrinho não encontrado" e o comprador nunca sabia
+        // o que aconteceu.
         status: res.status,
-        errorMessage: body?.message || "Carrinho não encontrado",
+        errorMessage: body?.error || body?.message || "Carrinho não encontrado",
       }
     }
 

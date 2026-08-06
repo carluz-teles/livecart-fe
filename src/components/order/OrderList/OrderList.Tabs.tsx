@@ -114,16 +114,19 @@ export const ORDER_TABS: OrderTab[] = [
     },
   },
   {
-    // Estado terminal por desistência do cliente — sem ação operacional do
-    // lojista, mas precisa de uma janela explícita pra recuperação de
-    // carrinho abandonado e pra tirar essas linhas do "Todos" quando o
-    // merchant quer triar só o pipeline ativo.
+    // Estado terminal do CARRINHO — sem ação operacional do lojista, mas
+    // precisa de uma janela explícita pra recuperação de carrinho abandonado e
+    // pra tirar essas linhas do "Todos" quando o merchant quer triar só o
+    // pipeline ativo. Filtra por status do carrinho (e não por payment_status)
+    // porque é o status que marca o pedido como morto: cancelamento pelo
+    // lojista, bloqueio do comprador ou fim do prazo. Uma COBRANÇA cancelada
+    // pelo gateway não mata o pedido — ele segue aguardando pagamento.
     id: "cancelled",
     label: "Cancelados",
     description:
-      "Pedidos que o cliente abandonou ou que expiraram sem pagamento. Útil para campanhas de recuperação de carrinho.",
+      "Pedidos cancelados pela loja (estoque já devolvido e link desativado) ou que expiraram sem pagamento. Útil para campanhas de recuperação de carrinho.",
     filters: {
-      paymentStatus: ["cancelled"],
+      status: ["cancelled", "expired"],
     },
   },
 ]

@@ -202,8 +202,8 @@ export function CustomerListTable() {
                   <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
                   <p className="font-medium">Nenhum cliente encontrado</p>
                   <p className="text-xs text-muted-foreground">
-                    Os clientes aparecem aqui assim que comentam em uma live e
-                    geram um carrinho.
+                    Os clientes aparecem aqui assim que comentam em uma transmissão da
+                    sua campanha e geram um carrinho.
                   </p>
                 </div>
               </TableCell>

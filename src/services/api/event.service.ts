@@ -9,22 +9,25 @@ import type {
   UpdateEventPayload,
   EndEventPayload,
   EndEventResponse,
+  EndSessionResponse,
   CreateSessionPayload,
   AddPlatformPayload,
+  LinkSessionMediaPayload,
   EventListParams,
   EventListResponse,
   EventSession,
   EventPlatform,
   EventDetailStatsResponse,
+  EventSessionMetrics,
   EventPulse,
   EventCart,
   EventCartsResponse,
   EventCommentsResponse,
   EventSoldProductsResponse,
-  EventWhitelistProduct,
-  EventWhitelistResponse,
-  AddEventProductPayload,
-  UpdateEventProductPayload,
+  SessionProduct,
+  SessionProductsResponse,
+  AddSessionProductPayload,
+  UpdateSessionProductPayload,
   EventUpsell,
   EventUpsellsResponse,
   AddEventUpsellPayload,
@@ -79,13 +82,47 @@ export const eventService = {
   createSession: (storeId: string, eventId: string, payload: CreateSessionPayload, token?: string | null) =>
     apiClient.post<EventSession>(`/stores/${storeId}/lives/${eventId}/sessions`, payload, token),
 
+  // Encerra UMA sessão sem encerrar o evento.
+  //
+  // Não confundir com `end` acima, que é do evento: aquele encerra o evento,
+  // encerra todas as sessões e finaliza os carrinhos. Este só para a live/post
+  // que acabou — o evento segue no ar e os carrinhos continuam valendo, que é o
+  // que faz um comprador de segunda e de terça ter um pedido só.
+  endSession: (storeId: string, eventId: string, sessionId: string, token?: string | null) =>
+    apiClient.post<EndSessionResponse>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/end`,
+      {},
+      token
+    ),
+
   // Add platform to active session (crash recovery)
   addPlatform: (storeId: string, eventId: string, payload: AddPlatformPayload, token?: string | null) =>
     apiClient.post<EventPlatform>(`/stores/${storeId}/lives/${eventId}/platforms`, payload, token),
 
+  // Vincula a publicação a UMA transmissão nomeada — o "vincular depois" da
+  // sessão criada sem mídia. A rota acima resolve a sessão sozinha e por isso
+  // não serve a uma campanha com mais de uma transmissão.
+  linkSessionMedia: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    payload: LinkSessionMediaPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<EventPlatform>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/platforms`,
+      payload,
+      token
+    ),
+
   // Event Details - Stats for a specific event
   getEventStats: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventDetailStatsResponse>(`/stores/${storeId}/lives/${eventId}/event-stats`, token),
+
+  // Event Details - Métrica em dois níveis: quebra por transmissão + o balde
+  // "sem transmissão". A soma das linhas fecha com o event-stats do evento.
+  getSessionMetrics: (storeId: string, eventId: string, token?: string | null) =>
+    apiClient.get<EventSessionMetrics>(`/stores/${storeId}/lives/${eventId}/session-metrics`, token),
 
   // Event Details - Cheap change-signal for near-real-time refresh
   getPulse: (storeId: string, eventId: string, token?: string | null) =>
@@ -157,34 +194,63 @@ export const eventService = {
     apiClient.patch<void>(`/stores/${storeId}/lives/${eventId}/pause-processing`, payload, token),
 
   // ==========================================================================
-  // EVENT WHITELIST - Products allowed for sale in this event
+  // SESSION PRODUCTS - o que ESTA transmissão pode vender
+  //
+  // As quatro rotas equivalentes por evento saíram do backend: elas escreviam
+  // em todas as sessões de uma vez, que é justamente o contrário do que o
+  // lojista quer — a live vende qualquer coisa, o story vende uma peça só.
   // ==========================================================================
 
-  // List whitelist products
-  listWhitelist: (storeId: string, eventId: string, token?: string | null) =>
-    apiClient.get<EventWhitelistResponse>(`/stores/${storeId}/lives/${eventId}/whitelist`, token),
-
-  // Add product to whitelist
-  addToWhitelist: (storeId: string, eventId: string, payload: AddEventProductPayload, token?: string | null) =>
-    apiClient.post<EventWhitelistProduct>(`/stores/${storeId}/lives/${eventId}/whitelist`, payload, token),
-
-  // Update whitelist product config
-  updateWhitelistProduct: (
+  listSessionProducts: (
     storeId: string,
     eventId: string,
-    productId: string,
-    payload: UpdateEventProductPayload,
+    sessionId: string,
     token?: string | null
   ) =>
-    apiClient.put<EventWhitelistProduct>(
-      `/stores/${storeId}/lives/${eventId}/whitelist/${productId}`,
+    apiClient.get<SessionProductsResponse>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist`,
+      token
+    ),
+
+  addSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    payload: AddSessionProductPayload,
+    token?: string | null
+  ) =>
+    apiClient.post<SessionProduct>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist`,
       payload,
       token
     ),
 
-  // Remove from whitelist
-  removeFromWhitelist: (storeId: string, eventId: string, productId: string, token?: string | null) =>
-    apiClient.delete<void>(`/stores/${storeId}/lives/${eventId}/whitelist/${productId}`, token),
+  // Chaveado por productId — nunca pelo id da linha da lista.
+  updateSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    productId: string,
+    payload: UpdateSessionProductPayload,
+    token?: string | null
+  ) =>
+    apiClient.put<SessionProduct>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist/${productId}`,
+      payload,
+      token
+    ),
+
+  removeSessionProduct: (
+    storeId: string,
+    eventId: string,
+    sessionId: string,
+    productId: string,
+    token?: string | null
+  ) =>
+    apiClient.delete<void>(
+      `/stores/${storeId}/lives/${eventId}/sessions/${sessionId}/whitelist/${productId}`,
+      token
+    ),
 
   // ==========================================================================
   // EVENT UPSELLS - Suggested products at checkout

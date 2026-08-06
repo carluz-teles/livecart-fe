@@ -1,11 +1,21 @@
 "use client"
 
-import { use } from "react"
-import { Clock, Copy, Loader2, Send, ShoppingCart } from "lucide-react"
+import { use, useState } from "react"
+import { Ban, Clock, Copy, Loader2, Send, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
-import { useResendCartMessage } from "@/hooks/event"
+import { useCancelEventCart, useResendCartMessage } from "@/hooks/event"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Card,
   CardContent,
@@ -51,7 +61,12 @@ export function EventDetailCarts() {
               <ShoppingCart className="h-4 w-4" />
               Pedidos
             </CardTitle>
-            <CardDescription>Todos os carrinhos do evento</CardDescription>
+            <CardDescription>
+              Uma linha por carrinho. Como o carrinho é um só por cliente na campanha, a
+              mesma pessoa aparece uma vez — com os itens de todas as sessões somados. Se
+              ela já pagou e voltou a comprar, aparece um segundo carrinho, com link
+              próprio.
+            </CardDescription>
           </div>
           {carts.length > 0 && (
             <Badge variant="secondary">{carts.length} carrinho(s)</Badge>
@@ -98,14 +113,17 @@ export function EventDetailCarts() {
                 </TableRow>
               ) : (
                 carts.map((cart) => {
-                  const sessionIndex =
-                    event.sessions?.findIndex((s) => s.id === cart.sessionId) ?? -1
+                  // sequenceOrder e a ordem da transmissao na campanha; a
+                  // posicao na lista nao e, porque ela vem por created_at DESC.
+                  // Usar o indice fazia o mesmo "S{n}" apontar para sessoes
+                  // diferentes nesta tabela e na de Sessoes.
+                  const session = event.sessions?.find((s) => s.id === cart.sessionId)
                   return (
                     <CartRow
                       key={cart.id}
                       cart={cart}
                       eventId={event.id}
-                      sessionNumber={sessionIndex >= 0 ? sessionIndex + 1 : null}
+                      sessionNumber={session?.sequenceOrder ?? null}
                     />
                   )
                 })
@@ -126,13 +144,30 @@ interface CartRowProps {
 
 function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
   const resendMessage = useResendCartMessage(eventId)
+  const cancelCart = useCancelEventCart(eventId)
+  const [cancelOpen, setCancelOpen] = useState(false)
+
+  // Cancelar só vale para carrinho vivo e não pago. O backend garante o resto
+  // (inclusive a corrida com um pagamento entrando agora); esconder aqui evita
+  // oferecer uma ação que já sabemos que será recusada.
+  const canCancel =
+    cart.paymentStatus !== "paid" &&
+    cart.paymentStatus !== "refunded" &&
+    cart.status !== "cancelled" &&
+    cart.status !== "expired"
   const statusConfig = getStatusConfig(ORDER_STATUS_CONFIG, cart.status, "active")
   const paymentConfig = cart.paymentStatus
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null
 
+  // O badge de "Pago" vem de `payment_status`: `carts.status` nunca recebe o
+  // valor 'paid', então um carrinho pago continua em 'active'/'checkout'.
   const displayConfig =
     paymentConfig && cart.paymentStatus === "paid" ? paymentConfig : statusConfig
+  const displayHint =
+    paymentConfig && cart.paymentStatus === "paid"
+      ? "Pagamento confirmado. Se o cliente comprar de novo nesta campanha, abre um carrinho novo com link próprio."
+      : statusConfig.hint
 
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -171,7 +206,11 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
       </TableCell>
       <TableCell>
         {sessionNumber ? (
-          <Badge variant="outline" className="font-mono text-xs">
+          <Badge
+            variant="outline"
+            className="font-mono text-xs"
+            title="A sessão em que este carrinho nasceu. Os itens dele podem ter vindo de várias sessões diferentes."
+          >
             S{sessionNumber}
           </Badge>
         ) : (
@@ -179,7 +218,9 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={displayConfig.variant}>{displayConfig.label}</Badge>
+        <Badge variant={displayConfig.variant} title={displayHint}>
+          {displayConfig.label}
+        </Badge>
       </TableCell>
       <TableCell className="text-center">
         {cart.waitlistedItems > 0 ? (
@@ -256,7 +297,66 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {canCancel && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => setCancelOpen(true)}
+                    disabled={cancelCart.isPending}
+                  >
+                    {cancelCart.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Ban className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">Cancelar carrinho</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Cancelar carrinho</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
+
+        <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Cancelar o carrinho de @{cart.platformHandle}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                O carrinho passa a constar como <strong>cancelado</strong>: o
+                estoque dos itens volta para o catálogo, a reserva no ERP é
+                estornada e o link do cliente deixa de aceitar pagamento — ele
+                verá que a loja cancelou, não que expirou. Se o cliente pagar
+                exatamente neste instante, o pagamento vence e o pedido continua
+                pago.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setCancelOpen(false)
+                  cancelCart.mutate({
+                    cartId: cart.id,
+                    handle: cart.platformHandle,
+                  })
+                }}
+                disabled={cancelCart.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Cancelar carrinho
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </TableCell>
     </TableRow>
   )

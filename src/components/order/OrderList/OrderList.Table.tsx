@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { OrderListContext } from "./OrderListContext"
-import { isOrderERPFailed, orderColumns } from "./OrderList.columns"
+import { isOrderERPFailed, isOrderTerminal, orderColumns } from "./OrderList.columns"
 import { OrderListEmpty } from "./OrderList.Empty"
 
 // Skeleton widths mapped to each column id. Kept here (not in columns.tsx)
@@ -122,11 +122,14 @@ export function OrderListTable() {
             ) : (
               table.getRowModel().rows.map((row) => {
                 const erpFailed = isOrderERPFailed(row.original)
+                const terminal = isOrderTerminal(row.original)
                 return (
                   <TableRow
                     key={row.id}
                     onClick={() => ctx.actions.openOrder(row.original.id)}
-                    data-state={erpFailed ? "erp_failed" : undefined}
+                    data-state={
+                      erpFailed ? "erp_failed" : terminal ? "terminal" : undefined
+                    }
                     className={cn(
                       "group/row cursor-pointer transition-colors duration-150 hover:bg-muted/40",
                       // Failed-ERP rows wear a 3px destructive bar inset on
@@ -134,6 +137,15 @@ export function OrderListTable() {
                       // without competing with the bar.
                       erpFailed &&
                         "bg-destructive/[0.025] shadow-[inset_3px_0_0_0_hsl(var(--destructive))] hover:bg-destructive/[0.05]",
+                      // Pedido morto (cancelado/expirado): mesma gramática da
+                      // barra à esquerda, mas em tom de arquivo — a linha recua
+                      // em vez de gritar. O texto inteiro fica esmaecido; os
+                      // selos mantêm cor própria e continuam saltando.
+                      // Prioridade para a barra destrutiva quando os dois casos
+                      // coincidem: falha de ERP pede ação, cancelado não.
+                      terminal &&
+                        !erpFailed &&
+                        "text-muted-foreground shadow-[inset_3px_0_0_0_hsl(var(--muted-foreground)/0.35)]",
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (

@@ -33,20 +33,44 @@ import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { FieldHint } from "@/components/shared/FieldHint"
+import {
+  EVENT_COPY,
+  defaultEndsAtLocal,
+  isLongCampaign,
+  LONG_CAMPAIGN_WARNING,
+} from "@/lib/event-copy"
 import type { Product } from "@/types"
 
 interface CreatePostFormProps {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
-  // "post" publishes to the feed (photo/Reels, buyers comment to buy); "story"
-  // publishes a 24h Story (buyers reply via DM to buy). The form reuses the same
-  // media + products UI, hiding the caption/window for Stories.
-  variant?: "post" | "story"
+  // "post" publishes to the feed (photo, buyers comment to buy); "reel" publishes
+  // a Reels video; "story" publishes a 24h Story (buyers reply via DM to buy).
+  // The form reuses the same media + products UI, hiding the caption/window for
+  // Stories.
+  variant?: "post" | "reel" | "story"
+  /** Quando presente, a publicação entra como SESSÃO deste evento em vez de
+   *  criar um evento próprio.
+   *
+   *  É o que liga o "publicar pelo LiveCart" ao guarda-chuva: sem isto, o post
+   *  de terça nascia num evento separado da live de segunda e o mesmo comprador
+   *  terminava com dois carrinhos. Com o evento, as regras comerciais (janela,
+   *  expiração, teto) são DELE — por isso os campos somem do formulário. */
+  eventId?: string
 }
 
-export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: CreatePostFormProps) {
+export function CreatePostForm({
+  open,
+  onClose,
+  onSuccess,
+  variant = "post",
+  eventId,
+}: CreatePostFormProps) {
   const isStory = variant === "story"
+  // Dentro de um evento, quem manda na janela e nas regras de carrinho é ele.
+  const insideEvent = !!eventId
   const fileInputRef = useRef<HTMLInputElement>(null)
   const submittingRef = useRef(false)
   // Stable per selected media: sent with every submit so a retry after a client
@@ -57,14 +81,19 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
   // then "processing" is indeterminate (Instagram has no progress to report).
   const [phase, setPhase] = useState<"idle" | "uploading" | "processing">("idle")
   const [uploadPercent, setUploadPercent] = useState(0)
-  const [mediaType, setMediaType] = useState<"image" | "reel">("image")
+  const [mediaType, setMediaType] = useState<"image" | "reel">(
+    variant === "reel" ? "reel" : "image"
+  )
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
   const [title, setTitle] = useState("")
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
   const [startsAt, setStartsAt] = useState("")
-  const [endsAt, setEndsAt] = useState("")
+  // Obrigatório também aqui. O Story tem vida de 24h no Instagram, mas o EVENTO
+  // do LiveCart não morre com ele: sem ends_at o carrinho gerado pelo Story
+  // ficaria sem prazo depois que a mídia já sumiu do perfil.
+  const [endsAt, setEndsAt] = useState(defaultEndsAtLocal)
   const [cartExpirationMinutes, setCartExpirationMinutes] = useState<number | null>(null)
   const [maxQty, setMaxQty] = useState<number | null>(null)
   const [search, setSearch] = useState("")
@@ -94,7 +123,7 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
     setTitle("")
     setSelectedProductIds([])
     setStartsAt("")
-    setEndsAt("")
+    setEndsAt(defaultEndsAtLocal())
     setCartExpirationMinutes(null)
     setMaxQty(null)
     setSearch("")
@@ -152,7 +181,7 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
   const toISO = (v: string) => (v ? new Date(v).toISOString() : undefined)
   const windowInvalid = !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
   const canSubmit =
-    !!file && selectedProductIds.length > 0 && !windowInvalid && !isPending
+    !!file && selectedProductIds.length > 0 && !!endsAt && !windowInvalid && !isPending
 
   const action = isStory ? "responde o Story por DM com" : "comenta"
   const ruleHint =
@@ -180,10 +209,17 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
       caption: caption.trim() || undefined,
       title: title.trim() || undefined,
       productIds: selectedProductIds,
-      startsAt: toISO(startsAt),
-      endsAt: toISO(endsAt),
-      cartExpirationMinutes,
-      cartMaxQuantityPerItem: maxQty,
+      // Dentro de um evento, janela e regras de carrinho NÃO são enviadas: são
+      // do evento, e mandá-las daqui deixaria uma publicação redefinir a
+      // campanha inteira pelas costas.
+      ...(insideEvent
+        ? { eventId }
+        : {
+            startsAt: toISO(startsAt),
+            endsAt: new Date(endsAt).toISOString(),
+            cartExpirationMinutes,
+            cartMaxQuantityPerItem: maxQty,
+          }),
       idempotencyKey: idempotencyKeyRef.current || undefined,
       onProgress: (pct: number) => {
         setUploadPercent(pct)
@@ -226,8 +262,8 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
           <SheetTitle>{isStory ? "Criar um Story no Instagram" : "Criar post no Instagram"}</SheetTitle>
           <SheetDescription>
             {isStory
-              ? "Publique um Story (foto ou vídeo) pelo LiveCart. Ele fica no ar por 24h e quem responder o Story por DM compra na hora."
-              : "Publique um post de foto direto pelo LiveCart e já comece a vender pelos comentários — sem sair daqui."}
+              ? "Atalho: publica o Story (foto ou vídeo) e cria a campanha de uma vez. Ele fica no ar por 24h e quem responder o Story por DM compra na hora — comentar em outro lugar não conta."
+              : "Atalho: publica o post pelo LiveCart e cria a campanha de uma vez, já vendendo pelos comentários. Você pode adicionar outras transmissões à mesma campanha depois."}
           </SheetDescription>
         </SheetHeader>
 
@@ -332,15 +368,22 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="post-title">Título do evento (opcional)</Label>
+              {/* Os três formulários chamavam este mesmo campo de três coisas
+                  diferentes ("Nome da campanha", "Título (opcional)", "Título
+                  do evento (opcional)"), e só um deles explicava que é o nome
+                  da CAMPANHA. */}
+              <Label htmlFor="post-title" className="flex items-center gap-1.5">
+                {EVENT_COPY.title.label}
+              </Label>
               <Input
                 id="post-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Promoção da Sexta"
+                placeholder={EVENT_COPY.title.placeholder}
               />
               <p className="text-xs text-muted-foreground">
-                Apenas para você identificar o evento no LiveCart.
+                Opcional. É o nome da campanha que o comprador vê nas mensagens — e esta
+                publicação é a primeira transmissão dela.
               </p>
             </div>
           </section>
@@ -397,37 +440,66 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
             </ScrollArea>
           </section>
 
-          {/* Step 3 — window + cart */}
+          {/* Step 3 — window + cart.
+              Some inteira dentro de um evento: janela, expiração e teto são do
+              EVENTO. Mostrá-los aqui convidaria o lojista a definir, numa
+              publicação, regra que vale para a campanha toda — e a publicação
+              nem as envia mais. */}
+          {insideEvent ? (
+            <section className="space-y-3">
+              <SectionTitle n={3} title="Janela e carrinho" />
+              <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                Esta publicação entra no evento que você já abriu. O prazo de
+                pagamento, a expiração do carrinho e o limite por produto são os
+                do evento — e valem igual para todas as transmissões dele.
+              </p>
+            </section>
+          ) : (
           <section className="space-y-3">
             <SectionTitle n={3} title="Janela e carrinho" />
-            {isStory ? (
-              // Stories always run for their fixed 24h lifetime — no custom window.
+            {isStory && (
               <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-                ⏳ O Story fica ativo por <span className="font-medium text-foreground">24 horas</span>.
-                Depois disso o evento encerra automaticamente.
+                ⏳ A mídia do Story sai do seu perfil em{" "}
+                <span className="font-medium text-foreground">24 horas</span>, mas o evento
+                do LiveCart continua até a data de fim abaixo — é ela que define quando o
+                prazo de pagamento do comprador começa a correr.
               </p>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="cp-starts">Início (opcional)</Label>
-                    <Input id="cp-starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">Vazio = começa agora.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cp-ends">Término (opcional)</Label>
-                    <Input id="cp-ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">Vazio = até encerrar manualmente.</p>
-                  </div>
-                </div>
-                {windowInvalid && (
-                  <p className="text-sm text-destructive">O término deve ser depois do início.</p>
-                )}
-              </>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Expiração do carrinho</Label>
+                <Label htmlFor="cp-starts" className="flex items-center gap-1.5">
+                  {EVENT_COPY.startsAt.label}
+                  <FieldHint text={EVENT_COPY.startsAt.hint} />
+                </Label>
+                <Input id="cp-starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.startsAt.empty}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cp-ends" className="flex items-center gap-1.5">
+                  {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
+                  <FieldHint text={EVENT_COPY.endsAt.hint} />
+                </Label>
+                <Input id="cp-ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+                <p className="text-xs text-muted-foreground">{EVENT_COPY.endsAt.help}</p>
+              </div>
+            </div>
+            {!endsAt && (
+              <p className="text-sm text-destructive">Informe quando a promoção encerra.</p>
+            )}
+            {windowInvalid && (
+              <p className="text-sm text-destructive">O término deve ser depois do início.</p>
+            )}
+            {isLongCampaign(startsAt || null, endsAt || null) && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-xs text-amber-800 dark:text-amber-200">{LONG_CAMPAIGN_WARNING}</p>
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.cartExpiration.label}
+                  <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                </Label>
                 <Select
                   value={cartExpirationMinutes === null ? "inherit" : String(cartExpirationMinutes)}
                   onValueChange={(v) => setCartExpirationMinutes(v === "inherit" ? null : parseInt(v, 10))}
@@ -444,7 +516,10 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Máximo por item</Label>
+                <Label className="flex items-center gap-1.5">
+                  {EVENT_COPY.maxQuantity.label}
+                  <FieldHint text={EVENT_COPY.maxQuantity.hint} />
+                </Label>
                 <Select
                   value={maxQty === null ? "inherit" : String(maxQty)}
                   onValueChange={(v) => setMaxQty(v === "inherit" ? null : parseInt(v, 10))}
@@ -461,6 +536,7 @@ export function CreatePostForm({ open, onClose, onSuccess, variant = "post" }: C
               </div>
             </div>
           </section>
+          )}
         </div>
 
         {isPending && (

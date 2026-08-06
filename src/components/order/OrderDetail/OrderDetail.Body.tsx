@@ -14,6 +14,7 @@ import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
 import { OrderDetailERPRetryBanner } from "./OrderDetail.ERPRetryBanner"
+import { OrderDetailStatusBanner } from "./OrderDetail.StatusBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
@@ -41,6 +42,10 @@ export function OrderDetailBody() {
           Lives above the grid so it's the first thing the merchant sees on
           opening the page — the action it surfaces (retry) blocks fulfilment. */}
       <OrderDetailERPRetryBanner />
+
+      {/* Estado terminal (cancelado/expirado) ou cancelamento revertido pelo
+          pagamento: explica a consequência antes de o lojista ler os cards. */}
+      <OrderDetailStatusBanner />
 
       {/* Mobile stacks the rail above the items because those cards carry the
           highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
@@ -78,13 +83,13 @@ function SummaryLiveCard({ order }: LiveCardProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <Radio className="h-4 w-4" />
-          Live de origem
+          Evento de origem
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
           <p className="text-sm font-medium leading-tight">
-            {order.liveTitle || "Sem título"}
+            {order.eventTitle || order.liveTitle || "Sem título"}
           </p>
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             {PlatformIcon && (

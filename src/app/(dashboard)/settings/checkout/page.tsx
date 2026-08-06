@@ -103,21 +103,21 @@ export default function CheckoutSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Tempo de expiração
+            Prazo do carrinho
           </CardTitle>
           <CardDescription>
-            Configure quanto tempo o carrinho fica válido
+            Padrão da loja para o prazo depois que a campanha fecha — o relógio só começa quando o evento termina, e cada evento pode ter o seu próprio prazo
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-w-xs">
             <Label htmlFor="expirationMinutes">
-              Expiração do carrinho (minutos)
+              Prazo para finalizar após o evento (minutos)
             </Label>
             <Input
               id="expirationMinutes"
               type="number"
-              min={5}
+              min={15}
               max={1440}
               {...register("expirationMinutes", { valueAsNumber: true })}
             />
@@ -127,7 +127,9 @@ export default function CheckoutSettingsPage() {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              5 minutos até 24 horas. O link de checkout usa o mesmo tempo.
+              15 minutos até 24 horas. Não é inatividade: durante a campanha o
+              carrinho nunca expira, e o relógio começa quando o evento fecha. O
+              link de checkout usa o mesmo tempo.
             </p>
           </div>
         </CardContent>

@@ -15,15 +15,25 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const needsOnboarding = !isLoading && user?.state === "no_store"
+  // Sem loja, mas com convite esperando: a escolha entre aceitar o convite e
+  // abrir loja própria é do usuário, então ele vai para a tela de convite e não
+  // direto para o onboarding.
+  const destination =
+    user?.state === "pending_invitation"
+      ? "/pending-invite"
+      : user?.state === "no_store"
+        ? "/onboarding"
+        : null
+
+  const needsRedirect = !isLoading && destination !== null
 
   useEffect(() => {
-    if (needsOnboarding && pathname !== "/onboarding") {
-      router.replace("/onboarding")
+    if (!isLoading && destination && pathname !== destination) {
+      router.replace(destination)
     }
-  }, [needsOnboarding, pathname, router])
+  }, [isLoading, destination, pathname, router])
 
-  if (needsOnboarding) return null
+  if (needsRedirect) return null
 
   return <>{children}</>
 }

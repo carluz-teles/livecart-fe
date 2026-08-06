@@ -316,8 +316,14 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
 
   // Loja sem gateway de pagamento (ou nenhum respondendo): não é erro do
   // cliente. Mostramos um aviso amigável em vez do erro cru.
+  //
+  // Tolerância dupla durante a migração do sistema de erros do BE (D1c): os
+  // códigos passam de lower_snake para UPPER_SNAKE. Aceitamos os dois enquanto
+  // BE e FE não estão no mesmo deploy; o ramo lower_snake sai numa leva seguinte.
   const configApiError = configError as unknown as ApiError | null
   const paymentNotConfigured =
+    configApiError?.reason === "PAYMENT_NOT_CONFIGURED" ||
+    configApiError?.reason === "PAYMENT_UNAVAILABLE" ||
     configApiError?.reason === "payment_not_configured" ||
     configApiError?.reason === "payment_unavailable"
 
@@ -649,10 +655,16 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     toast.warning(message)
   }, [cart?.appliedCoupon])
 
+  // Cobre também a loja cancelando com o comprador na tela: o refetch passa a
+  // receber 422 e a mensagem do backend ("cancelado pela loja") aparece aqui.
+  // O envelope da API traz a mensagem em `error`; `message` é o fallback.
   if (cartError || !cart) {
+    const apiError = cartError as unknown as ApiError | null
     return (
       <CheckoutErrorScreen
-        message={(cartError as Error)?.message || "Carrinho não encontrado"}
+        message={
+          apiError?.error || apiError?.message || "Carrinho não encontrado"
+        }
         retryHref={`/cart/${token}`}
       />
     )
@@ -682,9 +694,11 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   }
 
   const isLiveActive = cart.status === "active"
-  // Stories share the post-commerce checkout copy ("Promoção ativa!"), not the
-  // live wording.
-  const isPost = cart.event?.type === "post" || cart.event?.type === "story"
+  // Publicação (post/reel/story) usa o copy de promoção; só a live usa "Live em
+  // andamento". O campo vem de live_sessions.type — live_events.type não existe
+  // mais —, então a lista de espécies é aberta: qualquer coisa que NÃO seja
+  // live é publicação.
+  const isPost = !!cart.event?.type && cart.event.type !== "live"
 
   const availableItems = cart.items.filter((item) => {
     const availableQty = item.quantity - item.waitlistedQuantity

@@ -51,14 +51,17 @@ import {
   useDeleteComment,
 } from "@/hooks/event"
 import type { EventComment } from "@/types/event.types"
+import { getEventKind } from "@/lib/event-kind"
 import { EventDetailContext } from "./EventDetailContext"
 
 export function EventDetailComments() {
   const ctx = use(EventDetailContext)
   const eventId = ctx?.state.event.id ?? ""
-  // Story buyers engage via DM, not public comments — those rows can't be
-  // moderated (replied/hidden/deleted), so we show them read-only.
-  const isStory = ctx?.state.event.type === "story"
+  // Story só conversa por DM: não existe comentário público para moderar, então
+  // a lista vira somente leitura. Só quando a campanha INTEIRA é de story — se
+  // ela tiver uma live junto, os comentários dela são moderáveis.
+  const kindTypes = ctx ? getEventKind(ctx.state.event).types : []
+  const isStory = kindTypes.length > 0 && kindTypes.every((t) => t === "story")
   const { data: comments, isLoading } = useEventComments(eventId)
 
   const [replyFor, setReplyFor] = useState<EventComment | null>(null)
@@ -101,7 +104,7 @@ export function EventDetailComments() {
             <CardDescription>
               {isStory
                 ? "Quem respondeu seu Story por DM e entrou no carrinho."
-                : "Responda, oculte ou exclua comentários da live no Instagram"}
+                : "Responda, oculte ou exclua os comentários desta transmissão no Instagram"}
             </CardDescription>
           </div>
           {comments && comments.length > 0 && (
