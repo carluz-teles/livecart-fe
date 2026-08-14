@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package } from "lucide-react"
+import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -50,6 +50,20 @@ interface OrderItem {
 
 import type { AppliedCoupon } from "@/types"
 
+/**
+ * Uma edição de carrinho em voo.
+ *
+ * Qualquer valor não-nulo congela TODOS os controles de edição do resumo, não
+ * só os do item afetado. O carrinho é um recurso único no servidor: duas
+ * edições concorrentes disputam o mesmo total, o mesmo frete e a mesma reserva
+ * de estoque, e a segunda resposta sobrescreve a primeira. Congelar por item
+ * deixaria essa corrida aberta entre produtos diferentes.
+ */
+export interface PendingCartEdit {
+  itemId: string
+  kind: "quantity" | "remove"
+}
+
 interface CheckoutOrderSummaryProps {
   items: OrderItem[]
   subtotal: number
@@ -91,6 +105,7 @@ interface CheckoutOrderSummaryProps {
   isPost?: boolean
   allowEdit?: boolean
   maxQuantityPerItem?: number
+  pendingEdit?: PendingCartEdit | null
   expiresAt?: string | null
   appliedCoupon?: AppliedCoupon | null
   onApplyCoupon?: (code: string) => Promise<AppliedCoupon | null>
@@ -109,6 +124,7 @@ function OrderItemCompact({
   allowEdit,
   maxQuantityPerItem,
   isLastItem,
+  pendingEdit,
   onUpdateQuantity,
   onRemoveItem,
   index,
@@ -118,12 +134,18 @@ function OrderItemCompact({
   allowEdit?: boolean
   maxQuantityPerItem?: number
   isLastItem?: boolean
+  pendingEdit?: PendingCartEdit | null
   onUpdateQuantity?: (itemId: string, quantity: number) => void
   onRemoveItem?: (itemId: string) => void
   index: number
 }) {
   const [mounted, setMounted] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  // Qual dos dois botões o comprador apertou. Serve só para posicionar o
+  // spinner: a mutation atualiza o número de forma otimista, então trocar o
+  // NÚMERO por um spinner esconderia o resultado que ele acabou de pedir
+  // (veria 2 → spinner → 3 em vez de 2 → 3). O spinner pertence ao botão.
+  const [pressed, setPressed] = useState<"increase" | "decrease" | null>(null)
 
   const cap = maxQuantityPerItem && maxQuantityPerItem > 0 ? maxQuantityPerItem : Infinity
   // availableStock = free units of the SKU at read time (BE: product.stock).
@@ -134,13 +156,24 @@ function OrderItemCompact({
   const freeUnits: number = stockUnknown ? Infinity : (item.availableStock ?? Infinity)
   const stockBound = item.quantity + freeUnits
   const effectiveLimit = Math.min(cap, stockBound)
+  // Enquanto uma edição está em voo NENHUM controle responde, mesmo o de outro
+  // produto: o carrinho é um recurso só, e duas edições concorrentes disputam o
+  // mesmo total. O spinner, esse, fica onde o valor muda — no número, cujo slot
+  // já tem largura fixa, então a troca não desloca nada em volta.
+  const frozen = Boolean(pendingEdit)
+  const busyHere = pendingEdit?.itemId === item.id
+  const quantityBusy = busyHere && pendingEdit?.kind === "quantity"
+  const removeBusy = busyHere && pendingEdit?.kind === "remove"
+
   const canDecrease = item.quantity > 1
   const canIncrease = item.quantity < effectiveLimit
   const stockIsBinding = !canIncrease && stockBound <= cap
 
   // Stock-bound limits surprise buyers more than per-item caps, so when both
   // bite the stock message wins. freeUnits=0 = hard sold-out copy.
-  const limitReason = !canIncrease
+  const limitReason = frozen
+    ? null
+    : !canIncrease
     ? stockIsBinding
       ? freeUnits === 0
         ? "Sem mais unidades disponíveis no estoque"
@@ -153,7 +186,12 @@ function OrderItemCompact({
     return () => clearTimeout(timer)
   }, [index])
 
+  useEffect(() => {
+    if (!quantityBusy) setPressed(null)
+  }, [quantityBusy])
+
   const handleRemoveClick = () => {
+    if (frozen) return
     if (isLastItem) {
       setConfirmRemove(true)
       return
@@ -219,13 +257,24 @@ function OrderItemCompact({
               variant="ghost"
               size="icon"
               className="h-8 w-8 rounded-r-none hover:bg-gray-100"
-              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-              disabled={!canDecrease}
+              onClick={() => {
+                setPressed("decrease")
+                onUpdateQuantity(item.id, item.quantity - 1)
+              }}
+              disabled={!canDecrease || frozen}
+              aria-busy={quantityBusy && pressed === "decrease"}
               aria-label="Diminuir quantidade"
             >
-              <Minus className="h-3 w-3" />
+              {quantityBusy && pressed === "decrease" ? (
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              ) : (
+                <Minus className="h-3 w-3" />
+              )}
             </Button>
-            <span className="w-8 text-center text-sm font-semibold tabular-nums">
+            <span
+              className="w-8 text-center text-sm font-semibold tabular-nums"
+              aria-live="polite"
+            >
               {item.quantity}
             </span>
             <TooltipProvider delayDuration={150}>
@@ -238,11 +287,19 @@ function OrderItemCompact({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 rounded-l-none hover:bg-gray-100"
-                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      disabled={!canIncrease}
+                      onClick={() => {
+                        setPressed("increase")
+                        onUpdateQuantity(item.id, item.quantity + 1)
+                      }}
+                      disabled={!canIncrease || frozen}
+                      aria-busy={quantityBusy && pressed === "increase"}
                       aria-label="Aumentar quantidade"
                     >
-                      <Plus className="h-3 w-3" />
+                      {quantityBusy && pressed === "increase" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -269,9 +326,15 @@ function OrderItemCompact({
                 size="icon"
                 className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
                 onClick={handleRemoveClick}
-                aria-label="Remover item"
+                disabled={frozen}
+                aria-busy={removeBusy}
+                aria-label={removeBusy ? "Removendo item" : "Remover item"}
               >
-                <Trash2 className="h-4 w-4" />
+                {removeBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </Button>
               <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
                 <AlertDialogContent>
@@ -324,6 +387,7 @@ export function CheckoutOrderSummary({
   isPost,
   allowEdit,
   maxQuantityPerItem,
+  pendingEdit,
   expiresAt,
   appliedCoupon,
   onApplyCoupon,
@@ -395,6 +459,7 @@ export function CheckoutOrderSummary({
             allowEdit={allowEdit}
             maxQuantityPerItem={maxQuantityPerItem}
             isLastItem={items.length === 1}
+            pendingEdit={pendingEdit}
             onUpdateQuantity={onUpdateQuantity}
             onRemoveItem={onRemoveItem}
           />

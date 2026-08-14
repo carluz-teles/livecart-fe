@@ -37,6 +37,7 @@ import {
   CheckoutShippingOptions,
   CheckoutPromotionBanner,
 } from "@/components/checkout"
+import type { PendingCartEdit } from "@/components/checkout"
 
 // Heavy payment widgets only render after the shopper completes the
 // customer/address forms and picks a method. Lazy-loading keeps the
@@ -184,19 +185,46 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const updateItemQuantity = useUpdateCartItemQuantity()
   const removeItem = useRemoveCartItem()
 
+  // Uma edição de carrinho por vez.
+  //
+  // O `disabled` nos botões é o aviso; este guard é a garantia. Entre o clique
+  // e o re-render que desabilita o botão cabe um segundo clique — teclado com
+  // repeat, duplo-toque no mobile, mão pesada no "+". Cada clique extra vira uma
+  // requisição concorrente sobre o MESMO carrinho, e a segunda resposta
+  // sobrescreve a primeira: o comprador pede 3 e recebe 2, ou vê a quantidade
+  // saltar sozinha quando as respostas chegam fora de ordem.
+  const cartEditInFlight = updateItemQuantity.isPending || removeItem.isPending
+
+  const pendingCartEdit = useMemo<PendingCartEdit | null>(() => {
+    if (removeItem.isPending && removeItem.variables) {
+      return { itemId: removeItem.variables.itemId, kind: "remove" }
+    }
+    if (updateItemQuantity.isPending && updateItemQuantity.variables) {
+      return { itemId: updateItemQuantity.variables.itemId, kind: "quantity" }
+    }
+    return null
+  }, [
+    removeItem.isPending,
+    removeItem.variables,
+    updateItemQuantity.isPending,
+    updateItemQuantity.variables,
+  ])
+
   const handleUpdateQuantity = useCallback(
     (itemId: string, quantity: number) => {
       if (quantity < 1) return
+      if (cartEditInFlight) return
       updateItemQuantity.mutate({ token, itemId, quantity })
     },
-    [updateItemQuantity, token]
+    [cartEditInFlight, updateItemQuantity, token]
   )
 
   const handleRemoveItem = useCallback(
     (itemId: string) => {
+      if (cartEditInFlight) return
       removeItem.mutate({ token, itemId })
     },
-    [removeItem, token]
+    [cartEditInFlight, removeItem, token]
   )
 
   const shippingQuote = useShippingQuote()
@@ -801,6 +829,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
             onRemoveCoupon={handleRemoveCoupon}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
+            pendingEdit={pendingCartEdit}
             onExpired={() => refetchCart()}
             formatCurrency={formatCurrency}
           />
@@ -1368,6 +1397,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
               onRemoveCoupon={handleRemoveCoupon}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
+            pendingEdit={pendingCartEdit}
               onExpired={() => refetchCart()}
               formatCurrency={formatCurrency}
             />
