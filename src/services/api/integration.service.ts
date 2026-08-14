@@ -57,6 +57,20 @@ export const integrationService = {
       token,
     ),
 
+  // Escolhe QUAL saldo do ERP o LiveCart espelha: desligado usa o físico,
+  // ligado usa o disponível (físico menos o que o ERP já comprometeu).
+  updateERPStockSource: (
+    storeId: string,
+    id: string,
+    useAvailableStock: boolean,
+    token?: string | null,
+  ) =>
+    apiClient.patch<{ id: string; useAvailableStock: boolean }>(
+      `/stores/${storeId}/integrations/${id}/erp/stock-source`,
+      { useAvailableStock },
+      token,
+    ),
+
   // Get OAuth connect URL (for OAuth providers like Mercado Pago)
   getOAuthURL: (storeId: string, provider: IntegrationProvider, token?: string | null) =>
     apiClient.get<OAuthConnectResponse>(
