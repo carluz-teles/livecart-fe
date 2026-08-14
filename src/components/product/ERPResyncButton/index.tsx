@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useIntegrations, useStartERPResync } from "@/hooks/integration"
+import { useERPResyncRunning, useStartERPResync } from "@/hooks/integration"
 
 /**
  * Relê no ERP todos os produtos vinculados da loja.
@@ -28,15 +28,16 @@ import { useIntegrations, useStartERPResync } from "@/hooks/integration"
  */
 export function ERPResyncButton() {
   const [confirming, setConfirming] = useState(false)
-  const { data } = useIntegrations()
+  const { running, integrationId } = useERPResyncRunning()
   const resync = useStartERPResync()
 
-  const erp = data?.data?.find(
-    (i) => i.type === "erp" && i.status === "active",
-  )
-  if (!erp) return null
+  if (!integrationId) return null
 
-  const pending = resync.isPending
+  // `running` cobre a varredura já em andamento — inclusive uma disparada por
+  // outro membro da loja, ou por este mesmo antes de um F5. `isPending` cobre o
+  // clique cujo POST ainda não voltou, que é a janela onde um segundo clique
+  // caberia.
+  const pending = resync.isPending || running
 
   return (
     <>
@@ -51,7 +52,7 @@ export function ERPResyncButton() {
         ) : (
           <RefreshCw className="mr-2 h-4 w-4" />
         )}
-        Sincronizar com o ERP
+        {running ? "Sincronizando..." : "Sincronizar com o ERP"}
       </Button>
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
@@ -84,7 +85,7 @@ export function ERPResyncButton() {
             <AlertDialogAction
               onClick={() => {
                 setConfirming(false)
-                resync.mutate(erp.id)
+                resync.mutate(integrationId)
               }}
             >
               Sincronizar

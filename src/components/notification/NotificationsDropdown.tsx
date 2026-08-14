@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useState } from "react"
 import { Bell, MessageSquare, CornerDownRight, Tag, Check, RotateCcw, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -234,12 +233,6 @@ export function NotificationsDropdown({ unreadCount }: NotificationsDropdownProp
           )}
         </ScrollArea>
 
-        <Separator />
-        <div className="p-2">
-          <Button asChild variant="ghost" size="sm" className="w-full justify-center text-xs" onClick={() => setOpen(false)}>
-            <Link href="/ideas">Abrir o canal de ideias</Link>
-          </Button>
-        </div>
       </PopoverContent>
     </Popover>
   )

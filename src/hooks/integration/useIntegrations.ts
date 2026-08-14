@@ -25,5 +25,25 @@ export function useIntegrations() {
       return integrationService.list(storeId!, token)
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
+    // Enquanto uma varredura do ERP roda, a lista se reconsulta sozinha: é ela
+    // que destrava os botões de sincronizar quando o trabalho acaba. Sem isso o
+    // lojista ficaria com o botão desabilitado até recarregar a página na mão,
+    // sem saber que já podia clicar.
+    refetchInterval: (query) =>
+      query.state.data?.data?.some((i) => i.erpResyncRunning) ? 30_000 : false,
   })
+}
+
+/**
+ * Ponto único de "tem varredura do ERP rodando agora".
+ *
+ * Duas telas desabilitam botão por causa disso (o "sincronizar todos" e o sync
+ * por produto). Cada uma resolvendo por conta própria é convite para elas
+ * discordarem — uma bloqueia, a outra deixa passar, e o lojista dispara duas
+ * varreduras sobre a mesma cota do ERP.
+ */
+export function useERPResyncRunning() {
+  const { data } = useIntegrations()
+  const erp = data?.data?.find((i) => i.type === "erp" && i.status === "active")
+  return { running: Boolean(erp?.erpResyncRunning), integrationId: erp?.id }
 }

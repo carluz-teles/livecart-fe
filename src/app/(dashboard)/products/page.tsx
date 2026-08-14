@@ -17,6 +17,7 @@ import { StatsCard } from "@/components/shared/StatsCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct, useSyncProduct } from "@/hooks/product"
+import { useERPResyncRunning } from "@/hooks/integration"
 import { useProductGroups } from "@/hooks/product-group"
 import { formatCurrency } from "@/lib/format"
 import type { Product, ProductFilters as ProductFiltersType } from "@/types/product.types"
@@ -88,7 +89,12 @@ export default function ProductsPage() {
   const totalGroups = groupsCount?.pagination.total ?? 0
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
-  const { mutate: syncProduct, isPending: isSyncing, canSync } = useSyncProduct()
+  const { mutate: syncProduct, isPending: isSyncingOne, canSync } = useSyncProduct()
+  // A varredura em massa e o sync por produto gastam a MESMA cota do ERP.
+  // Deixar disparar um a um durante a varredura é competir com ela e provocar o
+  // estrangulamento que ela já está administrando.
+  const { running: bulkResyncRunning } = useERPResyncRunning()
+  const isSyncing = isSyncingOne || bulkResyncRunning
 
   const products = data?.data ?? []
 
@@ -423,7 +429,9 @@ export default function ProductsPage() {
                               <RefreshCw
                                 className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
                               />
-                              Sincronizar via ERP
+                              {bulkResyncRunning
+                                ? "Sincronização em massa em andamento"
+                                : "Sincronizar via ERP"}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
