@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Bell, MessageSquare, CornerDownRight, Tag, Check, RotateCcw } from "lucide-react"
+import { Bell, MessageSquare, CornerDownRight, Tag, Check, RotateCcw, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,7 @@ const TYPE_ICON: Record<InboxNotification["type"], typeof MessageSquare> = {
   idea_reply: CornerDownRight,
   idea_status_change: Tag,
   order_cancellation_reverted: RotateCcw,
+  erp_resync_finished: RefreshCw,
 }
 
 function buildText(n: InboxNotification): string {
@@ -41,6 +42,16 @@ function buildText(n: InboxNotification): string {
     case "idea_reply": {
       const actor = n.actorName ?? "Alguém"
       return `${actor} respondeu um comentário em ${numberRef}`
+    }
+    case "erp_resync_finished": {
+      const synced = (n.payload?.synced as number) ?? 0
+      const failed = (n.payload?.failed as number) ?? 0
+      const plural = synced === 1 ? "produto" : "produtos"
+      // O número de falhas só aparece quando existe: "e 0 falharam" é ruído que
+      // faz o lojista procurar problema onde não houve.
+      return failed > 0
+        ? `Sincronização com o ERP concluída: ${synced} ${plural} atualizados, ${failed} falharam`
+        : `Sincronização com o ERP concluída: ${synced} ${plural} atualizados`
     }
     case "order_cancellation_reverted": {
       const shortId = n.payload?.short_id as number | undefined
@@ -85,6 +96,10 @@ export function NotificationsDropdown({ unreadCount }: NotificationsDropdownProp
     if (n.ideaId) {
       const hash = n.commentId ? `#comment-${n.commentId}` : ""
       router.push(`/ideas/${n.ideaId}${hash}`)
+      return
+    }
+    if (n.type === "erp_resync_finished") {
+      router.push("/products")
     }
   }
 

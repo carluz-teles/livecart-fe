@@ -7,6 +7,9 @@ export type NotificationType =
   // Fato de PEDIDO: a loja cancelou o carrinho e o pagamento entrou assim
   // mesmo — o cancelamento foi revertido e o pedido seguiu o fluxo normal.
   | "order_cancellation_reverted"
+  // Fato de CATÁLOGO: a releitura em massa dos produtos do ERP terminou. Sem
+  // âncora de pedido ou ideia — é sobre a loja inteira, e leva para /products.
+  | "erp_resync_finished"
 
 export interface InboxNotification {
   id: string
