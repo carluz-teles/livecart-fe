@@ -28,7 +28,7 @@ import { useERPResyncRunning, useStartERPResync } from "@/hooks/integration"
  */
 export function ERPResyncButton() {
   const [confirming, setConfirming] = useState(false)
-  const { running, integrationId } = useERPResyncRunning()
+  const { running, done, total, integrationId } = useERPResyncRunning()
   const resync = useStartERPResync()
 
   if (!integrationId) return null
@@ -52,7 +52,14 @@ export function ERPResyncButton() {
         ) : (
           <RefreshCw className="mr-2 h-4 w-4" />
         )}
-        {running ? "Sincronizando..." : "Sincronizar com o ERP"}
+        {/* O total só aparece quando o servidor já contou os produtos. Nos
+            primeiros segundos ele ainda é zero, e "0 de 0" diria menos que
+            "Sincronizando...". */}
+        {running
+          ? total > 0
+            ? `Sincronizando ${done} de ${total}...`
+            : "Sincronizando..."
+          : "Sincronizar com o ERP"}
       </Button>
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>

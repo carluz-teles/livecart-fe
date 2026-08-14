@@ -26,11 +26,15 @@ export function useIntegrations() {
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
     // Enquanto uma varredura do ERP roda, a lista se reconsulta sozinha: é ela
-    // que destrava os botões de sincronizar quando o trabalho acaba. Sem isso o
-    // lojista ficaria com o botão desabilitado até recarregar a página na mão,
-    // sem saber que já podia clicar.
+    // que move o contador "X de N" e destrava os botões quando o trabalho acaba.
+    // Sem isso o lojista ficaria com o botão desabilitado até recarregar a
+    // página na mão, sem saber que já podia clicar.
+    //
+    // Dez segundos porque o servidor grava o progresso a cada cinco produtos, e
+    // um intervalo maior deixaria o número parado tempo suficiente para o botão
+    // voltar a parecer travado.
     refetchInterval: (query) =>
-      query.state.data?.data?.some((i) => i.erpResyncRunning) ? 30_000 : false,
+      query.state.data?.data?.some((i) => i.erpResyncRunning) ? 10_000 : false,
   })
 }
 
@@ -45,5 +49,10 @@ export function useIntegrations() {
 export function useERPResyncRunning() {
   const { data } = useIntegrations()
   const erp = data?.data?.find((i) => i.type === "erp" && i.status === "active")
-  return { running: Boolean(erp?.erpResyncRunning), integrationId: erp?.id }
+  return {
+    running: Boolean(erp?.erpResyncRunning),
+    done: erp?.erpResyncDone ?? 0,
+    total: erp?.erpResyncTotal ?? 0,
+    integrationId: erp?.id,
+  }
 }
