@@ -57,6 +57,9 @@ interface CheckoutCardFormProps {
   publicKey: string
   amount: number
   customer: CheckoutCustomerInfo
+  /** O total ainda está se formando (item editado, frete recotando). `amount`
+   *  seria cobrado errado, então a CTA não responde até assentar. */
+  disabled?: boolean
   onSuccess: (result: ProcessCardPaymentResponse) => void
   onError: (error: string) => void
 }
@@ -370,6 +373,7 @@ function MercadoPagoCardForm({
   publicKey,
   amount,
   customer,
+  disabled,
   onSuccess,
   onError,
 }: CheckoutCardFormProps) {
@@ -547,6 +551,7 @@ function MercadoPagoCardForm({
   const allFieldsValid =
     validity.cardNumber && validity.expirationDate && validity.securityCode
   const canSubmit =
+    !disabled &&
     mpReady &&
     allFieldsValid &&
     cardholderName.trim().length > 0 &&
@@ -793,6 +798,7 @@ function PagarmeCardForm({
   publicKey,
   amount,
   customer,
+  disabled,
   onSuccess,
   onError,
 }: CheckoutCardFormProps) {
@@ -827,7 +833,7 @@ function PagarmeCardForm({
   }
 
   const handleSubmit = async () => {
-    if (loading) return
+    if (loading || disabled) return
     setLoading(true)
     setError(null)
 
@@ -1017,7 +1023,12 @@ function PagarmeCardForm({
           </Select>
         </div>
 
-        <PayButton amount={amount} loading={loading} onClick={handleSubmit} />
+        <PayButton
+          amount={amount}
+          loading={loading}
+          disabled={disabled}
+          onClick={handleSubmit}
+        />
         <TrustLine />
       </div>
     </FormShell>

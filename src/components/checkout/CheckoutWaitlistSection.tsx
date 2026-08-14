@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Hourglass, X } from "lucide-react"
+import { Hourglass, Loader2, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -54,10 +54,14 @@ export function CheckoutWaitlistSection({
           <WaitingRow
             key={item.id}
             item={item}
-            onDrop={() =>
+            onDrop={() => {
+              // Uma saída por vez: cada clique extra é outra requisição sobre a
+              // mesma fila, e a segunda resposta sobrescreve a primeira.
+              if (dropMutation.isPending) return
               dropMutation.mutate({ token, waitlistItemId: item.id })
-            }
+            }}
             disabled={dropMutation.isPending}
+            busy={dropMutation.variables?.waitlistItemId === item.id}
           />
         ))}
       </CardContent>
@@ -69,9 +73,12 @@ interface RowProps {
   item: PublicCheckoutWaitlistItem
   onDrop: () => void
   disabled?: boolean
+  /** Esta linha é a que está saindo. Com várias na fila, o `disabled` sozinho
+   *  desabilita todas e não diz qual delas está processando. */
+  busy?: boolean
 }
 
-function WaitingRow({ item, onDrop, disabled }: RowProps) {
+function WaitingRow({ item, onDrop, disabled, busy }: RowProps) {
   return (
     <div className="flex items-start gap-3 rounded-lg border border-amber-100 bg-white/70 p-3">
       <ProductThumb image={item.productImage} name={item.productName} />
@@ -92,7 +99,7 @@ function WaitingRow({ item, onDrop, disabled }: RowProps) {
             Posição #{item.position}
           </Badge>
         </div>
-        <DropButton onClick={onDrop} disabled={disabled} compact />
+        <DropButton onClick={onDrop} disabled={disabled} busy={busy} compact />
       </div>
     </div>
   )
@@ -122,10 +129,12 @@ function ProductThumb({
 function DropButton({
   onClick,
   disabled,
+  busy,
   compact,
 }: {
   onClick: () => void
   disabled?: boolean
+  busy?: boolean
   compact?: boolean
 }) {
   return (
@@ -135,13 +144,18 @@ function DropButton({
       size="sm"
       onClick={onClick}
       disabled={disabled}
+      aria-busy={busy}
       className={cn(
         "h-7 self-start px-2 text-xs text-gray-500 hover:text-red-600",
         compact && "mt-2",
       )}
     >
-      <X className="mr-1 h-3.5 w-3.5" />
-      Sair da fila
+      {busy ? (
+        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+      ) : (
+        <X className="mr-1 h-3.5 w-3.5" />
+      )}
+      {busy ? "Saindo..." : "Sair da fila"}
     </Button>
   )
 }
