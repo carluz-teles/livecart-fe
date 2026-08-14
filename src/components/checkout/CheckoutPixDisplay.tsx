@@ -20,6 +20,18 @@ import type { GeneratePixResponse, CheckoutCustomerInfo } from "@/types"
 interface CheckoutPixDisplayProps {
   token: string
   customer: CheckoutCustomerInfo
+  /** O total ainda está se formando (item editado, frete recotando). Gerar o
+   *  Pix agora congela um valor que já não é o do carrinho — e o Pix, uma vez
+   *  gerado, é o que o comprador paga. */
+  disabled?: boolean
+  /** O total do carrinho AGORA, na conta do próprio checkout.
+   *
+   *  Guardamos este número no instante da geração e comparamos com o atual: se
+   *  o carrinho mudou depois, o QR na tela cobra o valor antigo. A comparação é
+   *  do nosso número com o nosso número — comparar com o `amount` que o backend
+   *  devolveu arriscaria divergência de arredondamento e um ciclo de gerar
+   *  cobrança atrás de cobrança. */
+  expectedAmount: number
   onSuccess: () => void
   onError: (error: string) => void
 }
@@ -70,6 +82,8 @@ function PixLogo({ className }: { className?: string }) {
 export function CheckoutPixDisplay({
   token,
   customer,
+  disabled,
+  expectedAmount,
   onSuccess,
   onError,
 }: CheckoutPixDisplayProps) {
@@ -90,7 +104,20 @@ export function CheckoutPixDisplay({
     onErrorRef.current = onError
   })
 
+  const disabledRef = useRef(disabled)
+  disabledRef.current = disabled
+
+  const expectedAmountRef = useRef(expectedAmount)
+  expectedAmountRef.current = expectedAmount
+
+  // Quanto valia o carrinho quando este código foi gerado.
+  const [generatedForAmount, setGeneratedForAmount] = useState<number | null>(null)
+
   const generatePix = useCallback(async () => {
+    // O Pix congela o valor no instante em que é gerado — é esse número que o
+    // comprador paga no app do banco. Gerar enquanto o total ainda se forma
+    // (item editado, frete recotando) grava a conta errada num QR code.
+    if (disabledRef.current) return
     setLoading(true)
     setError(null)
     setExpired(false)
@@ -101,6 +128,7 @@ export function CheckoutPixDisplay({
         customerRef.current
       )
       setPixData(result)
+      setGeneratedForAmount(expectedAmountRef.current)
     } catch (err: unknown) {
       const message = getCheckoutErrorMessage(err, "Erro ao gerar PIX")
       setError(message)
@@ -110,9 +138,12 @@ export function CheckoutPixDisplay({
     }
   }, [token])
 
+  // O Pix nasce sozinho ao montar, então esperar o carrinho assentar antes da
+  // primeira geração faz parte do mesmo cuidado — não só os botões de refazer.
   useEffect(() => {
+    if (disabled) return
     generatePix()
-  }, [generatePix])
+  }, [disabled, generatePix])
 
   // Countdown
   useEffect(() => {
@@ -188,7 +219,12 @@ export function CheckoutPixDisplay({
           <p className="text-sm text-red-700">
             {error || "Erro ao gerar o código PIX. Tente novamente."}
           </p>
-          <Button variant="outline" size="sm" onClick={generatePix}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={generatePix}
+            disabled={disabled}
+          >
             Tentar novamente
           </Button>
         </div>
@@ -209,7 +245,34 @@ export function CheckoutPixDisplay({
             Por segurança, o código deixou de ser válido. Gere um novo para
             concluir o pagamento.
           </p>
-          <Button onClick={generatePix} className="mt-1">
+          <Button onClick={generatePix} disabled={disabled} className="mt-1">
+            Gerar novo PIX
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Carrinho mudou depois da geração.
+  //
+  // O QR na tela cobra o valor de antes, e é ele que o app do banco vai pagar.
+  // Não regeramos sozinhos de propósito: cada geração abre uma cobrança no
+  // gateway, e um erro de comparação viraria uma fila delas. O comprador
+  // confirma, e a conta volta a bater.
+  if (generatedForAmount !== null && generatedForAmount !== expectedAmount) {
+    return (
+      <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-amber-200/60 bg-amber-50/70 p-8 text-center">
+          <AlertCircle className="h-7 w-7 text-amber-600" />
+          <h3 className="text-base font-semibold text-amber-900">
+            Seu carrinho mudou
+          </h3>
+          <p className="max-w-sm text-sm text-amber-800/80">
+            Este código foi gerado para {formatCurrency(generatedForAmount)} e
+            seu pedido agora é {formatCurrency(expectedAmount)}. Gere um novo
+            para pagar o valor certo.
+          </p>
+          <Button onClick={generatePix} disabled={disabled} className="mt-1">
             Gerar novo PIX
           </Button>
         </div>

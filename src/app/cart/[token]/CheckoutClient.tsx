@@ -494,6 +494,120 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     [form, quotedZip, runShippingQuote, selectShippingMethod, shippingOptions, token]
   )
 
+  // O frete descreve uma CAIXA, e a caixa vem dos itens.
+  //
+  // Mudar a quantidade muda peso e dimensões, então a cotação que está na tela
+  // passa a descrever uma encomenda que não existe mais — e o total cobrado sai
+  // errado, porque `effectiveTotal` soma o frete velho. Nada aqui reagia a isso:
+  // o efeito que cota na primeira carga é travado por `prefilledRef` e roda uma
+  // vez só.
+  //
+  // A assinatura é item + quantidade. Preço não entra: alterar preço não muda o
+  // que a transportadora carrega.
+  const shippingSignature = useMemo(() => {
+    const items = cart?.items ?? []
+    return items
+      .map((i) => `${i.id}:${i.quantity}`)
+      .sort()
+      .join("|")
+  }, [cart?.items])
+
+  const lastShippingSignatureRef = useRef<string | null>(null)
+
+  // Recota preservando a escolha do comprador quando ela ainda vale.
+  //
+  // Zerar a seleção sempre seria mais simples e pior: quem só apertou "+" numa
+  // camiseta teria de reabrir a lista e escolher o mesmo PAC de novo, sem
+  // entender por quê. Só forçamos nova escolha quando a opção realmente saiu.
+  const requoteAfterCartChange = useCallback(
+    async (zip: string) => {
+      const previousId = selectedShippingId
+      const previousCost = shippingSummary?.shippingCost ?? null
+      try {
+        const quote = await shippingQuote.mutateAsync({ token, zipCode: zip })
+        setShippingOptions(quote.options)
+        setShippingFreeByEvent(quote.freeShipping)
+        setPickupAddress(quote.pickupAddress ?? null)
+        setNoShippingAvailable(quote.noShippingAvailable ?? false)
+        setQuotedZip(zip)
+        setShippingQuoteError(null)
+
+        const stillThere = previousId
+          ? quote.options.find((o) => o.id === previousId && o.available)
+          : undefined
+
+        if (!stillThere) {
+          setSelectedShippingId(null)
+          setShippingSummary(null)
+          setShippingReselectNotice(
+            previousId
+              ? "A opção de frete que você tinha escolhido não atende ao novo carrinho. Escolha outra."
+              : null
+          )
+          return
+        }
+
+        const result = await selectShippingMethod.mutateAsync({
+          token,
+          serviceId: stillThere.id,
+          zipCode: zip,
+          provider: stillThere.provider,
+        })
+        setSelectedShippingId(stillThere.id)
+        setShippingSummary(result.summary)
+        setShippingReselectNotice(
+          previousCost !== null && result.summary.shippingCost !== previousCost
+            ? `Seu carrinho mudou, então o frete passou para ${formatCurrency(result.summary.shippingCost)}.`
+            : null
+        )
+      } catch (err) {
+        // Cotação falhou com o carrinho novo. Manter a escolha antiga cobraria
+        // um frete que ninguém confirmou, então ela cai — e o comprador fica
+        // sem poder pagar até haver cotação válida, que é a direção segura.
+        const apiErr = err as ApiError
+        setSelectedShippingId(null)
+        setShippingSummary(null)
+        setShippingOptions([])
+        setShippingQuoteError(
+          apiErr?.message ||
+            "Não foi possível recalcular o frete para o novo carrinho. Tente novamente."
+        )
+        setShippingReselectNotice(null)
+      }
+    },
+    [
+      formatCurrency,
+      selectShippingMethod,
+      selectedShippingId,
+      shippingQuote,
+      shippingSummary,
+      token,
+    ]
+  )
+
+  useEffect(() => {
+    if (!quotedZip) return
+    // Espera a edição assentar antes de cotar.
+    //
+    // A mutation atualiza a quantidade de forma otimista, então a assinatura
+    // muda ANTES de o servidor confirmar. Cotar aí é cotar um carrinho que pode
+    // não existir: se a reserva for recusada por estoque, o rollback devolve a
+    // quantidade antiga e a cotação que acabou de chegar descreve uma encomenda
+    // que nunca houve. Depois do settle a assinatura já reflete o que o
+    // servidor aceitou, e uma cotação basta.
+    if (cartEditInFlight) return
+    // Primeira observação: só registra. A cotação inicial já foi feita pelo
+    // efeito de preenchimento.
+    if (lastShippingSignatureRef.current === null) {
+      lastShippingSignatureRef.current = shippingSignature
+      return
+    }
+    if (lastShippingSignatureRef.current === shippingSignature) return
+    lastShippingSignatureRef.current = shippingSignature
+    setShippingReselectNotice("Seu carrinho mudou. Recalculando o frete...")
+    requoteAfterCartChange(quotedZip)
+  }, [shippingSignature, quotedZip, cartEditInFlight, requoteAfterCartChange])
+
   const handleRetryQuote = useCallback(() => {
     const zip = (form.getValues("shippingAddress.zipCode") || "").replace(/\D/g, "")
     if (zip.length === 8) runShippingQuote(zip)
@@ -781,6 +895,19 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   const pixDiscountCents = cart.summary.pixDiscountCents ?? 0
   const pixDiscountApplied =
     selectedMethod === "pix" && pixDiscountCents > 0
+  // Nada de cobrar enquanto o valor ainda está se formando.
+  //
+  // `effectiveTotal` é subtotal + frete − descontos, e os três se mexem: uma
+  // edição de item muda o subtotal e o peso, o recálculo do frete muda a
+  // parcela do frete, e o cupom pode cair sozinho quando o subtotal desce do
+  // mínimo. Apertar "pagar" no meio disso cobra um número que já não é o do
+  // carrinho — e, diferente dos outros erros desta tela, esse sai do bolso de
+  // alguém.
+  const checkoutSettling =
+    cartEditInFlight ||
+    shippingQuote.isPending ||
+    selectShippingMethod.isPending
+
   const effectiveTotal = Math.max(
     0,
     cart.summary.subtotal +
@@ -1326,6 +1453,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                       <>
                         <CheckoutExpressPayment
                           selectedMethod={selectedMethod}
+                          disabled={checkoutSettling}
                           onSelectMethod={setSelectedMethod}
                           pixAvailable={availableMethods.includes("pix")}
                           cardAvailable={availableMethods.includes("card")}
@@ -1343,6 +1471,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                         publicKey={checkoutConfig.publicKey}
                         amount={effectiveTotal}
                         customer={customerPayload}
+                        disabled={checkoutSettling}
                         onSuccess={handleCardSuccess}
                         onError={handlePaymentError}
                       />
@@ -1350,6 +1479,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                       <CheckoutPixDisplay
                         token={token}
                         customer={customerPayload}
+                        disabled={checkoutSettling}
+                        expectedAmount={effectiveTotal}
                         onSuccess={handlePixSuccess}
                         onError={handlePaymentError}
                       />
