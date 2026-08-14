@@ -71,6 +71,16 @@ export const integrationService = {
       token,
     ),
 
+  // Enfileira a releitura de TODOS os produtos vinculados a este ERP.
+  // Devolve quantos entraram na varredura; o trabalho corre em segundo plano,
+  // no ritmo que o rate limit do ERP permite.
+  startERPResync: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<{ products: number }>(
+      `/stores/${storeId}/integrations/${id}/erp/resync`,
+      {},
+      token,
+    ),
+
   // Get OAuth connect URL (for OAuth providers like Mercado Pago)
   getOAuthURL: (storeId: string, provider: IntegrationProvider, token?: string | null) =>
     apiClient.get<OAuthConnectResponse>(

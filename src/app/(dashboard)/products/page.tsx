@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { ERPResyncButton } from "@/components/product/ERPResyncButton"
 import { ProductForm } from "@/components/product/ProductForm"
 import { ProductDetailModal } from "@/components/product/ProductDetailModal"
 import { ProductGroupList } from "@/components/product/ProductGroupList"
@@ -177,6 +178,7 @@ export default function ProductsPage() {
         title="Produtos"
         description="Gerencie seu catálogo de produtos"
       >
+        <ERPResyncButton />
         <ProductForm
           open={createFormOpen}
           onOpenChange={setCreateFormOpen}
