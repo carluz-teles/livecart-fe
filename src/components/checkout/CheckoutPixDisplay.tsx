@@ -87,7 +87,7 @@ export function CheckoutPixDisplay({
   onSuccess,
   onError,
 }: CheckoutPixDisplayProps) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [pixData, setPixData] = useState<GeneratePixResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -112,6 +112,8 @@ export function CheckoutPixDisplay({
 
   // Quanto valia o carrinho quando este código foi gerado.
   const [generatedForAmount, setGeneratedForAmount] = useState<number | null>(null)
+  // O carrinho mudou e o código saiu da tela por causa disso.
+  const [invalidatedBy, setInvalidatedBy] = useState<number | null>(null)
 
   const generatePix = useCallback(async () => {
     // O Pix congela o valor no instante em que é gerado — é esse número que o
@@ -138,12 +140,21 @@ export function CheckoutPixDisplay({
     }
   }, [token])
 
-  // O Pix nasce sozinho ao montar, então esperar o carrinho assentar antes da
-  // primeira geração faz parte do mesmo cuidado — não só os botões de refazer.
+  // O código sai da tela no instante em que o carrinho muda.
+  //
+  // Ele cobra o valor de antes, e é ele que o app do banco pagaria. Deixá-lo
+  // visível com um aviso ao lado convida ao erro: o "copia e cola" continua a um
+  // toque de distância. O backend cancela a cobrança no gateway na mesma
+  // mutação — sem isso, sumir daqui não adiantaria nada, porque quem já tinha
+  // copiado o código continuaria conseguindo pagar.
   useEffect(() => {
-    if (disabled) return
-    generatePix()
-  }, [disabled, generatePix])
+    if (generatedForAmount === null) return
+    if (generatedForAmount === expectedAmount) return
+    setPixData(null)
+    setExpired(false)
+    setInvalidatedBy(generatedForAmount)
+    setGeneratedForAmount(null)
+  }, [expectedAmount, generatedForAmount])
 
   // Countdown
   useEffect(() => {
@@ -211,7 +222,7 @@ export function CheckoutPixDisplay({
   }
 
   // Error
-  if (error || !pixData) {
+  if (error) {
     return (
       <div className="rounded-xl border border-gray-100 bg-white p-6">
         <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200/70 bg-red-50 p-6 text-center">
@@ -226,6 +237,54 @@ export function CheckoutPixDisplay({
             disabled={disabled}
           >
             Tentar novamente
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Ocioso — nenhum código na tela.
+  //
+  // O PIX não nasce mais sozinho ao abrir a aba. Gerar abre uma cobrança no
+  // gateway e congela um valor; fazer isso antes de o comprador pedir criava
+  // cobrança para quem só estava olhando as opções de pagamento, e prendia o
+  // total num instante em que ele ainda podia mudar.
+  if (!pixData) {
+    const mudou = invalidatedBy !== null
+    return (
+      <div className="rounded-xl border border-gray-100 bg-white p-6">
+        <div
+          className={cn(
+            "flex flex-col items-center gap-3 rounded-xl p-8 text-center",
+            mudou
+              ? "border border-amber-200/60 bg-amber-50/70"
+              : "border border-gray-100 bg-gray-50/60"
+          )}
+        >
+          {mudou ? (
+            <>
+              <AlertCircle className="h-7 w-7 text-amber-600" />
+              <h3 className="text-base font-semibold text-amber-900">
+                Seu carrinho mudou
+              </h3>
+              <p className="max-w-sm text-sm text-amber-800/80">
+                O código anterior era de {formatCurrency(invalidatedBy)} e foi
+                cancelado. Seu pedido agora é {formatCurrency(expectedAmount)}.
+              </p>
+            </>
+          ) : (
+            <>
+              <QrCode className="h-7 w-7 text-gray-400" />
+              <h3 className="text-base font-semibold text-gray-900">
+                Pagar com PIX
+              </h3>
+              <p className="max-w-sm text-sm text-gray-500">
+                Você tem 30 minutos para pagar depois de gerar o código.
+              </p>
+            </>
+          )}
+          <Button onClick={generatePix} disabled={disabled} className="mt-1">
+            {mudou ? "Gerar novo código PIX" : "Gerar código PIX"}
           </Button>
         </div>
       </div>
@@ -253,32 +312,6 @@ export function CheckoutPixDisplay({
     )
   }
 
-  // Carrinho mudou depois da geração.
-  //
-  // O QR na tela cobra o valor de antes, e é ele que o app do banco vai pagar.
-  // Não regeramos sozinhos de propósito: cada geração abre uma cobrança no
-  // gateway, e um erro de comparação viraria uma fila delas. O comprador
-  // confirma, e a conta volta a bater.
-  if (generatedForAmount !== null && generatedForAmount !== expectedAmount) {
-    return (
-      <div className="rounded-xl border border-gray-100 bg-white p-6">
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-amber-200/60 bg-amber-50/70 p-8 text-center">
-          <AlertCircle className="h-7 w-7 text-amber-600" />
-          <h3 className="text-base font-semibold text-amber-900">
-            Seu carrinho mudou
-          </h3>
-          <p className="max-w-sm text-sm text-amber-800/80">
-            Este código foi gerado para {formatCurrency(generatedForAmount)} e
-            seu pedido agora é {formatCurrency(expectedAmount)}. Gere um novo
-            para pagar o valor certo.
-          </p>
-          <Button onClick={generatePix} disabled={disabled} className="mt-1">
-            Gerar novo PIX
-          </Button>
-        </div>
-      </div>
-    )
-  }
 
   // Active
   // MP returns the QR Code as raw base64 (no `data:` prefix). Normalize so
