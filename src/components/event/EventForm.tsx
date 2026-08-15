@@ -35,6 +35,7 @@ import { createEventSchema, type CreateEventFormData } from "@/schemas/event.sch
 import { useCreateEvent } from "@/hooks/event"
 import { useStore } from "@/hooks/store/useStore"
 import { FieldHint } from "@/components/shared/FieldHint"
+import { FormSection } from "@/components/shared/FormSection"
 import { InheritableNumberField } from "@/components/shared/InheritableNumberField"
 import {
   EVENT_COPY,
@@ -535,52 +536,5 @@ function Warning({ children }: { children: React.ReactNode }) {
     <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
       {children}
     </p>
-  )
-}
-
-/**
- * Cabeçalho de seção do formulário.
- *
- * Substitui o padrão antigo — um `Separator` com o texto flutuando centralizado
- * por cima, posicionado com `absolute` e `translate`. Aquilo colocava o rótulo
- * no MEIO da linha, longe dos campos que ele governa, e obrigava um fundo opaco
- * para "furar" a régua. O olho lia uma divisória decorada, não um grupo.
- *
- * Aqui o rótulo é um cabeçalho alinhado à esquerda, na mesma coluna dos campos,
- * com a hierarquia feita por peso e espaço em vez de posição — que é o que
- * agrupa de fato.
- */
-function FormSection({
-  title,
-  hint,
-  description,
-  children,
-}: {
-  title: string
-  hint?: string
-  description?: string
-  children: React.ReactNode
-}) {
-  return (
-    // A régua e o respiro acima é o que separa uma seção da outra. Sem eles o
-    // título ficava colado no último campo da seção anterior, e o formulário
-    // lia como uma lista contínua de campos em vez de três decisões distintas.
-    <section className="space-y-4 border-t pt-6">
-      <div className="space-y-1.5">
-        {/* Caixa alta e espaçamento de letra: o título precisa se distinguir de
-            um LABEL de campo, e antes os dois eram `text-sm font-semibold` — o
-            olho não tinha como saber o que era cabeçalho e o que era campo. */}
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-          {hint && <FieldHint text={hint} />}
-        </h3>
-        {description && (
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        )}
-      </div>
-      {children}
-    </section>
   )
 }

@@ -285,6 +285,14 @@ export interface CreateSessionPayload {
   mediaPermalink?: string
   mediaThumbnailUrl?: string
   mediaCaption?: string
+  /** Produtos que ESTA transmissão vende. Omitido = vende qualquer produto
+   *  ativo da loja, que é como toda sessão nascia.
+   *
+   *  Vai na criação porque o backend grava sessão e lista na MESMA transação.
+   *  Encadear no cliente (criar e depois adicionar um a um) deixaria a
+   *  transmissão no ar com lista parcial se uma chamada falhasse — e falhar na
+   *  primeira é o pior caso, porque lista vazia significa "vende tudo". */
+  productIds?: string[]
 }
 
 // Add Platform (reconnect - add platform ID to existing session)

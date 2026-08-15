@@ -1,13 +1,12 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Check, Film, ImagePlus, Loader2, Package, Search, X } from "lucide-react"
+import { Film, ImagePlus, Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -15,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Sheet,
@@ -29,10 +27,7 @@ import {
   useCreateInstagramReel,
   useCreateInstagramStory,
 } from "@/hooks/event"
-import { useProducts } from "@/hooks/product"
-import { useDebounce } from "@/hooks/shared"
-import { formatCurrency } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { ProductMultiSelect } from "@/components/shared/ProductMultiSelect"
 import { FieldHint } from "@/components/shared/FieldHint"
 import {
   EVENT_COPY,
@@ -40,7 +35,6 @@ import {
   isLongCampaign,
   LONG_CAMPAIGN_WARNING,
 } from "@/lib/event-copy"
-import type { Product } from "@/types"
 
 interface CreatePostFormProps {
   open: boolean
@@ -96,23 +90,10 @@ export function CreatePostForm({
   const [endsAt, setEndsAt] = useState(defaultEndsAtLocal)
   const [cartExpirationMinutes, setCartExpirationMinutes] = useState<number | null>(null)
   const [maxQty, setMaxQty] = useState<number | null>(null)
-  const [search, setSearch] = useState("")
-  const debouncedSearch = useDebounce(search, 300)
-
-  // Only promotable products: active AND in stock (you can't sell what's out of
-  // stock). Ordered by name so it reads like a catalog and a product's variants
-  // (which share the same base name) sit together.
-  const { data: productsData, isLoading: productsLoading } = useProducts({
-    search: debouncedSearch,
-    filters: { status: ["active"], stockMin: 1 },
-    sorting: { sortBy: "name", sortOrder: "asc" },
-  })
   const createPost = useCreateInstagramPost()
   const createReel = useCreateInstagramReel()
   const createStory = useCreateInstagramStory()
   const isPending = createPost.isPending || createReel.isPending || createStory.isPending
-  const products = productsData?.data ?? []
-
   const reset = () => {
     setFile(null)
     setPreviewUrl((prev) => {
@@ -126,7 +107,6 @@ export function CreatePostForm({
     setEndsAt(defaultEndsAtLocal())
     setCartExpirationMinutes(null)
     setMaxQty(null)
-    setSearch("")
     submittingRef.current = false
     setMayHavePublished(false)
     setPhase("idle")
@@ -172,11 +152,6 @@ export function CreatePostForm({
       return URL.createObjectURL(f)
     })
   }
-
-  const toggleProduct = (id: string) =>
-    setSelectedProductIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    )
 
   const toISO = (v: string) => (v ? new Date(v).toISOString() : undefined)
   const windowInvalid = !!startsAt && !!endsAt && new Date(endsAt) <= new Date(startsAt)
@@ -397,47 +372,19 @@ export function CreatePostForm({
             </SectionTitle>
             <p className="text-xs text-muted-foreground">{ruleHint}</p>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou palavra-chave..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+            {/* A lista mora em ProductMultiSelect: ela existia aqui e o
+                SessionForm precisou da mesma. Duas cópias divergiriam no
+                primeiro ajuste — e este código já teve isso, com "produto
+                disponível" definido de dois jeitos na mesma tela.
 
-            <ScrollArea className="h-[220px] rounded-md border">
-              <div className="space-y-1 p-2">
-                {productsLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2">
-                      <Skeleton className="h-10 w-10 rounded" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-3.5 w-32" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </div>
-                  ))
-                ) : products.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-8 text-center">
-                    <Package className="h-7 w-7 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">
-                      {search ? "Nenhum produto encontrado" : "Nenhum produto ativo"}
-                    </p>
-                  </div>
-                ) : (
-                  products.map((product) => (
-                    <ProductRow
-                      key={product.id}
-                      product={product}
-                      selected={selectedProductIds.includes(product.id)}
-                      onToggle={() => toggleProduct(product.id)}
-                    />
-                  ))
-                )}
-              </div>
-            </ScrollArea>
+                `requireStock`: publicar é vender AGORA, então produto sem
+                estoque não entra. Configurar uma transmissão é diferente — lá o
+                estoque pode voltar antes de a venda começar. */}
+            <ProductMultiSelect
+              value={selectedProductIds}
+              onChange={setSelectedProductIds}
+              requireStock
+            />
           </section>
 
           {/* Step 3 — window + cart.
@@ -636,71 +583,3 @@ function SectionTitle({ n, title, children }: { n: number; title: string; childr
   )
 }
 
-function ProductRow({
-  product,
-  selected,
-  onToggle,
-}: {
-  product: Product
-  selected: boolean
-  onToggle: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-md p-2 text-left transition-colors",
-        selected ? "bg-primary/10" : "hover:bg-muted"
-      )}
-      aria-pressed={selected}
-    >
-      <div
-        className={cn(
-          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-          selected ? "border-primary bg-primary text-primary-foreground" : "border-input"
-        )}
-      >
-        {selected && <Check className="h-3.5 w-3.5" />}
-      </div>
-      <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-4 w-4 text-muted-foreground/50" />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        {/* Title on its own line so a long name truncates cleanly without
-            being squeezed by the variant chips. */}
-        <p className="truncate text-sm font-medium leading-tight">
-          {product.groupName || product.name}
-        </p>
-        {/* Variant options wrap on their own line — tidy on mobile too. */}
-        {product.optionValues && product.optionValues.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
-            {product.optionValues.map((v) => (
-              <span
-                key={v.option}
-                className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] leading-none"
-              >
-                <span className="text-muted-foreground">{v.option}</span>
-                <span className="ml-1 font-semibold">{v.value}</span>
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-          <span className="font-mono">{product.keyword}</span>
-          <span aria-hidden>•</span>
-          <span>{formatCurrency(product.price)}</span>
-          <span aria-hidden>•</span>
-          <span className="whitespace-nowrap">{product.stock} em estoque</span>
-        </div>
-      </div>
-    </button>
-  )
-}

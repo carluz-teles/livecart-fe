@@ -11,7 +11,15 @@ export const instagramLivesKeys = {
   list: (storeId: string) => [...instagramLivesKeys.all, storeId] as const,
 }
 
-export function useInstagramLives() {
+/**
+ * Lives no ar da conta do Instagram.
+ *
+ * `enabled` existe porque este hook consulta a Graph API a cada 30 segundos, e
+ * antes rodava em toda página que MONTAVA o formulário de sessão — inclusive com
+ * o diálogo fechado, re-renderizando o componente sozinho a cada meio minuto e
+ * gastando cota da Meta para uma tela que ninguém está vendo.
+ */
+export function useInstagramLives({ enabled = true }: { enabled?: boolean } = {}) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
 
@@ -21,8 +29,9 @@ export function useInstagramLives() {
       const token = await getToken()
       return integrationService.getInstagramLives(storeId!, token)
     },
-    enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
-    refetchInterval: 30000, // Refetch every 30 seconds to detect new lives
+    enabled: enabled && isLoaded && isSignedIn && !storeLoading && !!storeId,
+    // Só fica sondando quando alguém está olhando.
+    refetchInterval: enabled ? 30000 : false,
     staleTime: 10000, // Consider data stale after 10 seconds
   })
 }

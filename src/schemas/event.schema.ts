@@ -104,6 +104,11 @@ export const createSessionSchema = z.object({
   mediaPermalink: z.string().optional(),
   mediaThumbnailUrl: z.string().optional(),
   mediaCaption: z.string().optional(),
+  // Produtos que ESTA transmissão vende. Vazia = vende qualquer produto ativo
+  // da loja, que é como toda sessão nascia. Entra na criação porque o backend
+  // grava sessão e lista na mesma transação — encadear no cliente deixaria a
+  // transmissão no ar com lista pela metade se a segunda chamada falhasse.
+  productIds: z.array(z.string().uuid()).optional(),
 })
 
 export type CreateSessionFormData = z.infer<typeof createSessionSchema>
