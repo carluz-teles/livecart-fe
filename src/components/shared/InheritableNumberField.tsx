@@ -45,7 +45,7 @@ export function InheritableNumberField({
     inheritedValue != null ? `Padrão da loja: ${inheritedValue}` : "Padrão da loja"
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       <Input
         id={id}
         type="number"
@@ -62,9 +62,13 @@ export function InheritableNumberField({
           // validação de tipo e seria recusado pelo CHECK como 500.
           onChange(raw === "" ? null : Number(raw))
         }}
-        className="max-w-[220px]"
+        // 220px deixava um "30" perdido numa caixa larga, com a unidade solta
+        // longe dele. O campo cabe o número; a unidade fica colada.
+        className="w-24 shrink-0"
       />
-      {unit ? <span className="text-sm text-muted-foreground">{unit}</span> : null}
+      {unit ? (
+        <span className="truncate text-sm text-muted-foreground">{unit}</span>
+      ) : null}
     </div>
   )
 }

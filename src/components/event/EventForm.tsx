@@ -216,16 +216,20 @@ export function EventForm({
           SheetContent traz `sm:max-w-sm` (384px) e o twMerge não reconcilia
           `max-w-*` com `w-*` — são propriedades diferentes. Sem isto o painel
           ficava preso em 384px e o `sm:w-[480px]` não valia nada. */}
-      <SheetContent className="flex w-[400px] flex-col gap-0 p-0 sm:w-[480px] sm:max-w-[480px]">
+      {/* `w-full` no mobile, não `w-[400px]`: 400 é mais largo que a tela de um
+          iPhone SE (375) e o painel estourava a viewport. */}
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:w-[480px] sm:max-w-[480px]">
         <SheetHeader className="px-6 pb-4 pt-6">
           <SheetTitle className="flex items-center gap-2">
             <CalendarRange className="h-5 w-5 text-primary" />
             Novo evento
           </SheetTitle>
-          <SheetDescription className="leading-relaxed">
-            Nome, quando abre, quando fecha e as regras comerciais. As transmissões —
-            live, post, reel ou story — você adiciona depois, quantas quiser, enquanto
-            o evento estiver aberto.
+          {/* Três linhas de texto antes do primeiro campo empurravam o
+              formulário para baixo da dobra. O que o lojista precisa saber aqui
+              é que não está escolhendo um formato agora — o resto ele descobre
+              ao adicionar a primeira transmissão. */}
+          <SheetDescription>
+            As transmissões — live, post, reel ou story — você adiciona depois.
           </SheetDescription>
         </SheetHeader>
 
@@ -236,7 +240,7 @@ export function EventForm({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pb-6">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
             <FormField
               control={form.control}
               name="title"
@@ -254,12 +258,14 @@ export function EventForm({
             />
 
             <FormSection title="Janela de vendas" hint={EVENT_COPY.windowSection.hint}>
-              <div className="grid gap-4 sm:grid-cols-2">
+              {/* Empilha na tela estreita: lado a lado, cada data fica com menos de
+                  170px e a legenda vira reticências. */}
+              <div className="grid gap-3 min-[380px]:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="startsAt"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem className="flex min-w-0 flex-col">
                       <FormLabel>{EVENT_COPY.startsAt.label}</FormLabel>
                       <DateTimeField
                         value={field.value}
@@ -274,7 +280,7 @@ export function EventForm({
                   control={form.control}
                   name="endsAt"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem className="flex min-w-0 flex-col">
                       <FormLabel>
                         {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
                       </FormLabel>
@@ -556,9 +562,15 @@ function FormSection({
   children: React.ReactNode
 }) {
   return (
-    <section className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+    // A régua e o respiro acima é o que separa uma seção da outra. Sem eles o
+    // título ficava colado no último campo da seção anterior, e o formulário
+    // lia como uma lista contínua de campos em vez de três decisões distintas.
+    <section className="space-y-4 border-t pt-6">
+      <div className="space-y-1.5">
+        {/* Caixa alta e espaçamento de letra: o título precisa se distinguir de
+            um LABEL de campo, e antes os dois eram `text-sm font-semibold` — o
+            olho não tinha como saber o que era cabeçalho e o que era campo. */}
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
           {hint && <FieldHint text={hint} />}
         </h3>

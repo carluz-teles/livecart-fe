@@ -71,14 +71,23 @@ export function DateTimeField({
           type="button"
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
+            // min-w-0 + truncate: sem os dois, o texto da data define a largura
+            // MÍNIMA do botão. Dentro de uma grid a coluna não encolhe abaixo do
+            // conteúdo (min-width:auto), e o painel inteiro ganhava barra de
+            // rolagem horizontal — com o campo de fim cortado ao meio.
+            "w-full min-w-0 justify-start text-left font-normal",
             !value && "text-muted-foreground"
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value
-            ? format(new Date(value), "PPP 'às' HH:mm", { locale: ptBR })
-            : placeholder}
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          {/* Formato curto: "16 de agosto de 2026 às 23:59" tem 29 caracteres e
+              não cabe num controle de meia coluna. O ano abreviado mantém a
+              data completa — importa para evento agendado para o ano seguinte. */}
+          <span className="truncate">
+            {value
+              ? format(new Date(value), "dd/MM/yy 'às' HH:mm", { locale: ptBR })
+              : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
