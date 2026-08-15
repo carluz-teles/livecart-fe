@@ -105,16 +105,6 @@ export function defaultEndsAtLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-/** Opções do prazo pós-evento. `0` não existe mais (migration 000104). */
-export const CART_EXPIRATION_OPTIONS = [
-  { value: "inherit", label: "Usar o padrão da loja" },
-  { value: "15", label: "15 minutos (mínimo)" },
-  { value: "30", label: "30 minutos" },
-  { value: "60", label: "1 hora" },
-  { value: "120", label: "2 horas" },
-  { value: "1440", label: "24 horas" },
-]
-
 /** Opções do prazo extra da fila — respeitam o CHECK 5..240 da 000073. */
 export const WAITLIST_TTL_OPTIONS = [
   { value: "15", label: "15 minutos" },
@@ -122,14 +112,6 @@ export const WAITLIST_TTL_OPTIONS = [
   { value: "60", label: "1 hora" },
   { value: "120", label: "2 horas" },
   { value: "240", label: "4 horas" },
-]
-
-export const MAX_QUANTITY_OPTIONS = [
-  { value: "inherit", label: "Usar o padrão da loja" },
-  { value: "1", label: "1 unidade" },
-  { value: "3", label: "3 unidades" },
-  { value: "5", label: "5 unidades" },
-  { value: "10", label: "10 unidades" },
 ]
 
 /**
