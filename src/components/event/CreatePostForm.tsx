@@ -182,7 +182,9 @@ export function CreatePostForm({
     const payload = {
       file,
       caption: caption.trim() || undefined,
-      title: title.trim() || undefined,
+      // Dentro de um evento o nome é dele, não desta publicação: mandar daqui
+      // seria oferecer a uma transmissão o poder de renomear a venda inteira.
+      title: insideEvent ? undefined : title.trim() || undefined,
       productIds: selectedProductIds,
       // Dentro de um evento, janela e regras de carrinho NÃO são enviadas: são
       // do evento, e mandá-las daqui deixaria uma publicação redefinir a
@@ -234,11 +236,20 @@ export function CreatePostForm({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="w-full sm:max-w-[640px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{isStory ? "Criar um Story no Instagram" : "Criar post no Instagram"}</SheetTitle>
+          <SheetTitle>
+            {isStory ? "Publicar um Story" : "Publicar um post"}
+          </SheetTitle>
+          {/* Dentro de um evento NÃO se cria campanha nenhuma — prometer isso
+              foi o que fez o lojista ver "Nome do evento" e achar que ia abrir
+              outro. */}
           <SheetDescription>
-            {isStory
-              ? "Atalho: publica o Story (foto ou vídeo) e cria a campanha de uma vez. Ele fica no ar por 24h e quem responder o Story por DM compra na hora — comentar em outro lugar não conta."
-              : "Atalho: publica o post pelo LiveCart e cria a campanha de uma vez, já vendendo pelos comentários. Você pode adicionar outras transmissões à mesma campanha depois."}
+            {insideEvent
+              ? isStory
+                ? "O LiveCart publica o Story e cria a transmissão neste evento. A venda acontece quando o cliente responde por DM."
+                : "O LiveCart publica e cria a transmissão neste evento, já vendendo pelos comentários."
+              : isStory
+                ? "Publica o Story e cria o evento de uma vez. Ele fica 24h no ar e quem responder por DM compra na hora."
+                : "Publica o post e cria o evento de uma vez, já vendendo pelos comentários."}
           </SheetDescription>
         </SheetHeader>
 
@@ -346,25 +357,28 @@ export function CreatePostForm({
               </div>
             )}
 
-            <div className="space-y-2">
-              {/* Os três formulários chamavam este mesmo campo de três coisas
-                  diferentes ("Nome da campanha", "Título (opcional)", "Título
-                  do evento (opcional)"), e só um deles explicava que é o nome
-                  da CAMPANHA. */}
-              <Label htmlFor="post-title" className="flex items-center gap-1.5">
-                {EVENT_COPY.title.label}
-              </Label>
-              <Input
-                id="post-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={EVENT_COPY.title.placeholder}
-              />
-              <p className="text-xs text-muted-foreground">
-                Opcional. É o nome da campanha que o comprador vê nas mensagens — e esta
-                publicação é a primeira transmissão dela.
-              </p>
-            </div>
+            {/* Só quando há evento a nomear.
+                Dentro de um evento este campo pedia o nome de uma campanha que
+                já existe — e o texto de apoio afirmava que esta publicação seria
+                "a primeira transmissão dela", o que é falso quando o lojista já
+                está dentro do evento adicionando a segunda. */}
+            {!insideEvent && (
+              <div className="space-y-2">
+                <Label htmlFor="post-title" className="flex items-center gap-1.5">
+                  {EVENT_COPY.title.label}
+                </Label>
+                <Input
+                  id="post-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={EVENT_COPY.title.placeholder}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opcional. É o nome que o comprador vê nas mensagens — e esta
+                  publicação é a primeira transmissão dele.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* Step 2 — products */}
@@ -397,14 +411,12 @@ export function CreatePostForm({
               publicação, regra que vale para a campanha toda — e a publicação
               nem as envia mais. */}
           {insideEvent ? (
-            <section className="space-y-3">
-              <SectionTitle n={3} title="Janela e carrinho" />
-              <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-                Esta publicação entra no evento que você já abriu. O prazo de
-                pagamento, a expiração do carrinho e o limite por produto são os
-                do evento — e valem igual para todas as transmissões dele.
-              </p>
-            </section>
+            // Sem número: numerar sugere um passo a cumprir, e aqui não há nada
+            // a preencher — é o aviso de que essas regras já foram decididas.
+            <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+              Prazo de pagamento, expiração do carrinho e limite por produto são
+              os do evento, iguais para todas as transmissões dele.
+            </p>
           ) : (
           <section className="space-y-3">
             <SectionTitle n={3} title="Janela e carrinho" />
@@ -566,7 +578,9 @@ export function CreatePostForm({
                 ? phase === "uploading"
                   ? `Enviando... ${uploadPercent}%`
                   : "Processando..."
-                : "Publicar e criar evento"}
+                : insideEvent
+                  ? "Publicar e adicionar ao evento"
+                  : "Publicar e criar evento"}
             </Button>
           )}
         </div>
