@@ -238,7 +238,17 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       : "Criar transmissão"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      {/* O diálogo SOME enquanto o sheet de publicação está aberto, em vez de
+          ficar montado atrás dele.
+          Um Dialog do Radix em modo modal aplica `pointer-events: none` fora do
+          próprio conteúdo. Com o sheet aberto por cima, os cliques dentro dele
+          — inclusive o que abre o seletor de arquivo — morriam antes de chegar,
+          e o lojista via a tela de publicar sem conseguir anexar nada.
+          `open` (a prop) continua verdadeiro, então o componente não desmonta e
+          o efeito de reset não dispara: fechar o sheet devolve o diálogo com
+          tudo preenchido. */}
+    <Dialog open={open && !publishOpen} onOpenChange={onOpenChange}>
       {/* O scroll fica num filho, não no diálogo inteiro — senão o rodapé com o
           botão primário rola para fora da tela. */}
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-[600px]">
@@ -442,9 +452,12 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         </Form>
       </DialogContent>
 
-      {/* Publicar pelo LiveCart, DENTRO deste evento. O backend já cria a sessão
-          vinculada à mídia, então aqui só fechamos os dois diálogos — criar a
-          sessão de novo duplicaria a transmissão. */}
+    </Dialog>
+
+      {/* Fora do Dialog de propósito — ver o comentário acima.
+          Publicar pelo LiveCart, DENTRO deste evento: o backend já cria a sessão
+          vinculada à mídia, então aqui só fechamos os dois — criar a sessão de
+          novo duplicaria a transmissão. */}
       <CreatePostForm
         open={publishOpen}
         variant={origem === "story" ? "story" : "post"}
@@ -456,7 +469,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
           onSuccess?.()
         }}
       />
-    </Dialog>
+    </>
   )
 }
 
