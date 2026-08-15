@@ -250,7 +250,11 @@ export function CreatePostForm({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,video/mp4"
+              // Tem de casar com o que `pickFile` aceita logo abaixo: ele
+              // aprova video/quicktime, mas o `accept` não listava — então o
+              // seletor do sistema escondia todo .mov, que é o formato padrão
+              // de vídeo do iPhone. O lojista não via o próprio arquivo.
+              accept="image/jpeg,image/jpg,video/mp4,video/quicktime"
               className="hidden"
               onChange={(e) => pickFile(e.target.files?.[0])}
             />
