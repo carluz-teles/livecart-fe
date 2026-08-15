@@ -156,49 +156,16 @@ export const EVENT_MODEL_COPY = {
 } as const
 
 /**
- * Tipo de sessão: rótulo e ajuda por opção — copy deck §4.1.
+ * O SELETOR de tipo saiu do copy e virou os cartões do próprio SessionForm.
  *
- * Story NÃO está aqui, e a ausência é deliberada. Um Story só vira venda se for
- * publicado PELO LiveCart: a intenção chega como resposta de DM, e o vínculo
- * depende do id da mídia que a publicação devolve. Por isso a opção Story não
- * oferece "escolher uma publicação existente" — o Instagram não lista stories
- * numa grade, e uma transmissão de Story sem mídia própria nunca captura nada.
+ * A lista aqui oferecia live, post e reel como três escolhas. Para VENDER, post
+ * e reel são a mesma coisa — `IsPostCommerceSessionType` no backend trata os
+ * dois (e o story) igual — e a diferença é só o que se publica. Perguntar antes
+ * de o lojista escolher a mídia era pedir que ele classificasse algo que
+ * `sessionTypeFromMediaType` deriva do `media_type`.
  *
- * Story JÁ pode ser adicionado a um evento existente: o handler de publicação
- * lê `eventId` e `attachPublishedMediaToEvent` anexa a sessão em vez de criar
- * outro evento. A lista aqui o omitia por causa de um estado antigo do backend,
- * e essa omissão sobreviveu à correção — o efeito era o Story só existir pelo
- * atalho da porta de entrada, que era justamente o que fazia uma publicação
- * parecer um evento inteiro.
+ * `reel` continua existindo como espécie GRAVADA: o que sumiu foi a pergunta.
  */
-export const SESSION_TYPE_OPTIONS = [
-  {
-    value: "live",
-    label: "Live ao vivo",
-    help: "Você conecta a transmissão do Instagram quando ela começar. Não dá para agendar a publicação de uma live.",
-  },
-  {
-    value: "post",
-    label: "Post no feed",
-    help: "Comentários no post viram carrinho. Pode ser um post que já existe ou um que o LiveCart publica para você.",
-  },
-  {
-    value: "reel",
-    label: "Reel",
-    help: "Funciona igual ao post: os comentários do reel viram carrinho.",
-  },
-  {
-    value: "story",
-    label: "Story",
-    help: "O LiveCart publica o Story e a venda acontece quando o comprador RESPONDE por DM — comentário não existe em story. Fica 24h no ar.",
-  },
-] as const
-
-export type SessionTypeOptionValue = (typeof SESSION_TYPE_OPTIONS)[number]["value"]
-
-export function sessionTypeHelp(value: string): string {
-  return SESSION_TYPE_OPTIONS.find((o) => o.value === value)?.help ?? ""
-}
 
 /** Textos do formulário de Sessão — copy deck §4.1 e §4.4. */
 export const SESSION_COPY = {
