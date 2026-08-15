@@ -178,17 +178,32 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
 
   function selecionarMidia(post: InstagramMediaPost) {
     setSelectedMedia(post)
+    form.clearErrors("platformLiveId")
     form.setValue("platformLiveId", post.id)
     // O tipo é DERIVADO da mídia — é o único lugar onde o lojista lê a espécie,
     // e ele a lê como fato, não como pergunta.
     form.setValue("type", sessionTypeFromMediaType(post.media_type))
   }
 
-  const publicando = origem !== "live" && mediaMode === "publish"
+  // Story tem UM caminho só: publicar pelo LiveCart.
+  //
+  // A condição olhava `mediaMode`, e story não mostra as abas — então o modo
+  // ficava no padrão "existing" e o botão criava uma transmissão vazia em vez de
+  // abrir a publicação. O lojista clicava em Story, aparecia uma sessão, e não
+  // havia como publicar nada.
+  const publicando =
+    origem === "story" || (origem === "post" && mediaMode === "publish")
 
   function onSubmit(data: CreateSessionFormData) {
     if (publicando) {
       setPublishOpen(true)
+      return
+    }
+    // Post sem publicação escolhida nasce sem capturar nada — e, diferente da
+    // live, aqui não é um caso legítimo: a grade está na tela e a publicação já
+    // existe. Criar assim daria uma transmissão muda, com falha silenciosa.
+    if (origem === "post" && !selectedMedia) {
+      form.setError("platformLiveId", { message: "Escolha uma publicação." })
       return
     }
     const mediaId = data.platformLiveId?.trim() || undefined
@@ -375,6 +390,11 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                           selected={selectedMedia}
                           onSelect={selecionarMidia}
                         />
+                        {form.formState.errors.platformLiveId && (
+                          <p className="mt-2 text-sm text-destructive">
+                            {form.formState.errors.platformLiveId.message}
+                          </p>
+                        )}
                       </TabsContent>
 
                       <TabsContent value="publish" className="mt-3">
