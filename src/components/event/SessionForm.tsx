@@ -316,20 +316,28 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
                     como fazer um post ou um Reel PELO LiveCart dentro de um
                     evento — o formulário de publicar existia, mas só era
                     alcançável pelo fluxo antigo, que criava evento próprio. */}
+                {/* Story só tem UM caminho: publicar pelo LiveCart.
+                    O Instagram não lista stories numa grade, então "já
+                    publiquei" mostraria posts — e vincular um post a uma
+                    transmissão de Story produz uma sessão que nunca captura
+                    nada, com falha muda: o comprador responde e não acontece
+                    coisa alguma. */}
                 <Tabs
-                  value={mediaMode}
+                  value={sessionType === "story" ? "publish" : mediaMode}
                   onValueChange={(v) => setMediaMode(v as "publish" | "existing")}
                 >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="publish">
-                      <Upload className="mr-1.5 h-3.5 w-3.5" />
-                      Publicar agora
-                    </TabsTrigger>
-                    <TabsTrigger value="existing">
-                      <Link2 className="mr-1.5 h-3.5 w-3.5" />
-                      Já publiquei
-                    </TabsTrigger>
-                  </TabsList>
+                  {sessionType !== "story" && (
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="publish">
+                        <Upload className="mr-1.5 h-3.5 w-3.5" />
+                        Publicar agora
+                      </TabsTrigger>
+                      <TabsTrigger value="existing">
+                        <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                        Já publiquei
+                      </TabsTrigger>
+                    </TabsList>
+                  )}
 
                   <TabsContent value="publish" className="mt-3 space-y-2">
                     <p className="text-sm text-muted-foreground">

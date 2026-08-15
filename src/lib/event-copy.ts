@@ -11,59 +11,59 @@
 export const EVENT_COPY = {
   /** Regra da janela comercial, no "?" do separador. */
   windowSection: {
-    hint: "A campanha só vende dentro desta janela. Antes do início ou depois do fim, o comentário não vira carrinho — o comprador recebe um aviso automático em vez de ficar sem resposta. O fim é obrigatório: é ele que garante que nenhum carrinho fica sem prazo.",
+    hint: "O evento só vende dentro desta janela. Antes do início ou depois do fim, o comentário não vira carrinho — o comprador recebe um aviso automático em vez de ficar sem resposta. O fim é obrigatório: é ele que garante que nenhum carrinho fica sem prazo.",
   },
   /** Regra das configurações de carrinho, no "?" do separador. */
   cartSection: {
-    hint: "Valem para a campanha inteira. Como cada cliente tem um carrinho só, somando o que ele compra em todas as transmissões, estas regras não se repetem por transmissão. O prazo de expiração só começa a contar quando a campanha fecha.",
+    hint: "Valem para o evento inteiro. Como cada cliente tem um carrinho só, somando o que ele compra em todas as transmissões, estas regras não se repetem por transmissão. O prazo de expiração só começa a contar quando o evento fecha.",
   },
   title: {
-    label: "Nome da campanha",
+    label: "Nome do evento",
     placeholder: "Ex: Semana Black",
   },
   startsAt: {
-    label: "Início da campanha",
-    hint: "Quando a campanha abre para vender. Antes disso, comentários não viram carrinho: o comprador recebe um aviso automático.",
+    label: "Início do evento",
+    hint: "Quando o evento abre para vender. Antes disso, comentários não viram carrinho: o comprador recebe um aviso automático.",
     empty: "Vazio = começa agora.",
   },
   endsAt: {
-    label: "Fim da campanha",
-    hint: "Quando a campanha fecha. É a partir daqui que o prazo para o comprador finalizar começa a correr.",
+    label: "Fim do evento",
+    hint: "Quando o evento fecha. É a partir daqui que o prazo para o comprador finalizar começa a correr.",
     help: "Enquanto o evento estiver aberto, nenhum carrinho expira e nenhum estoque é liberado. Este campo é o teto que garante que isso não fica eterno — você pode encerrar antes pelo botão “Finalizar evento”.",
   },
   cartExpiration: {
     label: "Prazo para finalizar após o evento",
     hint: "Quanto tempo o comprador tem para pagar depois que o evento fecha. Durante o evento o carrinho nunca expira. Mínimo de 15 minutos.",
-    help: "O relógio só começa quando a campanha termina. Prazo curto gira o estoque mais rápido; prazo longo converte mais. Não existe “sem prazo”: todo carrinho expira em algum momento, para o estoque voltar para a loja e para quem está na fila.",
+    help: "O relógio só começa quando o evento termina. Prazo curto gira o estoque mais rápido; prazo longo converte mais. Não existe “sem prazo”: todo carrinho expira em algum momento, para o estoque voltar para a loja e para quem está na fila.",
   },
   waitlistTtl: {
     label: "Prazo extra para quem estava na fila",
     hint: "Tempo a mais para pagar que quem esperava na fila ganha quando o produto libera. Vale para o carrinho inteiro e não acumula.",
-    help: "Sem esse prazo extra, todos os carrinhos da campanha expiram no mesmo instante — o estoque liberado por um carrinho chega em quem esperava exatamente quando o carrinho dela também morreu.",
+    help: "Sem esse prazo extra, todos os carrinhos do evento expiram no mesmo instante — o estoque liberado por um carrinho chega em quem esperava exatamente quando o carrinho dela também morreu.",
   },
   maxQuantity: {
-    label: "Quantidade máxima por produto na campanha",
+    label: "Quantidade máxima por produto",
     // Curto (≤140) — cabe no tooltip.
-    hint: "Limite de unidades por produto no carrinho do EVENTO — não por sessão. Quem comprou 2 na segunda não compra mais até a campanha fechar.",
+    hint: "Limite de unidades por produto no carrinho do EVENTO — não por sessão. Quem comprou 2 na segunda não compra mais até o evento fechar.",
     // Longo — o copy deck exige que este texto fique SEMPRE visível, não só no
     // tooltip: é o contrato de aceitação do risco R2.
-    help: "Este limite vale para a campanha inteira, não para cada transmissão. Como o carrinho é um só do começo ao fim, “máximo 2 por produto” significa 2 unidades na campanha toda: quem atingir o teto na primeira sessão fica bloqueado até ela terminar. Em campanhas longas, use um limite mais alto do que usaria numa live avulsa.",
+    help: "Este limite vale para o evento inteiro, não para cada transmissão. Como o carrinho é um só do começo ao fim, “máximo 2 por produto” significa 2 unidades no evento todo: quem atingir o teto na primeira sessão fica bloqueado até ela terminar. Em eventos longos, use um limite mais alto do que usaria numa live avulsa.",
   },
   closeCartOnEventEnd: {
-    label: "Prazo depois que a campanha fechar",
-    hint: "Os dois lados têm prazo: o carrinho sempre expira. A escolha é entre um prazo curto depois da campanha e um prazo estendido.",
+    label: "Prazo depois que o evento fechar",
+    hint: "Os dois lados têm prazo: o carrinho sempre expira. O prazo começa a correr quando o evento fecha.",
   },
   freeShipping: {
-    label: "Frete grátis nesta campanha",
-    hint: "Zera o frete para o comprador em todas as sessões da campanha. Você continua vendo o custo real no painel do pedido. Como o carrinho é um só, o frete grátis vale para tudo que ele juntar até o fim.",
+    label: "Frete grátis neste evento",
+    hint: "Zera o frete para o comprador em todas as transmissões do evento. Você continua vendo o custo real no painel do pedido. Como o carrinho é um só, o frete grátis vale para tudo que ele juntar até o fim.",
   },
   pixDiscount: {
     label: "Desconto no PIX",
-    hint: "Desconto aplicado no checkout quando o comprador escolhe PIX. Vale para a campanha inteira e é independente de cupom.",
+    hint: "Desconto aplicado no checkout quando o comprador escolhe PIX. Vale para o evento inteiro e é independente de cupom.",
   },
 } as const
 
-/** Aviso de campanha longa (copy deck §3.3) — mais de 7 dias entre início e fim. */
+/** Aviso de evento longo (copy deck §3.3) — mais de 7 dias entre início e fim. */
 export const LONG_CAMPAIGN_DAYS = 7
 
 export function isLongCampaign(startsAt: string | null | undefined, endsAt: string | null | undefined): boolean {
@@ -75,7 +75,7 @@ export function isLongCampaign(startsAt: string | null | undefined, endsAt: stri
 }
 
 export const LONG_CAMPAIGN_WARNING =
-  "Campanha longa. Eventos com mais de 7 dias seguram o estoque reservado durante todo esse período e podem esbarrar no limite de tempo que o Instagram dá para o LiveCart responder o comprador por DM. Considere quebrar em campanhas menores."
+  "Evento longo. Eventos com mais de 7 dias seguram o estoque reservado durante todo esse período e podem esbarrar no limite de tempo que o Instagram dá para o LiveCart responder o comprador por DM. Considere quebrar em eventos menores."
 
 /** Duração em texto, para o aviso do teto de quantidade. */
 export function campaignDuration(
@@ -143,15 +143,15 @@ export const MAX_QUANTITY_OPTIONS = [
  * divergirem entre si seria repetir o erro que os criou.
  */
 export const EVENT_MODEL_COPY = {
-  title: "Um evento é a sua campanha — não uma publicação",
+  title: "Um evento é a sua venda — não uma publicação",
   levels: [
     {
       term: "Evento",
-      text: "É a campanha inteira. “Semana Black”, de segunda a sábado. É aqui que você define cupom, frete grátis, desconto no PIX e o prazo para o cliente finalizar.",
+      text: "É a venda inteira. “Semana Black”, de segunda a sábado. É aqui que você define cupom, frete grátis, desconto no PIX e o prazo para o cliente finalizar.",
     },
     {
       term: "Sessão",
-      text: "É cada transmissão dentro da campanha: a live de segunda, o post de terça, o story de quarta, o reel de quinta. Um evento pode ter quantas quiser, de tipos diferentes.",
+      text: "É cada transmissão dentro do evento: a live de segunda, o post de terça, o story de quarta, o reel de quinta. Um evento pode ter quantas quiser, de tipos diferentes.",
     },
     {
       term: "Mídia",
@@ -159,35 +159,35 @@ export const EVENT_MODEL_COPY = {
     },
   ],
   cartRule:
-    "O carrinho é um só por cliente, por campanha. Se a Ana comentou na live de segunda e voltou a comentar no story de quarta, os dois produtos entram no mesmo carrinho, com o mesmo link.",
+    "O carrinho é um só por cliente, por evento. Se a Ana comentou na live de segunda e voltou a comentar no story de quarta, os dois produtos entram no mesmo carrinho, com o mesmo link.",
   deadlineRule:
-    "O prazo para pagar só começa a correr quando o evento fecha. Enquanto a campanha estiver aberta nenhum carrinho expira — e nenhum estoque volta para a loja.",
+    "O prazo para pagar só começa a correr quando o evento fecha. Enquanto o evento estiver aberto nenhum carrinho expira — e nenhum estoque volta para a loja.",
   maxQuantityRule:
-    "O teto de quantidade vale para a campanha inteira, não para cada transmissão. “Máximo 2 por produto” significa 2 unidades da segunda ao sábado: quem atingir o limite na primeira sessão fica bloqueado até a campanha terminar.",
+    "O teto de quantidade vale para o evento inteiro, não para cada transmissão. “Máximo 2 por produto” significa 2 unidades da segunda ao sábado: quem atingir o limite na primeira transmissão fica bloqueado até o evento terminar.",
   /** A exceção da regra acima — e a única. Sem ela o lojista procura os
    *  produtos no lugar em que tudo o mais mora: a campanha. */
   productRule:
-    "Cupom, frete, prazo e teto de quantidade são da campanha. Os produtos são a única coisa que é de cada transmissão: a live pode vender a loja toda enquanto o story vende só uma peça. Você configura a lista na aba Sessões, no botão “Produtos” da transmissão.",
+    "Cupom, frete, prazo e teto de quantidade são do evento. Os produtos são a única coisa que é de cada transmissão: a live pode vender a loja toda enquanto o story vende só uma peça. Você configura a lista na aba Sessões, no botão “Produtos” da transmissão.",
   /** Resumo de uma linha — cabe acima dos KPIs sem empurrar o número da dobra. */
   shortIntro:
-    "Os números abaixo são da campanha inteira — a soma de todas as transmissões. A quebra por transmissão fica na aba Sessões.",
+    "Os números abaixo são do evento inteiro — a soma de todas as transmissões. A quebra por transmissão fica na aba Sessões.",
 } as const
 
 /**
  * Tipo de sessão: rótulo e ajuda por opção — copy deck §4.1.
  *
  * Story NÃO está aqui, e a ausência é deliberada. Um Story só vira venda se for
- * publicado PELO LiveCart (a intenção chega como resposta de DM, e o vínculo
- * depende do id da mídia que a publicação devolve). O Instagram não lista
- * stories numa grade, e não existe rota para publicar um Story dentro de uma
- * campanha que já existe — o atalho "Criar um Story" cria campanha e
- * transmissão juntas.
+ * publicado PELO LiveCart: a intenção chega como resposta de DM, e o vínculo
+ * depende do id da mídia que a publicação devolve. Por isso a opção Story não
+ * oferece "escolher uma publicação existente" — o Instagram não lista stories
+ * numa grade, e uma transmissão de Story sem mídia própria nunca captura nada.
  *
- * Ou seja: oferecer "Story" aqui produziria uma transmissão que nunca captura
- * nada, e a falha é MUDA — o comprador responde o story e não acontece nada.
- * É a mesma armadilha do campo que pedia o id numérico da mídia. Enquanto a
- * publicação de Story em campanha existente não existir, o menu não promete.
- * Ver SESSION_COPY.storyElsewhere.
+ * Story JÁ pode ser adicionado a um evento existente: o handler de publicação
+ * lê `eventId` e `attachPublishedMediaToEvent` anexa a sessão em vez de criar
+ * outro evento. A lista aqui o omitia por causa de um estado antigo do backend,
+ * e essa omissão sobreviveu à correção — o efeito era o Story só existir pelo
+ * atalho da porta de entrada, que era justamente o que fazia uma publicação
+ * parecer um evento inteiro.
  */
 export const SESSION_TYPE_OPTIONS = [
   {
@@ -205,6 +205,11 @@ export const SESSION_TYPE_OPTIONS = [
     label: "Reel",
     help: "Funciona igual ao post: os comentários do reel viram carrinho.",
   },
+  {
+    value: "story",
+    label: "Story",
+    help: "O LiveCart publica o Story e a venda acontece quando o comprador RESPONDE por DM — comentário não existe em story. Fica 24h no ar.",
+  },
 ] as const
 
 export type SessionTypeOptionValue = (typeof SESSION_TYPE_OPTIONS)[number]["value"]
@@ -217,7 +222,7 @@ export function sessionTypeHelp(value: string): string {
 export const SESSION_COPY = {
   type: {
     label: "Tipo da sessão",
-    hint: "O formato desta transmissão. Uma mesma campanha pode misturar live, post e reel — todos somam no mesmo carrinho de cada cliente.",
+    hint: "O formato desta transmissão. Um mesmo evento pode misturar live, post e reel — todos somam no mesmo carrinho de cada cliente.",
   },
   media: {
     label: "Publicação vinculada",
@@ -241,7 +246,7 @@ export const SESSION_COPY = {
    * para onde ir em vez de procurar um menu que não tem.
    */
   storyElsewhere:
-    "Para vender por Story, use o atalho “Criar um Story” em Novo Evento — o LiveCart publica o Story e monta a transmissão junto. Hoje o Story cria a própria campanha; ele ainda não pode ser acrescentado a uma campanha existente.",
+    "Para vender por Story, adicione uma transmissão do tipo Story na aba Sessões — o LiveCart publica o Story e monta a transmissão junto. A venda acontece quando o comprador RESPONDE o story por DM.",
   /** Fallback do vínculo posterior numa sessão de story (que já nasce com mídia). */
   storyNoLink:
     "Stories não aparecem na lista de publicações do Instagram. Uma transmissão de Story recebe a mídia no momento em que o LiveCart publica o Story — não há como vinculá-la depois.",
@@ -259,14 +264,14 @@ export const SESSION_COPY = {
 /**
  * Produtos vendáveis de uma transmissão — decisão 15 / N2.
  *
- * A lista é da TRANSMISSÃO: a campanha não tem lista, e por isso não existe
+ * A lista é da TRANSMISSÃO: o evento não tem lista, e por isso não existe
  * mais aba "Produtos" no evento. "Whitelist" é nome de tabela e não aparece
  * para o lojista em lugar nenhum.
  */
 export const SESSION_PRODUCTS_COPY = {
   title: "Produtos desta transmissão",
   /** Tooltip do "?": a regra inteira, sob demanda. */
-  hint: "Cada transmissão da campanha tem a própria lista — a live pode vender a loja toda enquanto o story vende uma peça só. Sem produto selecionado, esta transmissão vende qualquer produto ativo da loja.",
+  hint: "Cada transmissão do evento tem a própria lista — a live pode vender a loja toda enquanto o story vende uma peça só. Sem produto selecionado, esta transmissão vende qualquer produto ativo da loja.",
   /** Linha de status quando a lista tem produtos. */
   restricted: (count: number) =>
     count === 1
