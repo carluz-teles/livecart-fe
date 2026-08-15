@@ -106,7 +106,7 @@ export function EventDetailBody() {
               por palavra. Aqui fica só o que a aba ganhou de novo: os produtos
               são configurados por transmissão. */}
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Cada linha é uma transmissão desta campanha. Os produtos que cada uma pode
+            Cada linha é uma transmissão deste evento. Os produtos que cada uma pode
             vender são configurados nela mesma, no botão &quot;Produtos&quot; da linha.
           </p>
           <EventDetailSessions />

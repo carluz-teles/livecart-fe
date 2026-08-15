@@ -1,4 +1,4 @@
-export { useIntegrations, integrationKeys } from "./useIntegrations"
+export { useIntegrations, integrationKeys, useERPResyncRunning } from "./useIntegrations"
 export { useStoreSetup } from "./useStoreSetup"
 export type { StoreRequirement } from "./useStoreSetup"
 export {

@@ -29,9 +29,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   EventFilters,
-  EventTypeChooser,
   EventModelCallout,
   EventModelDialog,
+  EventForm,
   SessionForm,
   ReconnectForm,
 } from "@/components/event"
@@ -191,7 +191,7 @@ export default function EventsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Eventos"
-        description="Cada evento é uma campanha. Dentro dele ficam as sessões — a live, o post, o reel, o story — e um carrinho único por cliente que soma tudo que ele pediu durante a campanha inteira."
+        description="Dentro de um evento ficam as transmissões — a live, o post, o reel, o story — e um carrinho único por cliente, somando tudo que ele pediu do começo ao fim."
       >
         {/* Entrada permanente para a explicação: o banner abaixo é
             dispensável, e depois de dispensado não pode levar o modelo junto. */}
@@ -203,7 +203,7 @@ export default function EventsPage() {
             </Button>
           }
         />
-        <EventTypeChooser />
+        <EventForm />
       </PageHeader>
 
       {/* Banner dispensável, nunca modal automático: um diálogo de primeira
@@ -214,14 +214,14 @@ export default function EventsPage() {
         <StatsCard
           title="Total de Eventos"
           value={stats?.totalEvents ?? stats?.totalLives ?? 0}
-          description="campanhas criadas"
+          description="eventos criados"
           icon={Calendar}
           isLoading={statsLoading}
         />
         <StatsCard
           title="Ativos Agora"
           value={stats?.activeEvents ?? stats?.activeLives ?? 0}
-          description="campanhas vendendo"
+          description="eventos vendendo"
           icon={Radio}
           isLoading={statsLoading}
           variant="success"
@@ -317,12 +317,12 @@ export default function EventsPage() {
                         <>
                           <p className="font-medium">Você ainda não tem eventos</p>
                           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                            Um evento é a sua campanha de vendas — pode ser uma live de duas
-                            horas ou uma semana inteira de publicações. Crie o evento primeiro
-                            e depois adicione as sessões: live, post, reel ou story.
+                            Um evento é a sua venda — pode ser uma live de duas horas ou uma
+                            semana inteira de publicações. Crie o evento primeiro e depois
+                            adicione as transmissões: live, post, reel ou story.
                           </p>
                           <div className="mt-3">
-                            <EventTypeChooser />
+                            <EventForm />
                           </div>
                         </>
                       )}
@@ -349,7 +349,7 @@ export default function EventsPage() {
                               className="gap-1 text-muted-foreground"
                               title={
                                 kind.isMixed
-                                  ? `Campanha com transmissões de tipos diferentes: ${describeEventKind(kind)}.`
+                                  ? `Evento com transmissões de tipos diferentes: ${describeEventKind(kind)}.`
                                   : undefined
                               }
                             >
@@ -398,7 +398,7 @@ export default function EventsPage() {
                                 <DropdownMenuSeparator />
                                 {/* "Nova sessão" é a ação que faz o evento ser
                                     guarda-chuva — ela não pode depender de a
-                                    campanha ter live, nem de já estar no ar.
+                                    o evento ter live, nem de já estar no ar.
                                     Reconectar, sim: só há o que reconectar
                                     onde existe transmissão ao vivo. */}
                                 {(event.status === "active" ||

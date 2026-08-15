@@ -18,6 +18,11 @@ export interface Integration {
   provider: IntegrationProvider
   status: IntegrationStatus
   metadata?: Record<string, unknown>
+  /** Uma releitura em massa dos produtos deste ERP está em andamento agora. */
+  erpResyncRunning?: boolean
+  /** Progresso da releitura. Só valem enquanto erpResyncRunning é true. */
+  erpResyncDone?: number
+  erpResyncTotal?: number
   lastSyncedAt?: string
   createdAt: string
   // Setup URLs the merchant must paste into the provider's app to complete

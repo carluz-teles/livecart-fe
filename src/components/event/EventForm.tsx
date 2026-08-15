@@ -7,7 +7,6 @@ import { Plus, Loader2, CalendarRange } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -36,6 +35,7 @@ import {
 } from "@/components/ui/select"
 import { createEventSchema, type CreateEventFormData } from "@/schemas/event.schema"
 import { useCreateEvent } from "@/hooks/event"
+import { useStore } from "@/hooks/store/useStore"
 import { FieldHint } from "@/components/shared/FieldHint"
 import { InheritableNumberField } from "@/components/shared/InheritableNumberField"
 import {
@@ -60,11 +60,19 @@ interface EventFormProps {
   onOpenChange?: (open: boolean) => void
   onSuccess?: () => void
   trigger?: React.ReactNode
-  /** Tipo da PRIMEIRA transmissão sugerido pela porta de entrada. O atalho
-   *  "Live ao vivo" abre já em `live`; a criação de campanha abre igual, mas o
-   *  lojista troca sem sair do formulário. */
+  /** Tipo da PRIMEIRA transmissão. Existe para quem abre o formulário já
+   *  sabendo o que vai publicar; o padrão é `live` e o lojista troca depois, na
+   *  aba Sessões, sem que a escolha bloqueie a criação do evento. */
   initialSessionType?: SessionType
 }
+
+/** Prazo extra da fila quando a loja não tem um padrão próprio.
+ *
+ *  Diferente dos outros dois, este não existe nas configurações da loja — mora
+ *  só no evento, com DEFAULT 30 no banco (migration 000073). Trazer o mesmo 30
+ *  preenchido evita que o campo pareça "sem regra" quando na verdade tem uma.
+ */
+const WAITLIST_TTL_FALLBACK = 30
 
 /** Fim padrão: 24h à frente, às 23h59 — o formato que o lojista digitaria. */
 function defaultEndsAt(): string {
@@ -82,6 +90,15 @@ export function EventForm({
   initialSessionType = "live",
 }: EventFormProps) {
   const createEvent = useCreateEvent()
+  // Os padrões da loja entram PREENCHIDOS, não como placeholder.
+  //
+  // Antes, vazio significava "herda da loja" e o backend resolvia com
+  // COALESCE(evento, loja) a cada leitura. Herdar ao vivo tem um efeito que o
+  // lojista não pede: mexer nas configurações da loja no meio de um evento em
+  // andamento muda as regras dele por baixo. Preenchido, o evento nasce com uma
+  // cópia do que a loja valia naquele momento — e continua editável aqui.
+  const { data: store } = useStore()
+  const storeDefaults = store?.cartSettings
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
   const sheetOpen = isControlled ? open : internalOpen
@@ -90,60 +107,52 @@ export function EventForm({
     onOpenChange?.(next)
   }
 
+  const initialValues = (): CreateEventFormData => ({
+    title: "",
+    // `type` é o tipo da PRIMEIRA SESSÃO — o evento nasce com uma transmissão
+    // de live por padrão, e o lojista troca ou adiciona outras depois.
+    type: initialSessionType,
+    platform: undefined,
+    platformLiveId: "",
+    startsAt: null,
+    // Padrão de 24h à frente: endsAt é obrigatório no backend, e abrir o
+    // formulário vazio num campo obrigatório é o caminho mais curto para o
+    // lojista levar 422 sem entender por quê.
+    endsAt: defaultEndsAt(),
+    description: null,
+    // Regra de produto, não escolha: o prazo de finalização SEMPRE começa a
+    // correr quando o evento fecha. Era um switch que oferecia a alternativa de
+    // manter o carrinho aberto por um prazo bem maior, e nenhuma loja quer isso
+    // — deixava estoque preso em carrinho de quem já tinha desistido.
+    closeCartOnEventEnd: true,
+    cartExpirationMinutes: storeDefaults?.expirationMinutes ?? null,
+    cartMaxQuantityPerItem: storeDefaults?.maxQuantityPerItem ?? null,
+    waitlistNotifiedTtlMinutes: WAITLIST_TTL_FALLBACK,
+    freeShipping: false,
+    pixDiscountPercent: 0,
+  })
+
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
-    defaultValues: {
-      title: "",
-      // `type` é o tipo da PRIMEIRA SESSÃO. Era um radio "Live Única /
-      // Multi-sessão" que não mudava um byte no banco (os dois caíam em
-      // `live`) e era o último lugar da UI mostrando ao lojista um vocabulário
-      // que a 000122 apagou.
-      type: initialSessionType,
-      platform: undefined,
-      platformLiveId: "",
-      startsAt: null,
-      // Padrão de 24h à frente: endsAt é obrigatório no backend, e abrir o
-      // formulário vazio num campo obrigatório é o caminho mais curto para o
-      // lojista levar 422 sem entender por quê.
-      endsAt: defaultEndsAt(),
-      description: null,
-      closeCartOnEventEnd: true,
-      cartExpirationMinutes: null,
-      cartMaxQuantityPerItem: null,
-      waitlistNotifiedTtlMinutes: null,
-      freeShipping: false,
-      pixDiscountPercent: 0,
-    },
+    defaultValues: initialValues(),
   })
 
   // Reabrir o Sheet tem de reabrir limpo: o mesmo componente serve o card
-  // "Criar uma campanha" e o atalho "Live ao vivo", e o tipo sugerido muda
-  // entre os dois.
+  // Reabrir tem de reabrir limpo — e com os padrões da loja já dentro. O
+  // `storeDefaults` entra nas dependências porque a loja chega por rede: sem
+  // ele, abrir o formulário antes da resposta deixaria os campos vazios para
+  // sempre naquela sessão.
   useEffect(() => {
     if (!sheetOpen) return
-    form.reset({
-      title: "",
-      type: initialSessionType,
-      platform: undefined,
-      platformLiveId: "",
-      startsAt: null,
-      endsAt: defaultEndsAt(),
-      description: null,
-      closeCartOnEventEnd: true,
-      cartExpirationMinutes: null,
-      cartMaxQuantityPerItem: null,
-      waitlistNotifiedTtlMinutes: null,
-      freeShipping: false,
-      pixDiscountPercent: 0,
-    })
+    form.reset(initialValues())
     // `form` é estável entre renders do react-hook-form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheetOpen, initialSessionType])
+  }, [sheetOpen, initialSessionType, storeDefaults])
 
   const watchStartsAt = form.watch("startsAt")
   const watchEndsAt = form.watch("endsAt")
 
-  // Só avisa sobre o teto quando a campanha passa de 24h — numa live de duas
+  // Só avisa sobre o teto quando o evento passa de 24h — numa live de duas
   // horas "máximo 2" é trava anti-abuso saudável, e o aviso viraria ruído.
   const longCampaignDuration = campaignDuration(watchStartsAt, watchEndsAt)
   const isPending = createEvent.isPending
@@ -170,7 +179,7 @@ export function EventForm({
 
     createEvent.mutate(payload, {
       onSuccess: () => {
-        toast.success("Campanha criada!", {
+        toast.success("Evento criado!", {
           description:
             "Abra o evento e use a aba Sessões para adicionar as transmissões — live, post, reel ou story.",
         })
@@ -216,10 +225,10 @@ export function EventForm({
             <CalendarRange className="h-5 w-5 text-primary" />
             Novo evento
           </SheetTitle>
-          <SheetDescription>
-            Defina a campanha: nome, quando abre, quando fecha e as regras comerciais. As
-            transmissões você adiciona no passo seguinte — e pode adicionar mais a
-            qualquer momento enquanto o evento estiver aberto.
+          <SheetDescription className="leading-relaxed">
+            Nome, quando abre, quando fecha e as regras comerciais. As transmissões —
+            live, post, reel ou story — você adiciona depois, quantas quiser, enquanto
+            o evento estiver aberto.
           </SheetDescription>
         </SheetHeader>
 
@@ -247,14 +256,11 @@ export function EventForm({
               )}
             />
 
-            <div className="relative py-2">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 bg-background px-2 text-xs text-muted-foreground">
-                Janela da campanha
-                <FieldHint text={EVENT_COPY.windowSection.hint} />
-              </span>
-            </div>
-
+            <FormSection
+              title="Janela de vendas"
+              hint={EVENT_COPY.windowSection.hint}
+              description="Fora desta janela o comentário não vira carrinho — o comprador recebe um aviso automático em vez de ficar sem resposta."
+            >
             <FormField
               control={form.control}
               name="startsAt"
@@ -298,48 +304,110 @@ export function EventForm({
             />
 
             {isLongCampaign(watchStartsAt, watchEndsAt) && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-                <p className="text-sm text-amber-800 dark:text-amber-200">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                <p className="text-sm leading-relaxed text-amber-800 dark:text-amber-200">
                   {LONG_CAMPAIGN_WARNING}
                 </p>
               </div>
             )}
+            </FormSection>
 
-            <div className="relative py-2">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 bg-background px-2 text-xs text-muted-foreground">
-                Configurações do carrinho
-                <FieldHint text={EVENT_COPY.cartSection.hint} />
-              </span>
-            </div>
-
+            <FormSection
+              title="Regras do carrinho"
+              hint={EVENT_COPY.cartSection.hint}
+              description="Já vêm preenchidas com o padrão da sua loja. O que você mudar aqui vale só para este evento."
+            >
             <FormField
               control={form.control}
-              name="closeCartOnEventEnd"
+              name="cartExpirationMinutes"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
-                      Fechar o carrinho logo depois da campanha
-                      <FieldHint text={EVENT_COPY.closeCartOnEventEnd.hint} />
-                    </FormLabel>
-                    <FormDescription className="text-xs">
-                      Ligado: o prazo abaixo começa a correr assim que a campanha fecha —
-                      é o que gira estoque mais rápido. Desligado: o carrinho continua
-                      aberto por um prazo bem maior. Os dois lados expiram; nada fica
-                      eterno.
-                    </FormDescription>
-                  </div>
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.cartExpiration.label}
+                    <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                  </FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={15}
+                      unit={"minutos"}
+                      inheritedValue={storeDefaults?.expirationMinutes}
                     />
                   </FormControl>
+                  <FormDescription>{EVENT_COPY.cartExpiration.help}</FormDescription>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="cartMaxQuantityPerItem"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.maxQuantity.label}
+                    <FieldHint text={EVENT_COPY.maxQuantity.hint} />
+                  </FormLabel>
+                  <FormControl>
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={1}
+                      unit={"unidades por produto"}
+                      inheritedValue={storeDefaults?.maxQuantityPerItem}
+                    />
+                  </FormControl>
+                  {/* O texto longo NÃO pode virar tooltip: é o contrato de
+                      aceitação do risco R2 — o teto vale para o evento
+                      inteira, e é isso que bloqueia uma compra legítima na
+                      sessão seguinte. */}
+                  <FormDescription>{EVENT_COPY.maxQuantity.help}</FormDescription>
+                  {field.value != null && longCampaignDuration && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <strong>Atenção ao limite num evento de vários dias.</strong>{" "}
+                        Você definiu {field.value} unidade(s) por produto, e este evento
+                        dura {longCampaignDuration}. Esse limite vale para o período
+                        inteiro: quem atingir o teto na primeira sessão fica bloqueado até
+                        o evento terminar.
+                      </p>
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="waitlistNotifiedTtlMinutes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.waitlistTtl.label}
+                    <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
+                  </FormLabel>
+                  <FormControl>
+                    <InheritableNumberField
+                      value={field.value}
+                      onChange={field.onChange}
+                      min={5} max={240}
+                      unit={"minutos"}
+                    />
+                  </FormControl>
+                  <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            </FormSection>
+
+            <FormSection
+              title="Promoções"
+              description="Valem para o evento inteiro — todas as transmissões, no mesmo carrinho de cada cliente."
+            >
             <FormField
               control={form.control}
               name="freeShipping"
@@ -425,91 +493,9 @@ export function EventForm({
                 )
               }}
             />
+            </FormSection>
 
-            <FormField
-              control={form.control}
-              name="cartExpirationMinutes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.cartExpiration.label}
-                    <FieldHint text={EVENT_COPY.cartExpiration.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={15}
-                      unit={"minutos"}
-                    />
-                  </FormControl>
-                  <FormDescription>{EVENT_COPY.cartExpiration.help}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cartMaxQuantityPerItem"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.maxQuantity.label}
-                    <FieldHint text={EVENT_COPY.maxQuantity.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={1}
-                      unit={"unidades por produto"}
-                    />
-                  </FormControl>
-                  {/* O texto longo NÃO pode virar tooltip: é o contrato de
-                      aceitação do risco R2 — o teto vale para a campanha
-                      inteira, e é isso que bloqueia uma compra legítima na
-                      sessão seguinte. */}
-                  <FormDescription>{EVENT_COPY.maxQuantity.help}</FormDescription>
-                  {field.value != null && longCampaignDuration && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        <strong>Atenção ao limite numa campanha de vários dias.</strong>{" "}
-                        Você definiu {field.value} unidade(s) por produto, e esta campanha
-                        dura {longCampaignDuration}. Esse limite vale para o período
-                        inteiro: quem atingir o teto na primeira sessão fica bloqueado até
-                        a campanha terminar.
-                      </p>
-                    </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="waitlistNotifiedTtlMinutes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.waitlistTtl.label}
-                    <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={5} max={240}
-                      unit={"minutos"}
-                    />
-                  </FormControl>
-                  <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+            <FormSection title="Uso interno">
             <FormField
               control={form.control}
               name="description"
@@ -529,6 +515,7 @@ export function EventForm({
                 </FormItem>
               )}
             />
+            </FormSection>
 
             </div>
 
@@ -551,5 +538,46 @@ export function EventForm({
         </Form>
       </SheetContent>
     </Sheet>
+  )
+}
+
+/**
+ * Cabeçalho de seção do formulário.
+ *
+ * Substitui o padrão antigo — um `Separator` com o texto flutuando centralizado
+ * por cima, posicionado com `absolute` e `translate`. Aquilo colocava o rótulo
+ * no MEIO da linha, longe dos campos que ele governa, e obrigava um fundo opaco
+ * para "furar" a régua. O olho lia uma divisória decorada, não um grupo.
+ *
+ * Aqui o rótulo é um cabeçalho alinhado à esquerda, na mesma coluna dos campos,
+ * com a hierarquia feita por peso e espaço em vez de posição — que é o que
+ * agrupa de fato.
+ */
+function FormSection({
+  title,
+  hint,
+  description,
+  children,
+}: {
+  title: string
+  hint?: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          {title}
+          {hint && <FieldHint text={hint} />}
+        </h3>
+        {description && (
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
   )
 }
