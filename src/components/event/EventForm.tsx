@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Loader2, CalendarRange } from "lucide-react"
+import { Plus, Loader2, CalendarRange, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { cn } from "@/lib/utils"
 import {
   Sheet,
   SheetContent,
@@ -20,19 +26,11 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { createEventSchema, type CreateEventFormData } from "@/schemas/event.schema"
 import { useCreateEvent } from "@/hooks/event"
 import { useStore } from "@/hooks/store/useStore"
@@ -40,9 +38,6 @@ import { FieldHint } from "@/components/shared/FieldHint"
 import { InheritableNumberField } from "@/components/shared/InheritableNumberField"
 import {
   EVENT_COPY,
-  CART_EXPIRATION_OPTIONS,
-  MAX_QUANTITY_OPTIONS,
-  WAITLIST_TTL_OPTIONS,
   isLongCampaign,
   campaignDuration,
   LONG_CAMPAIGN_WARNING,
@@ -100,6 +95,7 @@ export function EventForm({
   const { data: store } = useStore()
   const storeDefaults = store?.cartSettings
   const [internalOpen, setInternalOpen] = useState(false)
+  const [extrasOpen, setExtrasOpen] = useState(false)
   const isControlled = open !== undefined
   const sheetOpen = isControlled ? open : internalOpen
   const handleOpenChange = (next: boolean) => {
@@ -145,6 +141,7 @@ export function EventForm({
   useEffect(() => {
     if (!sheetOpen) return
     form.reset(initialValues())
+    setExtrasOpen(false)
     // `form` é estável entre renders do react-hook-form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetOpen, initialSessionType, storeDefaults])
@@ -239,13 +236,13 @@ export function EventForm({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pb-6">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
+                  <FormLabel>
                     {EVENT_COPY.title.label} <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
@@ -256,269 +253,248 @@ export function EventForm({
               )}
             />
 
-            <FormSection
-              title="Janela de vendas"
-              hint={EVENT_COPY.windowSection.hint}
-              description="Fora desta janela o comentário não vira carrinho — o comprador recebe um aviso automático em vez de ficar sem resposta."
-            >
-            <FormField
-              control={form.control}
-              name="startsAt"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.startsAt.label}
-                    <FieldHint text={EVENT_COPY.startsAt.hint} />
-                  </FormLabel>
-                  <DateTimeField
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Começa agora"
-                  />
-                  <FormDescription>{EVENT_COPY.startsAt.empty}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="endsAt"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
-                    <FieldHint text={EVENT_COPY.endsAt.hint} />
-                  </FormLabel>
-                  <DateTimeField
-                    value={field.value}
-                    onChange={(iso) => field.onChange(iso ?? "")}
-                    clearable={false}
-                    defaultHour={23}
-                    defaultMinute={59}
-                  />
-                  <FormDescription>{EVENT_COPY.endsAt.help}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isLongCampaign(watchStartsAt, watchEndsAt) && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
-                <p className="text-sm leading-relaxed text-amber-800 dark:text-amber-200">
-                  {LONG_CAMPAIGN_WARNING}
-                </p>
+            <FormSection title="Janela de vendas" hint={EVENT_COPY.windowSection.hint}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startsAt"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>{EVENT_COPY.startsAt.label}</FormLabel>
+                      <DateTimeField
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Começa agora"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endsAt"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>
+                        {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <DateTimeField
+                        value={field.value}
+                        onChange={(iso) => field.onChange(iso ?? "")}
+                        clearable={false}
+                        defaultHour={23}
+                        defaultMinute={59}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
+
+              {isLongCampaign(watchStartsAt, watchEndsAt) && (
+                <Warning>{LONG_CAMPAIGN_WARNING}</Warning>
+              )}
             </FormSection>
 
             <FormSection
               title="Regras do carrinho"
               hint={EVENT_COPY.cartSection.hint}
-              description="Já vêm preenchidas com o padrão da sua loja. O que você mudar aqui vale só para este evento."
+              description="Preenchidas com o padrão da sua loja. Valem só para este evento."
             >
-            <FormField
-              control={form.control}
-              name="cartExpirationMinutes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.cartExpiration.label}
-                    <FieldHint text={EVENT_COPY.cartExpiration.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={15}
-                      unit={"minutos"}
-                      inheritedValue={storeDefaults?.expirationMinutes}
-                    />
-                  </FormControl>
-                  <FormDescription>{EVENT_COPY.cartExpiration.help}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cartMaxQuantityPerItem"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.maxQuantity.label}
-                    <FieldHint text={EVENT_COPY.maxQuantity.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={1}
-                      unit={"unidades por produto"}
-                      inheritedValue={storeDefaults?.maxQuantityPerItem}
-                    />
-                  </FormControl>
-                  {/* O texto longo NÃO pode virar tooltip: é o contrato de
-                      aceitação do risco R2 — o teto vale para o evento
-                      inteira, e é isso que bloqueia uma compra legítima na
-                      sessão seguinte. */}
-                  <FormDescription>{EVENT_COPY.maxQuantity.help}</FormDescription>
-                  {field.value != null && longCampaignDuration && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        <strong>Atenção ao limite num evento de vários dias.</strong>{" "}
-                        Você definiu {field.value} unidade(s) por produto, e este evento
-                        dura {longCampaignDuration}. Esse limite vale para o período
-                        inteiro: quem atingir o teto na primeira sessão fica bloqueado até
-                        o evento terminar.
-                      </p>
-                    </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="waitlistNotifiedTtlMinutes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5">
-                    {EVENT_COPY.waitlistTtl.label}
-                    <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
-                  </FormLabel>
-                  <FormControl>
-                    <InheritableNumberField
-                      value={field.value}
-                      onChange={field.onChange}
-                      min={5} max={240}
-                      unit={"minutos"}
-                    />
-                  </FormControl>
-                  <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            </FormSection>
-
-            <FormSection
-              title="Promoções"
-              description="Valem para o evento inteiro — todas as transmissões, no mesmo carrinho de cada cliente."
-            >
-            <FormField
-              control={form.control}
-              name="freeShipping"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
-                      {EVENT_COPY.freeShipping.label}
-                      <FieldHint text={EVENT_COPY.freeShipping.hint} />
+              <FormField
+                control={form.control}
+                name="cartExpirationMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      {EVENT_COPY.cartExpiration.label}
+                      <FieldHint text={EVENT_COPY.cartExpiration.help} />
                     </FormLabel>
-                    <FormDescription className="text-xs">
-                      O cliente vê as opções de transportadora e prazo, mas paga
-                      R$ 0,00 pelo frete. Você ainda vê o custo real no painel
-                      do pedido.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value ?? false}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="pixDiscountPercent"
-              render={({ field }) => {
-                const value = field.value ?? 0
-                const enabled = value > 0
-                return (
-                  <FormItem className="rounded-lg border p-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-0.5 flex-1">
-                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium">
-                          {EVENT_COPY.pixDiscount.label}
-                          <FieldHint text={EVENT_COPY.pixDiscount.hint} />
-                        </FormLabel>
-                        <FormDescription className="text-xs">
-                          Aplicado automaticamente no checkout quando o cliente
-                          escolhe pagar com Pix. Independente de cupons.
-                        </FormDescription>
-                      </div>
-                      <Switch
-                        checked={enabled}
-                        onCheckedChange={(checked) =>
-                          field.onChange(checked ? 10 : 0)
-                        }
+                    <FormControl>
+                      <InheritableNumberField
+                        value={field.value}
+                        onChange={field.onChange}
+                        min={15}
+                        unit={"minutos"}
+                        inheritedValue={storeDefaults?.expirationMinutes}
                       />
-                    </div>
-                    {enabled && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            max={100}
-                            step={1}
-                            value={value}
-                            onChange={(e) => {
-                              const parsed = parseInt(e.target.value, 10)
-                              if (Number.isNaN(parsed)) {
-                                field.onChange(0)
-                              } else {
-                                field.onChange(Math.min(100, Math.max(0, parsed)))
-                              }
-                            }}
-                            className="w-24"
-                            aria-label="Percentual de desconto no Pix"
-                          />
-                        </FormControl>
-                        <span className="text-sm text-muted-foreground">%</span>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          O cliente verá o valor descontado no resumo do checkout.
-                        </span>
-                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cartMaxQuantityPerItem"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      {EVENT_COPY.maxQuantity.label}
+                      <FieldHint text={EVENT_COPY.maxQuantity.help} />
+                    </FormLabel>
+                    <FormControl>
+                      <InheritableNumberField
+                        value={field.value}
+                        onChange={field.onChange}
+                        min={1}
+                        unit={"unidades por produto"}
+                        inheritedValue={storeDefaults?.maxQuantityPerItem}
+                      />
+                    </FormControl>
+                    {/* O texto do teto era permanente por ser o contrato de
+                        aceitação do risco R2. Ele continua obrigatório — mas só
+                        onde morde: num evento de um dia "máximo 2" é trava
+                        anti-abuso e ninguém precisa ser avisado. */}
+                    {field.value != null && longCampaignDuration && (
+                      <Warning>
+                        <strong>{field.value} por produto vale para o evento inteiro</strong>{" "}
+                        ({longCampaignDuration}). Quem atingir o teto na primeira
+                        transmissão fica bloqueado até o fim.
+                      </Warning>
                     )}
                     <FormMessage />
                   </FormItem>
-                )
-              }}
-            />
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="waitlistNotifiedTtlMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5">
+                      {EVENT_COPY.waitlistTtl.label}
+                      <FieldHint text={EVENT_COPY.waitlistTtl.help} />
+                    </FormLabel>
+                    <FormControl>
+                      <InheritableNumberField
+                        value={field.value}
+                        onChange={field.onChange}
+                        min={5} max={240}
+                        unit={"minutos"}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </FormSection>
 
-            <FormSection title="Uso interno">
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Notas internas sobre o evento, produtos destaque, etc..."
-                      className="resize-none min-h-[80px]"
-                      {...field}
-                      value={field.value ?? ""}
-                    />
-                  </FormControl>
-                  <FormDescription>Não aparece para o cliente.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            </FormSection>
+            {/* Tudo o que tem padrão bom fica fechado.
+                Frete grátis, desconto no Pix e a nota interna são exceção, não
+                rotina: abertos por padrão, ocupavam mais da metade do
+                formulário para dizer "não" três vezes. */}
+            <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors hover:bg-muted/50">
+                <div>
+                  <p className="text-sm font-semibold">Promoções e observações</p>
+                  <p className="text-xs text-muted-foreground">
+                    Frete grátis, desconto no Pix e nota interna
+                  </p>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                    extrasOpen && "rotate-180",
+                  )}
+                />
+              </CollapsibleTrigger>
 
+              <CollapsibleContent className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="freeShipping"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between gap-4 rounded-lg border p-3">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-normal">
+                        {EVENT_COPY.freeShipping.label}
+                        <FieldHint text={EVENT_COPY.freeShipping.hint} />
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value ?? false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pixDiscountPercent"
+                  render={({ field }) => {
+                    const value = field.value ?? 0
+                    const enabled = value > 0
+                    return (
+                      <FormItem className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <FormLabel className="flex items-center gap-1.5 text-sm font-normal">
+                            {EVENT_COPY.pixDiscount.label}
+                            <FieldHint text={EVENT_COPY.pixDiscount.hint} />
+                          </FormLabel>
+                          <Switch
+                            checked={enabled}
+                            onCheckedChange={(checked) => field.onChange(checked ? 10 : 0)}
+                          />
+                        </div>
+                        {enabled && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                max={100}
+                                step={1}
+                                value={value}
+                                onChange={(e) => {
+                                  const parsed = parseInt(e.target.value, 10)
+                                  field.onChange(
+                                    Number.isNaN(parsed)
+                                      ? 0
+                                      : Math.min(100, Math.max(0, parsed)),
+                                  )
+                                }}
+                                className="w-20"
+                                aria-label="Percentual de desconto no Pix"
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground">
+                              % de desconto no checkout
+                            </span>
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-normal">
+                        Nota interna
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Só você vê. Produtos destaque, combinados com a equipe..."
+                          className="min-h-[72px] resize-none"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CollapsibleContent>
+            </Collapsible>
             </div>
-
             {/* Fora da área que rola: os botões ficam sempre à vista. */}
             <div className="flex shrink-0 justify-end gap-3 border-t bg-background px-6 py-4">
               <Button
@@ -538,6 +514,21 @@ export function EventForm({
         </Form>
       </SheetContent>
     </Sheet>
+  )
+}
+
+/**
+ * Aviso âmbar do formulário.
+ *
+ * Os dois avisos daqui eram blocos de texto corrido com as mesmas cinco classes
+ * repetidas. Um componente evita que o próximo nasça com outro tom de amarelo —
+ * e obriga a escrever curto, porque o espaço é o mesmo para os dois.
+ */
+function Warning({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+      {children}
+    </p>
   )
 }
 
