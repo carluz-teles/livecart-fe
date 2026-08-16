@@ -8,6 +8,8 @@ export interface CartSettings {
   reserveStock: boolean
   allowStorePickup: boolean
   maxQuantityPerItem: number
+  /** Piso de uma parcela no cartão, em centavos. 0 = sem mínimo. */
+  minInstallmentCents: number
   allowEdit: boolean
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings
@@ -23,6 +25,7 @@ export const DEFAULT_CART_SETTINGS: CartSettings = {
   reserveStock: true,
   allowStorePickup: false,
   maxQuantityPerItem: 5,
+  minInstallmentCents: 0,
   allowEdit: true,
   checkoutSendMethods: ['public_link', 'manual'],
   // Automatic message settings
@@ -103,6 +106,8 @@ export interface UpdateCartSettingsPayload {
   reserveStock: boolean
   allowStorePickup: boolean
   maxQuantityPerItem: number
+  /** Piso de uma parcela no cartão, em centavos. 0 = sem mínimo. */
+  minInstallmentCents: number
   allowEdit: boolean
   checkoutSendMethods: CheckoutSendMethod[]
   // Automatic message settings

@@ -23,6 +23,9 @@ export const checkoutSettingsSchema = z.object({
   reserveStock: z.boolean(),
   allowStorePickup: z.boolean(),
   maxQuantityPerItem: z.number().min(1, "Mínimo de 1 item"),
+  // Em REAIS na tela, centavos na API. Zero é válido e significa "sem mínimo" —
+  // é o padrão e o comportamento de sempre.
+  minInstallmentReais: z.number().min(0, "Não pode ser negativo"),
 })
 
 export type CheckoutSettingsFormData = z.infer<typeof checkoutSettingsSchema>

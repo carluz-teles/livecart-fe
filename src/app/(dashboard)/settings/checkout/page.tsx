@@ -200,6 +200,38 @@ export default function CheckoutSettingsPage() {
               Limite máximo que cada cliente pode comprar de um mesmo produto
             </p>
           </div>
+
+          <div className="space-y-2 max-w-xs">
+            <Label htmlFor="minInstallmentReais">
+              Valor mínimo da parcela
+            </Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                R$
+              </span>
+              <Input
+                id="minInstallmentReais"
+                type="number"
+                min={0}
+                step="0.01"
+                className="pl-9"
+                {...register("minInstallmentReais", { valueAsNumber: true })}
+              />
+            </div>
+            {errors.minInstallmentReais && (
+              <p className="text-sm text-destructive">
+                {errors.minInstallmentReais.message}
+              </p>
+            )}
+            {/* O exemplo faz mais que a regra: "R$ 20" é abstrato, "12× de
+                R$ 5,00 numa venda de R$ 60" é o que o lojista está pagando de
+                MDR hoje sem perceber. */}
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              O cartão não parcela abaixo deste valor. Com R$ 20, uma venda de
+              R$ 60 oferece até 3×; sem mínimo, ela ofereceria 12× de R$ 5,00.
+              Deixe 0 para não limitar. À vista sempre aparece.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

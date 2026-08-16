@@ -1470,6 +1470,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                         provider={checkoutConfig.provider}
                         publicKey={checkoutConfig.publicKey}
                         amount={effectiveTotal}
+                        maxInstallments={checkoutConfig.maxInstallments ?? 12}
                         customer={customerPayload}
                         disabled={checkoutSettling}
                         onSuccess={handleCardSuccess}

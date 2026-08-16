@@ -572,6 +572,10 @@ export interface CheckoutConfigResponse {
   availableMethods: PaymentMethod[]
   totalAmount: number
   currency: string
+  /** Quantas parcelas ESTE carrinho aceita, já com o mínimo por parcela da loja
+   *  aplicado. Calculado no servidor: a mesma regra decide o que a tela oferece
+   *  e o que o servidor aceita. */
+  maxInstallments: number
 }
 
 export interface ShippingAddressPayload {
