@@ -155,18 +155,22 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
   // sessão apontando para um id morto.
   useEffect(() => {
     if (origem !== "live") return
+    // `getValues`, e não o `platformLiveId` do render: este efeito roda logo
+    // depois do reset acima, no mesmo ciclo, e o valor do closure ainda é o da
+    // abertura anterior. Ao reabrir com a mesma live no ar, o closure trazia o
+    // id antigo, `aindaExiste` dava true e o efeito concluía que não havia o
+    // que fazer — enquanto o reset já tinha esvaziado o campo de verdade. O
+    // botão ficava bloqueado com a live na tela, e só destravava ao trocar de
+    // aba e voltar, que é o que zerava o closure.
+    const atual = form.getValues("platformLiveId")
     if (lives.length === 0) {
-      if (platformLiveId) form.setValue("platformLiveId", "")
+      if (atual) form.setValue("platformLiveId", "")
       return
     }
-    const aindaExiste = lives.some((l) => l.id === platformLiveId)
-    if (!platformLiveId || !aindaExiste) {
+    const aindaExiste = lives.some((l) => l.id === atual)
+    if (!atual || !aindaExiste) {
       form.setValue("platformLiveId", lives[0].id)
     }
-    // `open` entra aqui junto com os dados: ao reabrir o diálogo o efeito de
-    // reset limpa o campo, e sem esta dependência este aqui não roda de novo
-    // (origem e livesData vêm iguais, do cache). A live aparecia na tela com o
-    // campo vazio, e a sessão nascia sem vínculo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origem, livesData, open])
 
