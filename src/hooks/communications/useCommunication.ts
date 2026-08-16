@@ -106,6 +106,7 @@ export function useCommunication(type: CartNotificationType): UseCommunicationRe
           reserveStock: cart.reserveStock,
           allowStorePickup: cart.allowStorePickup ?? false,
           maxQuantityPerItem: cart.maxQuantityPerItem,
+        minInstallmentCents: cart.minInstallmentCents ?? 0,
           allowEdit: cart.allowEdit,
           checkoutSendMethods: cart.checkoutSendMethods,
           // Os toggles derivados continuam olhando o estado atual, com o

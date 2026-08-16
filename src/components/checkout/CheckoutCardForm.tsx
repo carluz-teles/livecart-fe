@@ -56,6 +56,9 @@ interface CheckoutCardFormProps {
   provider: PaymentProvider
   publicKey: string
   amount: number
+  /** Teto de parcelas para este carrinho, vindo do servidor com o mínimo por
+   *  parcela da loja já aplicado. */
+  maxInstallments: number
   customer: CheckoutCustomerInfo
   /** O total ainda está se formando (item editado, frete recotando). `amount`
    *  seria cobrado errado, então a CTA não responde até assentar. */
@@ -374,6 +377,7 @@ function MercadoPagoCardForm({
   amount,
   customer,
   disabled,
+  maxInstallments,
   onSuccess,
   onError,
 }: CheckoutCardFormProps) {
@@ -535,7 +539,10 @@ function MercadoPagoCardForm({
           total_amount: c.total_amount,
           recommended_message: c.recommended_message,
         }))
-        setInstallmentOptions(costs)
+        // O gateway devolve os planos da conta do lojista; o mínimo por parcela
+        // é regra do LiveCart e corta essa lista por cima. Quem manda é o menor
+        // dos dois.
+        setInstallmentOptions(costs.filter((c) => c.installments <= maxInstallments))
         setSelectedInstallments((prev) =>
           costs.some((c) => c.installments === prev) ? prev : 1
         )
@@ -596,10 +603,10 @@ function MercadoPagoCardForm({
       })
 
       if (result.status === "rejected") {
-        setError(
-          result.message ||
-            "Pagamento recusado. Verifique os dados do cartão."
-        )
+        // "Verifique os dados do cartão" é o conselho errado quando o cartão
+        // está certo — e o backend agora manda a mensagem específica quando o
+        // antifraude reprovou. Só caímos no texto genérico sem mensagem dele.
+        setError(result.message || "Não foi possível concluir o pagamento.")
         return
       }
       onSuccess(result)
@@ -799,6 +806,7 @@ function PagarmeCardForm({
   amount,
   customer,
   disabled,
+  maxInstallments,
   onSuccess,
   onError,
 }: CheckoutCardFormProps) {
@@ -895,10 +903,10 @@ function PagarmeCardForm({
       })
 
       if (result.status === "rejected") {
-        setError(
-          result.message ||
-            "Pagamento recusado. Verifique os dados do cartão."
-        )
+        // "Verifique os dados do cartão" é o conselho errado quando o cartão
+        // está certo — e o backend agora manda a mensagem específica quando o
+        // antifraude reprovou. Só caímos no texto genérico sem mensagem dele.
+        setError(result.message || "Não foi possível concluir o pagamento.")
         return
       }
       onSuccess(result)
@@ -1008,7 +1016,10 @@ function PagarmeCardForm({
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+              {/* A lista vem do servidor, não de 1..12 fixo. Numa venda de
+                  R$ 60 com mínimo de R$ 20 o comprador vê 3 opções, não doze de
+                  cinco reais — e o servidor recusa um POST que peça mais. */}
+              {Array.from({ length: maxInstallments }, (_, i) => i + 1).map((n) => (
                 <SelectItem key={n} value={n.toString()}>
                   <span className="font-semibold tabular-nums">{n}×</span>{" "}
                   <span className="tabular-nums">

@@ -36,6 +36,7 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
       reserveStock: true,
       allowStorePickup: false,
       maxQuantityPerItem: 5,
+      minInstallmentReais: 0,
     },
   })
 
@@ -56,6 +57,7 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
           setValue("reserveStock", cs.reserveStock)
           setValue("allowStorePickup", cs.allowStorePickup ?? false)
           setValue("maxQuantityPerItem", cs.maxQuantityPerItem)
+          setValue("minInstallmentReais", (cs.minInstallmentCents ?? 0) / 100)
         }
       } catch (error) {
         console.error("Failed to load checkout settings:", error)
@@ -88,6 +90,9 @@ export function useCheckoutSettings(): UseCheckoutSettingsReturn {
         reserveStock: data.reserveStock,
         allowStorePickup: data.allowStorePickup,
         maxQuantityPerItem: data.maxQuantityPerItem,
+        // Arredonda para centavo: o input aceita decimal e 19.999 viraria
+        // 1999.9 centavos, que o backend recusa como inteiro.
+        minInstallmentCents: Math.round((data.minInstallmentReais ?? 0) * 100),
         allowEdit: data.allowEdit,
         checkoutSendMethods: cs.checkoutSendMethods ?? ["public_link", "manual"],
         realTimeCart: cs.realTimeCart,
