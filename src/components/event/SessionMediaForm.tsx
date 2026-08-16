@@ -31,24 +31,24 @@ import type { EventSession, InstagramMediaPost } from "@/types"
 
 interface SessionMediaFormProps {
   eventId: string
-  /** A transmissão que vai receber a publicação. `null` fecha o diálogo. */
+  /** A sessão que vai receber a publicação. `null` fecha o diálogo. */
   session: EventSession | null
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
 }
 
 /**
- * Vincular a publicação a uma transmissão que já existe.
+ * Vincular a publicação a uma sessão que já existe.
  *
  * Esta tela é a outra metade de "crie a sessão agora e vincule a mídia depois".
  * A primeira metade já existia (a sessão nasce sem mídia e a tabela mostra o
  * badge "Sem publicação vinculada"); a segunda não tinha caminho nenhum no
  * painel — o único vínculo posterior era o "Crash recovery", que só lista lives
- * no ar, só aparece em campanha que já tem live, e escreve na sessão que o
+ * no ar, só aparece em evento que já tem live, e escreve na sessão que o
  * backend escolher, não na que o lojista está olhando.
  *
  * O tipo da sessão decide de onde a mídia vem: live sai da lista de
- * transmissões no ar, publicação sai da grade do perfil. Oferecer a lista
+ * sessões no ar, publicação sai da grade do perfil. Oferecer a lista
  * errada vincularia a mídia errada — e o erro é mudo, o comentário só deixa de
  * virar carrinho.
  */
@@ -97,7 +97,7 @@ export function SessionMediaForm({
       {
         onSuccess: () => {
           toast.success("Publicação vinculada!", {
-            description: "Os comentários desta transmissão já começam a virar carrinho.",
+            description: "Os comentários desta sessão já começam a virar carrinho.",
           })
           onOpenChange(false)
           onSuccess?.()
@@ -121,7 +121,7 @@ export function SessionMediaForm({
           </DialogTitle>
           <DialogDescription>
             {session
-              ? `Escolha o que a transmissão S${session.sequenceOrder} vai monitorar. Até vincular, ela existe na campanha mas não captura comentário nenhum.`
+              ? `Escolha o que a sessão S${session.sequenceOrder} vai monitorar. Até vincular, ela existe no evento mas não captura comentário nenhum.`
               : ""}
           </DialogDescription>
         </DialogHeader>

@@ -32,23 +32,23 @@ import type { EventSession, Platform, SessionMetrics } from "@/types/event.types
 interface SessionsTableProps {
   sessions: EventSession[]
   isLoading?: boolean
-  /** Receita que não pôde ser creditada a nenhuma transmissão — item posto pelo
+  /** Receita que não pôde ser creditada a nenhuma sessão — item posto pelo
    *  painel, ou carrinho anterior ao log de adições. Vem separada porque não é
    *  uma sessão; e aparece porque sem ela a soma da coluna não fecha com o
    *  faturamento do evento. */
   unattributed?: SessionMetrics | null
-  /** Quando presente, mostra o botão de adicionar transmissão. Ausente = a
-   *  campanha não aceita sessão nova (encerrada). */
+  /** Quando presente, mostra o botão de adicionar sessão. Ausente = a
+   *  evento não aceita sessão nova (encerrado). */
   onAddSession?: () => void
   /** Quando presente, a sessão sem mídia ganha o botão "Vincular".
    *
    *  Sem isto o badge "Sem publicação vinculada" era um beco: ele avisava que a
-   *  transmissão não captura nada e não havia onde clicar para resolver — o
+   *  sessão não captura nada e não havia onde clicar para resolver — o
    *  único vínculo posterior era o "Crash recovery", que só lista lives e nem
-   *  aparece em campanha sem live. */
+   *  aparece em evento sem live. */
   onLinkMedia?: (session: EventSession) => void
   /** Quando presente, cada linha ganha o botão que abre os produtos DAQUELA
-   *  transmissão. Ausente = campanha encerrada, nada mais a configurar. */
+   *  sessão. Ausente = evento encerrado, nada mais a configurar. */
   onOpenProducts?: (session: EventSession) => void
   /** Quando presente, a sessão ainda no ar ganha o botão "Encerrar".
    *
@@ -70,7 +70,7 @@ const REVENUE_HINT =
   "Receita atribuída a esta sessão: cada item conta para a sessão em que foi adicionado, mesmo que o pagamento tenha acontecido dias depois."
 
 const UNATTRIBUTED_HINT =
-  "Itens que não puderam ser creditados a nenhuma transmissão — postos pelo painel, ou de carrinhos anteriores ao registro por sessão. Aparecem aqui porque sem eles a soma das sessões não fecha com o total do evento."
+  "Itens que não puderam ser creditados a nenhuma sessão — postos pelo painel, ou de carrinhos anteriores ao registro por sessão. Aparecem aqui porque sem eles a soma das sessões não fecha com o total do evento."
 
 const SESSION_TYPE_META: Record<string, { label: string; Icon: typeof Radio }> = {
   live: { label: "Live", Icon: Radio },
@@ -117,7 +117,7 @@ function getStatusBadge(status: string) {
 }
 
 /**
- * O que esta transmissão vende, em uma olhada.
+ * O que esta sessão vende, em uma olhada.
  *
  * O rótulo sozinho não distinguia "vende tudo" de "esqueci de configurar" — e
  * as duas coisas têm o MESMO desfecho na tela antiga (lista vazia) e desfechos
@@ -194,15 +194,15 @@ export function SessionsTable({
         <div className="flex items-start justify-between gap-4">
           <div>
             {/* Layers, não Radio: este card lista post, reel e story também —
-                o ícone de live rotulava a campanha inteira como transmissão ao
+                o ícone de live rotulava o evento inteiro como transmissão ao
                 vivo. */}
             <CardTitle className="flex items-center gap-2 text-base font-medium">
               <Layers className="h-4 w-4 text-muted-foreground" />
               Sessões do evento
             </CardTitle>
             <CardDescription className="mt-1">
-              Cada linha é uma transmissão desta campanha. Você pode adicionar sessões
-              enquanto o evento estiver aberto, de tipos diferentes. A campanha só fecha na
+              Cada linha é uma sessão deste evento. Você pode adicionar sessões
+              enquanto o evento estiver aberto, de tipos diferentes. O evento só fecha na
               data de fim ou quando você clicar em &quot;Finalizar evento&quot; — nenhuma
               sessão sozinha fecha carrinho.
             </CardDescription>
@@ -231,9 +231,9 @@ export function SessionsTable({
                   Em carrinho
                 </TableHead>
                 <TableHead className="text-right">Status</TableHead>
-                {/* A coluna existe sempre — inclusive em campanha encerrada,
+                {/* A coluna existe sempre — inclusive em evento encerrado,
                     onde ela vira leitura. É o único lugar do painel que responde
-                    "o que ESTA transmissão vende". */}
+                    "o que ESTA sessão vende". */}
                 <TableHead className="text-right">Produtos</TableHead>
               </TableRow>
             </TableHeader>
@@ -256,7 +256,7 @@ export function SessionsTable({
                   <TableCell colSpan={8} className="h-24 text-center">
                     <p className="font-medium">Nenhuma sessão ainda</p>
                     <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                      Adicione a primeira transmissão desta campanha. Pode ser uma live que
+                      Adicione a primeira sessão deste evento. Pode ser uma live que
                       você vai conectar na hora, um post que já existe no seu perfil, ou uma
                       publicação que o LiveCart cria para você.
                     </p>
@@ -386,7 +386,7 @@ export function SessionsTable({
                     </Badge>
                   </TableCell>
                   <TableCell colSpan={3} className="text-muted-foreground" title={UNATTRIBUTED_HINT}>
-                    Sem transmissão
+                    Sem sessão
                   </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
                     {formatCurrency(unattributed.confirmedRevenue)}

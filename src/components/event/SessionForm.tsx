@@ -87,19 +87,19 @@ const ORIGENS = [
 type Origem = (typeof ORIGENS)[number]["value"]
 
 /**
- * Criação de uma transmissão dentro de um evento.
+ * Criação de uma sessão dentro de um evento.
  *
  * O que mudou, e por quê:
  *
  * O select "Live ativa" oferecia "Vincular depois" como se fosse uma escolha
  * entre duas coisas equivalentes. Não era: ou existe uma live no ar, e ela é a
  * resposta, ou não existe, e não há o que escolher. A capacidade de criar a
- * transmissão antes da live continua — é o caso central do evento guarda-chuva
+ * sessão antes da live continua — é o caso central do evento guarda-chuva
  * ("marco a Semana Black hoje e penduro a live de segunda") — mas deixou de ser
  * uma opção de menu e virou o que sempre foi: o estado vazio.
  *
  * Os produtos entram aqui, e não depois. O backend grava sessão e lista na mesma
- * transação; encadear no cliente deixaria a transmissão no ar com lista parcial
+ * transação; encadear no cliente deixaria a sessão no ar com lista parcial
  * se a segunda chamada falhasse — e falhar na primeira é o pior caso, porque
  * lista vazia significa "vende tudo".
  */
@@ -188,7 +188,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
   // Story tem UM caminho só: publicar pelo LiveCart.
   //
   // A condição olhava `mediaMode`, e story não mostra as abas — então o modo
-  // ficava no padrão "existing" e o botão criava uma transmissão vazia em vez de
+  // ficava no padrão "existing" e o botão criava uma sessão vazia em vez de
   // abrir a publicação. O lojista clicava em Story, aparecia uma sessão, e não
   // havia como publicar nada.
   const publicando =
@@ -201,7 +201,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     }
     // Post sem publicação escolhida nasce sem capturar nada — e, diferente da
     // live, aqui não é um caso legítimo: a grade está na tela e a publicação já
-    // existe. Criar assim daria uma transmissão muda, com falha silenciosa.
+    // existe. Criar assim daria uma sessão muda, com falha silenciosa.
     if (origem === "post" && !selectedMedia) {
       form.setError("platformLiveId", { message: "Escolha uma publicação." })
       return
@@ -227,7 +227,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       },
       {
         onSuccess: () => {
-          toast.success("Transmissão criada", {
+          toast.success("Sessão criada", {
             description: mediaId
               ? "Os comentários já viram carrinho."
               : "Vincule a live pela aba Sessões quando ela começar.",
@@ -236,7 +236,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
           onSuccess?.()
         },
         onError: (error) => {
-          toast.error("Não foi possível criar a transmissão", {
+          toast.error("Não foi possível criar a sessão", {
             description: error.message || "Tente novamente mais tarde.",
           })
         },
@@ -250,7 +250,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       : "Publicar um post"
     : isPending
       ? "Criando..."
-      : "Criar transmissão"
+      : "Criar sessão"
 
   return (
     <>
@@ -270,7 +270,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         <DialogHeader className="px-6 pb-4 pt-6">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
-            Nova transmissão
+            Nova sessão
           </DialogTitle>
           <DialogDescription>
             Tudo que ela vender cai no mesmo carrinho do cliente.
@@ -285,7 +285,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
               <FormSection
                 first
-                title="Tipo da transmissão"
+                title="Tipo da sessão"
                 hint="Live e post vendem pelo comentário. Story vende quando o cliente responde por DM."
               >
                 {/* Cartões, não select: os três subtítulos respondem à mesma
@@ -416,12 +416,12 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               {origem !== "live" && selectedMedia && (
                 <FormSection
                   title="Produtos"
-                  hint="Sem seleção, esta transmissão vende qualquer produto ativo da loja."
+                  hint="Sem seleção, esta sessão vende qualquer produto ativo da loja."
                 >
                   <Collapsible open={productsOpen} onOpenChange={setProductsOpen}>
                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors hover:bg-muted/50">
                       <div>
-                        <p className="text-sm font-medium">Produtos desta transmissão</p>
+                        <p className="text-sm font-medium">Produtos desta sessão</p>
                         <p className="text-xs text-muted-foreground">
                           {productIds.length === 0
                             ? "Todos os produtos da loja"
@@ -477,7 +477,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       {/* Fora do Dialog de propósito — ver o comentário acima.
           Publicar pelo LiveCart, DENTRO deste evento: o backend já cria a sessão
           vinculada à mídia, então aqui só fechamos os dois — criar a sessão de
-          novo duplicaria a transmissão. */}
+          novo duplicaria a sessão. */}
       <CreatePostForm
         open={publishOpen}
         variant={origem === "story" ? "story" : "post"}
@@ -546,7 +546,7 @@ function LiveSlot({
       <PainelInfo
         icon={<Radio className="h-5 w-5 text-muted-foreground" />}
         title="Não conseguimos falar com o Instagram"
-        body="A transmissão pode ser criada mesmo assim — você vincula a live pela aba Sessões."
+        body="A sessão pode ser criada mesmo assim — você vincula a live pela aba Sessões."
         action={
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Tentar de novo
@@ -561,7 +561,7 @@ function LiveSlot({
       <PainelInfo
         icon={<Radio className="h-5 w-5 text-muted-foreground" />}
         title="Nenhuma live no ar agora"
-        body="Crie a transmissão assim mesmo e vincule pela aba Sessões quando a live começar."
+        body="Crie a sessão assim mesmo e vincule pela aba Sessões quando a live começar."
         action={
           <Button
             type="button"
