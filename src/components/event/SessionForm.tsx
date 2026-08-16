@@ -163,8 +163,12 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     if (!platformLiveId || !aindaExiste) {
       form.setValue("platformLiveId", lives[0].id)
     }
+    // `open` entra aqui junto com os dados: ao reabrir o diálogo o efeito de
+    // reset limpa o campo, e sem esta dependência este aqui não roda de novo
+    // (origem e livesData vêm iguais, do cache). A live aparecia na tela com o
+    // campo vazio, e a sessão nascia sem vínculo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origem, livesData])
+  }, [origem, livesData, open])
 
   function trocarOrigem(next: Origem) {
     setOrigem(next)
@@ -195,6 +199,15 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
     origem === "story" || (origem === "post" && mediaMode === "publish")
 
   function onSubmit(data: CreateSessionFormData) {
+    // Sessão de live sem live no ar não captura nada: o vínculo é o que faz o
+    // comentário virar carrinho, e sem ele a sessão fica muda até alguém
+    // lembrar de voltar e vincular à mão.
+    if (origem === "live" && !platformLiveId) {
+      form.setError("platformLiveId", {
+        message: "Comece a live no Instagram para criar a sessão.",
+      })
+      return
+    }
     if (publicando) {
       setPublishOpen(true)
       return
@@ -230,7 +243,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
           toast.success("Sessão criada", {
             description: mediaId
               ? "Os comentários já viram carrinho."
-              : "Vincule a live pela aba Sessões quando ela começar.",
+              : "Vincule a publicação pela aba Sessões.",
           })
           onOpenChange(false)
           onSuccess?.()
@@ -243,6 +256,12 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
       },
     )
   }
+
+  // Sem live no ar não há sessão de live a criar. Vale também quando a consulta
+  // falha: aí não sabemos se existe live, e afirmar que não existe seria criar
+  // uma sessão muda por adivinhação. O painel traz "Tentar de novo" para sair
+  // do estado.
+  const semLiveParaVincular = origem === "live" && !platformLiveId
 
   const rotuloPrimario = publicando
     ? origem === "story"
@@ -463,7 +482,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || semLiveParaVincular}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {rotuloPrimario}
               </Button>
@@ -546,7 +565,7 @@ function LiveSlot({
       <PainelInfo
         icon={<Radio className="h-5 w-5 text-muted-foreground" />}
         title="Não conseguimos falar com o Instagram"
-        body="A sessão pode ser criada mesmo assim — você vincula a live pela aba Sessões."
+        body="Sem confirmar a live no ar não dá para criar a sessão — ela nasceria sem capturar comentário nenhum."
         action={
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Tentar de novo
@@ -561,7 +580,7 @@ function LiveSlot({
       <PainelInfo
         icon={<Radio className="h-5 w-5 text-muted-foreground" />}
         title="Nenhuma live no ar agora"
-        body="Crie a sessão assim mesmo e vincule pela aba Sessões quando a live começar."
+        body="Comece a transmissão no Instagram e procure de novo. A sessão de live precisa da live no ar para capturar os comentários."
         action={
           <Button
             type="button"
