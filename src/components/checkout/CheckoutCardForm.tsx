@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Loader2,
   AlertCircle,
@@ -819,6 +819,16 @@ function PagarmeCardForm({
   const [cardCvv, setCardCvv] = useState("")
   const [installments, setInstallments] = useState("1")
 
+  // Antifraud session id. Pagar.me's own antifraud reproves transactions that
+  // arrive with no origin signal (a brand-new customer from an unknown device
+  // scores "high" even on a R$5 order). Unlike Mercado Pago, Pagar.me ships no
+  // device-fingerprint SDK, so we generate a UUID per checkout mount and send
+  // it as the order's session_id — a stable correlation key across retries in
+  // the same session, paired with the buyer IP the backend captures.
+  const sessionIdRef = useRef<string>(
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : ""
+  )
+
   const detectedBrand = detectCardBrandFromBin(cardNumber)
   const ActiveBrandIcon = detectedBrand
     ? BRAND_ICON_MAP[detectedBrand] ?? GenericCardIcon
@@ -900,6 +910,7 @@ function PagarmeCardForm({
         ...customer,
         token: tokenData.id,
         installments: parseInt(installments),
+        deviceId: sessionIdRef.current || undefined,
       })
 
       if (result.status === "rejected") {
