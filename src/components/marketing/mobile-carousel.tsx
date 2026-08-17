@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-
 interface MobileCarouselProps {
   /** classes do container de scroll (flex/grid/gap/overflow…) */
   className?: string

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Loader2,
   AlertCircle,
@@ -800,6 +800,20 @@ function MercadoPagoCardForm({
 // the two providers feel like one product.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// tokenizecard.js (Pagar.me hosted tokenizer) injeta este global. A JS é servida
+// de checkout.pagar.me e tokeniza lendo os inputs marcados com
+// data-pagarmecheckout-element — testamos como última medida contra o antifraude.
+declare global {
+  interface Window {
+    PagarmeCheckout?: {
+      init: (
+        success: (data: Record<string, unknown>) => boolean,
+        fail: (error: unknown) => boolean
+      ) => void
+    }
+  }
+}
+
 function PagarmeCardForm({
   token,
   publicKey,
@@ -818,6 +832,113 @@ function PagarmeCardForm({
   const [cardExpiry, setCardExpiry] = useState("")
   const [cardCvv, setCardCvv] = useState("")
   const [installments, setInstallments] = useState("1")
+
+  // Antifraud session id. Pagar.me's own antifraud reproves transactions that
+  // arrive with no origin signal (a brand-new customer from an unknown device
+  // scores "high" even on a R$5 order). Unlike Mercado Pago, Pagar.me ships no
+  // device-fingerprint SDK, so we generate a UUID per checkout mount and send
+  // it as the order's session_id — a stable correlation key across retries in
+  // the same session, paired with the buyer IP the backend captures.
+  const sessionIdRef = useRef<string>(
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : ""
+  )
+
+  // tokenizecard.js integration. The script attaches to the hidden
+  // data-pagarmecheckout-form and, on submit, tokenizes the marked inputs and
+  // calls the global success/fail callbacks. We bridge those callbacks to a
+  // per-submit promise via a ref. If the script never becomes ready (blocked,
+  // failed to load), handleSubmit falls back to the direct /v5/tokens fetch, so
+  // this never breaks card checkout for other stores.
+  const tokenizeFormRef = useRef<HTMLFormElement>(null)
+  const tokenizerRef = useRef<{
+    ready: boolean
+    pending: { resolve: (t: string) => void; reject: (e: unknown) => void } | null
+  }>({ ready: false, pending: null })
+
+  useEffect(() => {
+    if (!publicKey || typeof window === "undefined") return
+    let cancelled = false
+
+    const initTokenizer = () => {
+      if (cancelled || tokenizerRef.current.ready || !window.PagarmeCheckout) return
+      try {
+        window.PagarmeCheckout.init(
+          (data) => {
+            const hidden = tokenizeFormRef.current?.querySelector<HTMLInputElement>(
+              'input[name="pagarmetoken"]'
+            )?.value
+            const tok =
+              (data?.["pagarmetoken"] as string | undefined) ??
+              (data?.["token"] as string | undefined) ??
+              (data?.["id"] as string | undefined) ??
+              hidden ??
+              ""
+            tokenizerRef.current.pending?.resolve(tok)
+            tokenizerRef.current.pending = null
+            return false // não dispara o POST nativo do form
+          },
+          (err) => {
+            tokenizerRef.current.pending?.reject(err)
+            tokenizerRef.current.pending = null
+            return false
+          }
+        )
+        tokenizerRef.current.ready = true
+      } catch {
+        tokenizerRef.current.ready = false // cai no fallback do fetch
+      }
+    }
+
+    const SCRIPT_ID = "pagarme-tokenizecard"
+    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
+    if (existing) {
+      initTokenizer()
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const script = document.createElement("script")
+    script.id = SCRIPT_ID
+    script.src = "https://checkout.pagar.me/v1/tokenizecard.js"
+    script.setAttribute("data-pagarmecheckout-app-id", publicKey)
+    script.async = true
+    script.onload = initTokenizer
+    document.body.appendChild(script)
+
+    return () => {
+      cancelled = true
+    }
+  }, [publicKey])
+
+  // tokenizeViaScript triggers the hidden form so tokenizecard.js tokenizes and
+  // resolves with the card token. Rejects (→ fetch fallback) when the script
+  // isn't ready or takes too long.
+  const tokenizeViaScript = (): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const t = tokenizerRef.current
+      if (!t.ready || !tokenizeFormRef.current) {
+        reject(new Error("tokenizer-not-ready"))
+        return
+      }
+      const timer = setTimeout(() => {
+        if (t.pending) {
+          t.pending = null
+          reject(new Error("tokenize-timeout"))
+        }
+      }, 15000)
+      t.pending = {
+        resolve: (tok) => {
+          clearTimeout(timer)
+          resolve(tok)
+        },
+        reject: (e) => {
+          clearTimeout(timer)
+          reject(e)
+        },
+      }
+      tokenizeFormRef.current.requestSubmit()
+    })
 
   const detectedBrand = detectCardBrandFromBin(cardNumber)
   const ActiveBrandIcon = detectedBrand
@@ -840,66 +961,74 @@ function PagarmeCardForm({
     return v
   }
 
+  // tokenizeViaFetch is the original direct /v5/tokens call, kept as the
+  // fallback for when tokenizecard.js isn't available/ready. Returns the token
+  // id. We pass billing_address (the buyer's shipping address) so the token is
+  // self-contained — the PSP acquirer rejects card_token-only orders with
+  // `billing "value" is required` when it's missing.
+  const tokenizeViaFetch = async (): Promise<string> => {
+    const [expMonth, expYear] = cardExpiry.split("/")
+    const holderDocument = customer.customerDocument?.replace(/\D/g, "") ?? ""
+    const sa = customer.shippingAddress
+    const billingAddress = {
+      line_1: [sa.street, sa.number, sa.neighborhood].filter(Boolean).join(", "),
+      line_2: sa.complement || undefined,
+      zip_code: sa.zipCode.replace(/\D/g, ""),
+      city: sa.city,
+      state: sa.state,
+      country: "BR",
+    }
+    const tokenResponse = await fetch(
+      "https://api.pagar.me/core/v5/tokens?appId=" + publicKey,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "card",
+          card: {
+            number: cardNumber.replace(/\s/g, ""),
+            holder_name: cardName || customer.customerName,
+            holder_document: holderDocument,
+            exp_month: parseInt(expMonth ?? "0"),
+            exp_year: parseInt(
+              (expYear?.length ?? 0) === 2 ? "20" + expYear : expYear ?? "0"
+            ),
+            cvv: cardCvv,
+            billing_address: billingAddress,
+          },
+        }),
+      }
+    )
+    if (!tokenResponse.ok) {
+      throw new Error(await readPagarmeTokenError(tokenResponse))
+    }
+    const tokenData = await tokenResponse.json()
+    return tokenData.id as string
+  }
+
   const handleSubmit = async () => {
     if (loading || disabled) return
     setLoading(true)
     setError(null)
 
     try {
-      const [expMonth, expYear] = cardExpiry.split("/")
-      const holderDocument = customer.customerDocument?.replace(/\D/g, "") ?? ""
-
-      // Pagar.me's sandbox PSP layer rejects card_token-only orders with
-      // `validation_error | billing | "value" is required` when the token
-      // payload doesn't carry billing_address — it surfaces the missing
-      // field via an internal alias ("billing"). The public-API docs list
-      // billing_address as optional for /tokens, but the simulator path
-      // treats it as required. We pass the buyer's shipping address (the
-      // only address captured at checkout) so the token is self-contained
-      // and the backend doesn't need to send a partial `card` block
-      // alongside card_token (which has its own validation pitfalls).
-      const sa = customer.shippingAddress
-      const billingAddress = {
-        line_1: [sa.street, sa.number, sa.neighborhood].filter(Boolean).join(", "),
-        line_2: sa.complement || undefined,
-        zip_code: sa.zipCode.replace(/\D/g, ""),
-        city: sa.city,
-        state: sa.state,
-        country: "BR",
+      // Última medida contra o antifraude: tokeniza pela JS do Pagar.me
+      // (tokenizecard.js), que pode agregar sinal de device que o fetch cru não
+      // manda. Se o script não estiver pronto ou falhar, cai no fetch direto —
+      // mesmo token, mesmo fluxo — para nunca quebrar o checkout de cartão.
+      let cardToken: string
+      try {
+        cardToken = await tokenizeViaScript()
+        if (!cardToken) throw new Error("empty-token")
+      } catch {
+        cardToken = await tokenizeViaFetch()
       }
-
-      const tokenResponse = await fetch(
-        "https://api.pagar.me/core/v5/tokens?appId=" + publicKey,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "card",
-            card: {
-              number: cardNumber.replace(/\s/g, ""),
-              holder_name: cardName || customer.customerName,
-              holder_document: holderDocument,
-              exp_month: parseInt(expMonth ?? "0"),
-              exp_year: parseInt(
-                (expYear?.length ?? 0) === 2 ? "20" + expYear : expYear ?? "0"
-              ),
-              cvv: cardCvv,
-              billing_address: billingAddress,
-            },
-          }),
-        }
-      )
-
-      if (!tokenResponse.ok) {
-        throw new Error(await readPagarmeTokenError(tokenResponse))
-      }
-
-      const tokenData = await tokenResponse.json()
 
       const result = await checkoutService.processCardPayment(token, {
         ...customer,
-        token: tokenData.id,
+        token: cardToken,
         installments: parseInt(installments),
+        deviceId: sessionIdRef.current || undefined,
       })
 
       if (result.status === "rejected") {
@@ -922,6 +1051,33 @@ function PagarmeCardForm({
   return (
     <FormShell error={error}>
       <AcceptedBrandsHeader paymentMethodId={detectedBrand} />
+
+      {/* Hidden form read by tokenizecard.js. The visible inputs stay pure UI
+          (formatted, controlled); these mirror the clean values the tokenizer
+          needs. sr-only (not display:none) keeps them real inputs the script
+          can read. requestSubmit() on this form triggers tokenization. */}
+      <form
+        ref={tokenizeFormRef}
+        data-pagarmecheckout-form
+        onSubmit={(e) => e.preventDefault()}
+        className="sr-only"
+        aria-hidden="true"
+        tabIndex={-1}
+      >
+        <input readOnly tabIndex={-1} data-pagarmecheckout-element="number" value={cardNumber.replace(/\s/g, "")} />
+        <input readOnly tabIndex={-1} data-pagarmecheckout-element="holder_name" value={cardName || customer.customerName} />
+        <input readOnly tabIndex={-1} data-pagarmecheckout-element="exp_month" value={cardExpiry.split("/")[0] ?? ""} />
+        <input
+          readOnly
+          tabIndex={-1}
+          data-pagarmecheckout-element="exp_year"
+          value={(() => {
+            const yy = cardExpiry.split("/")[1] ?? ""
+            return yy.length === 2 ? "20" + yy : yy
+          })()}
+        />
+        <input readOnly tabIndex={-1} data-pagarmecheckout-element="cvv" value={cardCvv} />
+      </form>
 
       <div className="space-y-4 pt-4">
         <div className="space-y-1.5">

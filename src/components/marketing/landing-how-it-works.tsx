@@ -1,27 +1,41 @@
-import { MessagesSquare, ShoppingCart, Send, RefreshCw, ArrowDown } from "lucide-react"
+import { MessageSquareHeart, Sparkles, ShoppingCart, Send, CircleCheck, ArrowDown } from "lucide-react"
 
 const steps = [
   {
-    icon: MessagesSquare,
-    title: "O público comenta",
-    caption: "A palavra-chave vira pedido",
+    icon: MessageSquareHeart,
+    title: "Cliente demonstra interesse",
+    caption: "No comentário, Direct, WhatsApp, Story ou live",
+  },
+  {
+    icon: Sparkles,
+    title: "A LiveCart entende a intenção",
+    caption: "Produto, quantidade e variação identificados na conversa",
   },
   {
     icon: ShoppingCart,
-    title: "O carrinho monta sozinho",
-    caption: "Produto reservado na hora",
+    title: "O pedido é criado",
+    caption: "O carrinho é montado automaticamente na sua operação",
   },
   {
     icon: Send,
-    title: "O checkout vai pro direct",
-    caption: "PIX ou cartão, em segundos",
+    title: "O checkout é enviado",
+    caption: "O cliente recebe o link pra finalizar a compra",
+  },
+  {
+    icon: CircleCheck,
+    title: "A venda é registrada",
+    caption: "Pagamento, estoque e pedido seguem para os sistemas conectados",
   },
 ]
 
 export function LandingHowItWorks() {
   return (
     <section id="como-funciona" className="bg-background py-20 sm:py-28">
-      <style>{`@keyframes lc-flow{to{background-position:24px 0}}`}</style>
+      <style>{`
+        @keyframes lc-flow{to{background-position:24px 0}}
+        .lc-flow-connector{animation:lc-flow 1s linear infinite}
+        @media (prefers-reduced-motion: reduce){.lc-flow-connector{animation:none}}
+      `}</style>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
@@ -29,15 +43,15 @@ export function LandingHowItWorks() {
             Como funciona
           </span>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Um fluxo que não para de vender
+            Do &quot;quero&quot; ao pagamento, sem trabalho manual
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Do comentário ao pagamento, tudo acontece em sequência, enquanto
-            você foca em vender ao vivo.
+            A LiveCart conecta seus canais de comunicação à sua operação de
+            vendas, em qualquer canal onde a conversa acontecer.
           </p>
         </div>
 
-        <div className="relative mt-20 grid gap-14 lg:grid-cols-3 lg:gap-8">
+        <div className="relative mt-20 grid gap-14 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
           {steps.map((step, i) => (
             <div
               key={step.title}
@@ -47,12 +61,11 @@ export function LandingHowItWorks() {
               {i < steps.length - 1 && (
                 <div
                   aria-hidden
-                  className="absolute left-1/2 top-8 hidden h-0.5 w-[calc(100%+2rem)] -translate-y-1/2 lg:block"
+                  className="lc-flow-connector absolute left-1/2 top-8 hidden h-0.5 w-[calc(100%+1.5rem)] -translate-y-1/2 lg:block"
                   style={{
                     backgroundImage:
                       "linear-gradient(90deg, hsl(var(--primary)) 0 12px, transparent 12px 24px)",
                     backgroundSize: "24px 2px",
-                    animation: "lc-flow 1s linear infinite",
                   }}
                 />
               )}
@@ -67,7 +80,7 @@ export function LandingHowItWorks() {
                 </span>
               </div>
 
-              <h3 className="mt-6 text-xl font-bold tracking-tight">
+              <h3 className="mt-6 text-base font-bold tracking-tight sm:text-lg">
                 {step.title}
               </h3>
               <p className="mt-1.5 text-sm font-medium text-muted-foreground">
@@ -85,8 +98,8 @@ export function LandingHowItWorks() {
         {/* Continuous loop hint */}
         <div className="mt-16 flex justify-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium text-primary">
-            <RefreshCw className="size-4" />
-            A cada nova live, o ciclo recomeça sozinho
+            <CircleCheck className="size-4" />
+            Do primeiro contato ao pagamento, tudo em sequência
           </span>
         </div>
       </div>
