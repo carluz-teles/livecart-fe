@@ -246,7 +246,7 @@ export default function ProductsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome ou keyword..."
+                placeholder="Buscar por nome, keyword, SKU ou código de barras..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-8"
