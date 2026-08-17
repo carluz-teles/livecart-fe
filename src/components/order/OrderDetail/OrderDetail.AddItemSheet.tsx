@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Loader2, Package, Plus, Search } from "lucide-react"
+import { AlertTriangle, Loader2, Package, Plus, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { useIntegrations } from "@/hooks/integration"
 import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { formatCurrency } from "@/lib/format"
@@ -52,6 +53,13 @@ export function OrderDetailAddItemSheet({
   })
 
   const produtos: Product[] = data?.data ?? []
+
+  // Loja com ERP ativo: produto sem vínculo não chega ao Tiny. Sem ERP nenhum,
+  // TODO produto é assim e o aviso viraria ruído em cada linha.
+  const { data: integracoes } = useIntegrations()
+  const temERPAtivo = !!integracoes?.data?.some(
+    (i) => i.type === "erp" && i.status === "active",
+  )
 
   const handleAdd = async (produto: Product) => {
     setAdicionando(produto.id)
@@ -121,6 +129,7 @@ export function OrderDetailAddItemSheet({
             buscou={!!buscaDebounced}
             productIdsNoPedido={productIdsNoPedido}
             adicionando={adicionando}
+            avisarSemVinculoERP={temERPAtivo}
             onAdd={handleAdd}
           />
         </div>
@@ -138,6 +147,11 @@ export interface OrderDetailCatalogListProps {
   productIdsNoPedido: string[]
   /** Id do produto sendo adicionado agora, ou null. */
   adicionando: string | null
+  /**
+   * A loja TEM ERP ativo — então produto sem vínculo é exceção e merece aviso.
+   * Falso para loja sem ERP, onde todo produto é assim e o aviso seria ruído.
+   */
+  avisarSemVinculoERP: boolean
   onAdd: (produto: Product) => void
 }
 
@@ -154,6 +168,7 @@ export function OrderDetailCatalogList({
   buscou,
   productIdsNoPedido,
   adicionando,
+  avisarSemVinculoERP,
   onAdd,
 }: OrderDetailCatalogListProps) {
   return (
@@ -194,6 +209,7 @@ export function OrderDetailCatalogList({
                 jaNoPedido={productIdsNoPedido.includes(produto.id)}
                 adicionando={adicionando === produto.id}
                 bloqueado={!!adicionando && adicionando !== produto.id}
+                semVinculoERP={avisarSemVinculoERP && !produto.externalId}
                 onAdd={() => onAdd(produto)}
               />
             ))}
@@ -207,6 +223,7 @@ interface LinhaDeProdutoProps {
   jaNoPedido: boolean
   adicionando: boolean
   bloqueado: boolean
+  semVinculoERP: boolean
   onAdd: () => void
 }
 
@@ -215,6 +232,7 @@ function LinhaDeProduto({
   jaNoPedido,
   adicionando,
   bloqueado,
+  semVinculoERP,
   onAdd,
 }: LinhaDeProdutoProps) {
   const semEstoque = produto.stock <= 0
@@ -250,6 +268,16 @@ function LinhaDeProduto({
           <Badge variant="secondary" className="mt-1">
             Já no pedido — soma na linha existente
           </Badge>
+        )}
+        {/* Produto sem vínculo com o ERP move só o estoque do LiveCart, e some
+            do pedido que o Tiny recebe quando a cliente pagar (a montagem do
+            pedido pula item sem external_id). Aviso, não bloqueio: vender ele
+            continua valendo, o que não pode é a lojista descobrir depois. */}
+        {semVinculoERP && (
+          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-500">
+            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+            Sem vínculo com o ERP — não entra no pedido do Tiny
+          </p>
         )}
       </div>
 
