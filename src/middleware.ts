@@ -7,6 +7,11 @@ const isPublicRoute = createRouteMatcher([
   "/login(.*)",
   "/register(.*)",
   "/cart/(.*)",
+  // Página pública de acompanhamento do pedido. O link do e-mail de pagamento
+  // confirmado aponta para cá com o tracking_token na query (?key=), que é a
+  // credencial — a página não usa sessão. Sem esta entrada o Clerk barrava
+  // antes de a página carregar e mandava a COMPRADORA para o login de lojista.
+  "/order/(.*)",
   "/api/webhooks/(.*)",
   "/accept-invite(.*)",
   "/privacy",
