@@ -46,6 +46,10 @@ export function useSearchERPProducts(integrationId: string, search: string) {
     },
     retry: (failureCount, error) => {
       if (error?.status && error.status >= 400 && error.status < 500) return false
+      // 503 é o ERP pedindo para esperar. Repetir sozinho empurra mais consulta
+      // no limitador que acabou de recusar — quem decide tentar de novo é o
+      // lojista, depois de ler a mensagem.
+      if (error?.status === 503) return false
       return failureCount < 2
     },
     enabled:
