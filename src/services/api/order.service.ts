@@ -152,6 +152,16 @@ export const orderService = {
       token,
     ),
 
+  // Pagamento recebido FORA do LiveCart. Roda o mesmo ciclo de um pagamento do
+  // gateway: materializa o pedido, cria a venda no ERP e lança o estoque. O
+  // lançamento financeiro NÃO vai — o lojista registra isso no próprio ERP.
+  confirmManualPayment: (storeId: string, id: string, token?: string | null) =>
+    apiClient.post<OrderDetail>(
+      `/stores/${storeId}/orders/${id}/confirm-manual-payment`,
+      {},
+      token,
+    ),
+
   cancel: (storeId: string, id: string, token?: string | null) =>
     apiClient.post<OrderDetail>(
       `/stores/${storeId}/orders/${id}/cancel`,

@@ -14,3 +14,4 @@ export {
   persistOrderListSnapshot,
   type OrderNavigationItem,
 } from "./useOrderNavigation"
+export { useConfirmManualPayment } from "./useConfirmManualPayment"
