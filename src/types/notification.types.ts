@@ -34,7 +34,6 @@ export interface NotificationSettings {
   // Os cinco gatilhos da RN-28 mais o waitlist_notified. Este era o buraco que
   // deixava `waitlist_notified` existir no domínio há meses sem nenhuma UI
   // conseguir ler ou escrever: chave sem entrada aqui é chave morta.
-  waitlist_notified?: TemplateSettings | null
   out_of_window_scheduled?: TemplateSettings | null
   out_of_window_session_ended?: TemplateSettings | null
   out_of_window_event_ended?: TemplateSettings | null
@@ -57,7 +56,6 @@ export interface UpdateNotificationSettingsPayload {
   checkout_immediate?: TemplateSettings | null
   item_added?: TemplateSettings | null
   checkout_reminder?: TemplateSettings | null
-  waitlist_notified?: TemplateSettings | null
   out_of_window_scheduled?: TemplateSettings | null
   out_of_window_session_ended?: TemplateSettings | null
   out_of_window_event_ended?: TemplateSettings | null
@@ -103,7 +101,6 @@ export const CART_NOTIFICATION_TYPES = [
   "out_of_window_event_ended",
   "event_deadline_started",
   "waitlist_joined",
-  "waitlist_notified",
   "waitlist_unfulfilled",
 ] as const
 export type CartNotificationType = (typeof CART_NOTIFICATION_TYPES)[number]
