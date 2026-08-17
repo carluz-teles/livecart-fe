@@ -110,6 +110,48 @@ export const orderService = {
   // o estoque volta e a reserva no ERP é estornada. Responde 409 quando o
   // pedido já foi pago ou está com um pagamento sendo finalizado — nessa
   // corrida o pagamento vence. Retorna o OrderDetail atualizado.
+  // Edição de itens de pedido AGUARDANDO PAGAMENTO, pelo painel. As três
+  // devolvem o OrderDetail relido: a edição muda total, subtotal pagável, valor
+  // em fila, frete (que é descartado) e o histórico — devolver só o item
+  // obrigaria a tela a adivinhar o resto.
+  addItem: (
+    storeId: string,
+    orderId: string,
+    payload: { productId: string; quantity: number },
+    token?: string | null,
+  ) =>
+    apiClient.post<OrderDetail>(
+      `/stores/${storeId}/orders/${orderId}/items`,
+      payload,
+      token,
+    ),
+
+  // Quantidade ABSOLUTA, não delta: o servidor recusa o passo obsoleto com 409
+  // em vez de aplicar "+1" sobre um valor que já mudou.
+  setItemQuantity: (
+    storeId: string,
+    orderId: string,
+    itemId: string,
+    quantity: number,
+    token?: string | null,
+  ) =>
+    apiClient.patch<OrderDetail>(
+      `/stores/${storeId}/orders/${orderId}/items/${itemId}`,
+      { quantity },
+      token,
+    ),
+
+  removeItem: (
+    storeId: string,
+    orderId: string,
+    itemId: string,
+    token?: string | null,
+  ) =>
+    apiClient.delete<OrderDetail>(
+      `/stores/${storeId}/orders/${orderId}/items/${itemId}`,
+      token,
+    ),
+
   cancel: (storeId: string, id: string, token?: string | null) =>
     apiClient.post<OrderDetail>(
       `/stores/${storeId}/orders/${id}/cancel`,
