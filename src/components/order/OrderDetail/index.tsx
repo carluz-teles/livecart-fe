@@ -10,6 +10,7 @@ import { OrderDetailStatusBanner } from "./OrderDetail.StatusBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailPayment } from "./OrderDetail.Payment"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
+import { OrderDetailAddItemSheet } from "./OrderDetail.AddItemSheet"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
 import { OrderDetailQuoteDocument } from "./OrderDetail.QuoteDocument"
@@ -42,6 +43,7 @@ export const OrderDetail = {
   Payment: OrderDetailPayment,
   Shipping: OrderDetailShipping,
   Items: OrderDetailItems,
+  AddItemSheet: OrderDetailAddItemSheet,
   Waitlist: OrderDetailWaitlist,
   QuoteDocument: OrderDetailQuoteDocument,
   Upsell: OrderDetailUpsell,
