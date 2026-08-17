@@ -30,6 +30,10 @@ export function groupOrderItemsByProduct(items: OrderItem[]): OrderItem[] {
       continue
     }
     existing.quantity += item.quantity
+    // A parcela em fila acompanha a quantidade: sem somar aqui, um produto
+    // pedido em duas sessões manteria só a fila da primeira linha, e a
+    // quantidade pagável (quantity - waitlisted) sairia maior que a real.
+    existing.waitlistedQuantity += item.waitlistedQuantity
     // Soma os totais em vez de recalcular por `unitPrice`: se o preço mudou
     // entre uma sessão e outra, recalcular inventaria um número que não bate
     // com o que o comprador pagou.

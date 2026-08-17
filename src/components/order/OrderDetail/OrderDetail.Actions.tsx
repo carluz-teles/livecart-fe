@@ -1,7 +1,7 @@
 "use client"
 
 import { use, useState } from "react"
-import { Ban, CheckCircle2, Hash, Link2, MoreHorizontal, Printer, RefreshCw } from "lucide-react"
+import { Ban, CheckCircle2, Hash, Link2, MoreHorizontal, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -41,7 +41,6 @@ export function OrderDetailActions() {
   const {
     refund,
     isRefunding,
-    print,
     requestRegenerate,
     markDelivered,
     isMarkingDelivered,
@@ -142,11 +141,10 @@ export function OrderDetailActions() {
               </DropdownMenuItem>
             </>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={print}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-          </DropdownMenuItem>
+          {/* Imprimir saiu daqui: virou botão visível no cabeçalho, porque para
+              pedido não pago o documento é a tarefa principal (orçamento para a
+              cliente), não uma ação secundária. Manter nos dois lugares daria
+              dois caminhos para a mesma coisa. */}
           {canCancel && (
             <>
               <DropdownMenuSeparator />

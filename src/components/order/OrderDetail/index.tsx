@@ -12,7 +12,9 @@ import { OrderDetailPayment } from "./OrderDetail.Payment"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
+import { OrderDetailQuoteDocument } from "./OrderDetail.QuoteDocument"
 import { OrderDetailUpsell } from "./OrderDetail.Upsell"
+import { OrderDetailWaitlist } from "./OrderDetail.Waitlist"
 import { OrderDetailSkeleton } from "./OrderDetail.Skeleton"
 import { OrderDetailNotFound } from "./OrderDetail.NotFound"
 
@@ -40,6 +42,8 @@ export const OrderDetail = {
   Payment: OrderDetailPayment,
   Shipping: OrderDetailShipping,
   Items: OrderDetailItems,
+  Waitlist: OrderDetailWaitlist,
+  QuoteDocument: OrderDetailQuoteDocument,
   Upsell: OrderDetailUpsell,
   Logistics: OrderDetailLogistics,
   History: OrderDetailHistory,

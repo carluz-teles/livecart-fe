@@ -3,7 +3,14 @@
 import { use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Ban, ChevronLeft, ChevronRight, Instagram } from "lucide-react"
+import {
+  ArrowLeft,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Instagram,
+  Printer,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -41,7 +48,10 @@ export function OrderDetailHeader() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex items-center justify-between gap-4">
+      {/* Fora da impressão inteiro: o documento tem cabeçalho próprio (nome da
+          loja, número, data). Deixar este aqui imprimiria dois títulos, um
+          deles com badges de estado interno. */}
+      <div className="flex items-center justify-between gap-4 print:hidden">
         <div className="flex items-center gap-4">
           <Link
             href="/orders"
@@ -153,6 +163,20 @@ export function OrderDetailHeader() {
               <Instagram className="h-4 w-4" />
             </Button>
           )}
+          {/* Imprimir estava só dentro do menu "...". Para pedido não pago o
+              documento É o trabalho — a lojista imprime o orçamento para a
+              cliente decidir — então vira botão de primeira linha. Depois de
+              pago a ação continua existindo, no menu, onde já estava. */}
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={ctx.actions.print}
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            {order.paymentStatus === "paid"
+              ? "Imprimir pedido"
+              : "Imprimir orçamento"}
+          </Button>
           <OrderDetailActions />
         </div>
       </div>

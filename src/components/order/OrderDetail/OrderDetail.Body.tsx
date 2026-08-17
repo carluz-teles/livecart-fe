@@ -19,8 +19,10 @@ import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
 import { OrderDetailLogistics } from "./OrderDetail.Logistics"
 import { OrderDetailPayment } from "./OrderDetail.Payment"
+import { OrderDetailQuoteDocument } from "./OrderDetail.QuoteDocument"
 import { OrderDetailShipping } from "./OrderDetail.Shipping"
 import { OrderDetailUpsell } from "./OrderDetail.Upsell"
+import { OrderDetailWaitlist } from "./OrderDetail.Waitlist"
 
 const PLATFORM_ICON: Record<string, typeof Instagram> = {
   instagram: Instagram,
@@ -37,7 +39,14 @@ export function OrderDetailBody() {
   const { order } = ctx.state
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
+      {/* A tela é operação da lojista; o papel é documento para a cliente. São
+          audiências diferentes, então a impressão troca um pelo outro em vez de
+          fotografar o painel — banner de ERP e histórico interno não saem da
+          loja. Ver OrderDetail.QuoteDocument. */}
+      <OrderDetailQuoteDocument />
+
+      <div className="flex flex-col gap-4 print:hidden">
       {/* High-priority banner: paid carts whose Tiny order failed to finalise.
           Lives above the grid so it's the first thing the merchant sees on
           opening the page — the action it surfaces (retry) blocks fulfilment. */}
@@ -53,6 +62,10 @@ export function OrderDetailBody() {
       <div className="grid gap-4 lg:grid-cols-12">
         <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
           <OrderDetailItems />
+          {/* Logo abaixo dos itens: é a continuação da mesma pergunta ("o que
+              ela pediu?"), e o que está em fila explica a diferença entre o que
+              ela pediu e o que a tabela cobra. */}
+          <OrderDetailWaitlist />
           <OrderDetailUpsell />
           <OrderDetailLogistics />
           <OrderDetailHistory />
@@ -64,7 +77,8 @@ export function OrderDetailBody() {
           <SummaryLiveCard order={order} />
         </aside>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
