@@ -22,6 +22,7 @@ const features = [
     title: "Recuperação de carrinhos",
     description:
       "Quem abandonou volta com um novo link de checkout gerado na hora, antes da venda esfriar.",
+    highlighted: true,
   },
   {
     icon: Ticket,
@@ -51,18 +52,20 @@ const features = [
 
 export function LandingCheckoutFeatures() {
   return (
-    <section className="bg-secondary/40 py-20 sm:py-28">
+    <section id="recuperacao" className="bg-secondary/40 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Recursos
+            Recuperação
           </span>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Tudo que o seu checkout precisa pra vender mais
+            Recupere vendas que poderiam ser perdidas
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Ferramentas de conversão prontas pra usar, do cupom à venda
-            recuperada no cartão.
+            Nem toda venda acontece na primeira tentativa. Um cliente pode
+            abandonar o checkout, não concluir o pagamento ou parar de
+            responder. A LiveCart automatiza ações para recuperar
+            oportunidades que já demonstraram intenção de compra.
           </p>
         </div>
 
@@ -102,6 +105,10 @@ export function LandingCheckoutFeatures() {
             </div>
           ))}
         </MobileCarousel>
+
+        <p className="mt-12 text-center text-lg font-semibold tracking-tight">
+          Cada conversa pode valer uma venda.
+        </p>
       </div>
     </section>
   )

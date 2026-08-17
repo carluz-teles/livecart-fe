@@ -18,6 +18,31 @@ function InstagramMark({ className }: { className?: string }) {
   )
 }
 
+import { Package2, Wallet, Truck, Boxes } from "lucide-react"
+
+const categories = [
+  {
+    icon: Package2,
+    title: "ERP",
+    description: "Sincronize produtos, estoque, pedidos e informações da operação.",
+  },
+  {
+    icon: Wallet,
+    title: "Pagamentos",
+    description: "Envie o cliente para um checkout preparado para finalizar a compra.",
+  },
+  {
+    icon: Truck,
+    title: "Frete",
+    description: "Integre a etapa de entrega à jornada do pedido.",
+  },
+  {
+    icon: Boxes,
+    title: "Catálogo",
+    description: "Utilize seus produtos e informações existentes para alimentar as vendas.",
+  },
+]
+
 type Logo =
   | { kind: "node"; alt: string; node: React.ReactNode }
   | { kind: "img"; alt: string; src: string }
@@ -102,8 +127,27 @@ export function LandingIntegrationsSection() {
           </div>
         </div>
 
+        {/* Categorias de integração */}
+        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => (
+            <div
+              key={category.title}
+              className="rounded-2xl border border-white/10 bg-white/5 p-6"
+            >
+              <span className="flex size-10 items-center justify-center rounded-lg bg-amber-400/15 text-amber-400">
+                <category.icon className="size-5" />
+              </span>
+              <h3 className="mt-4 font-semibold text-white">{category.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-neutral-400">
+                {category.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <p className="mt-10 text-center text-sm text-neutral-400">
-          Novas integrações de pagamento, ERP e frete chegando toda semana.
+          Novas integrações de pagamento, ERP, frete e catálogo chegando toda
+          semana.
         </p>
       </div>
     </section>

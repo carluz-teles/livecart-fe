@@ -13,11 +13,11 @@ export function LandingFinalCta() {
 
       <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-          Sua próxima live já pode vender sozinha
+          Transforme suas redes sociais em canais de venda
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-lg text-neutral-300">
-          Chega de anotar pedido na mão. A LiveCart captura o pedido, cobra o
-          cliente e avisa sobre a entrega enquanto você foca em vender ao vivo.
+          Instagram. WhatsApp. Lives. Stories. Mensagens. Onde seu cliente
+          estiver, sua venda pode começar.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button
@@ -26,7 +26,7 @@ export function LandingFinalCta() {
             className="h-12 bg-amber-400 text-base font-semibold text-black hover:bg-amber-300"
           >
             <Link href="/register">
-              Testar 7 dias grátis
+              Começar a vender com a LiveCart
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -40,7 +40,7 @@ export function LandingFinalCta() {
           </Button>
         </div>
         <p className="mt-5 text-sm text-neutral-400">
-          7 dias grátis, sem cartão — crie a conta e faça sua primeira live hoje.
+          7 dias grátis, sem cartão — venda onde seus clientes já estão.
         </p>
       </div>
     </section>

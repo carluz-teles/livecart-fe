@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils"
 
 const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "Checkout", href: "#checkout" },
-  { label: "Automações", href: "#automacoes" },
+  { label: "Instagram", href: "#instagram" },
+  { label: "WhatsApp", href: "#whatsapp" },
   { label: "Integrações", href: "#integracoes" },
-  { label: "Planos", href: "#precos" },
+  { label: "FAQ", href: "#faq" },
 ]
 
 export function LandingNav({ isSignedIn = false }: { isSignedIn?: boolean }) {

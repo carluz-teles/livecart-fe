@@ -6,10 +6,10 @@ const columns = [
     title: "Produto",
     links: [
       { label: "Como funciona", href: "#como-funciona" },
-      { label: "Checkout", href: "#checkout" },
-      { label: "Automações", href: "#automacoes" },
+      { label: "Instagram", href: "#instagram" },
+      { label: "WhatsApp", href: "#whatsapp" },
       { label: "Integrações", href: "#integracoes" },
-      { label: "Planos", href: "#precos" },
+      { label: "FAQ", href: "#faq" },
     ],
   },
   {
@@ -42,8 +42,9 @@ export function LandingFooter() {
               className="h-11 w-auto"
             />
             <p className="mt-4 max-w-xs text-sm">
-              A plataforma de live commerce que transforma os comentários da sua
-              live em vendas, do carrinho ao pagamento.
+              A infraestrutura de vendas para redes sociais. Transformamos
+              conversas no Instagram, WhatsApp e lives em pedidos, checkout e
+              vendas, integrados à sua operação.
             </p>
           </div>
 

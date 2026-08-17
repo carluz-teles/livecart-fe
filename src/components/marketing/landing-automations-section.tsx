@@ -1,4 +1,4 @@
-import { Instagram, Mail, Zap, Palette, BellRing, Send, ChevronLeft, Info } from "lucide-react"
+import { Instagram, Mail, Zap, Palette, BellRing, Send, ChevronLeft, Info, ArrowRight, ArrowDown } from "lucide-react"
 
 const editorFeatures = [
   {
@@ -19,6 +19,28 @@ const editorFeatures = [
     description:
       "Quem demonstrou interesse recebe o lembrete certo e volta pra finalizar a compra.",
   },
+]
+
+const beforeSteps = [
+  "Cliente pergunta",
+  "Alguém responde",
+  "Procura o produto",
+  "Consulta estoque",
+  "Monta o pedido",
+  "Gera o link",
+  "Envia",
+  "Confirma pagamento",
+  "Cadastra no ERP",
+  "Atualiza a operação",
+]
+
+const afterSteps = [
+  "Cliente demonstra interesse",
+  "LiveCart entende",
+  "Carrinho criado",
+  "Checkout enviado",
+  "Cliente paga",
+  "Pedido segue para sua operação",
 ]
 
 export function LandingAutomationsSection() {
@@ -134,6 +156,67 @@ export function LandingAutomationsSection() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Antes / Com a LiveCart */}
+      <div className="mx-auto mt-20 max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <h3 className="text-2xl font-bold tracking-tight">
+            Sua equipe não deveria perder tempo montando pedidos
+          </h3>
+          <p className="mt-3 text-muted-foreground">
+            A LiveCart automatiza as tarefas repetitivas que acontecem entre
+            o interesse e a compra.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Antes
+            </h4>
+            <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              {beforeSteps.map((step, i) => (
+                <div key={step} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+                  <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                    {step}
+                  </span>
+                  {i < beforeSteps.length - 1 && (
+                    <>
+                      <ArrowDown className="ml-3 size-3 text-muted-foreground/60 sm:hidden" aria-hidden />
+                      <ArrowRight className="hidden size-3 text-muted-foreground/60 sm:block" aria-hidden />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-primary">
+              Com a LiveCart
+            </h4>
+            <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              {afterSteps.map((step, i) => (
+                <div key={step} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+                  <span className="rounded-full bg-primary/15 px-3 py-1.5 text-xs font-semibold text-primary">
+                    {step}
+                  </span>
+                  {i < afterSteps.length - 1 && (
+                    <>
+                      <ArrowDown className="ml-3 size-3 text-primary/60 sm:hidden" aria-hidden />
+                      <ArrowRight className="hidden size-3 text-primary/60 sm:block" aria-hidden />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-8 text-center text-lg font-semibold tracking-tight">
+          Automatize o trabalho. Não a experiência de compra.
+        </p>
       </div>
     </section>
   )
