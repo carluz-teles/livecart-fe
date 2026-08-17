@@ -99,8 +99,6 @@ function pickCardSummary(
       return summaryFromTemplate(settings.event_deadline_started)
     case "waitlist_joined":
       return summaryFromTemplate(settings.waitlist_joined)
-    case "waitlist_notified":
-      return summaryFromTemplate(settings.waitlist_notified)
     case "waitlist_unfulfilled":
       return summaryFromTemplate(settings.waitlist_unfulfilled)
     case "payment_confirmed":

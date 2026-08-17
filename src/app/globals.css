@@ -114,6 +114,12 @@
 
 
 @media print {
+  /* Margem de documento. O <main> do dashboard usa print:p-0 para não somar o
+     padding da tela ao da folha, então a respiração do papel tem de vir daqui —
+     sem isto o orçamento entregue à cliente encosta na borda da página. */
+  @page {
+    margin: 14mm;
+  }
   html,
   body {
     background: white !important;

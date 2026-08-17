@@ -34,6 +34,10 @@ export interface OrderItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  // Parcela de `quantity` sem estoque. `quantity` é o TOTAL que a cliente
+  // pediu, então o que ela pode pagar agora é `quantity - waitlistedQuantity`
+  // — a mesma conta do checkout público. Sempre 0 em pedido já pago.
+  waitlistedQuantity: number
   // Per-item physical dimensions. Backend always sends these; 0 means the
   // product has no dimensions registered (NOT "zero grams" / "zero cm").
   weightGrams: number
@@ -187,6 +191,36 @@ export interface OrderDetail extends Order {
   // mesmo: o cancelamento foi revertido e o pedido seguiu o fluxo normal
   // (pedido no ERP, métricas). Vira uma entrada no histórico do pedido.
   cancellationRevertedAt?: string | null
+  // Produtos que a cliente pediu, a loja não tinha e ela entrou na fila. NÃO
+  // são pagáveis: não entram no total e não vão para a transportadora. Mesma
+  // fonte da seção de fila do checkout público, para o lojista ver exatamente
+  // o que a compradora vê.
+  waitlist: OrderWaitlistItem[]
+  // O que a cliente consegue pagar agora: só as unidades com estoque. É o valor
+  // que o orçamento impresso apresenta — `totalAmount` soma a quantidade cheia
+  // (base da receita do evento) e por isso inclui o que está em fila. Sem nada
+  // em fila os dois são idênticos.
+  payableAmount: number
+  // Valor das unidades em fila, declarado no orçamento como não incluído em vez
+  // de simplesmente omitido.
+  waitlistedAmount: number
+}
+
+export interface OrderWaitlistItem {
+  id: string
+  productId: string
+  productName: string
+  productImage: string | null
+  keyword: string
+  quantity: number
+  unitPrice: number
+  // Lugar na fila daquele produto no evento: 1 é a próxima a ser atendida
+  // quando o estoque voltar.
+  position: number
+  // waiting = esperando estoque; notified = estoque voltou e o prazo extra
+  // dela está correndo. Entradas encerradas não chegam aqui.
+  status: "waiting" | "notified"
+  createdAt: string
 }
 
 // Mirror of integration.Service finalisation state. Status `failed` means

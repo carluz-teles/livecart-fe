@@ -90,3 +90,18 @@ export interface BlockHandlePayload {
   handle: string
   reason?: string
 }
+
+// SeenHandle é um arroba que já mandou mensagem nas lives da loja. NÃO é um
+// Customer: a plateia inclui quem só comentou e nunca comprou — e é justamente
+// esse o caso a bloquear (a conta secundária da própria loja, que instrui a
+// audiência e acaba gerando pedido).
+export interface SeenHandle {
+  handle: string
+  // Todas as mensagens dele nas lives da loja.
+  messageCount: number
+  // Quantas viraram item no carrinho. Junto com messageCount é o sinal que
+  // separa a conta de instrução da compradora de verdade.
+  orderMessageCount: number
+  lastSeenAt?: string | null
+  blocked: boolean
+}

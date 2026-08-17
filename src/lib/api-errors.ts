@@ -33,6 +33,15 @@ export function getERPSearchErrorMessage(err: unknown): string {
       return "A busca demorou demais. Tente novamente."
     case 500:
       return "Erro interno do servidor. Tente novamente em instantes."
+    case 503:
+      // Estrangulamento do ERP. Antes a busca devolvia lista vazia e a tela
+      // dizia "nada encontrado" — o lojista concluía que o produto não existia
+      // e clicava de novo, somando pressão no limitador. "Não achei" e "não
+      // posso olhar agora" pedem ações opostas dele.
+      return (
+        apiError?.error ||
+        "O ERP está limitando as consultas neste momento. Aguarde alguns segundos e busque de novo."
+      )
     default:
       return apiError?.error || apiError?.message || "Erro ao buscar produtos no ERP."
   }

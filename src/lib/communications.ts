@@ -106,15 +106,6 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     triggerLabel: () => "Quando o estoque não cobre o pedido e o item vai para a fila",
     Icon: Hourglass,
   },
-  waitlist_notified: {
-    type: "waitlist_notified",
-    channel: "instagram_dm",
-    title: "Produto liberou para quem esperava",
-    description:
-      "Quem estava na fila é promovido e ganha o prazo extra configurado no evento.",
-    triggerLabel: () => "Quando o produto libera para quem estava na fila",
-    Icon: BellRing,
-  },
   waitlist_unfulfilled: {
     type: "waitlist_unfulfilled",
     channel: "instagram_dm",
@@ -159,7 +150,6 @@ export const NOTIFICATION_ORDER: NotificationType[] = [
   "out_of_window_session_ended",
   "out_of_window_event_ended",
   "waitlist_joined",
-  "waitlist_notified",
   "waitlist_unfulfilled",
   "payment_confirmed",
   "payment_cancelled",
@@ -175,7 +165,6 @@ export const CART_NOTIFICATION_ORDER: NotificationType[] = [
   "out_of_window_session_ended",
   "out_of_window_event_ended",
   "waitlist_joined",
-  "waitlist_notified",
   "waitlist_unfulfilled",
 ]
 

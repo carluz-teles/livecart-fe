@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   Building2,
   Users,
+  ShieldOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/hooks/useUser"
@@ -38,6 +39,10 @@ const navSections: NavSection[] = [
       { name: "Produtos", href: "/products", icon: Package },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
       { name: "Clientes", href: "/customers", icon: Users },
+      // Vizinho de Clientes porque é o mesmo assunto (quem fala com a loja),
+      // mas separado: o perfil bloqueado mais comum é a conta da PRÓPRIA
+      // loja, que nunca vira cliente.
+      { name: "Perfis bloqueados", href: "/blocked-profiles", icon: ShieldOff },
       { name: "Comunicações", href: "/communications", icon: MessageSquare },
     ],
   },

@@ -27,9 +27,21 @@ export function OrderDetailPayment() {
     "pending",
   )
 
-  const shippingCents = order.shipping?.costCents ?? 0
-  const itemsTotal = order.totalAmount - shippingCents
+  // `totalAmount` é GMV de PRODUTOS — orders.total_cents é gravado como
+  // gmvCents, sem frete (o valor com frete é paid_total_cents, que não sai
+  // neste payload). O código antigo fazia `totalAmount - shippingCents`, o que
+  // descontava um frete que nunca esteve somado: os itens saíam menores que o
+  // real e o "Valor total" excluía o frete apesar do rótulo.
+  //
+  // Itens usa payableAmount porque só as unidades COM estoque são cobradas.
+  // Sem nada em fila os dois números são idênticos, então isto não muda nada
+  // no caso comum — e no caso com fila é o único valor que a cliente vai pagar.
+  const shippingCents = order.shipping?.freeShipping
+    ? 0
+    : (order.shipping?.costCents ?? 0)
+  const itemsTotal = order.payableAmount
   const discountCents = 0
+  const orderTotal = itemsTotal + shippingCents - discountCents
 
   // Treat the order as expired when the cart-side status flips to expired
   // OR the payment is still pending past the expiresAt timestamp (catches
@@ -71,9 +83,17 @@ export function OrderDetailPayment() {
 
         <dl className="space-y-1.5 text-sm">
           <div className="flex items-baseline justify-between">
-            <dt className="text-muted-foreground">Valor pago</dt>
+            <dt className="text-muted-foreground">Produtos</dt>
             <dd className="tabular-nums">{formatCurrency(itemsTotal)}</dd>
           </div>
+          {order.waitlistedAmount > 0 && (
+            <div className="flex items-baseline justify-between text-amber-700 dark:text-amber-500">
+              <dt>Em fila (não cobrado)</dt>
+              <dd className="tabular-nums">
+                {formatCurrency(order.waitlistedAmount)}
+              </dd>
+            </div>
+          )}
           <div className="flex items-baseline justify-between">
             <dt className="text-muted-foreground">Frete</dt>
             <dd className="tabular-nums">
@@ -91,8 +111,8 @@ export function OrderDetailPayment() {
             </dd>
           </div>
           <div className="mt-2 flex items-baseline justify-between border-t pt-2 text-base font-semibold">
-            <dt>Valor total</dt>
-            <dd className="tabular-nums">{formatCurrency(order.totalAmount)}</dd>
+            <dt>{order.paidAt ? "Valor pago" : "Valor total"}</dt>
+            <dd className="tabular-nums">{formatCurrency(orderTotal)}</dd>
           </div>
         </dl>
       </CardContent>

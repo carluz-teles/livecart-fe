@@ -9,6 +9,7 @@ import type {
   CustomerListResponse,
   CustomerOrder,
   CustomerStats,
+  SeenHandle,
 } from "@/types"
 
 export const customerService = {
@@ -60,4 +61,20 @@ export const customerService = {
       `/stores/${storeId}/customers/blocks/${encodeURIComponent(handle)}`,
       token,
     ),
+
+  // Busca na plateia das lives (live_comments), não em `customers`: quem só
+  // comentou nunca virou cliente. O termo é obrigatório no backend — não existe
+  // listagem completa, de propósito.
+  searchHandles: (
+    storeId: string,
+    options: { search: string; exact?: boolean },
+    token?: string | null,
+  ) => {
+    const params = new URLSearchParams({ search: options.search })
+    if (options.exact) params.set("exact", "true")
+    return apiClient.get<SeenHandle[]>(
+      `/stores/${storeId}/customers/handles?${params.toString()}`,
+      token,
+    )
+  },
 }
