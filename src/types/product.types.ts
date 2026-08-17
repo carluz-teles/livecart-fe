@@ -9,7 +9,14 @@ export interface ShippingProfile {
   heightCm: number | null
   widthCm: number | null
   lengthCm: number | null
+  // Identificadores do produto. Moram aqui porque o SKU já morava — os dois vão
+  // para a etiqueta e os dois alimentam a busca do catálogo.
+  //
+  // `barcode` é opcional porque este tipo serve resposta E payload: a API sempre
+  // devolve o campo, mas os formulários não o enviam — o código de barras vem do
+  // ERP, não é algo que a lojista digita.
   sku: string
+  barcode?: string
   packageFormat: PackageFormat
   insuranceValueCents: number | null
 }

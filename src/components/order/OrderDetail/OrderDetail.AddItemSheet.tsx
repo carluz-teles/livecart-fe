@@ -114,7 +114,7 @@ export function OrderDetailAddItemSheet({
               id="add-item-search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Nome ou código do produto"
+              placeholder="Nome, keyword, SKU ou código de barras"
               className="pl-9"
               autoComplete="off"
             />

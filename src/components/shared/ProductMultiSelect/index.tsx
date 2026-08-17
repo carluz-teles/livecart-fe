@@ -70,7 +70,7 @@ export function ProductMultiSelect({
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar produto"
+          placeholder="Nome, keyword, SKU ou código de barras"
           className="pl-8"
         />
       </div>
