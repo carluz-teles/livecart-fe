@@ -1,7 +1,15 @@
 "use client"
 
 import { use, useState } from "react"
-import { Ban, CheckCircle2, Hash, Link2, MoreHorizontal, RefreshCw } from "lucide-react"
+import {
+  Ban,
+  BadgeDollarSign,
+  CheckCircle2,
+  Hash,
+  Link2,
+  MoreHorizontal,
+  RefreshCw,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +29,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useConfirmManualPayment } from "@/hooks/order"
+import type { ApiError } from "@/types/api.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 
 async function copyToClipboard(value: string): Promise<boolean> {
@@ -36,6 +46,8 @@ export function OrderDetailActions() {
   const ctx = use(OrderDetailContext)
   const [refundOpen, setRefundOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [manualPaymentOpen, setManualPaymentOpen] = useState(false)
+  const confirmManualPayment = useConfirmManualPayment()
   if (!ctx) return null
   const { order } = ctx.state
   const {
@@ -65,6 +77,35 @@ export function OrderDetailActions() {
     order.paymentStatus === "paid" &&
     !!order.shipment &&
     order.shipmentStatus !== "delivered"
+
+  // Mesmo critério do backend, menos as corridas que só ele resolve: aqui é só
+  // não oferecer o que já sabemos que será recusado.
+  const canConfirmManualPayment =
+    order.paymentStatus !== "paid" &&
+    order.paymentStatus !== "refunded" &&
+    order.status !== "cancelled" &&
+    order.status !== "expired" &&
+    order.items.length > 0
+
+  const handleConfirmManualPayment = () => {
+    setManualPaymentOpen(false)
+    confirmManualPayment.mutate(
+      { id: order.id },
+      {
+        onSuccess: () =>
+          toast.success(`Pedido #${order.shortId} marcado como pago`, {
+            description:
+              "Enviado ao ERP com o estoque lançado. Registre o recebimento por lá.",
+          }),
+        onError: (error) => {
+          const apiError = error as unknown as ApiError
+          toast.error("Não foi possível confirmar o pagamento", {
+            description: apiError?.message || apiError?.error,
+          })
+        },
+      },
+    )
+  }
 
   const checkoutUrl = order.token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/cart/${order.token}`
@@ -145,6 +186,22 @@ export function OrderDetailActions() {
               pedido não pago o documento é a tarefa principal (orçamento para a
               cliente), não uma ação secundária. Manter nos dois lugares daria
               dois caminhos para a mesma coisa. */}
+          {/* Dinheiro que entrou por fora (Pix na maquininha, dinheiro,
+              transferência). Só faz sentido enquanto o pedido não foi pago —
+              depois de pago não há o que confirmar, e o backend recusa. */}
+          {canConfirmManualPayment && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setManualPaymentOpen(true)}
+                disabled={confirmManualPayment.isPending}
+                className="text-emerald-700 focus:text-emerald-700"
+              >
+                <BadgeDollarSign className="mr-2 h-4 w-4" />
+                Confirmar pagamento manual
+              </DropdownMenuItem>
+            </>
+          )}
           {canCancel && (
             <>
               <DropdownMenuSeparator />
@@ -193,6 +250,48 @@ export function OrderDetailActions() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isCancelling ? "Cancelando..." : "Cancelar carrinho"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={manualPaymentOpen} onOpenChange={setManualPaymentOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Confirmar pagamento recebido por fora?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 leading-relaxed">
+              <span className="block">
+                O pedido #{order.shortId} passa a constar como{" "}
+                <strong className="font-medium text-foreground">pago</strong> e
+                segue o mesmo caminho de um pagamento pelo LiveCart: vira pedido
+                de venda no seu ERP e o estoque é lançado.
+              </span>
+              <span className="block">
+                O recebimento{" "}
+                <strong className="font-medium text-foreground">
+                  não é lançado no financeiro do ERP
+                </strong>{" "}
+                — registre por lá, com a forma como o dinheiro entrou.
+              </span>
+              <span className="block">
+                Use só quando o dinheiro já entrou de verdade. Para desfazer,
+                depois, seria preciso reembolsar.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={confirmManualPayment.isPending}>
+              Voltar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmManualPayment}
+              disabled={confirmManualPayment.isPending}
+            >
+              {confirmManualPayment.isPending
+                ? "Confirmando..."
+                : "Confirmar pagamento"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
