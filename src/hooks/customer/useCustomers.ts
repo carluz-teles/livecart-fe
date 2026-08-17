@@ -17,6 +17,11 @@ export const customerKeys = {
   // "incluir desbloqueados" filter doesn't reuse the active-only cache.
   blocked: (storeId: string, includeInactive: boolean) =>
     [...customerKeys.all, "blocked", storeId, includeInactive] as const,
+  // A busca na plateia é keyed pelo termo JÁ normalizado e pelo modo: "@Fulano"
+  // e "fulano" são a mesma busca e devem reusar o cache, mas trecho e exato
+  // devolvem conjuntos diferentes.
+  handleSearch: (storeId: string, term: string, exact: boolean) =>
+    [...customerKeys.all, "handle-search", storeId, term, exact] as const,
 }
 
 export function useCustomers(params?: CustomerListParams) {

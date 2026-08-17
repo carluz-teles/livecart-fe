@@ -215,9 +215,9 @@ export function formatRelativeTime(dateString: string): string {
   const diffDays = Math.floor(diffHours / 24)
 
   if (diffMins < 1) return "agora"
-  if (diffMins < 60) return `${diffMins} min atras`
-  if (diffHours < 24) return `${diffHours}h atras`
-  if (diffDays < 7) return `${diffDays}d atras`
+  if (diffMins < 60) return `${diffMins} min atrás`
+  if (diffHours < 24) return `${diffHours}h atrás`
+  if (diffDays < 7) return `${diffDays}d atrás`
   return formatDate(dateString)
 }
 
@@ -238,7 +238,7 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Formats a relative date (e.g., "Hoje", "Ontem", "3 dias atras")
+ * Formats a relative date (e.g., "Hoje", "Ontem", "3 dias atrás")
  * @param dateString - ISO date string
  * @returns Relative date string
  */
@@ -251,6 +251,6 @@ export function formatRelativeDate(dateString: string): string {
 
   if (diffDays === 0) return "Hoje"
   if (diffDays === 1) return "Ontem"
-  if (diffDays < 7) return `${diffDays} dias atras`
+  if (diffDays < 7) return `${diffDays} dias atrás`
   return formatDate(dateString)
 }

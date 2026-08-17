@@ -107,8 +107,9 @@ function Masthead({ order, orcamento }: MastheadProps) {
     <header className="flex items-start justify-between gap-8 border-b-2 border-neutral-900 pb-4">
       <div className="min-w-0">
         {/* Serifada só aqui: dá ao nome da loja o peso de identidade num
-            documento que, no resto, é tabela e número. Família do sistema —
-            impressão não carrega webfont de forma confiável. */}
+            documento que, no resto, é tabela e número. `font-serif` é a
+            Source Serif 4 do próprio projeto (next/font, self-hosted), então
+            imprime sem depender de rede. */}
         <p className="font-serif text-2xl font-semibold leading-tight tracking-tight">
           {loja?.name || "Loja"}
         </p>
