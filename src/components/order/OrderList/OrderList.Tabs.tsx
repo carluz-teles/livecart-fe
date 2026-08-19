@@ -56,7 +56,7 @@ export const ORDER_TABS: OrderTab[] = [
     id: "needs_action",
     label: "Precisam atenção",
     description:
-      "Pedidos que precisam de ação manual: pagamento falhou ou foi reembolsado, envio com problema (NFe, recusa, bloqueio, dano, não entregue) ou pedido pago que falhou ao ser enviado para o ERP. O estoque continua reservado para os casos de ERP — abra cada um para resolver.",
+      "Pedidos que precisam de ação manual: pagamento falhou, envio com problema (NFe, recusa, bloqueio, dano, não entregue) ou pedido pago que falhou ao ser enviado para o ERP. Reembolsos são cancelados automaticamente e moram em Cancelados. O estoque continua reservado para os casos de ERP — abra cada um para resolver.",
     filters: {
       needsAttention: true,
     },
@@ -124,7 +124,7 @@ export const ORDER_TABS: OrderTab[] = [
     id: "cancelled",
     label: "Cancelados",
     description:
-      "Pedidos cancelados pela loja (estoque já devolvido e link desativado) ou que expiraram sem pagamento. Útil para campanhas de recuperação de carrinho.",
+      "Pedidos cancelados pela loja (estoque já devolvido e link desativado), reembolsados ou que expiraram sem pagamento. Útil para campanhas de recuperação de carrinho.",
     filters: {
       status: ["cancelled", "expired"],
     },
