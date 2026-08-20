@@ -1,6 +1,6 @@
 "use client"
 
-import { Loader2 } from "lucide-react"
+import { CheckCircle2, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -30,7 +30,10 @@ export function NotificationEditorFooter({
               <span className="font-medium">Você tem alterações não salvas</span>
             </>
           ) : (
-            <span className="text-muted-foreground">Tudo salvo</span>
+            <>
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+              <span>Tudo salvo</span>
+            </>
           )}
         </div>
         <div className="flex items-center gap-2">

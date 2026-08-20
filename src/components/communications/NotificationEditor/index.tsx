@@ -112,9 +112,9 @@ function NotificationEditor({ type }: NotificationEditorProps) {
     return (
       <div className="flex min-h-full flex-col gap-4">
         <Skeleton className="h-16 w-full rounded-md" />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-md" />
-          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-2xl" />
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[520px] rounded-xl" />
+          <Skeleton className="h-[520px] rounded-xl" />
         </div>
       </div>
     )
@@ -135,37 +135,50 @@ function NotificationEditor({ type }: NotificationEditorProps) {
             onClick={() => setTestOpen(true)}
           >
             <Zap className="mr-1.5 h-4 w-4" />
-            Testar notificação
+            Testar mensagem
           </Button>
         }
       />
 
-      {/* Altura fluida com piso e teto: em notebook (lg de LARGURA, mas
-          baixo de ALTURA) o antigo flex-1/min-h-0 espremia o editor e cortava
-          o preview; agora cada painel tem ~45dvh com rolagem própria e a
-          página rola quando precisar. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-4">
+      {/* Dois cards com altura NATURAL (mockup 20/08/2026): nada de fração
+          da viewport com rolagem interna — o conteúdo define a altura e a
+          página rola quando precisar, sem scroll de mouse dentro dos painéis
+          em monitor menor. */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border bg-card p-5 sm:p-6">
           <NotificationEditorTriggerConfig
             type={type}
             expirationReminderMinutes={reminderMinutes}
             cartExpirationMinutes={cartSettings?.expirationMinutes ?? 30}
             onMinutesChange={setReminderMinutes}
           />
-          <div className="flex h-[clamp(300px,48dvh,600px)] flex-col">
-            <MessageEditor
-              ref={editorRef}
-              initialTemplate={draft}
-              defaultTemplate={defaultTemplates[type]}
-              variables={variables}
-              onTemplateChange={setDraft}
-            />
-          </div>
-        </div>
 
-        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-4">
+          <div className="mb-3 mt-6">
+            <h2 className="text-sm font-semibold tracking-tight">Mensagem</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Personalize o conteúdo da mensagem enviada na DM do Instagram.
+            </p>
+          </div>
+          <MessageEditor
+            ref={editorRef}
+            initialTemplate={draft}
+            defaultTemplate={defaultTemplates[type]}
+            variables={variables}
+            onTemplateChange={setDraft}
+          />
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 sm:p-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold tracking-tight">
+              Prévia da mensagem
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Veja como sua mensagem aparecerá para o cliente no Instagram.
+            </p>
+          </div>
           <InstagramPreview storeName="minhaloja" message={previewText} />
-        </aside>
+        </section>
       </div>
 
       <NotificationEditorFooter

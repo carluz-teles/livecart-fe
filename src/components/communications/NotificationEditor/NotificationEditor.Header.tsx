@@ -50,8 +50,9 @@ export function NotificationEditorHeader({
 
         <div className="flex items-center gap-3">
           {trailing}
-          <div className="flex items-center gap-2.5 rounded-md border bg-card px-3 py-2">
-            <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-sm text-muted-foreground">Status</span>
+          <div className="flex items-center gap-2.5 rounded-full border bg-card py-1.5 pl-3.5 pr-2">
+            <span className="text-sm font-medium">
               {enabled ? "Ativa" : "Pausada"}
             </span>
             <Switch
