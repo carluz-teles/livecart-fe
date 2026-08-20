@@ -32,7 +32,7 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
   const initials = getInitials(displayName)
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
 
       {/* Instagram chat frame — mirrors EmailEditor.Preview's structure but
           dressed as an IG Direct conversation. Theme-locked to light via
@@ -40,7 +40,7 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
           and dark dashboard modes. */}
       <div
         className={cn(
-          "instagram-preview-frame group relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-card",
+          "instagram-preview-frame group relative flex flex-1 flex-col overflow-hidden rounded-2xl border bg-card",
           "shadow-[0_30px_60px_-30px_rgba(15,23,42,0.35),0_8px_20px_-12px_rgba(15,23,42,0.18)]",
         )}
       >
@@ -87,7 +87,7 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
         {/* Altura NATURAL: a moldura cresce com a mensagem em vez de fixar
             uma fração da viewport com rolagem interna — era o scroll que
             aparecia em monitor menor (mockup 20/08/2026). */}
-        <div className="instagram-preview-backdrop relative min-h-[280px] px-4 py-6 sm:px-6 sm:py-8">
+        <div className="instagram-preview-backdrop relative min-h-[280px] flex-1 px-4 py-6 sm:px-6 sm:py-8">
           {/* Timestamp pill */}
           <div className="mb-3 flex justify-center">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8E8E8E]">
@@ -137,7 +137,7 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
         </div>
       </div>
 
-      <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+      <p className="shrink-0 px-1 text-xs leading-relaxed text-muted-foreground">
         Esta é uma simulação de como o cliente verá sua mensagem no Instagram
         Direct.
       </p>

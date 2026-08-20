@@ -133,7 +133,7 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
     const overLimit = byteLen > MAX_BYTES
 
     return (
-      <div className="flex flex-col rounded-xl border bg-muted/30">
+      <div className="flex h-full flex-col rounded-xl border bg-muted/30">
         <NotificationToolbar
           editor={editor}
           variables={variables}
@@ -141,9 +141,12 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
         />
 
         {/* Writing surface — distinctly elevated above the panel */}
-        <div className="flex flex-col px-3 pb-3">
-          <div className="flex flex-col rounded-lg border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
-            <div className="p-4">
+        <div className="flex flex-1 flex-col px-3 pb-3">
+          {/* flex-1 sem overflow: a caixa ESTICA para igualar a altura do card
+              vizinho, mas nunca rola por dentro — conteúdo maior empurra a
+              página, não ganha barra própria. */}
+          <div className="flex flex-1 flex-col rounded-lg border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
+            <div className="flex-1 p-4">
               <EditorContent editor={editor} />
             </div>
           </div>

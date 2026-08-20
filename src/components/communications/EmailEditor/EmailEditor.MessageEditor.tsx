@@ -131,16 +131,16 @@ export const EmailMessageEditor = forwardRef<EmailMessageEditorHandle, EmailMess
     }
 
     return (
-      <div className="flex h-full min-h-0 flex-col rounded-xl border bg-muted/30">
+      <div className="flex h-full flex-col rounded-xl border bg-muted/30">
         <EmailToolbar
           editor={editor}
           variables={variables}
           onRequestLink={() => setLinkDialogOpen(true)}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-1">
-          <div className="flex min-h-0 flex-1 flex-col rounded-lg border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="flex flex-1 flex-col px-3 pb-3 pt-1">
+          <div className="flex flex-1 flex-col rounded-lg border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-ring/15">
+            <div className="flex-1 p-4">
               <EditorContent editor={editor} />
             </div>
           </div>

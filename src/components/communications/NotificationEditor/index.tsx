@@ -144,8 +144,8 @@ function NotificationEditor({ type }: NotificationEditorProps) {
           da viewport com rolagem interna — o conteúdo define a altura e a
           página rola quando precisar, sem scroll de mouse dentro dos painéis
           em monitor menor. */}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border bg-card p-5 sm:p-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
           <NotificationEditorTriggerConfig
             type={type}
             expirationReminderMinutes={reminderMinutes}
@@ -159,16 +159,21 @@ function NotificationEditor({ type }: NotificationEditorProps) {
               Personalize o conteúdo da mensagem enviada na DM do Instagram.
             </p>
           </div>
-          <MessageEditor
-            ref={editorRef}
-            initialTemplate={draft}
-            defaultTemplate={defaultTemplates[type]}
-            variables={variables}
-            onTemplateChange={setDraft}
-          />
+          <div className="flex flex-1 flex-col">
+            <MessageEditor
+              ref={editorRef}
+              initialTemplate={draft}
+              defaultTemplate={defaultTemplates[type]}
+              variables={variables}
+              onTemplateChange={setDraft}
+            />
+          </div>
         </section>
 
-        <section className="rounded-xl border bg-card p-5 sm:p-6">
+        {/* Os dois cards têm a MESMA altura (linha do grid = o mais alto); o
+            miolo flexível de cada um — editor de um lado, fundo do chat do
+            outro — absorve a folga. Sem altura fixa, sem rolagem interna. */}
+        <section className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold tracking-tight">
               Prévia da mensagem
@@ -177,7 +182,9 @@ function NotificationEditor({ type }: NotificationEditorProps) {
               Veja como sua mensagem aparecerá para o cliente no Instagram.
             </p>
           </div>
-          <InstagramPreview storeName="minhaloja" message={previewText} />
+          <div className="flex flex-1 flex-col">
+            <InstagramPreview storeName="minhaloja" message={previewText} />
+          </div>
         </section>
       </div>
 
