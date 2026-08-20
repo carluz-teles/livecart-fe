@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Zap } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useCommunication } from "@/hooks/communications"
 import { defaultTemplates } from "@/schemas/checkout-settings.schema"
 import type { CartNotificationType } from "@/types/notification.types"
@@ -62,6 +63,11 @@ function NotificationEditor({ type }: NotificationEditorProps) {
       template: initialTemplate,
       reminderMinutes: initialMinutes,
     })
+    // O TipTap inicializa com o conteúdo disponível NA MONTAGEM; quando as
+    // settings chegam depois, só o estado `draft` era atualizado — o editor
+    // mostrava o template default e a prévia (que segue o draft) mostrava o
+    // salvo: duas mensagens diferentes na mesma tela (20/08/2026).
+    editorRef.current?.setTemplate(initialTemplate)
   }, [isLoading, template, cartSettings, type])
 
   const dirty =
@@ -89,6 +95,20 @@ function NotificationEditor({ type }: NotificationEditorProps) {
   // Render-time preview text (variables become friendly tokens like @cliente)
   // We render with sample values so the lojista sees the real shape of the DM.
   const previewText = renderWithSamples(draft)
+
+  // Montar o editor antes das settings chegarem foi a raiz da prévia
+  // divergente — o skeleton segura a montagem até existir UMA verdade.
+  if (isLoading) {
+    return (
+      <div className="flex min-h-full flex-col gap-4">
+        <Skeleton className="h-16 w-full rounded-md" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-md" />
+          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-2xl" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-full flex-col gap-4">
@@ -133,7 +153,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
           </div>
         </div>
 
-        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-0">
+        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-4">
           <InstagramPreview storeName="minhaloja" message={previewText} />
         </aside>
       </div>
