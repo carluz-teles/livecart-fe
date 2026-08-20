@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEmailCommunication } from "@/hooks/communications"
@@ -60,6 +61,9 @@ function EmailEditor({ type }: EmailEditorProps) {
     setSubject(initial.subject)
     setBodyHTML(initial.bodyHTML)
     setSnapshot(initial)
+    // Mesmo sync do editor de DM: o TipTap monta antes das settings chegarem
+    // e sem isto o corpo editado e a prévia contavam histórias diferentes.
+    editorRef.current?.setHTML(initial.bodyHTML)
   }, [isLoading, template])
 
   const dirty =
@@ -81,6 +85,21 @@ function EmailEditor({ type }: EmailEditorProps) {
 
   const handleSendTest = async (recipientEmail: string) => {
     await sendTest(recipientEmail, { enabled, subject, bodyHTML })
+  }
+
+
+  // Mesma regra do editor de DM: montar antes das settings chegarem cria duas
+  // verdades (corpo editado × prévia). Skeleton até existir uma só.
+  if (isLoading) {
+    return (
+      <div className="flex min-h-full flex-col gap-4">
+        <Skeleton className="h-16 w-full rounded-md" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-md" />
+          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-2xl" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -136,7 +155,7 @@ function EmailEditor({ type }: EmailEditorProps) {
           </div>
         </div>
 
-        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-0">
+        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-4">
           <EmailEditorPreview
             type={type}
             subject={subject}
