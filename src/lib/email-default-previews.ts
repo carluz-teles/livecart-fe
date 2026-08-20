@@ -60,6 +60,26 @@ const DEFAULT_PREVIEW_BODIES: Record<PostPaymentNotificationType, string> = {
     <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">
       Qualquer dúvida sobre o reembolso, é só responder este e-mail.
     </p>`,
+
+  shipped: `
+    <p style="margin:0;color:#3b82f6;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">📦 Pedido enviado</p>
+    <h2 style="margin:8px 0 12px;font-size:22px;color:#111827;">Pedido #1042 está a caminho</h2>
+    <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#4b5563;">
+      Olá <strong>Ana</strong>, seu pedido saiu para entrega via <strong>Sedex · Correios</strong>.
+    </p>
+    <p style="margin:12px 0 0;font-size:14px;color:#4b5563;">Código de rastreio: <strong style="font-family:monospace;">BR123456789BR</strong><br/>Prazo estimado: até 5 dias úteis</p>
+    <p style="margin:24px 0 0;"><a href="#" style="display:inline-block;background:#f59e0b;color:#111;font-weight:600;font-size:14px;padding:10px 22px;border-radius:8px;text-decoration:none;">Rastrear meu pedido</a></p>`,
+
+  delivered: `
+    <p style="margin:0;color:#10b981;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;">✓ Pedido entregue</p>
+    <h2 style="margin:8px 0 12px;font-size:22px;color:#111827;">Pedido #1042 chegou!</h2>
+    <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#4b5563;">
+      Olá <strong>Ana</strong>, a transportadora confirmou a entrega do seu pedido.
+      Esperamos que você ame cada item! 💜
+    </p>
+    <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">
+      Algum problema com a entrega? É só responder este e-mail.
+    </p>`,
 }
 
 export function defaultPreviewBody(type: PostPaymentNotificationType): string {
@@ -74,5 +94,9 @@ export function defaultPreviewSubject(type: PostPaymentNotificationType, storeNa
       return `Pedido #1042 cancelado · ${storeName}`
     case "payment_refunded":
       return `Reembolso do pedido #1042 · ${storeName}`
+    case "shipped":
+      return `Pedido #1042 a caminho · ${storeName}`
+    case "delivered":
+      return `Pedido #1042 entregue · ${storeName}`
   }
 }

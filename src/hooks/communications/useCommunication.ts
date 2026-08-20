@@ -118,14 +118,10 @@ export function useCommunication(type: CartNotificationType): UseCommunicationRe
             (type === "item_added"
               ? payload.enabled
               : (current?.item_added?.enabled ?? false)),
-          sendExpirationReminder:
-            type === "checkout_reminder"
-              ? payload.enabled
-              : (current?.checkout_reminder?.enabled ?? false),
-          expirationReminderMinutes:
-            type === "checkout_reminder" && payload.expirationReminderMinutes != null
-              ? payload.expirationReminderMinutes
-              : cart.expirationReminderMinutes,
+          // O lembrete de expiração saiu do catálogo (20/08/2026 — nunca
+          // teve produtor). Os campos espelham o estado salvo sem mexer.
+          sendExpirationReminder: current?.checkout_reminder?.enabled ?? false,
+          expirationReminderMinutes: cart.expirationReminderMinutes,
         }
         await storeService.updateCartSettings(cartPayload, token, storeId)
       }

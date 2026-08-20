@@ -1,17 +1,15 @@
 import {
   ShoppingCart,
   Plus,
-  Clock,
   CheckCircle2,
   XCircle,
   Undo2,
   CalendarClock,
   MessageSquareOff,
   DoorClosed,
-  Timer,
-  BellRing,
-  HeartCrack,
   Hourglass,
+  PackageCheck,
+  Truck,
   type LucideIcon,
 } from "lucide-react"
 
@@ -49,15 +47,6 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     triggerLabel: () => "Quando o cliente adiciona mais itens",
     Icon: Plus,
   },
-  checkout_reminder: {
-    type: "checkout_reminder",
-    channel: "instagram_dm",
-    title: "Lembrete de expiração",
-    description: "Avise o cliente antes do carrinho expirar e recupere vendas.",
-    triggerLabel: ({ expirationReminderMinutes }) =>
-      `${expirationReminderMinutes ?? 15} minutos antes do carrinho expirar`,
-    Icon: Clock,
-  },
   // ===========================================================================
   // Os cinco gatilhos da RN-28 (+ waitlist_notified, que existia no domínio e
   // não existia em UI nenhuma). Todos por Instagram DM.
@@ -67,35 +56,27 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     channel: "instagram_dm",
     title: "Comentou antes da campanha abrir",
     description:
-      "Quem comenta antes do início recebe a data de abertura em vez de ficar sem resposta.",
-    triggerLabel: () => "Quando o comentário chega antes do início da campanha",
+      "Quem comenta num post ou reel antes do início recebe a data de abertura em vez de ficar sem resposta. Vale para publicações — comentário de live só chega durante a transmissão.",
+    triggerLabel: () => "Comentário em post/reel antes do início da campanha",
     Icon: CalendarClock,
   },
   out_of_window_session_ended: {
     type: "out_of_window_session_ended",
     channel: "instagram_dm",
-    title: "Comentou em transmissão encerrada",
+    title: "Comentou em publicação de sessão encerrada",
     description:
-      "A campanha continua aberta, mas aquela transmissão já acabou. Avisa e aponta para as outras.",
-    triggerLabel: () => "Quando a sessão acabou e a campanha segue aberta",
+      "A campanha continua aberta, mas aquela sessão já acabou. Vale para post e reel — o Instagram não permite responder comentário de uma live que terminou.",
+    triggerLabel: () => "Comentário em post/reel de sessão encerrada, campanha aberta",
     Icon: MessageSquareOff,
   },
   out_of_window_event_ended: {
     type: "out_of_window_event_ended",
     channel: "instagram_dm",
     title: "Comentou depois da campanha fechar",
-    description: "Evita o descarte silencioso: o comprador sabe que a promoção terminou.",
-    triggerLabel: () => "Quando o comentário chega com a campanha já encerrada",
-    Icon: DoorClosed,
-  },
-  event_deadline_started: {
-    type: "event_deadline_started",
-    channel: "instagram_dm",
-    title: "Campanha encerrada, o prazo começou",
     description:
-      "O momento de maior impacto em conversão: o relógio para finalizar começa a correr agora.",
-    triggerLabel: () => "Quando a campanha fecha e o prazo de pagamento arma",
-    Icon: Timer,
+      "Evita o descarte silencioso: quem comenta num post ou reel depois do fim sabe que a promoção terminou. Comentário de live encerrada não pode ser respondido pelo Instagram.",
+    triggerLabel: () => "Comentário em post/reel com a campanha já encerrada",
+    Icon: DoorClosed,
   },
   waitlist_joined: {
     type: "waitlist_joined",
@@ -105,15 +86,6 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
       "O produto pedido acabou. Sem esta mensagem o comprador recebe o texto de item adicionado e acha que comprou.",
     triggerLabel: () => "Quando o estoque não cobre o pedido e o item vai para a fila",
     Icon: Hourglass,
-  },
-  waitlist_unfulfilled: {
-    type: "waitlist_unfulfilled",
-    channel: "instagram_dm",
-    title: "Não conseguimos liberar o produto",
-    description:
-      "A campanha fechou e o item da fila nunca liberou. Sem esta mensagem, a espera termina em silêncio.",
-    triggerLabel: () => "Quando a fila fecha sem o produto ter liberado",
-    Icon: HeartCrack,
   },
   payment_confirmed: {
     type: "payment_confirmed",
@@ -139,37 +111,63 @@ export const NOTIFICATION_META: Record<NotificationType, NotificationMeta> = {
     triggerLabel: () => "Quando o pagamento é estornado",
     Icon: Undo2,
   },
+  // Existiam no backend desde o início e nunca tiveram card: eram
+  // inconfiguráveis pela UI (20/08/2026).
+  shipped: {
+    type: "shipped",
+    channel: "email",
+    title: "Pedido enviado",
+    description: "Email com o código de rastreio assim que a etiqueta é postada.",
+    triggerLabel: () => "Quando o envio é postado com rastreio",
+    Icon: Truck,
+  },
+  delivered: {
+    type: "delivered",
+    channel: "email",
+    title: "Pedido entregue",
+    description: "Email de confirmação quando a transportadora marca a entrega.",
+    triggerLabel: () => "Quando a entrega é confirmada",
+    Icon: PackageCheck,
+  },
 }
 
+// Removidos do catálogo em 20/08/2026 (nunca entregavam, por regra do
+// Instagram — DM fora da janela de resposta):
+//   • event_deadline_started ("Campanha encerrada"): DM na hora que o evento
+//     fecha, tipicamente dias após o último comentário do comprador.
+//   • waitlist_unfulfilled ("Não conseguimos liberar"): DM no fim da fila,
+//     ainda mais tarde. Em produção: 0 entregas.
+//   • checkout_reminder ("Lembrete de expiração"): com prazos de dias, o
+//     lembrete cai sempre fora da janela. Em produção: nunca disparou.
+// Os tipos continuam existindo no backend (compat de JSONB e rotas velhas);
+// só saíram da oferta da UI.
 export const NOTIFICATION_ORDER: NotificationType[] = [
   "checkout_immediate",
   "item_added",
-  "event_deadline_started",
-  "checkout_reminder",
   "out_of_window_scheduled",
   "out_of_window_session_ended",
   "out_of_window_event_ended",
   "waitlist_joined",
-  "waitlist_unfulfilled",
   "payment_confirmed",
   "payment_cancelled",
   "payment_refunded",
+  "shipped",
+  "delivered",
 ]
 
 export const CART_NOTIFICATION_ORDER: NotificationType[] = [
   "checkout_immediate",
   "item_added",
-  "event_deadline_started",
-  "checkout_reminder",
   "out_of_window_scheduled",
   "out_of_window_session_ended",
   "out_of_window_event_ended",
   "waitlist_joined",
-  "waitlist_unfulfilled",
 ]
 
 export const POST_PAYMENT_NOTIFICATION_ORDER: NotificationType[] = [
   "payment_confirmed",
   "payment_cancelled",
   "payment_refunded",
+  "shipped",
+  "delivered",
 ]
