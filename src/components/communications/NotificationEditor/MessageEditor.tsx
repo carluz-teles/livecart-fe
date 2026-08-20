@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useImperativeHandle, useMemo } from "react"
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import { forwardRef } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -68,17 +68,36 @@ export const MessageEditor = forwardRef<MessageEditorHandle, MessageEditorProps>
       immediatelyRender: false,
     })
 
+    // Com immediatelyRender:false (obrigatório no SSR do Next), a instância
+    // do TipTap nasce DEPOIS da primeira renderização. Um setTemplate que
+    // chegue antes disso — o sync do carregamento das settings chega — era um
+    // no-op silencioso: o editor abria com o template default enquanto a
+    // prévia mostrava o salvo (20/08/2026, segunda ocorrência). A intenção
+    // fica na fila e aplica assim que a instância existir.
+    const pendingTemplate = useRef<string | null>(null)
+
     useImperativeHandle(
       ref,
       () => ({
         setTemplate: (template: string) => {
-          if (!editor) return
+          if (!editor) {
+            pendingTemplate.current = template
+            onTemplateChange(template)
+            return
+          }
+          pendingTemplate.current = null
           editor.commands.setContent(templateToDoc(template, knownNames))
           onTemplateChange(template)
         },
       }),
       [editor, knownNames, onTemplateChange],
     )
+
+    useEffect(() => {
+      if (!editor || pendingTemplate.current == null) return
+      editor.commands.setContent(templateToDoc(pendingTemplate.current, knownNames))
+      pendingTemplate.current = null
+    }, [editor, knownNames])
 
     // When the variables list arrives later (async), re-parse the doc so any
     // {handle} text already on screen turns into pills.
