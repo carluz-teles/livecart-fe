@@ -1,9 +1,11 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useBlockedHandles, useCustomers, useCustomerStats } from "@/hooks/customer"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
 import type { CustomerFilters } from "@/types/customer.types"
 import {
   CustomerListContext,
@@ -15,13 +17,30 @@ interface ProviderProps {
 }
 
 export function CustomerListProvider({ children }: ProviderProps) {
-  const [searchInput, setSearchInput] = useState("")
+  // Página, busca e o filtro de bloqueados nascem da URL e voltam para ela
+  // (skill list-url-state): F5 e o voltar do navegador restauram a tela.
+  const searchParams = useSearchParams()
+  const urlPage = parseInt(searchParams.get("page") ?? "", 10)
+
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "")
   const debouncedSearch = useDebounce(searchInput, 300)
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
-  const [showBlockedOnly, setShowBlockedOnly] = useState(false)
+  const [showBlockedOnly, setShowBlockedOnly] = useState(
+    searchParams.get("bloqueados") === "1",
+  )
 
   const { filters, setFilters, pagination, setPage, sorting, setSorting } =
-    useListParams<CustomerFilters>({ defaultSortBy: "last_order_at", defaultSortOrder: "desc" })
+    useListParams<CustomerFilters>({
+      defaultSortBy: "last_order_at",
+      defaultSortOrder: "desc",
+      defaultPage: Number.isNaN(urlPage) ? 1 : urlPage,
+    })
+
+  useListUrlMirror("/customers", {
+    page: pagination.page > 1 ? String(pagination.page) : null,
+    q: searchInput || null,
+    bloqueados: showBlockedOnly ? "1" : null,
+  })
 
   const toggleSort = useCallback(
     (column: string) => {

@@ -2,6 +2,7 @@
 
 import { use } from "react"
 import Link from "next/link"
+import { useListReturnURL } from "@/hooks/shared/useListUrlState"
 import { ArrowLeft, Aperture, Instagram, Layers, Radio, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -21,6 +22,10 @@ const KIND_ICONS = {
 
 export function EventDetailHeader() {
   const ctx = use(EventDetailContext)
+  // Voltar preserva a busca da listagem (skill list-url-state). Antes do
+  // early-return: hook não pode ser condicional.
+  const backHref = useListReturnURL("/events")
+
   if (!ctx) return null
   const { event } = ctx.state
   const { refresh } = ctx.actions
@@ -50,7 +55,7 @@ export function EventDetailHeader() {
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-4">
         <Link
-          href="/events"
+          href={backHref}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-accent"
           aria-label="Voltar para eventos"
         >

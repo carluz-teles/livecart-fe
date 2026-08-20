@@ -19,7 +19,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useOrderListReturnURL, useOrderNavigation } from "@/hooks/order"
+import { useOrderNavigation } from "@/hooks/order"
+import { useListReturnURL } from "@/hooks/shared/useListUrlState"
+import { useStoreId } from "@/hooks/useUser"
 import {
   FIRST_PURCHASE_BADGE,
   ORDER_STATUS_CONFIG,
@@ -36,7 +38,8 @@ export function OrderDetailHeader() {
   const navigation = useOrderNavigation(ctx?.state.order.id ?? "")
   // "Voltar" preserva a página/aba/busca de onde o lojista veio (URL salva
   // pela listagem); /orders puro só no acesso direto ao pedido.
-  const backHref = useOrderListReturnURL()
+  const { storeId } = useStoreId()
+  const backHref = useListReturnURL("/orders", storeId ?? undefined)
   if (!ctx) return null
   const { order } = ctx.state
 

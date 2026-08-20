@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
@@ -16,6 +17,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
 import { useProducts, useProductStats, useUpdateProduct, useDeleteProduct, useSyncProduct } from "@/hooks/product"
 import { useERPResyncRunning } from "@/hooks/integration"
 import { useProductGroups } from "@/hooks/product-group"
@@ -72,13 +74,26 @@ export default function ProductsPage() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
 
+  // Busca e aba nascem da URL e voltam para ela (skill list-url-state).
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") === "groups" ? "groups" : "all",
+  )
+
   const {
     search,
     setSearch,
     filters,
     setFilters,
     params,
-  } = useListParams<ProductFiltersType>()
+  } = useListParams<ProductFiltersType>({
+    defaultSearch: searchParams.get("q") ?? "",
+  })
+
+  useListUrlMirror("/products", {
+    q: search || null,
+    tab: activeTab !== "all" ? activeTab : null,
+  })
 
   const { data, isLoading, error } = useProducts(params)
   const { data: stats, isLoading: statsLoading } = useProductStats()
@@ -226,7 +241,7 @@ export default function ProductsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <Tabs defaultValue="all" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="all">
                 Todos os SKUs

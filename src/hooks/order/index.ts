@@ -12,8 +12,6 @@ export { useMarkDelivered } from "./useMarkDelivered"
 export {
   useOrderNavigation,
   persistOrderListSnapshot,
-  persistOrderListReturnURL,
-  useOrderListReturnURL,
   type OrderNavigationItem,
 } from "./useOrderNavigation"
 export { useConfirmManualPayment } from "./useConfirmManualPayment"

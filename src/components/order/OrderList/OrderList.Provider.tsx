@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  persistOrderListReturnURL,
   persistOrderListSnapshot,
   useOrders,
   useOrderStats,
 } from "@/hooks/order"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
 import { useStoreId } from "@/hooks/useUser"
 import type { OrderFilters } from "@/types/cart.types"
 import {
@@ -100,26 +100,17 @@ export function OrderListProvider({ children }: ProviderProps) {
 
   const { storeId } = useStoreId()
 
-  // Espelha página/aba/busca na URL (replaceState nativo — sem navegação, sem
-  // entrada extra no histórico) e guarda a URL completa para o "Voltar" do
-  // detalhe. Valores padrão ficam FORA da query para /orders continuar limpo.
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const params = new URLSearchParams(window.location.search)
-    const write = (key: string, value: string | null) => {
-      if (value) params.set(key, value)
-      else params.delete(key)
-    }
-    write("page", pagination.page > 1 ? String(pagination.page) : null)
-    write("tab", activeTab !== DEFAULT_TAB ? activeTab : null)
-    write("q", searchInput || null)
-    const qs = params.toString()
-    const url = qs ? `/orders?${qs}` : "/orders"
-    if (url !== window.location.pathname + window.location.search) {
-      window.history.replaceState(null, "", url)
-    }
-    if (storeId) persistOrderListReturnURL(storeId, url)
-  }, [pagination.page, activeTab, searchInput, storeId])
+  // Espelha página/aba/busca na URL e grava a URL para o "Voltar" do detalhe
+  // (padrão de toda listagem — skill list-url-state).
+  useListUrlMirror(
+    "/orders",
+    {
+      page: pagination.page > 1 ? String(pagination.page) : null,
+      tab: activeTab !== DEFAULT_TAB ? activeTab : null,
+      q: searchInput || null,
+    },
+    storeId ?? undefined,
+  )
 
   // Snapshot the page of order ids the merchant is currently browsing so the
   // detail screen can offer prev/next navigation that respects the active

@@ -10,6 +10,8 @@ interface UseListParamsOptions<TFilters> {
   defaultFilters?: TFilters
   /** Página inicial (ex.: restaurada da URL ao voltar do detalhe). */
   defaultPage?: number
+  /** Busca inicial (ex.: restaurada da URL ao voltar do detalhe). */
+  defaultSearch?: string
 }
 
 interface UseListParamsReturn<TFilters> {
@@ -46,7 +48,7 @@ export function useListParams<TFilters extends object>(
     []
   )
 
-  const [search, setSearchState] = useState("")
+  const [search, setSearchState] = useState(options?.defaultSearch ?? "")
   const [pagination, setPagination] = useState<Pagination>({
     ...DEFAULT_PAGINATION,
     page: Math.max(1, options?.defaultPage ?? DEFAULT_PAGINATION.page),
