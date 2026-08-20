@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   Aperture,
   Search,
@@ -38,6 +38,7 @@ import {
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
 import { useEvents, useEventStats, useEndEvent, useDeleteEvent } from "@/hooks/event"
 import type { Event, EventFilters as EventFiltersType } from "@/types/event.types"
 import {
@@ -99,6 +100,8 @@ export default function EventsPage() {
   const [sessionEvent, setSessionEvent] = useState<Event | null>(null)
   const [reconnectEvent, setReconnectEvent] = useState<Event | null>(null)
 
+  // Busca nasce da URL e volta para ela (skill list-url-state).
+  const searchParams = useSearchParams()
   const {
     search,
     setSearch,
@@ -106,7 +109,11 @@ export default function EventsPage() {
     setFilters,
     resetFilters,
     params,
-  } = useListParams<EventFiltersType>()
+  } = useListParams<EventFiltersType>({
+    defaultSearch: searchParams.get("q") ?? "",
+  })
+
+  useListUrlMirror("/events", { q: search || null })
 
   const { data, isLoading, error } = useEvents(params)
   const { data: stats, isLoading: statsLoading } = useEventStats()

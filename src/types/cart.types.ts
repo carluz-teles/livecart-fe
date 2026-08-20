@@ -272,6 +272,8 @@ export interface OrderFilters {
   paymentStatus?: PaymentStatus[]
   /** Filtra por CAMPANHA. O backend sempre casou `carts.event_id` aqui. */
   eventId?: string
+  /** Só pedidos que CONTÊM o produto (rastreabilidade produto → pedidos). */
+  productId?: string
   /** @deprecated sinônimo de `eventId`. */
   liveSessionId?: string
   dateFrom?: string
@@ -668,4 +670,17 @@ export interface PaymentStatusResponse {
   paymentStatus: string
   paidAt: string | null
   message?: string
+}
+
+/** Um balde do "pedidos com este produto": pedidos e unidades por par
+ *  (status do carrinho, status de pagamento). */
+export interface ProductOrderBreakdownBucket {
+  status: OrderStatus | string
+  paymentStatus: PaymentStatus | string
+  orders: number
+  units: number
+}
+
+export interface ProductOrderBreakdown {
+  buckets: ProductOrderBreakdownBucket[]
 }

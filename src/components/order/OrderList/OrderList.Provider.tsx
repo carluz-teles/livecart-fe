@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   persistOrderListSnapshot,
   useOrders,
@@ -9,13 +9,14 @@ import {
 } from "@/hooks/order"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { useListParams } from "@/hooks/shared/useListParams"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
 import { useStoreId } from "@/hooks/useUser"
 import type { OrderFilters } from "@/types/cart.types"
 import {
   OrderListContext,
   type OrderListContextValue,
 } from "./OrderListContext"
-import { getOrderTabFilters, type OrderTabId } from "./OrderList.Tabs"
+import { getOrderTabFilters, ORDER_TABS, type OrderTabId } from "./OrderList.Tabs"
 
 interface ProviderProps {
   children: React.ReactNode
@@ -47,12 +48,29 @@ function mergeFilters(
 
 export function OrderListProvider({ children }: ProviderProps) {
   const router = useRouter()
-  const [searchInput, setSearchInput] = useState("")
-  const debouncedSearch = useDebounce(searchInput, 300)
-  const [activeTab, setActiveTabState] = useState<OrderTabId>(DEFAULT_TAB)
 
+  // Página, aba e busca nascem da URL e voltam para ela (efeito abaixo).
+  // Antes viviam só em useState: navegar para o detalhe e voltar destruía o
+  // estado, e quem estava na página 3 recomeçava da 1 — reclamação do
+  // cliente em 20/08/2026.
+  const searchParams = useSearchParams()
+  const urlPage = parseInt(searchParams.get("page") ?? "", 10)
+  const urlTab = searchParams.get("tab")
+  const initialTab: OrderTabId = ORDER_TABS.some((t) => t.id === urlTab)
+    ? (urlTab as OrderTabId)
+    : DEFAULT_TAB
+
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "")
+  const debouncedSearch = useDebounce(searchInput, 300)
+  const [activeTab, setActiveTabState] = useState<OrderTabId>(initialTab)
+
+  const urlProduct = searchParams.get("product")
   const { filters, setFilters, pagination, setPage, sorting, setSorting } =
-    useListParams<OrderFilters>()
+    useListParams<OrderFilters>({
+      defaultPage: Number.isNaN(urlPage) ? 1 : urlPage,
+      // Deep-link da rastreabilidade produto → pedidos (modal do produto).
+      defaultFilters: urlProduct ? { productId: urlProduct } : undefined,
+    })
 
   const toggleSort = useCallback(
     (column: string) => {
@@ -84,6 +102,19 @@ export function OrderListProvider({ children }: ProviderProps) {
   })
 
   const { storeId } = useStoreId()
+
+  // Espelha página/aba/busca na URL e grava a URL para o "Voltar" do detalhe
+  // (padrão de toda listagem — skill list-url-state).
+  useListUrlMirror(
+    "/orders",
+    {
+      page: pagination.page > 1 ? String(pagination.page) : null,
+      tab: activeTab !== DEFAULT_TAB ? activeTab : null,
+      q: searchInput || null,
+      product: filters.productId ?? null,
+    },
+    storeId ?? undefined,
+  )
 
   // Snapshot the page of order ids the merchant is currently browsing so the
   // detail screen can offer prev/next navigation that respects the active

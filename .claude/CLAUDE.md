@@ -44,6 +44,14 @@ Quando recebo uma tarefa de UI, sempre me pergunto:
 
 ---
 
+## Telas de listagem (paginação, busca, abas)
+
+**OBRIGATÓRIO**: toda listagem segue a skill `list-url-state` — o estado
+navegável (página, busca, aba, filtro) vive na URL via `useListUrlMirror`, e o
+"Voltar" de tela de detalhe usa `useListReturnURL` (nunca href fixo, nunca
+`router.back()`). Molde de referência: `OrderList.Provider` +
+`OrderDetail.Header`.
+
 ## React Query (Server State Management)
 
 ### Regra fundamental

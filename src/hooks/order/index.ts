@@ -15,3 +15,4 @@ export {
   type OrderNavigationItem,
 } from "./useOrderNavigation"
 export { useConfirmManualPayment } from "./useConfirmManualPayment"
+export { useProductOrderBreakdown } from "./useProductOrderBreakdown"
