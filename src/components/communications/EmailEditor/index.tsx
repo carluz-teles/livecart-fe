@@ -131,8 +131,8 @@ function EmailEditor({ type }: EmailEditorProps) {
 
       {/* Dois cards com altura natural — mesmo padrão do editor de DM
           (mockup 20/08/2026): sem rolagem interna em monitor menor. */}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border bg-card p-5 sm:p-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
           <div className="rounded-md border bg-background p-4">
             <Label htmlFor="email-subject" className="text-sm font-medium">
               Assunto
@@ -156,15 +156,17 @@ function EmailEditor({ type }: EmailEditorProps) {
               Personalize o corpo do e-mail enviado ao cliente.
             </p>
           </div>
-          <EmailMessageEditor
-            ref={editorRef}
-            initialHTML={bodyHTML}
-            variables={variables}
-            onHTMLChange={setBodyHTML}
-          />
+          <div className="flex flex-1 flex-col">
+            <EmailMessageEditor
+              ref={editorRef}
+              initialHTML={bodyHTML}
+              variables={variables}
+              onHTMLChange={setBodyHTML}
+            />
+          </div>
         </section>
 
-        <section className="rounded-xl border bg-card p-5 sm:p-6">
+        <section className="flex flex-col rounded-xl border bg-card p-5 sm:p-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold tracking-tight">
               Prévia do e-mail
@@ -173,14 +175,16 @@ function EmailEditor({ type }: EmailEditorProps) {
               Veja como o e-mail aparecerá na caixa de entrada do cliente.
             </p>
           </div>
-          <EmailEditorPreview
-            type={type}
-            subject={subject}
-            bodyHTML={bodyHTML}
-            storeName={store?.name}
-            storeLogoUrl={store?.logoUrl ?? undefined}
-            ownerEmail={ownerEmail}
-          />
+          <div className="flex flex-1 flex-col">
+            <EmailEditorPreview
+              type={type}
+              subject={subject}
+              bodyHTML={bodyHTML}
+              storeName={store?.name}
+              storeLogoUrl={store?.logoUrl ?? undefined}
+              ownerEmail={ownerEmail}
+            />
+          </div>
         </section>
       </div>
 

@@ -70,14 +70,14 @@ export function EmailEditorPreview({
   const effectiveBody = isDefaultBody ? defaultPreviewBody(type) : bodyHTML
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
 
       {/* Light email-client frame. The whole widget is theme-locked to light
           via .email-preview-frame so the preview reads identically regardless
           of the dashboard theme. */}
       <div
         className={cn(
-          "email-preview-frame group relative flex flex-col overflow-hidden rounded-2xl border bg-card",
+          "email-preview-frame group relative flex flex-1 flex-col overflow-hidden rounded-2xl border bg-card",
           "shadow-[0_30px_60px_-30px_rgba(15,23,42,0.35),0_8px_20px_-12px_rgba(15,23,42,0.18)]",
         )}
       >
@@ -114,7 +114,7 @@ export function EmailEditorPreview({
         </div>
 
         {/* Backdrop — the email "paper" floats over this with strong elevation. */}
-        <div className="email-preview-backdrop relative min-h-[280px] px-6 py-8 sm:px-10 sm:py-12">
+        <div className="email-preview-backdrop relative min-h-[280px] flex-1 px-6 py-8 sm:px-10 sm:py-12">
           <article
             className={cn(
               "relative overflow-hidden rounded-xl bg-white",
