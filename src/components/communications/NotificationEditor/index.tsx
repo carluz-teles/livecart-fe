@@ -67,14 +67,14 @@ function NotificationEditor({ type }: NotificationEditorProps) {
   const dirty =
     enabled !== snapshot.enabled ||
     draft !== snapshot.template ||
-    (type === "checkout_reminder" && reminderMinutes !== snapshot.reminderMinutes)
+    false
 
   const handleSave = async () => {
     await save({
       enabled,
       template: draft,
       expirationReminderMinutes:
-        type === "checkout_reminder" ? reminderMinutes : undefined,
+        undefined,
     })
     setSnapshot({ enabled, template: draft, reminderMinutes })
   }
@@ -91,7 +91,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
   const previewText = renderWithSamples(draft)
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex min-h-full flex-col gap-4">
       <NotificationEditorHeader
         title={meta.title}
         description={meta.description}
@@ -110,15 +110,19 @@ function NotificationEditor({ type }: NotificationEditorProps) {
         }
       />
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:grid-rows-1">
-        <div className="flex min-h-0 flex-col gap-4">
+      {/* Altura fluida com piso e teto: em notebook (lg de LARGURA, mas
+          baixo de ALTURA) o antigo flex-1/min-h-0 espremia o editor e cortava
+          o preview; agora cada painel tem ~45dvh com rolagem própria e a
+          página rola quando precisar. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-4">
           <NotificationEditorTriggerConfig
             type={type}
             expirationReminderMinutes={reminderMinutes}
             cartExpirationMinutes={cartSettings?.expirationMinutes ?? 30}
             onMinutesChange={setReminderMinutes}
           />
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-[clamp(300px,48dvh,600px)] flex-col">
             <MessageEditor
               ref={editorRef}
               initialTemplate={draft}
@@ -129,7 +133,7 @@ function NotificationEditor({ type }: NotificationEditorProps) {
           </div>
         </div>
 
-        <aside className="flex min-h-0 flex-col">
+        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-0">
           <InstagramPreview storeName="minhaloja" message={previewText} />
         </aside>
       </div>

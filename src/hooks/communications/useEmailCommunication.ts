@@ -99,8 +99,8 @@ export function useEmailCommunication(
             type === "payment_confirmed"
               ? updated
               : current?.payment_confirmed ?? null,
-          shipped: current?.shipped ?? null,
-          delivered: current?.delivered ?? null,
+          shipped: type === "shipped" ? updated : current?.shipped ?? null,
+          delivered: type === "delivered" ? updated : current?.delivered ?? null,
           payment_cancelled:
             type === "payment_cancelled" ? updated : current?.payment_cancelled ?? null,
           payment_refunded:

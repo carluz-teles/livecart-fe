@@ -87,26 +87,24 @@ function pickCardSummary(
       return summaryFromTemplate(settings.checkout_immediate)
     case "item_added":
       return summaryFromTemplate(settings.item_added)
-    case "checkout_reminder":
-      return summaryFromTemplate(settings.checkout_reminder)
     case "out_of_window_scheduled":
       return summaryFromTemplate(settings.out_of_window_scheduled)
     case "out_of_window_session_ended":
       return summaryFromTemplate(settings.out_of_window_session_ended)
     case "out_of_window_event_ended":
       return summaryFromTemplate(settings.out_of_window_event_ended)
-    case "event_deadline_started":
-      return summaryFromTemplate(settings.event_deadline_started)
     case "waitlist_joined":
       return summaryFromTemplate(settings.waitlist_joined)
-    case "waitlist_unfulfilled":
-      return summaryFromTemplate(settings.waitlist_unfulfilled)
     case "payment_confirmed":
       return summaryFromEmail(settings.payment_confirmed)
     case "payment_cancelled":
       return summaryFromEmail(settings.payment_cancelled)
     case "payment_refunded":
       return summaryFromEmail(settings.payment_refunded)
+    case "shipped":
+      return summaryFromEmail(settings.shipped)
+    case "delivered":
+      return summaryFromEmail(settings.delivered)
   }
 }
 

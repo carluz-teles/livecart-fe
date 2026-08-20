@@ -92,16 +92,20 @@ export interface AvailableVariablesResponse {
 }
 
 // Cart-flow notifications go through Instagram DM (the original 3 templates).
+// Removidos da oferta em 20/08/2026 (o backend mantém as chaves por compat):
+//   checkout_reminder — nunca teve produtor (nenhuma task agenda o lembrete);
+//   event_deadline_started — o envio de links no fechamento vive no toggle
+//     do EVENTO (auto_send_links), não aqui; o card era um segundo interruptor
+//     que não interrompia nada;
+//   waitlist_unfulfilled — dispara dias depois do último comentário, fora de
+//     qualquer janela do Instagram: zero entregas na história do produto.
 export const CART_NOTIFICATION_TYPES = [
   "checkout_immediate",
   "item_added",
-  "checkout_reminder",
   "out_of_window_scheduled",
   "out_of_window_session_ended",
   "out_of_window_event_ended",
-  "event_deadline_started",
   "waitlist_joined",
-  "waitlist_unfulfilled",
 ] as const
 export type CartNotificationType = (typeof CART_NOTIFICATION_TYPES)[number]
 
@@ -110,6 +114,8 @@ export const POST_PAYMENT_NOTIFICATION_TYPES = [
   "payment_confirmed",
   "payment_cancelled",
   "payment_refunded",
+  "shipped",
+  "delivered",
 ] as const
 export type PostPaymentNotificationType =
   (typeof POST_PAYMENT_NOTIFICATION_TYPES)[number]
