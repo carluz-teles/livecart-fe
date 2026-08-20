@@ -242,6 +242,9 @@ export interface UpdateEventPayload {
   startsAt?: string | null
   endsAt?: string
   waitlistNotifiedTtlMinutes?: number
+  /** Prazo do carrinho em minutos (20/08/2026). Omitir = não mexer; enviar
+   *  grava no evento E propaga o delta para os carrinhos abertos. */
+  cartExpirationMinutes?: number
 }
 
 // End Event - payload is now empty since auto-send is handled via Private Reply during the live

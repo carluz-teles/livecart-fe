@@ -37,6 +37,7 @@ import { useStore } from "@/hooks/store/useStore"
 import { FieldHint } from "@/components/shared/FieldHint"
 import { FormSection } from "@/components/shared/FormSection"
 import { InheritableNumberField } from "@/components/shared/InheritableNumberField"
+import { DurationField } from "@/components/shared/DurationField"
 import {
   EVENT_COPY,
   isLongCampaign,
@@ -318,11 +319,11 @@ export function EventForm({
                       <FieldHint text={EVENT_COPY.cartExpiration.help} />
                     </FormLabel>
                     <FormControl>
-                      <InheritableNumberField
+                      <DurationField
                         value={field.value}
                         onChange={field.onChange}
-                        min={15}
-                        unit={"minutos"}
+                        minMinutes={15}
+                        maxMinutes={43200}
                         inheritedValue={storeDefaults?.expirationMinutes}
                       />
                     </FormControl>

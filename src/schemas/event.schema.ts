@@ -34,10 +34,15 @@ export const createEventSchema = z
     // Piso 15: espelha o CHECK live_events_cart_expiration_minutes_check
     // (migration 000104). Abaixo disso o banco rejeita, então validar aqui
     // devolve erro de campo em vez de 500. null = herda a config da loja.
-    // Piso 15 espelha o CHECK do banco. NÃO há teto: o limite de 1440 vinha da
-    // lista fixa do select, não de nenhuma regra — uma campanha de vários dias
-    // pode querer um prazo maior que 24h.
-    cartExpirationMinutes: z.number().int().min(15).nullable().optional(),
+    // Piso 15 espelha o CHECK do banco; teto de 30 dias espelha o
+    // `max=43200` do backend (20/08/2026 — o antigo 1440 limitava tudo a 24h).
+    cartExpirationMinutes: z
+      .number()
+      .int()
+      .min(15, "Mínimo de 15 minutos")
+      .max(43200, "Máximo de 30 dias")
+      .nullable()
+      .optional(),
     // cart_max_quantity_per_item não tem CHECK no banco: aceita qualquer inteiro
     // positivo. O teto de 100 era invenção da tela.
     cartMaxQuantityPerItem: z.number().int().min(1).nullable().optional(),
@@ -66,6 +71,16 @@ export const updateEventWindowSchema = z
     endsAt: z.string().min(1, "Informe quando a campanha fecha"),
     waitlistNotifiedTtlMinutes: z.number().int().min(5).max(240).optional(),
     pixDiscountPercent: z.number().int().min(0).max(100).optional(),
+    // Prazo do carrinho, agora editável depois de criado (20/08/2026). null =
+    // herda da loja (o PUT omite o campo). Mudar aqui PROPAGA para os
+    // carrinhos abertos do evento.
+    cartExpirationMinutes: z
+      .number()
+      .int()
+      .min(15, "Mínimo de 15 minutos")
+      .max(43200, "Máximo de 30 dias")
+      .nullable()
+      .optional(),
   })
   .refine(
     (v) => !v.startsAt || new Date(v.endsAt) > new Date(v.startsAt),

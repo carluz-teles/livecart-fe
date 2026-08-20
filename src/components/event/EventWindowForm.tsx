@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DateTimeField } from "@/components/shared/DateTimeField"
+import { DurationField } from "@/components/shared/DurationField"
 import { FieldHint } from "@/components/shared/FieldHint"
 import {
   EVENT_COPY,
@@ -77,6 +78,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       endsAt: event.endsAt ?? "",
       waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes || 30,
       pixDiscountPercent: event.pixDiscountPercent ?? 0,
+      cartExpirationMinutes: event.cartExpirationMinutes ?? null,
     },
   })
 
@@ -87,6 +89,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       endsAt: event.endsAt ?? "",
       waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes || 30,
       pixDiscountPercent: event.pixDiscountPercent ?? 0,
+      cartExpirationMinutes: event.cartExpirationMinutes ?? null,
     })
   }, [event, form])
 
@@ -106,6 +109,11 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
           endsAt: data.endsAt,
           waitlistNotifiedTtlMinutes: data.waitlistNotifiedTtlMinutes,
           pixDiscountPercent: data.pixDiscountPercent,
+          // null = "herda da loja" — o campo é OMITIDO para o PUT não
+          // congelar a herança num override igual ao valor atual da loja.
+          ...(data.cartExpirationMinutes != null
+            ? { cartExpirationMinutes: data.cartExpirationMinutes }
+            : {}),
         },
       },
       {
@@ -206,6 +214,32 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                 </p>
               </div>
             )}
+
+            <FormField
+              control={form.control}
+              name="cartExpirationMinutes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    {EVENT_COPY.cartExpiration.label}
+                    <FieldHint text={EVENT_COPY.cartExpiration.hint} />
+                  </FormLabel>
+                  <FormControl>
+                    <DurationField
+                      value={field.value}
+                      onChange={field.onChange}
+                      minMinutes={15}
+                      maxMinutes={43200}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Mudar aqui vale também para os carrinhos já abertos deste
+                    evento: o prazo deles é deslocado pela diferença.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

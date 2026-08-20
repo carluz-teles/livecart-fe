@@ -19,7 +19,7 @@ export const checkoutSettingsSchema = z.object({
   expirationMinutes: z
     .number()
     .min(15, "Mínimo de 15 minutos")
-    .max(1440, "Máximo de 24 horas"),
+    .max(43200, "Máximo de 30 dias"),
   reserveStock: z.boolean(),
   allowStorePickup: z.boolean(),
   maxQuantityPerItem: z.number().min(1, "Mínimo de 1 item"),
