@@ -196,6 +196,10 @@ export interface OrderDetail extends Order {
   // fonte da seção de fila do checkout público, para o lojista ver exatamente
   // o que a compradora vê.
   waitlist: OrderWaitlistItem[]
+  /** DMs automáticas do pedido — texto verbatim e desfecho (sent/failed/…). */
+  notifications: OrderNotification[]
+  /** Jornada COMPLETA da fila, incluindo entradas encerradas — histórico. */
+  waitlistJourney: OrderWaitlistJourneyItem[]
   // O que a cliente consegue pagar agora: só as unidades com estoque. É o valor
   // que o orçamento impresso apresenta — `totalAmount` soma a quantidade cheia
   // (base da receita do evento) e por isso inclui o que está em fila. Sem nada
@@ -683,4 +687,33 @@ export interface ProductOrderBreakdownBucket {
 
 export interface ProductOrderBreakdown {
   buckets: ProductOrderBreakdownBucket[]
+}
+
+/** Uma DM automática do pedido (notification_logs), com o texto que a cliente
+ *  recebeu e o desfecho do envio. */
+export interface OrderNotification {
+  type:
+    | "checkout_immediate"
+    | "item_added"
+    | "checkout_reminder"
+    | "cart_recovery"
+    | string
+  channel: string
+  status: "sent" | "failed" | "skipped" | "cooldown" | "pending" | string
+  message?: string
+  error?: string
+  createdAt: string
+  sentAt?: string
+}
+
+/** Uma entrada da fila com a jornada completa: entrou → liberou → desfecho. */
+export interface OrderWaitlistJourneyItem {
+  productName: string
+  quantity: number
+  status: "waiting" | "notified" | "fulfilled" | "expired" | "cancelled" | string
+  createdAt: string
+  notifiedAt?: string
+  expiresAt?: string
+  fulfilledAt?: string
+  cancelledAt?: string
 }

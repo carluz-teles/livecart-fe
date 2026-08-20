@@ -2,7 +2,7 @@
 
 import { use, useState } from "react"
 import Image from "next/image"
-import { Clock, Loader2, Minus, Package, Plus, Trash2 } from "lucide-react"
+import { Loader2, Minus, Package, Plus, Trash2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,7 +61,16 @@ function ItensDoPedido({ order }: { order: OrderDetail }) {
   // Desde a 000107 o pedido tem uma linha por (produto, sessão): o mesmo
   // produto comprado na live de segunda e no story de quinta chega em DUAS
   // linhas. Sem agrupar, o lojista vê "Vestido Preto" repetido e lê como bug.
-  const items = groupOrderItemsByProduct(order.items)
+  const agrupados = groupOrderItemsByProduct(order.items)
+
+  // Itens mostra APENAS o que a cliente TEM (20/08/2026) — a parcela em fila
+  // vive no card "Aguardando estoque" logo abaixo, uma vez só. Antes a tabela
+  // somava as duas e repetia a fila numa nota âmbar por linha: o mesmo número
+  // contado em dois lugares, lido como confusão. Linha 100% em fila só
+  // aparece no modo edição (para o lojista poder mexer nela).
+  const items = editavel
+    ? agrupados
+    : agrupados.filter((i) => i.quantity - i.waitlistedQuantity > 0)
 
   // `quantity` é o total pedido; a parcela em fila não tem estoque para
   // entregar. A coluna Qtd mostra o que dá para faturar, e a linha em fila
@@ -171,10 +180,14 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
   const salvando = edit.isSaving(item.id)
   // Enquanto o stepper acumula, a linha mostra o valor que a lojista montou —
   // ver o número antigo por 600ms faria os cliques parecerem perdidos.
-  const quantidadeNaTela = editavel
+  //
+  // O stepper fala em DISPONÍVEL (o que a cliente tem), nunca na soma com a
+  // fila: o total salvo re-embute a parcela em fila na borda do onChange. A
+  // soma na tela era exatamente a confusão relatada em 20/08/2026.
+  const totalNaTela = editavel
     ? edit.displayQuantity(item.id, item.quantity)
-    : disponivel
-  const pagavelNaTela = Math.max(quantidadeNaTela - item.waitlistedQuantity, 0)
+    : item.quantity
+  const pagavelNaTela = Math.max(totalNaTela - item.waitlistedQuantity, 0)
 
   return (
     <>
@@ -200,21 +213,18 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
             <p className="text-xs text-muted-foreground">Tamanho: {item.size}</p>
           )}
           <p className="font-mono text-xs text-muted-foreground">{item.keyword}</p>
-          {item.waitlistedQuantity > 0 && (
-            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-500">
-              <Clock className="h-3 w-3" aria-hidden="true" />
-              {item.waitlistedQuantity} em fila · sem estoque
-            </p>
-          )}
+
         </TableCell>
 
         <TableCell className="text-center">
           {editavel ? (
             <Stepper
-              quantidade={quantidadeNaTela}
+              quantidade={pagavelNaTela}
               salvando={salvando}
               nome={item.productName}
-              onChange={(q) => edit.setQuantity(item.id, q)}
+              onChange={(q) =>
+                edit.setQuantity(item.id, q + item.waitlistedQuantity)
+              }
             />
           ) : (
             <span
