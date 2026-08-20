@@ -8,6 +8,8 @@ interface UseListParamsOptions<TFilters> {
   defaultSortBy?: string
   defaultSortOrder?: "asc" | "desc"
   defaultFilters?: TFilters
+  /** Página inicial (ex.: restaurada da URL ao voltar do detalhe). */
+  defaultPage?: number
 }
 
 interface UseListParamsReturn<TFilters> {
@@ -47,6 +49,7 @@ export function useListParams<TFilters extends object>(
   const [search, setSearchState] = useState("")
   const [pagination, setPagination] = useState<Pagination>({
     ...DEFAULT_PAGINATION,
+    page: Math.max(1, options?.defaultPage ?? DEFAULT_PAGINATION.page),
   })
   const [sorting, setSortingState] = useState<Sorting>({
     sortBy: options?.defaultSortBy || DEFAULT_SORTING.sortBy,

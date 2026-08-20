@@ -9,6 +9,7 @@ export interface OrderNavigationItem {
 }
 
 const STORAGE_KEY = (storeId: string) => `orderListIds:${storeId}`
+const RETURN_URL_KEY = (storeId: string) => `orderListReturnUrl:${storeId}`
 
 // Reads the breadcrumb of order ids the listing dropped on session storage
 // (set by OrderListProvider whenever its query resolves) and returns the
@@ -59,4 +60,39 @@ export function persistOrderListSnapshot(
   } catch {
     // Same fallback rationale as the read path.
   }
+}
+
+// A URL exata da listagem que o lojista estava vendo (página, aba, busca),
+// gravada pelo OrderListProvider. O "Voltar" do detalhe aponta para ela —
+// antes era um href fixo para /orders, que jogava quem estava na página 3 de
+// volta para a página 1 (reclamação do cliente, 20/08/2026). router.back()
+// não serve aqui: depois de navegar entre pedidos com prev/next, "voltar"
+// recuaria para o pedido anterior, não para a lista.
+export function persistOrderListReturnURL(storeId: string, url: string): void {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(RETURN_URL_KEY(storeId), url)
+  } catch {
+    // Mesmo fallback do snapshot: sem sessionStorage, o Voltar cai em /orders.
+  }
+}
+
+// Href do "Voltar para pedidos". Lido em efeito (não no render) para o SSR e a
+// hidratação verem o mesmo valor; até lá vale o fallback /orders.
+export function useOrderListReturnURL(): string {
+  const { storeId } = useStoreId()
+  const [href, setHref] = useState("/orders")
+
+  useEffect(() => {
+    if (!storeId || typeof window === "undefined") return
+    try {
+      const saved = sessionStorage.getItem(RETURN_URL_KEY(storeId))
+      // Só aceita caminho da própria listagem — sessionStorage é dado, não código.
+      if (saved && saved.startsWith("/orders")) setHref(saved)
+    } catch {
+      // Fallback /orders, como no snapshot.
+    }
+  }, [storeId])
+
+  return href
 }

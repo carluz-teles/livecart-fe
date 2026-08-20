@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
+  persistOrderListReturnURL,
   persistOrderListSnapshot,
   useOrders,
   useOrderStats,
@@ -15,7 +16,7 @@ import {
   OrderListContext,
   type OrderListContextValue,
 } from "./OrderListContext"
-import { getOrderTabFilters, type OrderTabId } from "./OrderList.Tabs"
+import { getOrderTabFilters, ORDER_TABS, type OrderTabId } from "./OrderList.Tabs"
 
 interface ProviderProps {
   children: React.ReactNode
@@ -47,12 +48,26 @@ function mergeFilters(
 
 export function OrderListProvider({ children }: ProviderProps) {
   const router = useRouter()
-  const [searchInput, setSearchInput] = useState("")
+
+  // Página, aba e busca nascem da URL e voltam para ela (efeito abaixo).
+  // Antes viviam só em useState: navegar para o detalhe e voltar destruía o
+  // estado, e quem estava na página 3 recomeçava da 1 — reclamação do
+  // cliente em 20/08/2026.
+  const searchParams = useSearchParams()
+  const urlPage = parseInt(searchParams.get("page") ?? "", 10)
+  const urlTab = searchParams.get("tab")
+  const initialTab: OrderTabId = ORDER_TABS.some((t) => t.id === urlTab)
+    ? (urlTab as OrderTabId)
+    : DEFAULT_TAB
+
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "")
   const debouncedSearch = useDebounce(searchInput, 300)
-  const [activeTab, setActiveTabState] = useState<OrderTabId>(DEFAULT_TAB)
+  const [activeTab, setActiveTabState] = useState<OrderTabId>(initialTab)
 
   const { filters, setFilters, pagination, setPage, sorting, setSorting } =
-    useListParams<OrderFilters>()
+    useListParams<OrderFilters>({
+      defaultPage: Number.isNaN(urlPage) ? 1 : urlPage,
+    })
 
   const toggleSort = useCallback(
     (column: string) => {
@@ -84,6 +99,27 @@ export function OrderListProvider({ children }: ProviderProps) {
   })
 
   const { storeId } = useStoreId()
+
+  // Espelha página/aba/busca na URL (replaceState nativo — sem navegação, sem
+  // entrada extra no histórico) e guarda a URL completa para o "Voltar" do
+  // detalhe. Valores padrão ficam FORA da query para /orders continuar limpo.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const write = (key: string, value: string | null) => {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    write("page", pagination.page > 1 ? String(pagination.page) : null)
+    write("tab", activeTab !== DEFAULT_TAB ? activeTab : null)
+    write("q", searchInput || null)
+    const qs = params.toString()
+    const url = qs ? `/orders?${qs}` : "/orders"
+    if (url !== window.location.pathname + window.location.search) {
+      window.history.replaceState(null, "", url)
+    }
+    if (storeId) persistOrderListReturnURL(storeId, url)
+  }, [pagination.page, activeTab, searchInput, storeId])
 
   // Snapshot the page of order ids the merchant is currently browsing so the
   // detail screen can offer prev/next navigation that respects the active

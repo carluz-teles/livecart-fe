@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useOrderNavigation } from "@/hooks/order"
+import { useOrderListReturnURL, useOrderNavigation } from "@/hooks/order"
 import {
   FIRST_PURCHASE_BADGE,
   ORDER_STATUS_CONFIG,
@@ -34,6 +34,9 @@ export function OrderDetailHeader() {
   const ctx = use(OrderDetailContext)
   const router = useRouter()
   const navigation = useOrderNavigation(ctx?.state.order.id ?? "")
+  // "Voltar" preserva a página/aba/busca de onde o lojista veio (URL salva
+  // pela listagem); /orders puro só no acesso direto ao pedido.
+  const backHref = useOrderListReturnURL()
   if (!ctx) return null
   const { order } = ctx.state
 
@@ -54,7 +57,7 @@ export function OrderDetailHeader() {
       <div className="flex items-center justify-between gap-4 print:hidden">
         <div className="flex items-center gap-4">
           <Link
-            href="/orders"
+            href={backHref}
             className="flex h-9 w-9 items-center justify-center rounded-lg border transition-colors hover:bg-accent print:hidden"
             aria-label="Voltar para pedidos"
           >
