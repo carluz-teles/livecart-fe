@@ -50,6 +50,10 @@ function EmailEditor({ type }: EmailEditorProps) {
     bodyHTML: "",
   })
 
+  // Idempotente por VALOR — mesmo guard do editor de DM: refetch (foco de
+  // janela) re-executa o efeito e sobrescreveria o que o lojista digita.
+  const appliedLoadKey = useRef("")
+
   useEffect(() => {
     if (isLoading) return
     const initial = {
@@ -57,6 +61,9 @@ function EmailEditor({ type }: EmailEditorProps) {
       subject: template?.subject ?? "",
       bodyHTML: template?.body_html ?? "",
     }
+    const loadKey = `${type}|${initial.enabled}|${initial.subject}|${initial.bodyHTML}`
+    if (appliedLoadKey.current === loadKey) return
+    appliedLoadKey.current = loadKey
     setEnabled(initial.enabled)
     setSubject(initial.subject)
     setBodyHTML(initial.bodyHTML)
@@ -64,7 +71,7 @@ function EmailEditor({ type }: EmailEditorProps) {
     // Mesmo sync do editor de DM: o TipTap monta antes das settings chegarem
     // e sem isto o corpo editado e a prévia contavam histórias diferentes.
     editorRef.current?.setHTML(initial.bodyHTML)
-  }, [isLoading, template])
+  }, [isLoading, template, type])
 
   const dirty =
     enabled !== snapshot.enabled ||

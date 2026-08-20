@@ -48,12 +48,22 @@ function NotificationEditor({ type }: NotificationEditorProps) {
     reminderMinutes: 15,
   })
 
+  // Idempotente por VALOR: o react-query devolve um objeto novo a cada
+  // refetch (foco de janela incluso) e o efeito re-executa; sem este guard,
+  // o sync abaixo sobrescreveria o texto que o lojista está digitando com o
+  // salvo do servidor.
+  const appliedLoadKey = useRef("")
+
   useEffect(() => {
     if (isLoading) return
     const fallback = defaultTemplates[type]
     const initialEnabled = template?.enabled ?? false
     const initialTemplate = template?.template ?? fallback
     const initialMinutes = cartSettings?.expirationReminderMinutes ?? 15
+
+    const loadKey = `${type}|${initialEnabled}|${initialMinutes}|${initialTemplate}`
+    if (appliedLoadKey.current === loadKey) return
+    appliedLoadKey.current = loadKey
 
     setEnabled(initialEnabled)
     setDraft(initialTemplate)

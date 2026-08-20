@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useImperativeHandle, useMemo, useState, forwardRef } from "react"
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
@@ -77,17 +77,33 @@ export const EmailMessageEditor = forwardRef<EmailMessageEditorHandle, EmailMess
       immediatelyRender: false,
     })
 
+    // Mesma fila do editor de DM: com immediatelyRender:false a instância
+    // nasce depois da primeira renderização, e um setHTML que chegue antes
+    // era engolido em silêncio — corpo editado e prévia divergiam.
+    const pendingHTML = useRef<string | null>(null)
+
     useImperativeHandle(
       ref,
       () => ({
         setHTML: (html: string) => {
-          if (!editor) return
+          if (!editor) {
+            pendingHTML.current = html
+            onHTMLChange(html)
+            return
+          }
+          pendingHTML.current = null
           editor.commands.setContent(html || "<p></p>")
           onHTMLChange(html)
         },
       }),
       [editor, onHTMLChange],
     )
+
+    useEffect(() => {
+      if (!editor || pendingHTML.current == null) return
+      editor.commands.setContent(pendingHTML.current || "<p></p>")
+      pendingHTML.current = null
+    }, [editor])
 
     useEffect(() => {
       if (!editor) return
