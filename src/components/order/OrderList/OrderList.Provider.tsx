@@ -64,9 +64,12 @@ export function OrderListProvider({ children }: ProviderProps) {
   const debouncedSearch = useDebounce(searchInput, 300)
   const [activeTab, setActiveTabState] = useState<OrderTabId>(initialTab)
 
+  const urlProduct = searchParams.get("product")
   const { filters, setFilters, pagination, setPage, sorting, setSorting } =
     useListParams<OrderFilters>({
       defaultPage: Number.isNaN(urlPage) ? 1 : urlPage,
+      // Deep-link da rastreabilidade produto → pedidos (modal do produto).
+      defaultFilters: urlProduct ? { productId: urlProduct } : undefined,
     })
 
   const toggleSort = useCallback(
@@ -108,6 +111,7 @@ export function OrderListProvider({ children }: ProviderProps) {
       page: pagination.page > 1 ? String(pagination.page) : null,
       tab: activeTab !== DEFAULT_TAB ? activeTab : null,
       q: searchInput || null,
+      product: filters.productId ?? null,
     },
     storeId ?? undefined,
   )

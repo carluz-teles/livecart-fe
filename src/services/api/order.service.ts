@@ -7,6 +7,7 @@ import type {
   OrderListResponse,
   OrderStats,
   OrderUpsellSummary,
+  ProductOrderBreakdown,
   ShippingAddressPayload,
 } from "@/types"
 
@@ -61,6 +62,13 @@ export const orderService = {
     })
     return apiClient.get<OrderStats>(`/stores/${storeId}/orders/stats${query}`, token)
   },
+
+  /** Pedidos que contêm o produto, agrupados por status — modal do produto. */
+  productBreakdown: (storeId: string, productId: string, token?: string | null) =>
+    apiClient.get<ProductOrderBreakdown>(
+      `/stores/${storeId}/orders/product-breakdown?productId=${encodeURIComponent(productId)}`,
+      token
+    ),
 
   getUpsell: (storeId: string, id: string, token?: string | null) =>
     apiClient.get<OrderUpsellSummary>(

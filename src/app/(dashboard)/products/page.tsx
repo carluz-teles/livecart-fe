@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import { Search, MoreHorizontal, Package, CheckCircle, AlertTriangle, Warehouse, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -430,6 +431,11 @@ export default function ProductsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href={`/orders?product=${product.id}`}>
+                              Ver pedidos com este produto
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(product)}>
                             Editar produto
                           </DropdownMenuItem>
