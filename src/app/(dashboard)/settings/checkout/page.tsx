@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { DurationField } from "@/components/shared/DurationField"
 import { useCheckoutSettings } from "@/hooks/settings/useCheckoutSettings"
 
 export default function CheckoutSettingsPage() {
@@ -110,16 +111,21 @@ export default function CheckoutSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 max-w-xs">
+          <div className="space-y-2 max-w-md">
             <Label htmlFor="expirationMinutes">
-              Prazo para finalizar após o evento (minutos)
+              Prazo para finalizar após o evento
             </Label>
-            <Input
+            <DurationField
               id="expirationMinutes"
-              type="number"
-              min={15}
-              max={1440}
-              {...register("expirationMinutes", { valueAsNumber: true })}
+              value={watch("expirationMinutes")}
+              onChange={(v) =>
+                setValue("expirationMinutes", v ?? 0, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              minMinutes={15}
+              maxMinutes={43200}
             />
             {errors.expirationMinutes && (
               <p className="text-sm text-destructive">
@@ -127,7 +133,7 @@ export default function CheckoutSettingsPage() {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              15 minutos até 24 horas. Não é inatividade: durante a campanha o
+              De 15 minutos a 30 dias. Não é inatividade: durante a campanha o
               carrinho nunca expira, e o relógio começa quando o evento fecha. O
               link de checkout usa o mesmo tempo.
             </p>

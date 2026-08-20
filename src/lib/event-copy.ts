@@ -33,7 +33,7 @@ export const EVENT_COPY = {
   },
   cartExpiration: {
     label: "Prazo para finalizar após o evento",
-    hint: "Quanto tempo o comprador tem para pagar depois que o evento fecha. Durante o evento o carrinho nunca expira. Mínimo de 15 minutos.",
+    hint: "Quanto tempo o comprador tem para pagar depois que o evento fecha. Durante o evento o carrinho nunca expira. De 15 minutos a 30 dias — em minutos, horas ou dias.",
     help: "O relógio só começa quando o evento termina. Prazo curto gira o estoque mais rápido; prazo longo converte mais. Não existe “sem prazo”: todo carrinho expira em algum momento, para o estoque voltar para a loja e para quem está na fila.",
   },
   waitlistTtl: {

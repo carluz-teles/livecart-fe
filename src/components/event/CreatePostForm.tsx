@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { Film, ImagePlus, Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { DurationField } from "@/components/shared/DurationField"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -463,20 +464,12 @@ export function CreatePostForm({
                   {EVENT_COPY.cartExpiration.label}
                   <FieldHint text={EVENT_COPY.cartExpiration.hint} />
                 </Label>
-                <Select
-                  value={cartExpirationMinutes === null ? "inherit" : String(cartExpirationMinutes)}
-                  onValueChange={(v) => setCartExpirationMinutes(v === "inherit" ? null : parseInt(v, 10))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inherit">Usar padrão da loja</SelectItem>
-                    <SelectItem value="15">15 minutos</SelectItem>
-                    <SelectItem value="30">30 minutos</SelectItem>
-                    <SelectItem value="60">1 hora</SelectItem>
-                    <SelectItem value="120">2 horas</SelectItem>
-                    <SelectItem value="1440">24 horas</SelectItem>
-                  </SelectContent>
-                </Select>
+                <DurationField
+                  value={cartExpirationMinutes}
+                  onChange={setCartExpirationMinutes}
+                  minMinutes={15}
+                  maxMinutes={43200}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
