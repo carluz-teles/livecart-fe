@@ -7,9 +7,13 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  Hourglass,
   MessageCircle,
   Package,
+  PackageCheck,
   RotateCcw,
+  Send,
+  TimerOff,
   Truck,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +45,15 @@ type EventCategory = "customer" | "payment" | "logistics" | "system"
 type EventKind =
   | "created"
   | "comment"
+  | "dm_sent"
+  | "dm_failed"
+  | "dm_skipped"
+  | "waitlist_joined"
+  | "waitlist_released"
+  | "waitlist_fulfilled"
+  | "waitlist_lost"
+  | "deadline"
+  | "expired"
   | "paid"
   | "erp_done"
   | "shipment_created"
@@ -55,6 +68,8 @@ interface TimelineEvent {
   date: string
   title: string
   description?: string
+  /** Texto verbatim (comentário da cliente ou DM enviada) — vira bloco citado. */
+  message?: string
 }
 
 interface FilterChip {
@@ -73,6 +88,15 @@ const FILTERS: FilterChip[] = [
 const ICON: Record<EventKind, React.ComponentType<{ className?: string }>> = {
   created: Activity,
   comment: MessageCircle,
+  dm_sent: Send,
+  dm_failed: Send,
+  dm_skipped: Send,
+  waitlist_joined: Hourglass,
+  waitlist_released: PackageCheck,
+  waitlist_fulfilled: PackageCheck,
+  waitlist_lost: TimerOff,
+  deadline: Clock,
+  expired: TimerOff,
   paid: CreditCard,
   erp_done: CheckCircle2,
   shipment_created: Package,
@@ -84,19 +108,32 @@ const ICON: Record<EventKind, React.ComponentType<{ className?: string }>> = {
 
 const SUCCESS_TONE =
   "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+const WAIT_TONE =
+  "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+const ISSUE_TONE = "bg-destructive/15 text-destructive"
+const NEUTRAL_TONE = "bg-muted text-muted-foreground"
 
-// Three tones only — keeps the modal aligned with the rest of the page,
-// which leans on neutral muted + emerald success + destructive alert.
+// Quatro tons com significado fixo: verde = deu certo, âmbar = esperando,
+// vermelho = deu errado, cinza = registro. A árvore inteira se lê pelas cores.
 const TONE: Record<EventKind, string> = {
-  created: "bg-muted text-muted-foreground",
-  comment: "bg-muted text-muted-foreground",
+  created: NEUTRAL_TONE,
+  comment: NEUTRAL_TONE,
+  dm_sent: SUCCESS_TONE,
+  dm_failed: ISSUE_TONE,
+  dm_skipped: NEUTRAL_TONE,
+  waitlist_joined: WAIT_TONE,
+  waitlist_released: SUCCESS_TONE,
+  waitlist_fulfilled: SUCCESS_TONE,
+  waitlist_lost: ISSUE_TONE,
+  deadline: WAIT_TONE,
+  expired: ISSUE_TONE,
   paid: SUCCESS_TONE,
   erp_done: SUCCESS_TONE,
   delivered: SUCCESS_TONE,
-  shipment_created: "bg-muted text-muted-foreground",
-  shipment_event: "bg-muted text-muted-foreground",
-  issue: "bg-destructive/15 text-destructive",
-  cancel_reverted: "bg-destructive/15 text-destructive",
+  shipment_created: NEUTRAL_TONE,
+  shipment_event: NEUTRAL_TONE,
+  issue: ISSUE_TONE,
+  cancel_reverted: ISSUE_TONE,
 }
 
 const SHIPMENT_ISSUE_STATUSES: ShipmentStatus[] = [
@@ -110,6 +147,17 @@ const SHIPMENT_ISSUE_STATUSES: ShipmentStatus[] = [
   "not_delivered",
 ]
 
+const DM_LABEL: Record<string, string> = {
+  checkout_immediate: "Link de pagamento por DM",
+  item_added: "DM de novo item",
+  checkout_reminder: "Lembrete de prazo por DM",
+  cart_recovery: "DM de recuperação de carrinho",
+}
+
+// A árvore de decisões do pedido (20/08/2026): tudo que o LiveCart fez com
+// este carrinho, em ordem, com desfecho — comentário, DM (enviada OU não, e o
+// porquê), fila (entrou, liberou, venceu), prazo, pagamento, ERP, envio. O
+// lojista lia "comentário → pedido criado" e o resto do fluxo era invisível.
 function buildEvents(order: OrderDetail): TimelineEvent[] {
   const out: TimelineEvent[] = []
 
@@ -128,9 +176,123 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
       category: "customer",
       kind: "comment",
       date: c.createdAt,
-      title: `@${order.customerHandle}`,
-      description: c.text,
+      title: `@${order.customerHandle} comentou`,
+      message: c.text,
     })
+  }
+
+  // DMs automáticas — o lado "o que o LiveCart respondeu" da conversa, que
+  // nunca aparecia. Enviada = verde com o texto verbatim; falha = vermelho com
+  // o motivo; pulada/cooldown = cinza, para o lojista saber que NÃO houve
+  // mensagem e por quê.
+  for (const n of order.notifications ?? []) {
+    const label = DM_LABEL[n.type] ?? "DM automática"
+    if (n.status === "sent") {
+      out.push({
+        category: "customer",
+        kind: "dm_sent",
+        date: n.sentAt ?? n.createdAt,
+        title: `${label} enviada`,
+        message: n.message,
+      })
+    } else if (n.status === "failed") {
+      out.push({
+        category: "customer",
+        kind: "dm_failed",
+        date: n.createdAt,
+        title: `${label} falhou`,
+        description: n.error || "O Instagram recusou o envio.",
+      })
+    } else {
+      out.push({
+        category: "customer",
+        kind: "dm_skipped",
+        date: n.createdAt,
+        title: `${label} não enviada`,
+        description:
+          n.status === "cooldown"
+            ? "Aguardando o intervalo mínimo entre mensagens."
+            : n.status === "pending"
+              ? "Envio ainda na fila."
+              : "Envio pulado pela configuração da loja.",
+      })
+    }
+  }
+
+  // Jornada da fila — inclusive desfechos que a seção "Aguardando estoque"
+  // não mostra mais (venceu, atendida, saiu).
+  for (const w of order.waitlistJourney ?? []) {
+    out.push({
+      category: "customer",
+      kind: "waitlist_joined",
+      date: w.createdAt,
+      title: `Entrou na fila: ${w.productName} ×${w.quantity}`,
+      description: "Sem estoque na hora — a vez dela fica guardada por ordem de chegada.",
+    })
+    if (w.notifiedAt) {
+      out.push({
+        category: "customer",
+        kind: "waitlist_released",
+        date: w.notifiedAt,
+        title: `Estoque liberado: ${w.productName}`,
+        description: w.expiresAt
+          ? `Prazo extra para pagar até ${formatDateTime(w.expiresAt)}.`
+          : "O item voltou para o carrinho dela com prazo extra.",
+      })
+    }
+    if (w.status === "fulfilled") {
+      out.push({
+        category: "customer",
+        kind: "waitlist_fulfilled",
+        date: w.fulfilledAt ?? w.notifiedAt ?? w.createdAt,
+        title: `Item da fila garantido: ${w.productName}`,
+        description: "A cliente finalizou dentro do prazo extra.",
+      })
+    } else if (w.status === "expired") {
+      out.push({
+        category: "customer",
+        kind: "waitlist_lost",
+        date: w.expiresAt ?? w.cancelledAt ?? w.createdAt,
+        title: `Liberação venceu: ${w.productName}`,
+        description:
+          "O prazo extra terminou sem pagamento — a unidade seguiu para o próximo da fila ou voltou ao estoque.",
+      })
+    } else if (w.cancelledAt) {
+      out.push({
+        category: "customer",
+        kind: "dm_skipped",
+        date: w.cancelledAt,
+        title: `Saiu da fila: ${w.productName}`,
+      })
+    }
+  }
+
+  // O prazo do pedido, como nó da linha do tempo: enquanto corre, mostra até
+  // quando; vencido com pedido expirado, mostra ONDE o pedido morreu.
+  if (order.expiresAt && !order.paidAt) {
+    if (order.status === "expired") {
+      out.push({
+        category: "system",
+        kind: "expired",
+        date: order.expiresAt,
+        title: "Pedido expirado — o prazo venceu",
+        description:
+          "O estoque reservado voltou para a loja e a fila foi avisada.",
+      })
+    } else if (order.status !== "cancelled") {
+      const vencido = new Date(order.expiresAt).getTime() < Date.now()
+      out.push({
+        category: "system",
+        kind: "deadline",
+        date: order.expiresAt,
+        title: vencido
+          ? "Prazo para pagar venceu — aguardando desfecho"
+          : "Prazo para pagar termina aqui",
+        description: vencido
+          ? "A expiração roda em instantes (ou aguarda a fila do pedido)."
+          : `A cliente tem até ${formatDateTime(order.expiresAt)} para finalizar.`,
+      })
+    }
   }
 
   if (order.paidAt) {
@@ -283,10 +445,10 @@ export function OrderDetailHistory() {
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm">
                 <span className="font-medium">{lastEvent.title}</span>
-                {lastEvent.description ? (
+                {(lastEvent.description || lastEvent.message) ? (
                   <span className="text-muted-foreground">
                     {" · "}
-                    {lastEvent.description}
+                    {lastEvent.description || lastEvent.message}
                   </span>
                 ) : null}
               </p>
@@ -372,16 +534,21 @@ export function OrderDetailHistory() {
                       >
                         <Icon className="h-3 w-3" />
                       </span>
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         <p className="text-sm font-medium leading-tight">
                           {entry.title}
                         </p>
                         {entry.description && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs leading-relaxed text-muted-foreground">
                             {entry.description}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        {entry.message && (
+                          <blockquote className="whitespace-pre-line rounded-md border-l-2 border-muted-foreground/30 bg-muted/40 px-3 py-2 text-xs leading-relaxed text-foreground/90">
+                            {entry.message}
+                          </blockquote>
+                        )}
+                        <p className="text-xs text-muted-foreground/80">
                           {formatDateTime(entry.date)}
                         </p>
                       </div>
