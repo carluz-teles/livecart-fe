@@ -39,12 +39,31 @@ const nextConfig = {
     ]
   },
   images: {
+    // hostname "**" fica (não dá pra restringir): fotos de produto vêm de URL
+    // colada pelo lojista ou de mídia do Instagram — origem arbitrária por
+    // natureza do produto, não um conjunto fixo de domínios.
     remotePatterns: [
       {
         protocol: "https",
         hostname: "**",
       },
     ],
+    // Sem isso, o Next usa os arrays default (8 deviceSizes até 3840px x 8
+    // imageSizes), e cada combinação nova é processada pelo `sharp` DENTRO do
+    // processo Node (decodifica a imagem inteira, resiza, reencoda) — o maior
+    // consumidor de memória do FE no Railway (maior que Postgres+backend+Redis
+    // somados). O maior `sizes` realmente usado no app hoje é 672px (banner
+    // responsivo); o resto são thumbnails de 40-120px — não existe tela pedindo
+    // as resoluções de device grandes do default (1920/2048/3840).
+    // Cortar os arrays para o que o app de fato usa reduz tanto o número de
+    // variantes distintas cacheadas em disco (.next/cache/images, sem limite
+    // de tamanho) quanto a maior dimensão que o sharp precisa decodificar.
+    deviceSizes: [384, 640, 750],
+    imageSizes: [16, 32, 48, 64, 96, 128],
+    // Variantes já otimizadas não mudam — a imagem original que muda vira uma
+    // URL nova (upload substitui). 30 dias reduz o reprocessamento pelo sharp
+    // em cache miss por expiração, sem risco de servir uma foto desatualizada.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
   },
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
