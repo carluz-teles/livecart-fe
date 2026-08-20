@@ -9,3 +9,4 @@ export {
   useBlockHandle,
   useUnblockHandle,
 } from "./useBlockedHandles"
+export { useVipHandles, useAddVip, useRemoveVip } from "./useVipHandles"

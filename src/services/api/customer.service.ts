@@ -10,6 +10,9 @@ import type {
   CustomerOrder,
   CustomerStats,
   SeenHandle,
+  VipHandle,
+  VipHandlesResponse,
+  AddVipPayload,
 } from "@/types"
 
 export const customerService = {
@@ -59,6 +62,32 @@ export const customerService = {
   unblock: (storeId: string, handle: string, token?: string | null) =>
     apiClient.delete<BlockedHandle>(
       `/stores/${storeId}/customers/blocks/${encodeURIComponent(handle)}`,
+      token,
+    ),
+
+  // VIP flow -----------------------------------------------------------------
+
+  listVips: (
+    storeId: string,
+    options: { includeInactive?: boolean; limit?: number } = {},
+    token?: string | null,
+  ) => {
+    const params = new URLSearchParams()
+    if (options.includeInactive) params.set("includeInactive", "true")
+    if (options.limit) params.set("limit", String(options.limit))
+    const qs = params.toString()
+    return apiClient.get<VipHandlesResponse>(
+      `/stores/${storeId}/customers/vips${qs ? `?${qs}` : ""}`,
+      token,
+    )
+  },
+
+  addVip: (storeId: string, payload: AddVipPayload, token?: string | null) =>
+    apiClient.post<VipHandle>(`/stores/${storeId}/customers/vips`, payload, token),
+
+  removeVip: (storeId: string, handle: string, token?: string | null) =>
+    apiClient.delete<VipHandle>(
+      `/stores/${storeId}/customers/vips/${encodeURIComponent(handle)}`,
       token,
     ),
 

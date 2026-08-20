@@ -91,6 +91,26 @@ export interface BlockHandlePayload {
   reason?: string
 }
 
+// VipHandle — cliente VIP: carrinho que nunca expira e acumula compras de
+// vários eventos num só carrinho, até ser pago ou cancelado. Oposto do bloqueio.
+export interface VipHandle {
+  id: string
+  handle: string
+  addedAt: string
+  removedAt?: string | null
+  addedByUserId?: string | null
+  cartsUpdated?: number
+}
+
+export interface VipHandlesResponse {
+  data: VipHandle[]
+  total: number
+}
+
+export interface AddVipPayload {
+  handle: string
+}
+
 // SeenHandle é um arroba que já mandou mensagem nas lives da loja. NÃO é um
 // Customer: a plateia inclui quem só comentou e nunca comprou — e é justamente
 // esse o caso a bloquear (a conta secundária da própria loja, que instrui a
