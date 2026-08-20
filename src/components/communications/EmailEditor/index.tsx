@@ -101,9 +101,9 @@ function EmailEditor({ type }: EmailEditorProps) {
     return (
       <div className="flex min-h-full flex-col gap-4">
         <Skeleton className="h-16 w-full rounded-md" />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-md" />
-          <Skeleton className="h-[clamp(300px,48dvh,600px)] rounded-2xl" />
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[520px] rounded-xl" />
+          <Skeleton className="h-[520px] rounded-xl" />
         </div>
       </div>
     )
@@ -129,13 +129,11 @@ function EmailEditor({ type }: EmailEditorProps) {
         }
       />
 
-      {/* Altura fluida com piso e teto: em notebook (lg de LARGURA, mas
-          baixo de ALTURA) o antigo flex-1/min-h-0 espremia o editor e cortava
-          o preview; agora cada painel tem ~45dvh com rolagem própria e a
-          página rola quando precisar. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-4">
-          <div className="shrink-0 rounded-md border bg-card p-5">
+      {/* Dois cards com altura natural — mesmo padrão do editor de DM
+          (mockup 20/08/2026): sem rolagem interna em monitor menor. */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <section className="rounded-xl border bg-card p-5 sm:p-6">
+          <div className="rounded-md border bg-background p-4">
             <Label htmlFor="email-subject" className="text-sm font-medium">
               Assunto
             </Label>
@@ -152,17 +150,29 @@ function EmailEditor({ type }: EmailEditorProps) {
             </p>
           </div>
 
-          <div className="flex h-[clamp(300px,48dvh,600px)] flex-col">
-            <EmailMessageEditor
-              ref={editorRef}
-              initialHTML={bodyHTML}
-              variables={variables}
-              onHTMLChange={setBodyHTML}
-            />
+          <div className="mb-3 mt-6">
+            <h2 className="text-sm font-semibold tracking-tight">Mensagem</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Personalize o corpo do e-mail enviado ao cliente.
+            </p>
           </div>
-        </div>
+          <EmailMessageEditor
+            ref={editorRef}
+            initialHTML={bodyHTML}
+            variables={variables}
+            onHTMLChange={setBodyHTML}
+          />
+        </section>
 
-        <aside className="flex h-[clamp(300px,48dvh,600px)] flex-col lg:sticky lg:top-4">
+        <section className="rounded-xl border bg-card p-5 sm:p-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold tracking-tight">
+              Prévia do e-mail
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Veja como o e-mail aparecerá na caixa de entrada do cliente.
+            </p>
+          </div>
           <EmailEditorPreview
             type={type}
             subject={subject}
@@ -171,7 +181,7 @@ function EmailEditor({ type }: EmailEditorProps) {
             storeLogoUrl={store?.logoUrl ?? undefined}
             ownerEmail={ownerEmail}
           />
-        </aside>
+        </section>
       </div>
 
       <NotificationEditorFooter

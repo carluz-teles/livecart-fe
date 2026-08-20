@@ -18,17 +18,19 @@ export function NotificationEditorTriggerConfig({
   type,
 }: NotificationEditorTriggerConfigProps) {
   const meta = NOTIFICATION_META[type]
-  // Faixa de uma linha: o card alto gastava ~120px de altura para uma frase,
-  // exatamente o espaço que faltava para o editor em tela de notebook.
+  // Bloco "Gatilho" do mockup (20/08/2026): tile de ícone + frase numa linha
+  // de campo — leitura de configuração, sem falso affordance de clique.
   return (
-    <div className="flex min-w-0 items-center gap-2.5 rounded-md border bg-card px-4 py-2.5">
-      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Quando envia
-      </span>
-      <span className="truncate text-sm" title={meta.triggerLabel({})}>
-        {meta.triggerLabel({})}
-      </span>
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent">
+        <Clock className="h-5 w-5 text-accent-foreground" strokeWidth={1.8} aria-hidden="true" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-semibold tracking-tight">Gatilho</h2>
+        <p className="mt-2 rounded-md border bg-background px-3.5 py-2.5 text-sm">
+          {meta.triggerLabel({})}
+        </p>
+      </div>
     </div>
   )
 }

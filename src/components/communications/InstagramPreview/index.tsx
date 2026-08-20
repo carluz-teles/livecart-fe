@@ -32,13 +32,7 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
   const initials = getInitials(displayName)
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex shrink-0 items-center justify-between">
-        <h2 className="text-sm font-medium tracking-tight">Prévia</h2>
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-          Como aparece na DM
-        </span>
-      </div>
+    <div className="flex flex-col gap-3">
 
       {/* Instagram chat frame — mirrors EmailEditor.Preview's structure but
           dressed as an IG Direct conversation. Theme-locked to light via
@@ -90,30 +84,10 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
         </div>
 
         {/* Chat backdrop — the message bubble floats here. */}
-        <div className="instagram-preview-backdrop relative min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
-          {/* Profile card — IG shows this when you open a new conversation. */}
-          <div className="mb-6 flex flex-col items-center">
-            <div className="story-ring mb-2 h-16 w-16">
-              <div className="story-ring-inner h-full w-full">
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-rose-300 to-orange-300 text-[18px] font-bold text-white">
-                  {initials}
-                </div>
-              </div>
-            </div>
-            <div className="text-[14px] font-semibold text-[#262626]">
-              {displayName}
-            </div>
-            <div className="mt-0.5 text-[11px] text-[#8E8E8E]">
-              Conta comercial
-            </div>
-            <button
-              type="button"
-              className="mt-2 rounded-md bg-[#EFEFEF] px-3 py-1 text-[12px] font-semibold text-[#262626]"
-            >
-              Ver loja
-            </button>
-          </div>
-
+        {/* Altura NATURAL: a moldura cresce com a mensagem em vez de fixar
+            uma fração da viewport com rolagem interna — era o scroll que
+            aparecia em monitor menor (mockup 20/08/2026). */}
+        <div className="instagram-preview-backdrop relative min-h-[280px] px-4 py-6 sm:px-6 sm:py-8">
           {/* Timestamp pill */}
           <div className="mb-3 flex justify-center">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8E8E8E]">
@@ -163,9 +137,9 @@ export function InstagramPreview({ storeName, message }: InstagramPreviewProps) 
         </div>
       </div>
 
-      <p className="shrink-0 px-1 text-[11px] leading-relaxed text-muted-foreground">
-        No envio real, a mensagem é entregue pelo Instagram Direct. Esta é uma
-        simulação do que o cliente vê na conversa.
+      <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+        Esta é uma simulação de como o cliente verá sua mensagem no Instagram
+        Direct.
       </p>
     </div>
   )
