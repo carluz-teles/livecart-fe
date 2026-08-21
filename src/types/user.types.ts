@@ -82,7 +82,9 @@ export type SyncUserPayload = Record<string, never>
 export interface PeriodUsage {
   periodStart: string
   gmvCents: number
-  feeCents: number
+  feeCents: number // líquido — já com a promo de taxa aplicada
+  feeCentsGross?: number
+  taxaDiscountBps?: number
   sales: number
   refunds: number
   refundCreditsCents: number

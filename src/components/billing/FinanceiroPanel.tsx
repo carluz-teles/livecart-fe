@@ -131,6 +131,9 @@ export function FinanceiroPanel() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {formatCurrency(flat)} mensalidade + {formatCurrency(usage?.feeCents ?? 0)}{" "}
                   taxa de sucesso{feeBpsLabel ? ` (${feeBpsLabel} das vendas)` : ""}
+                  {usage?.taxaDiscountBps
+                    ? ` — com ${usage.taxaDiscountBps / 100}% de desconto neste ciclo`
+                    : ""}
                 </p>
               </>
             )}
