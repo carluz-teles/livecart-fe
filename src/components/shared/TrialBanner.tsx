@@ -5,8 +5,9 @@ import { Sparkles, AlertTriangle } from "lucide-react"
 
 import { useUser } from "@/hooks/useUser"
 
-// TrialBanner (PRD 007): dias restantes do trial ou aviso de grace period.
-// Some quando a assinatura está ativa (ou sem dados de assinatura).
+// TrialBanner (PRD 007): dias restantes do trial, aviso de grace period, ou
+// aviso de assinatura cancelada (acesso até o fim do ciclo). Some quando a
+// assinatura está ativa e vigente (ou sem dados de assinatura).
 export function TrialBanner() {
   const { user } = useUser()
   const sub = user?.subscription
@@ -48,6 +49,33 @@ export function TrialBanner() {
         </span>
         <Link href="/settings/billing" className="underline underline-offset-2 hover:opacity-80">
           Escolher plano
+        </Link>
+      </div>
+    )
+  }
+
+  // Assinatura cancelada mas ainda vigente: informa até quando o acesso vale.
+  if (sub.cancelAtPeriodEnd) {
+    const accessUntil = sub.currentPeriodEnd
+      ? new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : null
+
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-2 bg-amber-600 px-4 py-1.5 text-sm font-medium text-white print:hidden">
+        <AlertTriangle className="size-4 shrink-0" />
+        <span>
+          Sua assinatura foi cancelada
+          {accessUntil ? ` — você tem acesso até ${accessUntil}` : ""}.
+        </span>
+        <Link
+          href="/settings/billing"
+          className="rounded-md bg-white/15 px-2.5 py-0.5 underline-offset-2 transition-colors hover:bg-white/25"
+        >
+          Reativar assinatura
         </Link>
       </div>
     )
