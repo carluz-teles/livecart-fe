@@ -150,12 +150,20 @@ function BillingContent() {
               </p>
             </div>
           )}
-          {sub?.currentPeriodEnd && sub.status === "active" && (
-            <p className="text-sm text-muted-foreground">
-              Próxima cobrança em{" "}
-              {new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")}
-            </p>
-          )}
+          {sub?.currentPeriodEnd &&
+            sub.status === "active" &&
+            (sub.cancelAtPeriodEnd ? (
+              <p className="text-sm text-muted-foreground">
+                Assinatura cancelada — você tem acesso até{" "}
+                {new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")} (sem
+                renovação).
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Próxima cobrança em{" "}
+                {new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")}
+              </p>
+            ))}
 
           {sub?.hasPaymentMethod && (
             <Button
