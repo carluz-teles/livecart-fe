@@ -22,6 +22,8 @@ export const customerKeys = {
   // devolvem conjuntos diferentes.
   handleSearch: (storeId: string, term: string, exact: boolean) =>
     [...customerKeys.all, "handle-search", storeId, term, exact] as const,
+  vip: (storeId: string, includeInactive: boolean) =>
+    [...customerKeys.all, "vip", storeId, includeInactive] as const,
 }
 
 export function useCustomers(params?: CustomerListParams) {
