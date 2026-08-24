@@ -92,8 +92,12 @@ export function EventMetricCards({
       icon: DollarSign,
       label: "Receita confirmada",
       value: formatCurrency(confirmedRevenue),
-      subValue: projectedRevenue > confirmedRevenue ? formatCurrency(projectedRevenue) : undefined,
-      subLabel: projectedRevenue > confirmedRevenue ? "projetado" : undefined,
+      // Projetado aparece sempre que houver carrinho aberto (projected > 0), não
+      // só quando é maior que o confirmado. Ao encerrar o evento o confirmado
+      // cresce e passa o projetado, mas os pedidos ainda abertos continuam sendo
+      // expectativa de venda — esconder isso apagava um número que ainda vale.
+      subValue: projectedRevenue > 0 ? formatCurrency(projectedRevenue) : undefined,
+      subLabel: projectedRevenue > 0 ? "projetado" : undefined,
       hint: "Só pedidos efetivamente pagos. Sai da tabela de pedidos, que é a fonte da verdade do faturamento. O valor menor ao lado é a receita projetada: carrinhos abertos que ainda não foram pagos — expectativa, não faturamento.",
       color: "text-green-600",
       bgColor: "bg-green-500/10",

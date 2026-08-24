@@ -1,9 +1,10 @@
 "use client"
 
 import { use, useState } from "react"
-import { Ban, Clock, Copy, Loader2, Send, ShoppingCart } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Ban, Clock, Copy, Loader2, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
-import { useCancelEventCart, useResendCartMessage } from "@/hooks/event"
+import { useCancelEventCart } from "@/hooks/event"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -143,7 +144,7 @@ interface CartRowProps {
 }
 
 function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
-  const resendMessage = useResendCartMessage(eventId)
+  const router = useRouter()
   const cancelCart = useCancelEventCart(eventId)
   const [cancelOpen, setCancelOpen] = useState(false)
 
@@ -195,7 +196,11 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
   }
 
   return (
-    <TableRow className="group">
+    <TableRow
+      className="group cursor-pointer"
+      onClick={() => router.push(`/orders/${cart.id}`)}
+      title={`Ver pedido de @${cart.platformHandle}`}
+    >
       <TableCell>
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
@@ -255,30 +260,10 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
         {getRelativeTime(cart.createdAt)}
       </TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => resendMessage.mutate(cart.id)}
-                  disabled={resendMessage.isPending}
-                >
-                  {resendMessage.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Reenviar mensagem de checkout</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Reenviar mensagem de checkout</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div
+          className="flex items-center justify-end gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

@@ -20,7 +20,6 @@ import type {
   EventDetailStatsResponse,
   EventSessionMetrics,
   EventPulse,
-  EventCart,
   EventCartsResponse,
   EventCommentsResponse,
   EventSoldProductsResponse,
@@ -154,19 +153,6 @@ export const eventService = {
   deleteComment: (storeId: string, commentId: string, token?: string | null) =>
     apiClient.delete<{ commentId: string; deleted: boolean }>(
       `/stores/${storeId}/integrations/instagram/comments/${commentId}`,
-      token
-    ),
-
-  // Event Details - Resend the Instagram checkout DM for a single cart
-  resendCartMessage: (
-    storeId: string,
-    eventId: string,
-    cartId: string,
-    token?: string | null
-  ) =>
-    apiClient.post<EventCart>(
-      `/stores/${storeId}/lives/${eventId}/carts/${cartId}/resend-message`,
-      {},
       token
     ),
 
