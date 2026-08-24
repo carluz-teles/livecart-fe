@@ -29,6 +29,8 @@ export function ProductFormERPSearch({
 }: ProductFormERPSearchProps) {
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Imagem principal escolhida pelo lojista quando o Tiny devolve várias.
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [pickerParent, setPickerParent] = useState<ERPProduct | null>(null)
   const { data, isLoading, isError, error } = useSearchERPProducts(integrationId, search)
 
@@ -49,12 +51,22 @@ export function ProductFormERPSearch({
       setSelectedId(null)
       return
     }
-    setSelectedId(product.id === selectedId ? null : product.id)
+    const nextId = product.id === selectedId ? null : product.id
+    setSelectedId(nextId)
+    // Ao selecionar, a imagem principal começa na default (a primeira do Tiny);
+    // o lojista troca na galeria abaixo.
+    setSelectedImage(
+      nextId ? product.imageUrl ?? product.imageUrls?.[0] ?? null : null
+    )
   }
 
   function handleConfirm() {
     if (selectedProduct) {
-      onSelect(selectedProduct)
+      // Leva a imagem escolhida pelo lojista como principal do produto.
+      onSelect({
+        ...selectedProduct,
+        imageUrl: selectedImage ?? selectedProduct.imageUrl,
+      })
     }
   }
 
@@ -68,6 +80,7 @@ export function ProductFormERPSearch({
           onChange={(e) => {
             setSearch(e.target.value)
             setSelectedId(null)
+            setSelectedImage(null)
           }}
           className="pl-9"
         />
@@ -176,6 +189,51 @@ export function ProductFormERPSearch({
               Mostrando {products.length} de {data.totalCount} resultados. Refine sua busca.
             </p>
           )}
+        </div>
+      )}
+
+      {selectedProduct && (selectedProduct.imageUrls?.length ?? 0) > 1 && (
+        <div className="space-y-2 rounded-lg border bg-card p-3">
+          <div>
+            <p className="text-sm font-medium">Imagem principal</p>
+            <p className="text-xs text-muted-foreground">
+              O Tiny enviou {selectedProduct.imageUrls!.length} imagens para este
+              produto. Selecione qual será salva no LiveCart.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedProduct.imageUrls!.map((url) => {
+              const isSelected = selectedImage === url
+              return (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setSelectedImage(url)}
+                  aria-pressed={isSelected}
+                  title="Usar esta imagem como principal"
+                  className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
+                    isSelected
+                      ? "border-primary ring-1 ring-primary"
+                      : "border-transparent hover:border-muted-foreground/40"
+                  }`}
+                >
+                  <Image
+                    src={url}
+                    alt="Imagem do produto"
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="h-full w-full object-cover bg-muted"
+                  />
+                  {isSelected && (
+                    <span className="absolute right-0.5 top-0.5 rounded-full bg-primary text-primary-foreground">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
