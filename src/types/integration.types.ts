@@ -149,6 +149,9 @@ export interface ERPProduct {
   price: number // cents
   stock: number
   imageUrl?: string
+  // Todas as imagens do ERP (Tiny anexos), na ordem. O lojista escolhe qual
+  // vira a principal no import; imageUrl é o default (a primeira).
+  imageUrls?: string[]
   active: boolean
   isParent?: boolean
   variants?: ERPVariant[]
