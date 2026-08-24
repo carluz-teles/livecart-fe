@@ -208,6 +208,14 @@ export interface OrderDetail extends Order {
   // Valor das unidades em fila, declarado no orçamento como não incluído em vez
   // de simplesmente omitido.
   waitlistedAmount: number
+  // Forma de pagamento (pix/credit_card/debit_card/boleto), parcelas e os
+  // valores REAIS do pedido. paidTotalCents é EXATAMENTE o que foi cobrado (já
+  // com o desconto PIX); discountCents é cupom + desconto PIX. Vêm da leitura do
+  // pedido — a tela mostra sem recalcular.
+  paymentMethod?: string
+  installments?: number
+  discountCents: number
+  paidTotalCents: number
 }
 
 export interface OrderWaitlistItem {
