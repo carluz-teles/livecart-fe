@@ -40,8 +40,16 @@ export function OrderDetailPayment() {
     ? 0
     : (order.shipping?.costCents ?? 0)
   const itemsTotal = order.payableAmount
-  const discountCents = 0
-  const orderTotal = itemsTotal + shippingCents - discountCents
+  // Desconto REAL do pedido (cupom + desconto PIX), vindo do backend.
+  const discountCents = order.discountCents ?? 0
+  // Valor pago = EXATAMENTE o que foi cobrado (paid_total, já com o desconto
+  // PIX) quando o pedido está pago. Antes disso, mostramos a expectativa:
+  // produtos − desconto + frete.
+  const paidExact = !!order.paidAt && order.paidTotalCents > 0
+  const orderTotal = paidExact
+    ? order.paidTotalCents
+    : itemsTotal - discountCents + shippingCents
+  const methodLabel = paymentMethodLabel(order.paymentMethod, order.installments)
 
   // Treat the order as expired when the cart-side status flips to expired
   // OR the payment is still pending past the expiresAt timestamp (catches
@@ -82,6 +90,12 @@ export function OrderDetailPayment() {
         )}
 
         <dl className="space-y-1.5 text-sm">
+          {methodLabel && (
+            <div className="flex items-baseline justify-between">
+              <dt className="text-muted-foreground">Forma de pagamento</dt>
+              <dd className="font-medium">{methodLabel}</dd>
+            </div>
+          )}
           <div className="flex items-baseline justify-between">
             <dt className="text-muted-foreground">Produtos</dt>
             <dd className="tabular-nums">{formatCurrency(itemsTotal)}</dd>
@@ -118,6 +132,28 @@ export function OrderDetailPayment() {
       </CardContent>
     </Card>
   )
+}
+
+// Rótulo amigável da forma de pagamento. Cartão com mais de 1 parcela mostra
+// "Nx"; PIX/débito/boleto não têm parcela.
+function paymentMethodLabel(
+  method?: string,
+  installments?: number,
+): string | null {
+  switch (method) {
+    case "pix":
+      return "PIX"
+    case "credit_card":
+      return installments && installments > 1
+        ? `Cartão de crédito · ${installments}x`
+        : "Cartão de crédito"
+    case "debit_card":
+      return "Cartão de débito"
+    case "boleto":
+      return "Boleto"
+    default:
+      return method || null
+  }
 }
 
 interface ExpiredAlertProps {
