@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 
-const faqs = [
+export const faqs = [
   {
     question: "O que é a LiveCart?",
     answer:
@@ -14,37 +14,22 @@ const faqs = [
   {
     question: "A LiveCart funciona apenas para lives?",
     answer:
-      "Não. Lives são um dos principais casos de uso da LiveCart, mas a plataforma foi criada para permitir vendas em diferentes canais, incluindo Instagram, WhatsApp, mensagens e outros pontos de contato.",
+      "Não. As lives são um dos usos mais comuns, mas a plataforma também vende pelo Instagram, por mensagens e por outros pontos de contato.",
   },
   {
     question: "Posso vender pelo Instagram?",
     answer:
-      "Sim. A LiveCart pode ser utilizada para automatizar jornadas de venda iniciadas por interações no Instagram, como Direct, Stories e conteúdos.",
-  },
-  {
-    question: "Posso vender pelo WhatsApp?",
-    answer:
-      "Sim. A LiveCart pode automatizar partes da jornada de compra iniciada em conversas no WhatsApp, reduzindo o trabalho manual da equipe.",
+      "Sim. A LiveCart automatiza vendas que começam no Instagram, seja no Direct, nos Stories ou nos posts.",
   },
   {
     question: "A LiveCart substitui meu ERP?",
     answer:
-      "Não. A proposta é conectar sua operação de vendas às ferramentas que você já utiliza, evitando criar uma operação paralela.",
+      "Não. A ideia é conectar suas vendas às ferramentas que você já usa, sem criar uma operação paralela.",
   },
   {
     question: "Preciso cadastrar meus pedidos manualmente?",
     answer:
-      "A proposta da LiveCart é justamente reduzir esse trabalho. As informações geradas durante a jornada de compra podem ser utilizadas para criar e encaminhar o pedido automaticamente para os sistemas integrados.",
-  },
-  {
-    question: "A LiveCart funciona com qualquer loja?",
-    answer:
-      "A compatibilidade depende das integrações disponíveis e da estrutura da sua operação. Consulte as integrações suportadas para verificar o seu cenário.",
-  },
-  {
-    question: "Preciso ter uma equipe para atender meus clientes?",
-    answer:
-      "Não necessariamente. A automação pode assumir grande parte das interações repetitivas e encaminhar situações que exigem intervenção humana para sua equipe.",
+      "É justamente esse trabalho que a LiveCart tira das suas costas. Os dados da conversa viram um pedido que segue sozinho para os sistemas que você conectou.",
   },
   {
     question: "A LiveCart usa inteligência artificial?",

@@ -14,3 +14,5 @@ Disallow: /orders
 Disallow: /customers
 Disallow: /events
 Disallow: /settings
+
+Sitemap: https://livecart.app/sitemap.xml

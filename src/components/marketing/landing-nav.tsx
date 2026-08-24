@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils"
 
 const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "Instagram", href: "#instagram" },
-  { label: "WhatsApp", href: "#whatsapp" },
+  { label: "Canais", href: "#canais" },
+  { label: "Recursos", href: "#recursos" },
   { label: "Integrações", href: "#integracoes" },
+  { label: "Preços", href: "#precos" },
   { label: "FAQ", href: "#faq" },
 ]
 

@@ -1,27 +1,17 @@
 import {
   RefreshCcw,
-  RotateCcw,
   Ticket,
   PlusCircle,
   MousePointerClick,
   Users,
 } from "lucide-react"
 
-import { MobileCarousel } from "./mobile-carousel"
-
 const features = [
   {
     icon: RefreshCcw,
     title: "Retentativa Transparente",
     description:
-      "Quando o cartão é recusado, a LiveCart tenta de novo por outro gateway, sem o cliente perceber. Você recupera até 30% das vendas negadas.",
-    highlighted: true,
-  },
-  {
-    icon: RotateCcw,
-    title: "Recuperação de carrinhos",
-    description:
-      "Quem abandonou volta com um novo link de checkout gerado na hora, antes da venda esfriar.",
+      "Cartão recusado? A LiveCart tenta de novo por outro gateway, sem o cliente perceber, e recupera boa parte das vendas negadas.",
     highlighted: true,
   },
   {
@@ -52,34 +42,29 @@ const features = [
 
 export function LandingCheckoutFeatures() {
   return (
-    <section id="recuperacao" className="bg-secondary/40 py-20 sm:py-28">
+    <section id="recursos" className="bg-background py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Recuperação
+            Recursos
           </span>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             Recupere vendas que poderiam ser perdidas
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Nem toda venda acontece na primeira tentativa. Um cliente pode
-            abandonar o checkout, não concluir o pagamento ou parar de
-            responder. A LiveCart automatiza ações para recuperar
-            oportunidades que já demonstraram intenção de compra.
+            Poucas vendas acontecem na primeira tentativa. A LiveCart age
+            sozinha para recuperar quem já mostrou que queria comprar.
           </p>
         </div>
 
-        <MobileCarousel
-          wrapperClassName="mt-16"
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden"
-        >
+        <div className="mt-12 flex flex-wrap justify-center gap-5">
           {features.map((f) => (
             <div
               key={f.title}
               className={
                 f.highlighted
-                  ? "w-full min-w-full shrink-0 snap-start rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 sm:min-w-0"
-                  : "w-full min-w-full shrink-0 snap-start rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md sm:min-w-0"
+                  ? "w-full rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5 p-6 sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
+                  : "w-full rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
               }
             >
               <div className="flex items-center gap-3">
@@ -104,11 +89,7 @@ export function LandingCheckoutFeatures() {
               </p>
             </div>
           ))}
-        </MobileCarousel>
-
-        <p className="mt-12 text-center text-lg font-semibold tracking-tight">
-          Cada conversa pode valer uma venda.
-        </p>
+        </div>
       </div>
     </section>
   )

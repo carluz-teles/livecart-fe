@@ -59,9 +59,9 @@ export function LandingProblemSection() {
         </div>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-base text-muted-foreground">
-          Essas conversas acontecem no Instagram, WhatsApp, comentários,
-          Stories e lives. O problema é que transformar cada uma delas em uma
-          venda normalmente exige alguém para:
+          Essas conversas acontecem no Instagram, em comentários, Stories e
+          lives. O problema é que transformar cada uma delas em uma venda
+          normalmente exige alguém para:
         </p>
 
         <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">

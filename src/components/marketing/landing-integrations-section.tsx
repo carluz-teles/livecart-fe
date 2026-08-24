@@ -1,33 +1,13 @@
-/* Logos oficiais das integrações prontas. Os brasileiros são servidos das
- * URLs de marca fornecidas; Mercado Pago e Instagram são inline (mono na cor
- * da marca). SmartEnvios usa wordmark provisório até chegar o SVG oficial. */
-
-function MercadoPagoMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="#00B1EA" role="img" aria-label="Mercado Pago">
-      <path d="M11.115 16.479a.93.927 0 0 1-.939-.886c-.002-.042-.006-.155-.103-.155-.04 0-.074.023-.113.059-.112.103-.254.206-.46.206a.816.814 0 0 1-.305-.066c-.535-.214-.542-.578-.521-.725.006-.038.007-.08-.02-.11l-.032-.03h-.034c-.027 0-.055.012-.093.039a.788.786 0 0 1-.454.16.7.699 0 0 1-.253-.05c-.708-.27-.65-.928-.617-1.126.005-.041-.005-.072-.03-.092l-.05-.04-.047.043a.728.726 0 0 1-.505.203.73.728 0 0 1-.732-.725c0-.4.328-.722.732-.722.364 0 .675.27.721.63l.026.195.11-.165c.01-.018.307-.46.852-.46.102 0 .21.016.316.05.434.13.508.52.519.68.008.094.075.1.09.1.037 0 .064-.024.083-.045a.746.744 0 0 1 .54-.225c.128 0 .263.03.402.09.69.293.379 1.158.374 1.167-.058.144-.061.207-.005.244l.027.013h.02c.03 0 .07-.014.134-.035.093-.032.235-.08.367-.08a.944.942 0 0 1 .94.93.936.934 0 0 1-.94.928zm7.302-4.171c-1.138-.98-3.768-3.24-4.481-3.77-.406-.302-.685-.462-.928-.533a1.559 1.554 0 0 0-.456-.07c-.182 0-.376.032-.58.095-.46.145-.918.505-1.362.854l-.023.018c-.414.324-.84.66-1.164.73a1.986 1.98 0 0 1-.43.049c-.362 0-.687-.104-.81-.258-.02-.025-.007-.066.04-.125l.008-.008 1-1.067c.783-.774 1.525-1.506 3.23-1.545h.085c1.062 0 2.12.469 2.24.524a7.03 7.03 0 0 0 3.056.724c1.076 0 2.188-.263 3.354-.795a9.135 9.11 0 0 0-.405-.317c-1.025.44-2.003.66-2.946.66-.962 0-1.925-.229-2.858-.68-.05-.022-1.22-.567-2.44-.57-.032 0-.065 0-.096.002-1.434.033-2.24.536-2.782.976-.528.013-.982.138-1.388.25-.361.1-.673.186-.979.185-.125 0-.35-.01-.37-.012-.35-.01-2.115-.437-3.518-.962-.143.1-.28.203-.415.31 1.466.593 3.25 1.053 3.812 1.089.157.01.323.027.491.027.372 0 .744-.103 1.104-.203.213-.059.446-.123.692-.17l-.196.194-1.017 1.087c-.08.08-.254.294-.14.557a.705.703 0 0 0 .268.292c.243.162.677.27 1.08.271.152 0 .297-.015.43-.044.427-.095.874-.448 1.349-.82.377-.296.913-.672 1.323-.782a1.494 1.49 0 0 1 .37-.05.611.61 0 0 1 .095.005c.27.034.533.125 1.003.472.835.62 4.531 3.815 4.566 3.846.002.002.238.203.22.537-.007.186-.11.352-.294.466a.902.9 0 0 1-.484.15.804.802 0 0 1-.428-.124c-.014-.01-1.28-1.157-1.746-1.543-.074-.06-.146-.115-.22-.115a.122.122 0 0 0-.096.045c-.073.09.01.212.105.294l1.48 1.47c.002 0 .184.17.204.395.012.244-.106.447-.35.606a.957.955 0 0 1-.526.171.766.764 0 0 1-.42-.127l-.214-.206a21.035 20.978 0 0 0-1.08-1.009c-.072-.058-.148-.112-.221-.112a.127.127 0 0 0-.094.038c-.033.037-.056.103.028.212a.698.696 0 0 0 .075.083l1.078 1.198c.01.01.222.26.024.511l-.038.048a1.18 1.178 0 0 1-.1.096c-.184.15-.43.164-.527.164a.8.798 0 0 1-.147-.012c-.106-.018-.178-.048-.212-.089l-.013-.013c-.06-.06-.602-.609-1.054-.98-.059-.05-.133-.11-.21-.11a.128.128 0 0 0-.096.042c-.09.096.044.24.1.293l.92 1.003a.204.204 0 0 1-.033.062c-.033.044-.144.155-.479.196a.91.907 0 0 1-.122.007c-.345 0-.712-.164-.902-.264a1.343 1.34 0 0 0 .13-.576 1.368 1.365 0 0 0-1.42-1.357c.024-.342-.025-.99-.697-1.274a1.455 1.452 0 0 0-.575-.125c-.146 0-.287.025-.42.075a1.153 1.15 0 0 0-.671-.564 1.52 1.515 0 0 0-.494-.085c-.28 0-.537.08-.767.242a1.168 1.165 0 0 0-.903-.43 1.173 1.17 0 0 0-.82.335c-.287-.217-1.425-.93-4.467-1.613a17.39 17.344 0 0 1-.692-.189 4.822 4.82 0 0 0-.077.494l.67.157c3.108.682 4.136 1.391 4.309 1.525a1.145 1.142 0 0 0-.09.442 1.16 1.158 0 0 0 1.378 1.132c.096.467.406.821.879 1.003a1.165 1.162 0 0 0 .415.08c.09 0 .179-.012.266-.034.086.22.282.493.722.668a1.233 1.23 0 0 0 .457.094c.122 0 .241-.022.355-.063a1.373 1.37 0 0 0 1.269.841c.37.002.726-.147.985-.41.221.121.688.341 1.163.341.06 0 .118-.002.175-.01.47-.059.689-.24.789-.382a.571.57 0 0 0 .048-.078c.11.032.234.058.373.058.255 0 .501-.086.75-.265.244-.174.418-.424.444-.637v-.01c.083.017.167.026.251.026.265 0 .527-.082.773-.242.48-.31.562-.715.554-.98a1.28 1.279 0 0 0 .978-.194 1.04 1.04 0 0 0 .502-.808 1.088 1.085 0 0 0-.16-.653c.804-.342 2.636-1.003 4.795-1.483a4.734 4.721 0 0 0-.067-.492 27.742 27.667 0 0 0-5.049 1.62zm5.123-.763c0 4.027-5.166 7.293-11.537 7.293-6.372 0-11.538-3.266-11.538-7.293 0-4.028 5.165-7.293 11.539-7.293 6.371 0 11.537 3.265 11.537 7.293zm.46.004c0-4.272-5.374-7.755-12-7.755S.002 7.277.002 11.55L0 12.004c0 4.533 4.695 8.203 11.999 8.203 7.347 0 12-3.67 12-8.204z" />
-    </svg>
-  )
-}
-
-function InstagramMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="#E4405F" role="img" aria-label="Instagram">
-      <path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077" />
-    </svg>
-  )
-}
-
-import { Package2, Wallet, Truck, Boxes } from "lucide-react"
+import { Database, CreditCard, Truck, LayoutGrid } from "lucide-react"
 
 const categories = [
   {
-    icon: Package2,
+    icon: Database,
     title: "ERP",
     description: "Sincronize produtos, estoque, pedidos e informações da operação.",
   },
   {
-    icon: Wallet,
+    icon: CreditCard,
     title: "Pagamentos",
     description: "Envie o cliente para um checkout preparado para finalizar a compra.",
   },
@@ -37,115 +17,67 @@ const categories = [
     description: "Integre a etapa de entrega à jornada do pedido.",
   },
   {
-    icon: Boxes,
+    icon: LayoutGrid,
     title: "Catálogo",
-    description: "Utilize seus produtos e informações existentes para alimentar as vendas.",
+    description: "Use os produtos e informações que você já tem para alimentar as vendas.",
   },
 ]
 
-type Logo =
-  | { kind: "node"; alt: string; node: React.ReactNode }
-  | { kind: "img"; alt: string; src: string }
-  | { kind: "text"; alt: string; text: string; color: string }
-
-const logos: Logo[] = [
-  { kind: "node", alt: "Mercado Pago", node: <MercadoPagoMark className="h-8 w-8" /> },
-  { kind: "img", alt: "Pagar.me", src: "/integrations/pagarme.svg" },
-  { kind: "img", alt: "olist", src: "/integrations/tiny.svg" },
-  { kind: "node", alt: "Instagram", node: <InstagramMark className="h-8 w-8" /> },
-  { kind: "img", alt: "Melhor Envio", src: "/integrations/melhor-envio.svg" },
-  { kind: "img", alt: "SmartEnvios", src: "/integrations/smartenvios.png" },
+const logos = [
+  { alt: "Pagar.me", src: "/integrations/pagarme.svg" },
+  { alt: "olist", src: "/integrations/tiny.svg" },
+  { alt: "Melhor Envio", src: "/integrations/melhor-envio.svg" },
+  { alt: "SmartEnvios", src: "/integrations/smartenvios.png" },
 ]
-
-function LogoTile({ logo }: { logo: Logo }) {
-  return (
-    <div className="mr-4 flex h-16 shrink-0 items-center justify-center rounded-2xl bg-white px-7 shadow-lg">
-      {logo.kind === "node" && logo.node}
-      {logo.kind === "img" && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={logo.src}
-          alt={logo.alt}
-          className="h-8 w-auto max-w-[150px] object-contain"
-        />
-      )}
-      {logo.kind === "text" && (
-        <span className={`text-xl font-bold tracking-tight ${logo.color}`}>
-          {logo.text}
-        </span>
-      )}
-    </div>
-  )
-}
 
 export function LandingIntegrationsSection() {
   return (
-    <section
-      id="integracoes"
-      className="relative overflow-hidden bg-neutral-950 py-20 text-white sm:py-28"
-    >
-      <style>{`@keyframes lc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
-
-      <div className="absolute inset-0 bg-gradient-to-b from-neutral-950 via-neutral-950 to-amber-950/40" />
-      <div className="absolute left-1/2 top-10 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
-
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-amber-400">
+    <section id="integracoes" className="bg-secondary/40 py-20 sm:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-sm font-semibold uppercase tracking-wider text-primary">
             Integrações
           </span>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Conecta com tudo que{" "}
-            <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
-              a sua loja usa
-            </span>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            Conecta com tudo que a sua loja usa
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-neutral-300">
+          <p className="mt-4 text-lg text-muted-foreground">
             Do pagamento à entrega, a LiveCart já vem com as integrações que a
-            sua operação precisa. Conecte pagamento, ERP e frete e pare de
-            digitar pedido duas vezes.
+            sua operação precisa. Ligue pagamento, ERP e frete e pare de
+            digitar o mesmo pedido duas vezes.
           </p>
         </div>
 
-        {/* Carousel */}
-        <div
-          className="mt-14 overflow-hidden"
-          style={{
-            maskImage:
-              "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)",
-          }}
-        >
-          <div
-            className="flex w-max"
-            style={{ animation: "lc-marquee 28s linear infinite" }}
-          >
-            {[...logos, ...logos].map((logo, i) => (
-              <LogoTile key={`${logo.alt}-${i}`} logo={logo} />
-            ))}
-          </div>
+        <div className="mt-11 flex flex-wrap items-center justify-center gap-x-14 gap-y-6">
+          {logos.map((logo) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={logo.alt}
+              src={logo.src}
+              alt={logo.alt}
+              className="h-7 w-auto object-contain opacity-75"
+            />
+          ))}
         </div>
 
-        {/* Categorias de integração */}
-        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
             <div
               key={category.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6"
+              className="rounded-2xl border border-border bg-card p-6 shadow-sm"
             >
-              <span className="flex size-10 items-center justify-center rounded-lg bg-amber-400/15 text-amber-400">
+              <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <category.icon className="size-5" />
               </span>
-              <h3 className="mt-4 font-semibold text-white">{category.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-neutral-400">
+              <h3 className="mt-4 font-semibold">{category.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                 {category.description}
               </p>
             </div>
           ))}
         </div>
 
-        <p className="mt-10 text-center text-sm text-neutral-400">
+        <p className="mt-7 text-center text-sm text-muted-foreground">
           Novas integrações de pagamento, ERP, frete e catálogo chegando toda
           semana.
         </p>

@@ -2,7 +2,6 @@ import Link from "next/link"
 import { Store, Sparkles, Video, Radio } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { MobileCarousel } from "./mobile-carousel"
 
 const segments = [
   {
@@ -48,14 +47,11 @@ export function LandingIcpSection() {
           </h2>
         </div>
 
-        <MobileCarousel
-          wrapperClassName="mt-16"
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
-        >
+        <div className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {segments.map((segment) => (
             <div
               key={segment.title}
-              className="flex w-full min-w-full shrink-0 snap-start flex-col rounded-2xl border border-border bg-card p-6 sm:min-w-0"
+              className="flex flex-col rounded-2xl border border-border bg-card p-6"
             >
               <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <segment.icon className="size-5" />
@@ -69,7 +65,7 @@ export function LandingIcpSection() {
               </Button>
             </div>
           ))}
-        </MobileCarousel>
+        </div>
       </div>
     </section>
   )

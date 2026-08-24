@@ -6,9 +6,9 @@ const columns = [
     title: "Produto",
     links: [
       { label: "Como funciona", href: "#como-funciona" },
-      { label: "Instagram", href: "#instagram" },
-      { label: "WhatsApp", href: "#whatsapp" },
+      { label: "Canais", href: "#canais" },
       { label: "Integrações", href: "#integracoes" },
+      { label: "Preços", href: "#precos" },
       { label: "FAQ", href: "#faq" },
     ],
   },
@@ -43,8 +43,8 @@ export function LandingFooter() {
             />
             <p className="mt-4 max-w-xs text-sm">
               A infraestrutura de vendas para redes sociais. Transformamos
-              conversas no Instagram, WhatsApp e lives em pedidos, checkout e
-              vendas, integrados à sua operação.
+              conversas no Instagram e lives em pedidos, checkout e vendas,
+              integrados à sua operação.
             </p>
           </div>
 

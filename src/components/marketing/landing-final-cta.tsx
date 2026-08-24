@@ -16,8 +16,8 @@ export function LandingFinalCta() {
           Transforme suas redes sociais em canais de venda
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-lg text-neutral-300">
-          Instagram. WhatsApp. Lives. Stories. Mensagens. Onde seu cliente
-          estiver, sua venda pode começar.
+          Instagram. Lives. Stories. Mensagens. Onde seu cliente estiver, sua
+          venda pode começar.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button

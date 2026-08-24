@@ -7,7 +7,6 @@ import {
   Check,
   Instagram,
   Package,
-  MessageCircle,
   Radio,
 } from "lucide-react"
 
@@ -15,19 +14,16 @@ import { Button } from "@/components/ui/button"
 
 type Bubble =
   | { side: "start" | "end"; variant: "comment"; channel: "live" | "instagram"; user: string; text: string }
-  | { side: "start" | "end"; variant: "whatsapp"; user: string; text: string }
   | { side: "start" | "end"; variant: "system" | "dm" | "paid" | "shipped"; text: string }
-  | { side: "start" | "end"; variant: "typing"; user: string }
 
 const bubbles: Bubble[] = [
   { side: "start", variant: "comment", channel: "live", user: "@ana.reis", text: "quero 2 do BONE 🔥" },
-  { side: "end", variant: "whatsapp", user: "Ju Costa", text: "tem esse na M? me manda o link" },
+  { side: "end", variant: "comment", channel: "instagram", user: "@ju.costa", text: "tem esse na M? me manda o link" },
   { side: "start", variant: "comment", channel: "instagram", user: "@pedro.alves", text: "tem no tamanho GG? 👀" },
   { side: "end", variant: "system", text: "3 carrinhos criados na hora" },
   { side: "start", variant: "dm", text: "Checkout enviado no direct" },
   { side: "end", variant: "paid", text: "@ana.reis pagou · R$ 119,80" },
   { side: "start", variant: "shipped", text: "Pedido a caminho" },
-  { side: "end", variant: "typing", user: "@bia.santos" },
 ]
 
 function BubbleContent({ bubble }: { bubble: Bubble }) {
@@ -47,40 +43,6 @@ function BubbleContent({ bubble }: { bubble: Bubble }) {
         <span>
           <strong className="text-neutral-900">{bubble.user}</strong>{" "}
           <span className="text-neutral-600">{bubble.text}</span>
-        </span>
-      </div>
-    )
-  }
-
-  if (bubble.variant === "whatsapp") {
-    return (
-      <div className="flex items-center gap-2.5 rounded-2xl bg-white px-4 py-2.5 text-sm text-neutral-900 shadow-xl">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
-          <MessageCircle className="size-3.5" />
-        </span>
-        <span>
-          <strong className="text-neutral-900">{bubble.user}</strong>{" "}
-          <span className="text-neutral-600">{bubble.text}</span>
-        </span>
-      </div>
-    )
-  }
-
-  if (bubble.variant === "typing") {
-    return (
-      <div className="flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 text-sm text-neutral-900 shadow-xl">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#833AB4] to-[#F77737] text-white">
-          <Instagram className="size-3.5" />
-        </span>
-        <strong className="text-neutral-900">{bubble.user}</strong>
-        <span className="flex items-center gap-1">
-          {[0, 1, 2].map((d) => (
-            <span
-              key={d}
-              className="lc-hero-typing-dot size-1.5 rounded-full bg-neutral-400"
-              style={{ animationDelay: `${d * 0.2}s` }}
-            />
-          ))}
         </span>
       </div>
     )
@@ -128,12 +90,10 @@ export function LandingHero() {
       <style>{`
         @keyframes lc-hero-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes lc-hero-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-        @keyframes lc-hero-dot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
         .lc-hero-bubble{animation:lc-hero-in .6s ease-out both}
         .lc-hero-stack{animation:lc-hero-float 5s ease-in-out infinite}
-        .lc-hero-typing-dot{animation:lc-hero-dot 1.2s ease-in-out infinite}
         @media (prefers-reduced-motion: reduce){
-          .lc-hero-bubble,.lc-hero-stack,.lc-hero-typing-dot{animation:none}
+          .lc-hero-bubble,.lc-hero-stack{animation:none}
         }
       `}</style>
 
@@ -164,7 +124,7 @@ export function LandingHero() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
             <Sparkles className="size-3.5" />
-            Instagram, WhatsApp e lives, em uma só operação
+            Instagram e lives, em uma só operação
           </div>
 
           <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
@@ -175,9 +135,9 @@ export function LandingHero() {
           </h1>
 
           <p className="mt-6 max-w-lg text-lg text-neutral-300">
-            A LiveCart transforma conversas no Instagram, WhatsApp e lives em
-            pedidos, checkout e vendas — sem precisar responder cada mensagem
-            manualmente.
+            A LiveCart transforma as conversas do Instagram e das lives em
+            pedidos e vendas, sem que você precise responder cada mensagem na
+            mão.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -215,7 +175,7 @@ export function LandingHero() {
           <div className="mb-6 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-200">
               <span className="size-2 animate-pulse rounded-full bg-amber-400" />
-              PRÉVIA ILUSTRATIVA · INSTAGRAM, WHATSAPP E LIVE
+              PRÉVIA ILUSTRATIVA · INSTAGRAM E LIVE
             </span>
           </div>
 

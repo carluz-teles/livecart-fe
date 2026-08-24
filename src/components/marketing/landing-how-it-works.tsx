@@ -4,7 +4,7 @@ const steps = [
   {
     icon: MessageSquareHeart,
     title: "Cliente demonstra interesse",
-    caption: "No comentário, Direct, WhatsApp, Story ou live",
+    caption: "No comentário, Direct, Story ou live",
   },
   {
     icon: Sparkles,
