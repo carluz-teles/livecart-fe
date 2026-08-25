@@ -15,4 +15,4 @@ Disallow: /customers
 Disallow: /events
 Disallow: /settings
 
-Sitemap: https://livecart.app/sitemap.xml
+Sitemap: https://livecart.com.br/sitemap.xml

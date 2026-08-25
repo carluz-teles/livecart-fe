@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://livecart.app"
+  const baseUrl = "https://livecart.com.br"
 
   return [
     {

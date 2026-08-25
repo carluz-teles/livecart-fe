@@ -18,7 +18,7 @@ const fontMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://livecart.app"),
+  metadataBase: new URL("https://livecart.com.br"),
   title: "LiveCart - Venda mais nas suas lives",
   description:
     "Plataforma de vendas ao vivo que detecta pedidos automaticamente nos comentários das suas lives.",

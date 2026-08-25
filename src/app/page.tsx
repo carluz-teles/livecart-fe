@@ -25,12 +25,12 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: {
-    canonical: "https://livecart.app",
+    canonical: "https://livecart.com.br",
   },
   openGraph: {
     title,
     description,
-    url: "https://livecart.app",
+    url: "https://livecart.com.br",
     siteName: "LiveCart",
     locale: "pt_BR",
     type: "website",
@@ -48,8 +48,8 @@ const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "LiveCart",
-  url: "https://livecart.app",
-  logo: "https://livecart.app/livecart/logotipo-whitemode.png",
+  url: "https://livecart.com.br",
+  logo: "https://livecart.com.br/livecart/logotipo-whitemode.png",
   description,
 }
 

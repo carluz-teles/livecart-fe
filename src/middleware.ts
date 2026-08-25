@@ -1,7 +1,20 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server"
 
 import { safeRedirectPath } from "@/lib/redirect"
+
+// Split de domínio: a LP pública mora em livecart.com.br, o app autenticado
+// em app.livecart.com.br — mesmo deploy, dois hosts. Só "/" precisa de
+// redirect cruzado; as demais rotas públicas (/privacy, /terms, /cart,
+// /order) já ficam fora do matcher abaixo e continuam servidas nos dois
+// hosts sem custo de handshake do Clerk.
+const MARKETING_HOSTS = new Set(["livecart.com.br", "www.livecart.com.br"])
+const APP_HOST = "app.livecart.com.br"
+const MARKETING_ORIGIN = "https://livecart.com.br"
+
+function hostnameOf(req: NextRequest) {
+  return (req.headers.get("host") ?? "").split(":")[0]
+}
 
 const isPublicRoute = createRouteMatcher([
   "/login(.*)",
@@ -52,7 +65,7 @@ function resetClerkSession(req: NextRequest) {
   return response
 }
 
-export default clerkMiddleware(async (auth, req) => {
+const withClerk = clerkMiddleware(async (auth, req) => {
   const session = await auth().catch((error: unknown) => {
     console.error("[middleware] clerk auth failed, clearing session:", error)
     return null
@@ -70,9 +83,10 @@ export default clerkMiddleware(async (auth, req) => {
 
   const { userId, getToken, redirectToSignIn } = session
 
-  // Landing page ("/") is public marketing for everyone — logged in or out.
-  // Signed-in visitors see it too (the nav shows a "dashboard" link); we never
-  // force a redirect here so the page is always reachable.
+  // Landing page ("/") é pública pra todo mundo — logado ou não. Em dev/preview
+  // (host que não é nem livecart.com.br nem app.livecart.com.br) ela é servida
+  // direto aqui; em produção o split de domínio acima já tirou "/" da frente
+  // do Clerk antes de chegar neste ponto.
   if (req.nextUrl.pathname === "/") {
     return NextResponse.next()
   }
@@ -145,6 +159,30 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next()
   }
 })
+
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  const host = hostnameOf(req)
+  const { pathname, search } = req.nextUrl
+
+  // Host de marketing pedindo qualquer coisa que não seja a home: manda pro
+  // app (ex.: alguém bate em livecart.com.br/dashboard direto).
+  if (MARKETING_HOSTS.has(host) && pathname !== "/") {
+    return NextResponse.redirect(new URL(`https://${APP_HOST}${pathname}${search}`, req.url))
+  }
+
+  // Host do app pedindo a home: manda pro domínio de marketing, que é quem
+  // deve servir "/" a partir de agora.
+  if (host === APP_HOST && pathname === "/") {
+    return NextResponse.redirect(new URL(`${MARKETING_ORIGIN}${pathname}${search}`, req.url))
+  }
+
+  // Host de marketing servindo "/", app host, e dev/preview (host que não
+  // bate com nenhum dos dois domínios de produção) seguem pro Clerk — que já
+  // tem um fast-path pra "/" (linha ~90) sem handshake nem redirect. Rotas
+  // que nunca precisam do Clerk (privacy/terms/cart/etc.) já ficam fora do
+  // matcher abaixo e nem chegam aqui.
+  return withClerk(req, event)
+}
 
 export const config = {
   matcher: [

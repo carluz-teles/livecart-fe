@@ -17,7 +17,7 @@ const plans = [
     period: "/mês",
     description: "+ 1,8% sobre pedidos pagos. Para quem está começando a vender nas redes.",
     features: sharedFeatures,
-    cta: "Assinar Start",
+    cta: "Testar 7 dias grátis",
     highlighted: false,
   },
   {
@@ -36,7 +36,7 @@ const plans = [
     period: "/mês",
     description: "+ 1,0% sobre pedidos pagos. Para alto volume e times maiores.",
     features: sharedFeatures,
-    cta: "Assinar Scale",
+    cta: "Testar 7 dias grátis",
     highlighted: false,
   },
 ]
