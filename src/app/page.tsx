@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import { auth } from "@clerk/nextjs/server"
+import { currentUser } from "@clerk/nextjs/server"
 
+import { CrispIdentify } from "@/components/shared/CrispChat/CrispChat.Identify"
 import { LandingNav } from "@/components/marketing/landing-nav"
 import { LandingHero } from "@/components/marketing/landing-hero"
 import { LandingSocialProofSection } from "@/components/marketing/landing-social-proof-section"
@@ -67,9 +68,13 @@ const faqJsonLd = {
 }
 
 export default async function LandingPage() {
-  const { userId } = await auth()
+  const user = await currentUser()
+  const email = user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null
+
   return (
     <main className="bg-background text-foreground">
+      <CrispIdentify email={email} name={name} />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -81,7 +86,7 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <LandingNav isSignedIn={!!userId} />
+      <LandingNav isSignedIn={!!user} />
       <LandingHero />
 
       {/* Prova social: componente pronto para receber dado real via props

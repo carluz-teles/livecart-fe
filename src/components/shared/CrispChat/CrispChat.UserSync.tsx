@@ -1,27 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
 import { useUser } from "@/hooks/user/useUser"
+import { CrispIdentify } from "@/components/shared/CrispChat/CrispChat.Identify"
 
-declare global {
-  interface Window {
-    $crisp?: unknown[]
-  }
-}
-
+// Usado dentro do dashboard (dentro de ClerkProvider/UserProvider).
 export function CrispUserSync() {
   const { user } = useUser()
+  const membership = user?.membership
 
-  useEffect(() => {
-    const membership = user?.membership
-    if (!membership || typeof window === "undefined") return
-
-    window.$crisp = window.$crisp || []
-    window.$crisp.push(["set", "user:email", [membership.email]])
-    if (membership.name) {
-      window.$crisp.push(["set", "user:nickname", [membership.name]])
-    }
-  }, [user])
-
-  return null
+  return <CrispIdentify email={membership?.email} name={membership?.name} />
 }
