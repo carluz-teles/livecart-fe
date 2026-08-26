@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google"
+import { CrispChat } from "@/components/shared/CrispChat"
 import "./globals.css"
 
 const fontSans = Inter({
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} font-sans antialiased`}
       >
         {children}
+        <CrispChat />
       </body>
     </html>
   )
