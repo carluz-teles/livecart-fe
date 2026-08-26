@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { UserProvider } from "@/components/providers/user-provider"
 import { AuthTokenBridge } from "@/components/providers/auth-token-bridge"
+import { CrispUserSync } from "@/components/shared/CrispChat/CrispChat.UserSync"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { clerkAppearance } from "@/lib/clerk-theme"
@@ -33,7 +34,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               telas — e um Tooltip sem Provider ancestral simplesmente não
               abre. */}
           <TooltipProvider delayDuration={200}>
-            <UserProvider>{children}</UserProvider>
+            <UserProvider>
+              <CrispUserSync />
+              {children}
+            </UserProvider>
           </TooltipProvider>
           <Toaster richColors closeButton />
         </QueryProvider>
