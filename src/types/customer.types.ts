@@ -100,6 +100,13 @@ export interface VipHandle {
   removedAt?: string | null
   addedByUserId?: string | null
   cartsUpdated?: number
+  // Quantos carrinhos abertos foram fundidos no eterno na promoção.
+  cartsMerged?: number
+  // Quantos ficaram de fora da fusão por já terem pedido no ERP — esses seguem
+  // com prazo, e portanto seguem expirando.
+  cartsSkipped?: number
+  // O @ virou VIP, mas os carrinhos que ele já tinha não foram consolidados.
+  activationFailed?: boolean
 }
 
 export interface VipHandlesResponse {
