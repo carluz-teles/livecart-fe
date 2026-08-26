@@ -1,9 +1,10 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { billingService } from "@/services/api/billing.service"
 import { useStoreId } from "@/hooks/useUser"
+import type { BillingInterval } from "@/types"
 
 export const billingKeys = {
   subscription: (storeId: string) => ["billing", "subscription", storeId] as const,
@@ -35,10 +36,10 @@ export function useStartCheckout() {
   const { storeId } = useStoreId()
 
   return useMutation({
-    mutationFn: async (plan: "start" | "grow" | "scale") => {
+    mutationFn: async (interval: BillingInterval) => {
       if (!storeId) throw new Error("Store ID not found")
       const token = await getToken()
-      return billingService.createCheckout(storeId, plan, token)
+      return billingService.createCheckout(storeId, interval, token)
     },
     onSuccess: ({ url }) => {
       if (url) window.location.href = url
@@ -63,27 +64,6 @@ export function useOpenPortal() {
     },
   })
 }
-
-// Upgrade imediato (com proração) ou downgrade agendado pro próximo ciclo.
-export function useChangePlan() {
-  const { getToken } = useAuth()
-  const { storeId } = useStoreId()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (plan: "start" | "grow" | "scale") => {
-      if (!storeId) throw new Error("Store ID not found")
-      const token = await getToken()
-      return billingService.changePlan(storeId, plan, token)
-    },
-    onSuccess: () => {
-      if (storeId) {
-        queryClient.invalidateQueries({ queryKey: billingKeys.subscription(storeId) })
-      }
-    },
-  })
-}
-
 
 export function usePeriodUsage() {
   const { getToken, isLoaded, isSignedIn } = useAuth()

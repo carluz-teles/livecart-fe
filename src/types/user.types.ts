@@ -46,10 +46,14 @@ export interface SyncUserResponse {
   pendingInvitations?: PendingInvitation[] // só no estado "pending_invitation"
 }
 
+// BillingInterval — intervalo de cobrança do plano Pro (único plano pago)
+export type BillingInterval = "monthly" | "semestral" | "annual"
+
 // SubscriptionState — snapshot do paywall/assinatura (PRD 007)
 export interface SubscriptionState {
   status: "trialing" | "active" | "past_due" | "paused" | "unpaid" | "canceled" | string
-  plan: "start" | "grow" | "scale" | "enterprise" | string
+  plan: "pro" | "enterprise" | string
+  billingInterval: BillingInterval
   trialEndsAt?: string
   trialDaysLeft: number
   currentPeriodEnd?: string

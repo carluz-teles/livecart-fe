@@ -6,6 +6,7 @@
 import type { LivePlatform } from "@/types/live.types"
 import type { EventStatus } from "@/types/event.types"
 import type { OrderStatus, PaymentStatus } from "@/types/cart.types"
+import type { BillingInterval } from "@/types/user.types"
 
 // =============================================================================
 // STATUS CONFIGURATIONS
@@ -141,6 +142,42 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, StatusConfig> = {
 export const FIRST_PURCHASE_BADGE: StatusConfig = {
   label: "Primeira venda",
   variant: "default",
+}
+
+// =============================================================================
+// BILLING — plano Pro (fonte única dos preços de exibição)
+// =============================================================================
+
+/**
+ * Preço do plano Pro por intervalo de cobrança, em centavos.
+ * Espelha os valores cobrados pelo backend (Stripe): mensal R$ 597,00,
+ * semestral R$ 3.402,90 (5% off, cobrado a cada 6 meses) e anual
+ * R$ 6.447,60 (10% off, cobrado a cada 12 meses). Não há endpoint de preços
+ * dedicado — se um for criado, substituir este hardcode por ele.
+ */
+export const PRO_PLAN_PRICE_CENTS: Record<BillingInterval, number> = {
+  monthly: 59700,
+  semestral: 340290,
+  annual: 644760,
+}
+
+export const BILLING_INTERVAL_MONTHS: Record<BillingInterval, number> = {
+  monthly: 1,
+  semestral: 6,
+  annual: 12,
+}
+
+export const BILLING_INTERVAL_LABELS: Record<BillingInterval, string> = {
+  monthly: "Mensal",
+  semestral: "Semestral",
+  annual: "Anual",
+}
+
+/** Desconto (%) do intervalo comparado à mensalidade × N meses. */
+export const BILLING_INTERVAL_DISCOUNT_PCT: Record<BillingInterval, number> = {
+  monthly: 0,
+  semestral: 5,
+  annual: 10,
 }
 
 // =============================================================================

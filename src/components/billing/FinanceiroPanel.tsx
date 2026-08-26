@@ -5,14 +5,12 @@ import Link from "next/link"
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  CheckCircle2,
   MessageCircle,
   ReceiptText,
   Settings2,
   TrendingUp,
 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -23,18 +21,12 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency } from "@/lib/format"
+import { BILLING_INTERVAL_LABELS, PRO_PLAN_PRICE_CENTS } from "@/lib/constants"
 import { usePeriodUsage, useStatement, useSubscription } from "@/hooks/billing"
 import { useRevenueByPayment } from "@/hooks/dashboard"
 import { PaymentMethodChart } from "@/components/analytics/PaymentMethodChart"
 import { useWhatsAppRecoveryStats } from "@/hooks/integration"
 import { cn } from "@/lib/utils"
-
-// Mensalidade por plano (exibição da composição da próxima fatura)
-const planFlat: Record<string, number> = {
-  start: 14700,
-  grow: 29700,
-  scale: 69700,
-}
 
 export function FinanceiroPanel() {
   const [page, setPage] = useState(1)
@@ -44,18 +36,15 @@ export function FinanceiroPanel() {
   const { data: recovery } = useWhatsAppRecoveryStats()
   const { data: revenueByPayment, isLoading: paymentLoading } = useRevenueByPayment()
 
-  const feeBpsLabel = usage && usage.gmvCents > 0
-    ? `${((usage.feeCents / usage.gmvCents) * 100).toFixed(2).replace(".", ",")}%`
-    : null
-  const flat = planFlat[sub?.plan ?? ""] ?? 0
+  const flat = sub?.billingInterval ? PRO_PLAN_PRICE_CENTS[sub.billingInterval] : 0
   const isTrial = sub?.status === "trialing"
-  const nextTotal = flat + (usage?.feeCents ?? 0)
+  const nextTotal = flat
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Suas vendas, sua taxa de sucesso e o extrato do ciclo — sem surpresa na fatura.
+          Suas vendas e o extrato do ciclo — sem surpresa na fatura.
         </p>
         <Button variant="outline" size="sm" asChild>
           <Link href="/settings/billing">
@@ -122,18 +111,14 @@ export function FinanceiroPanel() {
               <>
                 <p className="text-3xl font-bold">R$ 0,00</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Período de teste — a taxa de sucesso só passa a valer no plano pago.
+                  Período de teste — sem cobrança até o fim do trial.
                 </p>
               </>
             ) : (
               <>
-                <p className="text-3xl font-bold">~{formatCurrency(nextTotal)}</p>
+                <p className="text-3xl font-bold">{formatCurrency(nextTotal)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {formatCurrency(flat)} mensalidade + {formatCurrency(usage?.feeCents ?? 0)}{" "}
-                  taxa de sucesso{feeBpsLabel ? ` (${feeBpsLabel} das vendas)` : ""}
-                  {usage?.taxaDiscountBps
-                    ? ` — com ${usage.taxaDiscountBps / 100}% de desconto neste ciclo`
-                    : ""}
+                  Plano Pro · cobrança {sub?.billingInterval ? BILLING_INTERVAL_LABELS[sub.billingInterval].toLowerCase() : ""}
                 </p>
               </>
             )}
@@ -142,8 +127,7 @@ export function FinanceiroPanel() {
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        A LiveCart só ganha quando você vende: ciclo sem vendas, taxa zero. Estornos
-        devolvem a taxa automaticamente — mesmo em ciclos seguintes.
+        Assinatura fixa, sem comissão sobre vendas — o que você vende é 100% seu.
       </p>
 
       {/* Mix de pagamento (movido da Visão geral — assunto de dinheiro) */}
@@ -154,7 +138,7 @@ export function FinanceiroPanel() {
         <CardHeader>
           <CardTitle>Extrato</CardTitle>
           <CardDescription>
-            Cada venda e estorno do ciclo, com a taxa de sucesso discriminada
+            Cada venda e estorno do ciclo
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -211,18 +195,6 @@ export function FinanceiroPanel() {
                         {entry.amountCents >= 0 ? "+" : "−"}
                         {formatCurrency(Math.abs(entry.amountCents))}
                       </p>
-                      {isRefund && entry.billable && entry.feeCents !== 0 ? (
-                        <Badge variant="outline" className="mt-0.5 gap-1 border-emerald-200 text-emerald-700">
-                          <CheckCircle2 className="size-3" />
-                          taxa de {formatCurrency(Math.abs(entry.feeCents))} devolvida
-                        </Badge>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          {entry.billable
-                            ? `taxa ${formatCurrency(Math.abs(entry.feeCents))}`
-                            : "teste grátis · sem taxa"}
-                        </p>
-                      )}
                     </div>
                   </div>
                 )

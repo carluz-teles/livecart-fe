@@ -1,7 +1,7 @@
 "use client"
 
-import { Suspense } from "react"
-import { Check, CreditCard, ExternalLink, Loader2, Sparkles } from "lucide-react"
+import { Suspense, useState } from "react"
+import { CreditCard, ExternalLink, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -14,22 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import {
-  useBillingActivation,
-  useChangePlan,
-  useOpenPortal,
-  useStartCheckout,
-} from "@/hooks/billing"
-import type { ApiError } from "@/types"
-
-type PlanID = "start" | "grow" | "scale"
-
-const plans: { id: PlanID; name: string; price: string; gmv: string; flatCents: number }[] = [
-  { id: "start", name: "Start", price: "R$ 147", gmv: "1,8%", flatCents: 14700 },
-  { id: "grow", name: "Grow", price: "R$ 297", gmv: "1,3%", flatCents: 29700 },
-  { id: "scale", name: "Scale", price: "R$ 697", gmv: "1,0%", flatCents: 69700 },
-]
+import { PlanCard } from "@/components/billing/PlanCard"
+import { formatCurrency } from "@/lib/format"
+import { BILLING_INTERVAL_LABELS, PRO_PLAN_PRICE_CENTS } from "@/lib/constants"
+import { useBillingActivation, useOpenPortal, useStartCheckout } from "@/hooks/billing"
+import type { ApiError, BillingInterval } from "@/types"
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   trialing: { label: "Período de teste", variant: "secondary" },
@@ -46,36 +35,17 @@ function BillingContent() {
   const { subscription: sub, isLoading, isActivating } = useBillingActivation()
   const checkout = useStartCheckout()
   const portal = useOpenPortal()
-  const changePlan = useChangePlan()
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly")
 
   const badge = statusBadge[sub?.status ?? ""] ?? { label: sub?.status ?? "—", variant: "outline" as const }
   const isTrial = sub?.status === "trialing" || sub?.status === "paused"
-  const currentFlat = plans.find((p) => p.id === sub?.plan)?.flatCents ?? 0
-  // Durante o trial o BE ancora a assinatura no Grow, mas o lojista ainda não
-  // escolheu nada — não exibir isso como "plano contratado".
-  const planName =
-    sub?.plan === "enterprise"
-      ? "Enterprise"
-      : plans.find((p) => p.id === sub?.plan)?.name ?? "—"
+  const isSubscribed = sub?.plan === "pro" && !isTrial
+  const planName = sub?.plan === "enterprise" ? "Enterprise" : isSubscribed ? "Pro" : "—"
 
-  const handlePlanAction = (plan: PlanID) => {
-    if (isTrial || !sub?.hasPaymentMethod) {
-      checkout.mutate(plan, {
-        onError: (err) =>
-          toast.error((err as unknown as ApiError)?.message || "Falha ao abrir o pagamento."),
-      })
-      return
-    }
-    const target = plans.find((p) => p.id === plan)!
-    changePlan.mutate(plan, {
-      onSuccess: () =>
-        toast.success(
-          target.flatCents > currentFlat
-            ? `Upgrade para o ${target.name} aplicado!`
-            : `Mudança para o ${target.name} agendada para o próximo ciclo.`
-        ),
+  const handleSubscribe = () => {
+    checkout.mutate(billingInterval, {
       onError: (err) =>
-        toast.error((err as unknown as ApiError)?.message || "Falha ao mudar de plano."),
+        toast.error((err as unknown as ApiError)?.message || "Falha ao abrir o pagamento."),
     })
   }
 
@@ -150,6 +120,12 @@ function BillingContent() {
               </p>
             </div>
           )}
+          {isSubscribed && (
+            <p className="text-sm text-muted-foreground">
+              {formatCurrency(PRO_PLAN_PRICE_CENTS[sub!.billingInterval])} · cobrança{" "}
+              {BILLING_INTERVAL_LABELS[sub!.billingInterval].toLowerCase()}
+            </p>
+          )}
           {sub?.currentPeriodEnd &&
             sub.status === "active" &&
             (sub.cancelAtPeriodEnd ? (
@@ -176,78 +152,47 @@ function BillingContent() {
               ) : (
                 <CreditCard className="size-4" />
               )}
-              Gerenciar pagamento e faturas
+              Gerenciar assinatura
               <ExternalLink className="size-3.5" />
             </Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Planos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Planos</CardTitle>
-          <CardDescription>
-            Todos os recursos em todos os planos. A diferença é a mensalidade e a
-            taxa sobre pedidos pagos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {plans.map((plan) => {
-              const isCurrent = sub?.plan === plan.id && !isTrial
-              return (
-                <div
-                  key={plan.id}
-                  className={cn(
-                    "flex flex-col rounded-xl border p-5",
-                    isCurrent ? "border-primary ring-1 ring-primary" : "border-border"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{plan.name}</h3>
-                    {isCurrent && (
-                      <Badge variant="default" className="gap-1">
-                        <Check className="size-3" /> Atual
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">/mês</span>
-                  </div>
-                  <p className="mt-1 text-sm font-medium text-primary">
-                    + {plan.gmv} sobre pedidos pagos
-                  </p>
-                  <Button
-                    className="mt-4 w-full"
-                    variant={isCurrent ? "outline" : "default"}
-                    disabled={isCurrent || checkout.isPending || changePlan.isPending}
-                    onClick={() => handlePlanAction(plan.id)}
-                  >
-                    {checkout.isPending || changePlan.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : isCurrent ? (
-                      "Plano atual"
-                    ) : isTrial || !sub?.hasPaymentMethod ? (
-                      `Assinar ${plan.name}`
-                    ) : plan.flatCents > currentFlat ? (
-                      `Fazer upgrade`
-                    ) : (
-                      `Mudar no próximo ciclo`
-                    )}
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Upgrades são aplicados na hora (com cobrança proporcional). Downgrades
-            valem a partir do próximo ciclo. Precisa de volume Enterprise? Fale com
-            a gente.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Plano */}
+      {isSubscribed ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plano</CardTitle>
+            <CardDescription>
+              Sem comissão sobre vendas. Para trocar o intervalo de cobrança, use o
+              portal de assinatura acima — ele cuida da proração automaticamente.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plano Pro</CardTitle>
+            <CardDescription>
+              Todos os recursos incluídos, sem comissão sobre vendas. Escolha o
+              intervalo de cobrança.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-sm">
+              <PlanCard
+                interval={billingInterval}
+                onIntervalChange={setBillingInterval}
+                ctaLabel="Assinar Pro"
+                ctaLoading={checkout.isPending}
+                ctaDisabled={checkout.isPending}
+                onCtaClick={handleSubscribe}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
