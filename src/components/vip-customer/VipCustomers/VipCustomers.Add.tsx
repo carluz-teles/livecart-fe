@@ -22,14 +22,40 @@ export function VipCustomersAdd() {
       { handle: clean },
       {
         onSuccess: (vip) => {
-          const n = vip.cartsUpdated ?? 0
-          toast.success(`@${vip.handle} agora é VIP`, {
-            description:
-              n > 0
-                ? `${n} carrinho${n > 1 ? "s" : ""} em aberto ${n > 1 ? "viraram" : "virou"} eterno${n > 1 ? "s" : ""}.`
-                : "O carrinho dele nunca vai expirar.",
-          })
           setHandle("")
+          // A promoção grava a linha do VIP e só DEPOIS consolida os carrinhos
+          // que o cliente já tinha. Quando essa segunda parte não roda, o @ é
+          // VIP para as próximas compras mas os carrinhos atuais continuam com
+          // prazo — dizer "nunca vai expirar" aqui seria mentira.
+          if (vip.activationFailed) {
+            toast.warning(`@${vip.handle} agora é VIP, mas os carrinhos atuais não`, {
+              description:
+                "Os carrinhos em aberto dele continuam com prazo para expirar. Remova e adicione o VIP de novo para tentar outra vez.",
+            })
+            return
+          }
+
+          const eterno = (vip.cartsUpdated ?? 0) > 0
+          const fundidos = vip.cartsMerged ?? 0
+          const forasDaFusao = vip.cartsSkipped ?? 0
+
+          const description = !eterno
+            ? "Ele ainda não tem carrinho em aberto. O próximo nunca vai expirar."
+            : fundidos > 0
+              ? `${fundidos + 1} carrinhos viraram um só, que nunca vai expirar.`
+              : "O carrinho dele nunca vai expirar."
+
+          toast.success(`@${vip.handle} agora é VIP`, { description })
+
+          if (forasDaFusao > 0) {
+            toast.warning(
+              `${forasDaFusao} carrinho${forasDaFusao > 1 ? "s" : ""} ficou de fora`,
+              {
+                description:
+                  "Já tem pedido no ERP, então não foi juntado ao carrinho eterno — e continua com prazo.",
+              },
+            )
+          }
         },
         onError: (e) =>
           toast.error("Não foi possível adicionar", {
