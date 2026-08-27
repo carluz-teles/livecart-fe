@@ -3,6 +3,7 @@ import { Header } from "@/components/shared/Header"
 import { TrialBanner } from "@/components/shared/TrialBanner"
 import { AppProviders } from "@/components/providers/app-providers"
 import { OnboardingGuard } from "@/components/providers/onboarding-guard"
+import { LiveSimulator } from "@/components/staging/LiveSimulator"
 
 // Authenticated, per-merchant área: nunca pode ser prerenderizada nem
 // cacheada publicamente. Sem isto, o Next gera estes routes como estáticos
@@ -38,6 +39,13 @@ export default function DashboardLayout({
             {children}
           </main>
         </div>
+      </div>
+      {/* Bancada de teste de staging. O componente devolve null fora de
+          staging, e as rotas que ele chama nem existem lá — ver
+          components/staging/LiveSimulator. print:hidden porque isto nunca faz
+          parte de um documento impresso. */}
+      <div className="print:hidden">
+        <LiveSimulator />
       </div>
       </OnboardingGuard>
     </AppProviders>
