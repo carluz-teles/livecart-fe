@@ -6,7 +6,7 @@ const channels = [
     iconClassName: "bg-red-500",
     title: "Lives",
     description:
-      "Quando alguém comenta \"quero 2 do preto\" ou \"tem tamanho M?\", a LiveCart lê a mensagem e transforma essa vontade de comprar em pedido.",
+      "Você anuncia o código de cada produto durante a live. Quem digita o código no comentário recebe o carrinho na hora, sem espera.",
     tags: ["Comentário", "Carrinho", "Checkout", "Pagamento"],
   },
   {
@@ -14,7 +14,7 @@ const channels = [
     iconClassName: "bg-gradient-to-br from-[#833AB4] to-[#F77737]",
     title: "Instagram",
     description:
-      "Seu Instagram deixa de ser só uma vitrine e vira um canal de vendas. Stories, Direct e posts viram oportunidades de compra.",
+      "Poste o código nos Stories, no Direct ou nos posts. Quem responde com o código recebe o link de compra na hora.",
     tags: ["Stories", "Direct", "Posts", "Mensagens"],
   },
 ]

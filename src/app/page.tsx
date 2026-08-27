@@ -8,7 +8,7 @@ import { LandingSocialProofSection } from "@/components/marketing/landing-social
 import { LandingProblemSection } from "@/components/marketing/landing-problem-section"
 import { LandingHowItWorks } from "@/components/marketing/landing-how-it-works"
 import { LandingChannelsSection } from "@/components/marketing/landing-channels-section"
-import { LandingAiSection } from "@/components/marketing/landing-ai-section"
+import { LandingUrgencySection } from "@/components/marketing/landing-urgency-section"
 import { LandingCheckoutFeatures } from "@/components/marketing/landing-checkout-features"
 import { LandingIntegrationsSection } from "@/components/marketing/landing-integrations-section"
 import { LandingIcpSection } from "@/components/marketing/landing-icp-section"
@@ -89,17 +89,15 @@ export default async function LandingPage() {
       <LandingNav isSignedIn={!!user} />
       <LandingHero />
 
-      {/* Prova social: componente pronto para receber dado real via props
-       * (stats/logos). Ainda não há dado real aprovado para publicação, então
-       * a seção fica oculta — o componente retorna `null` enquanto os arrays
-       * estiverem vazios. Basta passar os dados reais aprovados para
-       * reativá-la. */}
+      {/* Prova social: mostra números ilustrativos (marcados como tal) até
+       * termos métricas reais aprovadas. Quando houver, passe `stats`/`logos`
+       * reais e `illustrative={false}`. */}
       <LandingSocialProofSection />
 
       <LandingProblemSection />
       <LandingHowItWorks />
       <LandingChannelsSection />
-      <LandingAiSection />
+      <LandingUrgencySection />
       <LandingCheckoutFeatures />
       <LandingIntegrationsSection />
       <LandingIcpSection />
