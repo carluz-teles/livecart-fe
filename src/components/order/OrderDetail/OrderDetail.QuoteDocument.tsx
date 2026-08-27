@@ -1,6 +1,7 @@
 "use client"
 
 import { use } from "react"
+import { Package } from "lucide-react"
 import {
   formatCurrency,
   formatDate,
@@ -10,6 +11,7 @@ import {
   formatZipBR,
 } from "@/lib/format"
 import { groupOrderItemsByProduct } from "@/lib/order-items"
+import { cn } from "@/lib/utils"
 import type { OrderDetail, OrderItem } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 
@@ -242,6 +244,11 @@ function TabelaDeItens({ items }: { items: OrderItem[] }) {
     )
   }
 
+  // Coluna de foto só existe se alguma foto existir. Pedido inteiro sem
+  // imagem (produto criado na mão, sem anexo no ERP) imprimiria uma coluna de
+  // quadrados cinzas vazios — ruído que faz o documento parecer quebrado.
+  const comFoto = items.some((item) => item.productImage)
+
   return (
     <table className="mt-6 w-full border-collapse">
       <caption className="mb-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
@@ -249,6 +256,14 @@ function TabelaDeItens({ items }: { items: OrderItem[] }) {
       </caption>
       <thead>
         <tr className="border-b border-neutral-900 text-[10px] uppercase tracking-[0.12em] text-neutral-500">
+          {comFoto && (
+            <th scope="col" className="w-[76px] py-1.5 text-left font-semibold">
+              {/* Rótulo invisível: o cabeçalho impresso fica limpo sobre a
+                  coluna de imagens, sem uma palavra "Foto" competindo com
+                  "Produto" logo ao lado. */}
+              <span className="sr-only">Foto</span>
+            </th>
+          )}
           <th scope="col" className="py-1.5 text-left font-semibold">
             Produto
           </th>
@@ -267,7 +282,17 @@ function TabelaDeItens({ items }: { items: OrderItem[] }) {
         {items.map((item) => {
           const qtd = item.quantity - item.waitlistedQuantity
           return (
-            <tr key={item.id} className="border-b border-neutral-300 align-top">
+            <tr
+              key={item.id}
+              // Com foto a linha fica alta o bastante para a quebra de página
+              // cair no meio dela — imagem numa folha, preço na outra.
+              className="border-b border-neutral-300 align-top print-keep-together"
+            >
+              {comFoto && (
+                <td className="py-2 pr-3">
+                  <Foto src={item.productImage} tamanho="h-16 w-16" />
+                </td>
+              )}
               <td className="py-2 pr-4">
                 <span className="font-medium">{item.productName}</span>
                 {item.size && (
@@ -303,6 +328,8 @@ function FilaDeEspera({ order }: { order: OrderDetail }) {
   const fila = order.waitlist ?? []
   if (fila.length === 0) return null
 
+  const comFoto = fila.some((item) => item.productImage)
+
   return (
     <section className="mt-8 border border-neutral-400 p-4 print-keep-together">
       <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
@@ -315,17 +342,25 @@ function FilaDeEspera({ order }: { order: OrderDetail }) {
         </strong>
         . A loja avisa assim que houver estoque.
       </p>
-      <ul className="mt-3 space-y-1">
+      <ul className="mt-3 space-y-1.5">
         {fila.map((item) => (
           <li
             key={item.id}
-            className="flex items-baseline justify-between gap-4 border-b border-dotted border-neutral-400 pb-1 text-[12px] last:border-0"
+            className="flex items-center justify-between gap-4 border-b border-dotted border-neutral-400 pb-1.5 text-[12px] last:border-0"
           >
-            <span>
-              <span className="font-medium">{item.productName}</span>
-              {item.status === "notified" && (
-                <span className="text-neutral-600"> · já liberado</span>
+            <span className="flex min-w-0 items-center gap-2.5">
+              {/* Menor que a da tabela: aqui a foto serve para reconhecer o
+                  produto de relance, não para decidir a compra — o item da
+                  fila nem entra no total. */}
+              {comFoto && (
+                <Foto src={item.productImage} tamanho="h-10 w-10" />
               )}
+              <span className="min-w-0">
+                <span className="font-medium">{item.productName}</span>
+                {item.status === "notified" && (
+                  <span className="text-neutral-600"> · já liberado</span>
+                )}
+              </span>
             </span>
             <span className="shrink-0 tabular-nums text-neutral-600">
               {item.quantity} un · {formatCurrency(item.unitPrice)}
@@ -390,6 +425,55 @@ function Rodape({ order, orcamento }: RodapeProps) {
 }
 
 // ─── Auxiliares ─────────────────────────────────────────────────────────────
+
+interface FotoProps {
+  src: string | null
+  /** Classes de dimensão do quadro (ex.: "h-16 w-16"). */
+  tamanho: string
+}
+
+/**
+ * Foto do produto no papel.
+ *
+ * Três decisões que não são estilo, são o que faz a imagem aparecer impressa:
+ *
+ *  1. `<img>` cru, nunca `next/image`. A URL vem de origem arbitrária — mídia
+ *     do Instagram ou link colado pelo lojista — e o otimizador do Next erra
+ *     nesse caso (lança no cliente fora do remotePatterns, e no Railway não
+ *     tem permissão de escrita no cache). Mesmo motivo do resto do app.
+ *  2. `loading="eager"`. O documento fica em `display:none` até a impressão, e
+ *     o navegador nunca busca imagem lazy dentro de subárvore oculta — com o
+ *     default, o orçamento sai com os quadros em branco.
+ *  3. O quadro cinza é o elemento externo, não um fallback condicional. Assim
+ *     a URL que morreu (produto excluído no ERP, CDN do Instagram expirada)
+ *     deixa um quadrado neutro no lugar do ícone de imagem quebrada, e a
+ *     linha da tabela mantém a mesma altura das outras.
+ */
+function Foto({ src, tamanho }: FotoProps) {
+  return (
+    <div
+      className={cn(
+        tamanho,
+        "flex shrink-0 items-center justify-center overflow-hidden rounded border border-neutral-300 bg-neutral-100",
+      )}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          // Decorativa: o nome do produto está no texto ao lado, e repetir o
+          // mesmo nome em alt só duplicaria a leitura.
+          alt=""
+          loading="eager"
+          decoding="sync"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <Package className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+      )}
+    </div>
+  )
+}
 
 function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
