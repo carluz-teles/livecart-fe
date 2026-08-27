@@ -44,9 +44,43 @@ export function OrderDetailProvider({ order, children }: ProviderProps) {
     )
   }, [order.id, updateOrder])
 
+  // `window.print()` congela a página no estado do clique: foto que ainda não
+  // chegou sai como quadro vazio no papel, e a lojista só descobre depois de
+  // gastar a folha. O documento fica em display:none até a impressão, então
+  // essas imagens não estão na tela para o navegador ter buscado sozinho.
+  //
+  // O teto de 2s é deliberado: foto de produto vem de origem arbitrária (mídia
+  // do Instagram, URL colada pelo lojista) e uma origem lenta ou morta não pode
+  // impedir a impressão — vencido o prazo, imprime com o que houver. Erro de
+  // carga resolve igual: uma URL quebrada não é motivo para segurar as outras.
   const print = useCallback(() => {
-    window.print()
-  }, [])
+    const fotos = [
+      ...order.items.map((item) => item.productImage),
+      ...(order.waitlist ?? []).map((item) => item.productImage),
+    ].filter((url): url is string => Boolean(url))
+
+    if (fotos.length === 0) {
+      window.print()
+      return
+    }
+
+    const carregadas = Promise.all(
+      fotos.map(
+        (url) =>
+          new Promise<void>((resolve) => {
+            const img = new window.Image()
+            img.onload = () => resolve()
+            img.onerror = () => resolve()
+            img.src = url
+          }),
+      ),
+    )
+    const prazo = new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 2000)
+    })
+
+    void Promise.race([carregadas, prazo]).then(() => window.print())
+  }, [order.items, order.waitlist])
 
   const requestRegenerate = useCallback(() => {
     setRegenerateConfirmOpen(true)
