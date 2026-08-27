@@ -23,24 +23,24 @@ export interface ComentarioSimuladoResult {
   falhas?: string[]
 }
 
-export interface EventoSimulado {
+export interface SessaoNoAr {
   eventId: string
   sessionId: string
-  title: string
+  mediaId: string
 }
 
 const base = (storeId: string) => `/stores/${storeId}/simulador/live`
 
 export const simulatorService = {
   /**
-   * Cria campanha + transmissão sem passar pelo Instagram.
+   * Abre uma transmissão num evento que JÁ EXISTE e a põe no ar.
    *
-   * A tela normal só cria transmissão escolhendo uma live ativa da conta do
-   * Instagram — e em staging não há conta com live. O serviço, porém, sempre
-   * aceitou sessão sem mídia; quem exigia era só o formulário.
+   * A campanha continua sendo criada no painel de verdade — o que não dá para
+   * fazer em staging é ENTRAR NO AR, porque a tela exige escolher uma live ativa
+   * do Instagram e a conta de teste não transmite.
    */
-  criarEvento: (storeId: string, titulo: string, token?: string | null) =>
-    apiClient.post<EventoSimulado>(`${base(storeId)}/evento`, { titulo }, token),
+  entrarNoAr: (storeId: string, eventId: string, mediaId: string, token?: string | null) =>
+    apiClient.post<SessaoNoAr>(`${base(storeId)}/sessao`, { eventId, mediaId }, token),
 
   listarSessoes: (storeId: string, token?: string | null) =>
     apiClient.get<SessaoSimulavel[]>(`${base(storeId)}/sessoes`, token),

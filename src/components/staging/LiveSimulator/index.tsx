@@ -24,9 +24,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
-import { CalendarPlus, FlaskConical, Loader2, Radio, Send, SquareDashedBottom, X } from "lucide-react"
+import { FlaskConical, Loader2, Radio, Send, SquareDashedBottom, X } from "lucide-react"
 
 import { useStoreId } from "@/hooks/useUser"
+import { useEvents } from "@/hooks/event/useEvents"
 import { cn } from "@/lib/utils"
 import {
   simulatorService,
@@ -72,6 +73,8 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
   const { getToken } = useAuth()
   const { storeId } = useStoreId()
 
+  const eventos = useEvents()
+  const [eventId, setEventId] = useState("")
   const [sessoes, setSessoes] = useState<SessaoSimulavel[]>([])
   const [carregando, setCarregando] = useState(true)
   const [sessionId, setSessionId] = useState("")
@@ -81,7 +84,6 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
   const [vezes, setVezes] = useState(1)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [ultimo, setUltimo] = useState<ComentarioSimuladoResult | null>(null)
-  const [tituloEvento, setTituloEvento] = useState("")
 
   useEffect(() => {
     if (!storeId) return
@@ -94,10 +96,9 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
         setSessoes(lista)
         const comMidia = lista.find((s) => s.midiasVivas.length > 0)
         if (comMidia) {
+          setEventId(comMidia.eventId)
           setSessionId(comMidia.sessionId)
           setMediaId(comMidia.midiasVivas[0])
-        } else if (lista.length > 0) {
-          setSessionId(lista[0].sessionId)
         }
       } catch {
         if (vivo) toast.error("Não consegui listar as sessões")
@@ -110,40 +111,31 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
     }
   }, [storeId, getToken])
 
-  const sessaoEscolhida = useMemo(
-    () => sessoes.find((s) => s.sessionId === sessionId),
-    [sessoes, sessionId],
+  const listaEventos = eventos.data?.data ?? []
+  // Sessões só do evento escolhido: a lista vem da loja inteira, e mostrar
+  // transmissão de outra campanha faria pendurar mídia no lugar errado.
+  const sessoesDoEvento = useMemo(
+    () => sessoes.filter((s) => s.eventId === eventId),
+    [sessoes, eventId],
   )
 
-  async function criarEvento() {
-    if (!storeId) return
-    setOcupado("evento")
-    try {
-      const token = await getToken()
-      const ev = await simulatorService.criarEvento(storeId, tituloEvento, token)
-      const lista = await simulatorService.listarSessoes(storeId, token)
-      setSessoes(lista)
-      setSessionId(ev.sessionId)
-      setMediaId("")
-      setTituloEvento("")
-      toast.success("Campanha criada", { description: ev.title })
-    } catch (e) {
-      toast.error("Não consegui criar a campanha", { description: String(e) })
-    } finally {
-      setOcupado(null)
-    }
-  }
+  useEffect(() => {
+    // Sem evento escolhido ainda, adota o primeiro da lista.
+    if (!eventId && listaEventos.length > 0) setEventId(listaEventos[0].id)
+  }, [eventId, listaEventos])
 
-  async function criarMidia() {
-    if (!storeId || !sessionId) return
-    setOcupado("midia")
+  async function entrarNoAr() {
+    if (!storeId || !eventId) return
+    setOcupado("noar")
     try {
       const token = await getToken()
-      const r = await simulatorService.criarMidia(storeId, sessionId, "", token)
+      const r = await simulatorService.entrarNoAr(storeId, eventId, "", token)
+      setSessionId(r.sessionId)
       setMediaId(r.mediaId)
-      toast.success("Mídia no ar", { description: r.mediaId })
+      setSessoes(await simulatorService.listarSessoes(storeId, token))
+      toast.success("No ar", { description: r.mediaId })
     } catch (e) {
-      toast.error("Não consegui criar a mídia", { description: String(e) })
+      toast.error("Não consegui entrar no ar", { description: String(e) })
     } finally {
       setOcupado(null)
     }
@@ -238,94 +230,79 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
         </header>
 
         <div className="flex-1 space-y-5 px-5 py-5">
-          {/* ── 0. A CAMPANHA ────────────────────────────────────────── */}
-          <Bloco numero="00" titulo="A campanha">
-            <p className="text-[10px] leading-relaxed text-[#8a9a68]">
-              A tela normal só cria transmissão escolhendo uma live ativa do
-              Instagram — que aqui não existe. Este botão cria a campanha e a
-              transmissão direto, sem mídia. A mídia entra no passo 01.
-            </p>
-            <div className="flex gap-2">
-              <input
-                value={tituloEvento}
-                onChange={(e) => setTituloEvento(e.target.value)}
-                placeholder="Live simulada (opcional)"
-                className={cn(entrada, "flex-1")}
-              />
-              <button
-                type="button"
-                onClick={criarEvento}
-                disabled={ocupado !== null}
-                className={botao("primario")}
-              >
-                {ocupado === "evento" ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <CalendarPlus className="h-3 w-3" />
-                )}
-                Criar
-              </button>
-            </div>
-          </Bloco>
-
-          {/* ── 1. A TRANSMISSÃO ─────────────────────────────────────── */}
+          {/* ── 1. O EVENTO E A TRANSMISSÃO ──────────────────────────── */}
           <Bloco numero="01" titulo="A transmissão">
-            {carregando ? (
+            <p className="text-[10px] leading-relaxed text-[#8a9a68]">
+              A campanha você cria no painel de verdade. O que não dá para fazer
+              em staging é <strong className="text-[#dfe8c4]">entrar no ar</strong> —
+              a tela exige escolher uma live ativa do Instagram, e a conta de
+              teste não transmite.
+            </p>
+
+            {eventos.isLoading ? (
               <p className="flex items-center gap-2 text-[11px] text-[#8a9a68]">
-                <Loader2 className="h-3 w-3 animate-spin" /> lendo sessões…
+                <Loader2 className="h-3 w-3 animate-spin" /> lendo campanhas…
               </p>
-            ) : sessoes.length === 0 ? (
+            ) : listaEventos.length === 0 ? (
               <p className="text-[11px] leading-relaxed text-[#c9a227]">
-                Nenhuma transmissão nesta loja — crie uma no passo 00 acima.
+                Nenhuma campanha nesta loja. Crie uma no painel primeiro.
               </p>
             ) : (
               <>
-                <Campo rotulo="Sessão">
+                <Campo rotulo="Campanha">
                   <select
-                    value={sessionId}
-                    onChange={(e) => setSessionId(e.target.value)}
+                    value={eventId}
+                    onChange={(e) => {
+                      setEventId(e.target.value)
+                      setSessionId("")
+                      setMediaId("")
+                    }}
                     className="w-full rounded border border-[#7c8b1a]/40 bg-[#141a08] px-2 py-1.5 text-[11px] text-[#dfe8c4] outline-none focus:border-[#c4f82a]"
                   >
-                    {sessoes.map((s) => (
-                      <option key={s.sessionId} value={s.sessionId}>
-                        {s.eventTitle || "sem título"} · {s.status}
-                        {s.midiasVivas.length > 0 ? " · no ar" : ""}
+                    {listaEventos.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title} · {ev.status}
                       </option>
                     ))}
                   </select>
                 </Campo>
 
-                {sessaoEscolhida && sessaoEscolhida.midiasVivas.length > 0 && !mediaId ? (
+                {!carregando && sessoesDoEvento.some((s) => s.midiasVivas.length > 0) && !mediaId ? (
                   <div className="rounded border border-[#7c8b1a]/30 bg-[#141a08] px-2.5 py-2">
                     <p className="text-[10px] uppercase tracking-wider text-[#8a9a68]">
-                      já no ar nesta sessão
+                      já no ar nesta campanha
                     </p>
-                    {sessaoEscolhida.midiasVivas.map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMediaId(m)}
-                        className="mt-1 block w-full truncate text-left text-[11px] text-[#c4f82a] hover:underline"
-                      >
-                        {m}
-                      </button>
-                    ))}
+                    {sessoesDoEvento
+                      .flatMap((s) => s.midiasVivas.map((m) => ({ s, m })))
+                      .map(({ s, m }) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setSessionId(s.sessionId)
+                            setMediaId(m)
+                          }}
+                          className="mt-1 block w-full truncate text-left text-[11px] text-[#c4f82a] hover:underline"
+                        >
+                          {m}
+                        </button>
+                      ))}
                   </div>
                 ) : null}
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={criarMidia}
-                    disabled={!sessionId || ocupado !== null}
+                    onClick={entrarNoAr}
+                    disabled={!eventId || ocupado !== null}
                     className={botao("primario")}
                   >
-                    {ocupado === "midia" ? (
+                    {ocupado === "noar" ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <Radio className="h-3 w-3" />
                     )}
-                    Entrar no ar
+                    Criar transmissão e entrar no ar
                   </button>
                   {noAr ? (
                     <button
