@@ -98,6 +98,29 @@ export interface ERPHealthCheckItem {
 // Wrapper bundles the per-item audit + a flag the backend uses to signal
 // that the underlying ERP doesn't expose the audit endpoints (in which
 // case the FE should hide the section silently rather than show "all OK").
+/**
+ * O que dá para afirmar sobre o módulo de Reserva de Estoque do Tiny.
+ *
+ * Nunca existe "desativado", e a ausência é deliberada: `GET /depositos` — o
+ * endpoint que traz `possuiReserva` — devolve 403 mesmo numa conta com o módulo
+ * ligado. A única evidência disponível é encontrar unidade reservada em algum
+ * produto, o que PROVA que o módulo está ativo mas nunca prova o contrário: uma
+ * loja com o módulo ativo e nada vendido também mostra tudo zerado.
+ */
+export type ERPReservaStatus = "confirmada" | "indeterminada" | "nao_verificada"
+
+export interface ERPReservaResponse {
+  status: ERPReservaStatus
+  /** Quantos produtos foram lidos no Tiny. */
+  sampled: number
+  /** Em quantos deles havia unidade reservada. */
+  withHold: number
+  /** Nome de um produto com reserva — a evidência, para o lojista reconhecer. */
+  example?: string
+  /** Por que não deu para verificar. */
+  reason?: string
+}
+
 export interface ERPHealthCheckResponse {
   supported: boolean
   checkedAt: string

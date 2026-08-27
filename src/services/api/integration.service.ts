@@ -1,5 +1,6 @@
 import { apiClient } from "./client"
 import type {
+  ERPReservaResponse,
   Integration,
   IntegrationListResponse,
   OAuthConnectResponse,
@@ -57,17 +58,15 @@ export const integrationService = {
       token,
     ),
 
-  // Escolhe QUAL saldo do ERP o LiveCart espelha: desligado usa o físico,
-  // ligado usa o disponível (físico menos o que o ERP já comprometeu).
-  updateERPStockSource: (
-    storeId: string,
-    id: string,
-    useAvailableStock: boolean,
-    token?: string | null,
-  ) =>
-    apiClient.patch<{ id: string; useAvailableStock: boolean }>(
-      `/stores/${storeId}/integrations/${id}/erp/stock-source`,
-      { useAvailableStock },
+  // O que dá para saber sobre o módulo de Reserva de Estoque do Tiny.
+  //
+  // Substituiu updateERPStockSource, que escolhia entre saldo físico e
+  // disponível. Deixou de ser escolha: o LiveCart lê SEMPRE o disponível, porque
+  // o físico conta peça que já tem dono. O que o lojista de fato escolhe — se a
+  // live segura a peça — é decidido na conta dele no Tiny, não aqui.
+  checkERPReserva: (storeId: string, id: string, token?: string | null) =>
+    apiClient.get<ERPReservaResponse>(
+      `/stores/${storeId}/integrations/${id}/erp/reserva`,
       token,
     ),
 
