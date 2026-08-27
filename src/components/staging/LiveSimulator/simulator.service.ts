@@ -23,9 +23,25 @@ export interface ComentarioSimuladoResult {
   falhas?: string[]
 }
 
+export interface EventoSimulado {
+  eventId: string
+  sessionId: string
+  title: string
+}
+
 const base = (storeId: string) => `/stores/${storeId}/simulador/live`
 
 export const simulatorService = {
+  /**
+   * Cria campanha + transmissão sem passar pelo Instagram.
+   *
+   * A tela normal só cria transmissão escolhendo uma live ativa da conta do
+   * Instagram — e em staging não há conta com live. O serviço, porém, sempre
+   * aceitou sessão sem mídia; quem exigia era só o formulário.
+   */
+  criarEvento: (storeId: string, titulo: string, token?: string | null) =>
+    apiClient.post<EventoSimulado>(`${base(storeId)}/evento`, { titulo }, token),
+
   listarSessoes: (storeId: string, token?: string | null) =>
     apiClient.get<SessaoSimulavel[]>(`${base(storeId)}/sessoes`, token),
 

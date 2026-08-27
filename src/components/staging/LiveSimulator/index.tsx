@@ -24,7 +24,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
-import { FlaskConical, Loader2, Radio, Send, SquareDashedBottom, X } from "lucide-react"
+import { CalendarPlus, FlaskConical, Loader2, Radio, Send, SquareDashedBottom, X } from "lucide-react"
 
 import { useStoreId } from "@/hooks/useUser"
 import { cn } from "@/lib/utils"
@@ -81,6 +81,7 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
   const [vezes, setVezes] = useState(1)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [ultimo, setUltimo] = useState<ComentarioSimuladoResult | null>(null)
+  const [tituloEvento, setTituloEvento] = useState("")
 
   useEffect(() => {
     if (!storeId) return
@@ -113,6 +114,25 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
     () => sessoes.find((s) => s.sessionId === sessionId),
     [sessoes, sessionId],
   )
+
+  async function criarEvento() {
+    if (!storeId) return
+    setOcupado("evento")
+    try {
+      const token = await getToken()
+      const ev = await simulatorService.criarEvento(storeId, tituloEvento, token)
+      const lista = await simulatorService.listarSessoes(storeId, token)
+      setSessoes(lista)
+      setSessionId(ev.sessionId)
+      setMediaId("")
+      setTituloEvento("")
+      toast.success("Campanha criada", { description: ev.title })
+    } catch (e) {
+      toast.error("Não consegui criar a campanha", { description: String(e) })
+    } finally {
+      setOcupado(null)
+    }
+  }
 
   async function criarMidia() {
     if (!storeId || !sessionId) return
@@ -218,6 +238,36 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
         </header>
 
         <div className="flex-1 space-y-5 px-5 py-5">
+          {/* ── 0. A CAMPANHA ────────────────────────────────────────── */}
+          <Bloco numero="00" titulo="A campanha">
+            <p className="text-[10px] leading-relaxed text-[#8a9a68]">
+              A tela normal só cria transmissão escolhendo uma live ativa do
+              Instagram — que aqui não existe. Este botão cria a campanha e a
+              transmissão direto, sem mídia. A mídia entra no passo 01.
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={tituloEvento}
+                onChange={(e) => setTituloEvento(e.target.value)}
+                placeholder="Live simulada (opcional)"
+                className={cn(entrada, "flex-1")}
+              />
+              <button
+                type="button"
+                onClick={criarEvento}
+                disabled={ocupado !== null}
+                className={botao("primario")}
+              >
+                {ocupado === "evento" ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CalendarPlus className="h-3 w-3" />
+                )}
+                Criar
+              </button>
+            </div>
+          </Bloco>
+
           {/* ── 1. A TRANSMISSÃO ─────────────────────────────────────── */}
           <Bloco numero="01" titulo="A transmissão">
             {carregando ? (
@@ -226,7 +276,7 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
               </p>
             ) : sessoes.length === 0 ? (
               <p className="text-[11px] leading-relaxed text-[#c9a227]">
-                Nenhuma sessão nesta loja. Crie um evento com sessão antes.
+                Nenhuma transmissão nesta loja — crie uma no passo 00 acima.
               </p>
             ) : (
               <>
