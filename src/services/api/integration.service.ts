@@ -1,6 +1,9 @@
 import { apiClient } from "./client"
 import type {
+  CartJoinLink,
   ERPReservaResponse,
+  JoinCandidate,
+  JoinOrdersResult,
   Integration,
   IntegrationListResponse,
   OAuthConnectResponse,
@@ -64,6 +67,32 @@ export const integrationService = {
   // disponível. Deixou de ser escolha: o LiveCart lê SEMPRE o disponível, porque
   // o físico conta peça que já tem dono. O que o lojista de fato escolhe — se a
   // live segura a peça — é decidido na conta dele no Tiny, não aqui.
+  // Os pedidos que podem ser juntados a este. Compradores diferentes NÃO
+  // aparecem na lista: juntar a compra de duas pessoas é possível, mas exige
+  // confirmação — e oferecê-la aqui faria o clique errado parecer normal.
+  listJoinCandidates: (storeId: string, cartId: string, token?: string | null) =>
+    apiClient.get<JoinCandidate[]>(
+      `/stores/${storeId}/integrations/erp/join-candidates/${cartId}`,
+      token,
+    ),
+
+  getCartJoinLink: (storeId: string, cartId: string, token?: string | null) =>
+    apiClient.get<CartJoinLink>(
+      `/stores/${storeId}/integrations/erp/join-link/${cartId}`,
+      token,
+    ),
+
+  joinOrders: (
+    storeId: string,
+    body: { cartAId: string; cartBId: string; confirmDifferentBuyers?: boolean },
+    token?: string | null,
+  ) =>
+    apiClient.post<JoinOrdersResult>(
+      `/stores/${storeId}/integrations/erp/join-orders`,
+      body,
+      token,
+    ),
+
   checkERPReserva: (storeId: string, id: string, token?: string | null) =>
     apiClient.get<ERPReservaResponse>(
       `/stores/${storeId}/integrations/${id}/erp/reserva`,

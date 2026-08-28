@@ -107,6 +107,43 @@ export interface ERPHealthCheckItem {
  * produto, o que PROVA que o módulo está ativo mas nunca prova o contrário: uma
  * loja com o módulo ativo e nada vendido também mostra tudo zerado.
  */
+/**
+ * Juntar pedidos acontece só no ERP.
+ *
+ * No Tiny vira UM pedido com o conteúdo dos dois; aqui os pedidos continuam
+ * separados, cada um com o seu histórico e o seu pagamento. Um deles é o
+ * ANFITRIÃO e é dele o pedido no ERP.
+ */
+export interface JoinCandidate {
+  cartId: string
+  shortId: number
+  eventTitle: string
+  createdAt: string
+  status: string
+  paymentStatus?: string
+  erpOrderNumber?: string
+  totalCents: number
+  itemCount: number
+}
+
+export interface CartJoinLink {
+  /** Preenchidos quando ESTE pedido foi juntado a outro. */
+  hostCartId?: string
+  hostShortId?: string
+  /** Preenchidos quando outros foram juntados A ESTE. */
+  joinedCartIds?: string[]
+  joinedShortIds?: string[]
+  joinedAt?: string
+}
+
+export interface JoinOrdersResult {
+  hostCartId: string
+  joinedCartId: string
+  externalOrderId?: string
+  orderReleased?: string
+  outstandingCents: number
+}
+
 export type ERPReservaStatus = "confirmada" | "indeterminada" | "nao_verificada"
 
 export interface ERPReservaResponse {
