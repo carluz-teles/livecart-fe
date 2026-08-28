@@ -127,6 +127,13 @@ export interface JoinCandidate {
 }
 
 export interface CartJoinLink {
+  /** Se ESTE pedido pode entrar numa junção. */
+  canJoin: boolean
+  /**
+   * Por que não pode:
+   * cancelado_ou_vencido | estornado | faturado | pedido_cancelado_no_erp | ja_juntado
+   */
+  cannotJoinReason?: string
   /** Preenchidos quando ESTE pedido foi juntado a outro. */
   hostCartId?: string
   hostShortId?: string

@@ -43,6 +43,17 @@ export function OrderDetailJoin() {
   const ehJuntado = Boolean(vinculo?.hostCartId)
   const ehAnfitriao = Boolean(vinculo?.joinedShortIds?.length)
 
+  // Enquanto carrega, nada — piscar um botão que pode sumir é pior que esperar.
+  if (link.isLoading || !vinculo) return null
+
+  // Este pedido não pode entrar numa junção. Some com a seção em vez de
+  // oferecer um botão que leva a uma recusa: em staging, em 28/08, um carrinho
+  // vencido mostrou "Juntar", o lojista escolheu o outro pedido, confirmou, e só
+  // então levou o erro. O botão prometia o que a regra não ia entregar.
+  if (!vinculo.canJoin && !ehJuntado) {
+    return <ImpedimentoDeJuncao motivo={vinculo.cannotJoinReason} />
+  }
+
   // Pedido já juntado a outro: só informa, e aponta para o dono do pedido.
   if (ehJuntado) {
     return (
@@ -87,6 +98,38 @@ export function OrderDetailJoin() {
         <JoinDialog cartId={cartId} shortId={ctx.state.order.shortId} onClose={() => setAberto(false)} />
       ) : null}
     </>
+  )
+}
+
+/**
+ * Por que este pedido não pode ser juntado.
+ *
+ * Só aparece quando há algo a explicar — um pedido normal não mostra nada. Dizer
+ * o motivo em vez de só esconder o botão evita a pergunta "e por que não tem a
+ * opção aqui?", que é a que o lojista faria olhando dois pedidos parecidos com
+ * comportamentos diferentes.
+ */
+function ImpedimentoDeJuncao({ motivo }: { motivo?: string }) {
+  const texto: Record<string, string> = {
+    cancelado_ou_vencido:
+      "Este pedido está cancelado ou venceu — não há venda viva a juntar.",
+    estornado: "Este pedido foi estornado; o dinheiro já voltou.",
+    faturado:
+      "A nota deste pedido já foi emitida. Somar item nele seria emitir nota errada.",
+    pedido_cancelado_no_erp: "O pedido foi cancelado no Tiny.",
+    ja_juntado: "Este pedido já faz parte de outra junção.",
+  }
+  const msg = motivo ? texto[motivo] : undefined
+  if (!msg) return null
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/40 px-3.5 py-3">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <Link2 className="h-3.5 w-3.5" />
+        Não dá para juntar
+      </p>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{msg}</p>
+    </div>
   )
 }
 
