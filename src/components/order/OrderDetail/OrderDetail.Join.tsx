@@ -194,6 +194,11 @@ function JoinDialog({
               junção. Pedido faturado não pode receber item — somar nele seria emitir
               nota errada.
             </p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              Se este pedido já tem pagamento, os outros pagos também ficam de fora:
+              juntar cancela um dos dois no Tiny, e cancelar pedido pago é estorno.
+              Nesse caso despache os dois juntos, sem juntar os pedidos.
+            </p>
           </div>
         ) : (
           <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
