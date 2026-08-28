@@ -10,11 +10,17 @@ import { formatAttemptCount, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
 
-// Surfaces a paid cart whose post-payment Tiny order creation failed. The
-// stock stays held against the cart on the backend (re-reserved on failure),
-// so the merchant has a true "retry" instead of having to figure out
-// reconciliation. Hidden in the happy path — only renders when status is
-// "failed".
+// O pedido pago cuja APROVAÇÃO no Tiny falhou.
+//
+// O texto mudou junto com o modelo. Antes o pedido só nascia no pagamento, e
+// falhar aqui significava "a venda não chegou ao ERP" — daí "não foi enviado".
+// Agora o pedido nasce no primeiro comentário e já está lá desde a live; o que
+// pode falhar depois do pagamento é a APROVAÇÃO e a gravação das parcelas.
+//
+// Dizer "não foi enviado" mandaria o lojista procurar no Tiny um pedido que
+// está bem na frente dele, em situação Aberta — e o faria criar um duplicado à
+// mão. A ação continua sendo a mesma, e continua necessária: são os dois pontos
+// que ainda marcam 'failed' (ver MarkFinalisationFailed).
 export function OrderDetailERPRetryBanner() {
   const ctx = use(OrderDetailContext)
   const retry = useRetryERPFinalisation()
@@ -31,10 +37,10 @@ export function OrderDetailERPRetryBanner() {
       {
         onSuccess: (refreshed) => {
           if (refreshed.erpFinalisation?.status === "done") {
-            toast.success("Pedido enviado para o ERP com sucesso")
+            toast.success("Pedido aprovado no ERP")
           } else if (refreshed.erpFinalisation?.status === "failed") {
             toast.error(
-              "O ERP rejeitou o pedido novamente. Confira a mensagem e contate o suporte se persistir.",
+              "O ERP recusou de novo. Confira a mensagem e contate o suporte se persistir.",
             )
           }
         },
@@ -60,12 +66,13 @@ export function OrderDetailERPRetryBanner() {
         />
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-sm font-semibold text-destructive">
-            Pedido pago, mas não foi enviado para o ERP
+            Pedido pago, mas não foi aprovado no ERP
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            O estoque continua reservado para esse pedido no ERP — nenhuma
-            unidade foi liberada. Tente reenviar abaixo. Se o erro persistir
-            após algumas tentativas, contate o suporte.
+            O pedido existe no Tiny e continua segurando o estoque — nenhuma
+            unidade foi liberada. O que faltou foi aprová-lo e gravar o
+            pagamento. Tente de novo abaixo; se o erro persistir, contate o
+            suporte.
           </p>
         </div>
       </div>
