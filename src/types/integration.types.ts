@@ -446,3 +446,31 @@ export interface WhatsAppRecoveryStats {
   cartsRecovered: number
   revenueRecoveredCents: number
 }
+
+/** Um carrinho na passada da drenagem. */
+export interface DrainOutcome {
+  cartId: string
+  units: number
+  orderId?: string
+  reversed: number
+  remaining: number
+  skipped?: string
+  error?: string
+}
+
+/**
+ * Relatorio de uma passada da drenagem.
+ *
+ * `carts` e `units` descrevem o trabalho TOTAL que ainda falta, nao o desta
+ * passada — e por isso servem tanto de ensaio quanto de barra de progresso.
+ */
+export interface DrainReport {
+  dryRun: boolean
+  carts: number
+  units: number
+  ordersCreated: number
+  rowsReversed: number
+  failed: number
+  tookSeconds: number
+  outcomes?: DrainOutcome[]
+}

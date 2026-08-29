@@ -34,3 +34,4 @@ export {
   whatsappKeys,
   whatsappRecoveryKeys,
 } from "./useWhatsApp"
+export * from "./useDrenagem"
