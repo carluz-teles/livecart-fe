@@ -472,5 +472,9 @@ export interface DrainReport {
   rowsReversed: number
   failed: number
   tookSeconds: number
+  /** Parou pelo orçamento de tempo: há mais para fazer. */
+  stoppedOnTime?: boolean
+  /** Outra passada estava em curso; nada foi feito nesta. */
+  alreadyRunning?: boolean
   outcomes?: DrainOutcome[]
 }

@@ -56,8 +56,17 @@ export function useDrenar() {
   })
 }
 
-/** O tamanho do lote. Medido: ~16s por carrinho, então 5 dá ~80s por requisição. */
-const CARRINHOS_POR_LOTE = 5
+/**
+ * O teto de cada passada é de TEMPO, não de carrinhos.
+ *
+ * O custo de um carrinho varia demais para um número fixo servir: no ensaio
+ * eram 16 segundos, e na cantodaart — 150 produtos disputando a mesma cota e o
+ * Tiny devolvendo 429 — um lote de 5 passou de sete minutos e nenhum navegador
+ * esperou. O servidor corta em 45 segundos e devolve o que fez; o limite por
+ * carrinhos fica alto só como rede de segurança.
+ */
+const SEGUNDOS_POR_LOTE = 45
+const CARRINHOS_POR_LOTE = 25
 
 export interface ProgressoDrenagem {
   rodando: boolean
@@ -127,8 +136,18 @@ export function useDrenarTudo() {
       try {
         const token = await getToken()
         const r = await integrationService.drainLegacyReservations(
-          storeId!, { dryRun: false, limit: CARRINHOS_POR_LOTE }, token,
+          storeId!,
+          { dryRun: false, limit: CARRINHOS_POR_LOTE, maxSeconds: SEGUNDOS_POR_LOTE },
+          token,
         )
+        if (r.alreadyRunning) {
+          // Outra aba está drenando. Encostar aqui só desperdiçaria cota.
+          setProgresso((p) => ({
+            ...p, rodando: false,
+            erro: "já há uma migração em andamento — provavelmente em outra aba",
+          }))
+          break
+        }
         // `carts` na resposta é o pendente ANTES desta passada — o backend o
         // calcula percorrendo a lista inteira antes de aplicar o limite. Lê-lo
         // como "quanto falta" deixaria a barra parada e o laço girando: o
