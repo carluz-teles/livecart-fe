@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { useDrenagemPendente, useDrenar } from "@/hooks/integration"
+import { useDrenagemPendente, useDrenar, useDrenarTudo } from "@/hooks/integration"
 import type { DrainReport } from "@/types"
 
 /**
@@ -32,6 +32,7 @@ import type { DrainReport } from "@/types"
 export function Drenagem() {
   const pendente = useDrenagemPendente()
   const drenar = useDrenar()
+  const { progresso, rodar, parar } = useDrenarTudo()
   const [confirmando, setConfirmando] = useState<number | null>(null)
   const [ultimo, setUltimo] = useState<DrainReport | null>(null)
 
@@ -104,37 +105,75 @@ export function Drenagem() {
             </p>
           )}
 
+          {progresso.rodando && (
+            <div className="mt-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-xs font-medium text-foreground">
+                  Migrando {progresso.feitos} de {progresso.total} — lote {progresso.lote}
+                </p>
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  ~{Math.max(1, Math.ceil(((progresso.total - progresso.feitos) * 16) / 60))} min
+                </p>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-amber-200/60 dark:bg-amber-900/40">
+                <div
+                  className="h-full rounded-full bg-amber-600 transition-[width] duration-500 dark:bg-amber-500"
+                  style={{
+                    width: `${progresso.total ? (progresso.feitos / progresso.total) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                Cada lote leva cerca de um minuto e meio — o teto da conta no Tiny é
+                de 30 escritas por minuto. Pode parar entre lotes: a próxima passada
+                continua de onde esta ficou.
+              </p>
+            </div>
+          )}
+
+          {progresso.erro && !progresso.rodando && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-destructive">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {progresso.erro}
+            </p>
+          )}
+
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={rodando}
-              onClick={() => setConfirmando(5)}
-            >
-              {rodando && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              Migrar 5
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={rodando}
-              onClick={() => setConfirmando(20)}
-            >
-              Migrar 20
-            </Button>
-            <button
-              type="button"
-              disabled={pendente.isFetching}
-              onClick={() => void pendente.refetch()}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
-            >
-              recontar
-            </button>
+            {progresso.rodando ? (
+              <Button size="sm" variant="outline" onClick={parar}>
+                Parar depois deste lote
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" disabled={rodando} onClick={() => setConfirmando(-1)}>
+                  Migrar tudo ({falta.carts})
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={rodando}
+                  onClick={() => setConfirmando(5)}
+                >
+                  {rodando && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  Só 5, para conferir
+                </Button>
+                <button
+                  type="button"
+                  disabled={pendente.isFetching}
+                  onClick={() => void pendente.refetch()}
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  recontar
+                </button>
+              </>
+            )}
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Comece por 5 e confira no Tiny antes de soltar o resto. O teto da conta
-            é de 30 escritas por minuto, então lotes maiores demoram, não falham.
-          </p>
+          {!progresso.rodando && (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Comece por 5 e confira no Tiny antes de soltar o resto: o saldo tem que
+              subir e o disponível tem que ficar igual.
+            </p>
+          )}
         </div>
       </div>
 
@@ -145,7 +184,9 @@ export function Drenagem() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Migrar {confirmando} {confirmando === 1 ? "pedido" : "pedidos"} agora?
+              {confirmando === -1
+                ? `Migrar os ${falta.carts} pedidos agora?`
+                : `Migrar ${confirmando} ${confirmando === 1 ? "pedido" : "pedidos"} agora?`}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
@@ -168,10 +209,14 @@ export function Drenagem() {
               onClick={() => {
                 const n = confirmando ?? 5
                 setConfirmando(null)
+                if (n === -1) {
+                  void rodar()
+                  return
+                }
                 drenar.mutate(n, { onSuccess: (r) => setUltimo(r) })
               }}
             >
-              Migrar {confirmando}
+              {confirmando === -1 ? "Migrar tudo" : `Migrar ${confirmando}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
