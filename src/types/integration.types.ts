@@ -98,6 +98,73 @@ export interface ERPHealthCheckItem {
 // Wrapper bundles the per-item audit + a flag the backend uses to signal
 // that the underlying ERP doesn't expose the audit endpoints (in which
 // case the FE should hide the section silently rather than show "all OK").
+/**
+ * O que dá para afirmar sobre o módulo de Reserva de Estoque do Tiny.
+ *
+ * Nunca existe "desativado", e a ausência é deliberada: `GET /depositos` — o
+ * endpoint que traz `possuiReserva` — devolve 403 mesmo numa conta com o módulo
+ * ligado. A única evidência disponível é encontrar unidade reservada em algum
+ * produto, o que PROVA que o módulo está ativo mas nunca prova o contrário: uma
+ * loja com o módulo ativo e nada vendido também mostra tudo zerado.
+ */
+/**
+ * Juntar pedidos acontece só no ERP.
+ *
+ * No Tiny vira UM pedido com o conteúdo dos dois; aqui os pedidos continuam
+ * separados, cada um com o seu histórico e o seu pagamento. Um deles é o
+ * ANFITRIÃO e é dele o pedido no ERP.
+ */
+export interface JoinCandidate {
+  cartId: string
+  shortId: number
+  eventTitle: string
+  createdAt: string
+  status: string
+  paymentStatus?: string
+  erpOrderNumber?: string
+  totalCents: number
+  itemCount: number
+}
+
+export interface CartJoinLink {
+  /** Se ESTE pedido pode entrar numa junção. */
+  canJoin: boolean
+  /**
+   * Por que não pode:
+   * cancelado_ou_vencido | estornado | faturado | pedido_cancelado_no_erp | ja_juntado
+   */
+  cannotJoinReason?: string
+  /** Preenchidos quando ESTE pedido foi juntado a outro. */
+  hostCartId?: string
+  hostShortId?: string
+  /** Preenchidos quando outros foram juntados A ESTE. */
+  joinedCartIds?: string[]
+  joinedShortIds?: string[]
+  joinedAt?: string
+}
+
+export interface JoinOrdersResult {
+  hostCartId: string
+  joinedCartId: string
+  externalOrderId?: string
+  orderReleased?: string
+  outstandingCents: number
+}
+
+export type ERPReservaStatus = "confirmada" | "indeterminada" | "nao_verificada"
+
+export interface ERPReservaResponse {
+  status: ERPReservaStatus
+  /** Quantos produtos foram lidos no Tiny. */
+  sampled: number
+  /** Em quantos deles havia unidade reservada. */
+  withHold: number
+  /** Nome de um produto com reserva — a evidência, para o lojista reconhecer. */
+  example?: string
+  /** Por que não deu para verificar. */
+  reason?: string
+}
+
 export interface ERPHealthCheckResponse {
   supported: boolean
   checkedAt: string
@@ -378,4 +445,32 @@ export interface WhatsAppRecoveryStats {
   messagesSent: number
   cartsRecovered: number
   revenueRecoveredCents: number
+}
+
+/** Um carrinho na passada da drenagem. */
+export interface DrainOutcome {
+  cartId: string
+  units: number
+  orderId?: string
+  reversed: number
+  remaining: number
+  skipped?: string
+  error?: string
+}
+
+/**
+ * Relatorio de uma passada da drenagem.
+ *
+ * `carts` e `units` descrevem o trabalho TOTAL que ainda falta, nao o desta
+ * passada — e por isso servem tanto de ensaio quanto de barra de progresso.
+ */
+export interface DrainReport {
+  dryRun: boolean
+  carts: number
+  units: number
+  ordersCreated: number
+  rowsReversed: number
+  failed: number
+  tookSeconds: number
+  outcomes?: DrainOutcome[]
 }

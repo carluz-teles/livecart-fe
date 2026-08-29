@@ -14,6 +14,7 @@ import type { OrderDetail } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 import { OrderDetailCustomer } from "./OrderDetail.Customer"
 import { OrderDetailERPRetryBanner } from "./OrderDetail.ERPRetryBanner"
+import { OrderDetailJoin } from "./OrderDetail.Join"
 import { OrderDetailStatusBanner } from "./OrderDetail.StatusBanner"
 import { OrderDetailHistory } from "./OrderDetail.History"
 import { OrderDetailItems } from "./OrderDetail.Items"
@@ -55,6 +56,12 @@ export function OrderDetailBody() {
       {/* Estado terminal (cancelado/expirado) ou cancelamento revertido pelo
           pagamento: explica a consequência antes de o lojista ler os cards. */}
       <OrderDetailStatusBanner />
+
+      {/* Juntar pedidos acontece no ERP: um pedido só lá, com o conteúdo dos
+          dois. Aqui eles seguem separados, e esta seção é o que torna o vínculo
+          visível — sem ela o lojista trataria um dos dois como pedido solto e
+          mandaria frete duplicado. */}
+      <OrderDetailJoin />
 
       {/* Mobile stacks the rail above the items because those cards carry the
           highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").

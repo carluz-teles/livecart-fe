@@ -8,11 +8,25 @@ const nextConfig = {
   // Only use standalone output in production
   ...(process.env.NODE_ENV === "production" && { output: "standalone" }),
   // Ambiente de DEPLOY (production/staging/development), distinto do NODE_ENV
-  // (que é "production" em qualquer build). Vem do Railway; fora dele,
-  // development. Inlined no bundle do client — usado p/ regras que só valem
-  // em produção (ex.: StoreSetupGate).
+  // (que é "production" em qualquer build). Inlined no bundle do client — é o
+  // que decide regras que só valem num ambiente (StoreSetupGate em produção, o
+  // simulador de live em staging).
+  //
+  // A ordem importa, e ela nasceu de um bug: este bloco lia SÓ
+  // RAILWAY_ENVIRONMENT, que não existe dentro do build Docker — e como o bloco
+  // `env` do next.config SOBRESCREVE a variável de ambiente de mesmo nome, ele
+  // apagava o NEXT_PUBLIC_APP_ENV que o Railway já entregava. O bundle saía com
+  // "development" em todo ambiente, inclusive produção, e o StoreSetupGate
+  // nunca chegou a valer lá.
+  //
+  // Agora a variável explícita vem primeiro e o nome do ambiente do Railway é
+  // só o plano B. As duas chegam ao build pelos ARG do Dockerfile.
   env: {
-    NEXT_PUBLIC_APP_ENV: process.env.RAILWAY_ENVIRONMENT ?? "development",
+    NEXT_PUBLIC_APP_ENV:
+      process.env.NEXT_PUBLIC_APP_ENV ??
+      process.env.RAILWAY_ENVIRONMENT_NAME ??
+      process.env.RAILWAY_ENVIRONMENT ??
+      "development",
   },
   // Pin the workspace root so Next.js doesn't get confused by other lockfiles
   // up the tree (e.g. ~/pnpm-lock.yaml).

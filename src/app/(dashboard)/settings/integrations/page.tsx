@@ -71,7 +71,8 @@ import { PagarmeConnectWizard } from "@/components/integration/PagarmeConnectWiz
 import { WhatsAppConnectDialog } from "@/components/integration/WhatsAppConnectDialog"
 import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProbe"
 import { TinyHealthCheckDialog } from "@/components/integration/TinyHealthCheck/TinyHealthCheckDialog"
-import { ERPStockSource } from "@/components/integration/ERPStockSource"
+import { ERPReserva } from "@/components/integration/ERPReserva"
+import { Drenagem } from "@/components/integration/Drenagem"
 import {
   useIntegrations,
   integrationKeys,
@@ -892,13 +893,9 @@ function IntegrationsContent() {
                                 </div>
                                 {provider.id === "tiny" && connected.status === "active" ? (
                                   <>
-                                    <ERPStockSource
-                                      integrationId={connected.id}
-                                      useAvailableStock={
-                                        connected.metadata?.use_available_stock === true
-                                      }
-                                    />
                                     <TinyHealthCheckDialog integrationId={connected.id} />
+                                    <ERPReserva integrationId={connected.id} />
+                                    <Drenagem />
                                   </>
                                 ) : null}
                               </>
