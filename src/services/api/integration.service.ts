@@ -98,7 +98,7 @@ export const integrationService = {
   // de venda. `dryRun` e o padrao do backend — omitir NAO escreve.
   drainLegacyReservations: (
     storeId: string,
-    body: { dryRun: boolean; limit?: number },
+    body: { dryRun: boolean; limit?: number; maxSeconds?: number },
     token?: string | null,
   ) =>
     apiClient.post<DrainReport>(
