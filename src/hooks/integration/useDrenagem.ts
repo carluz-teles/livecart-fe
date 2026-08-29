@@ -129,10 +129,21 @@ export function useDrenarTudo() {
         const r = await integrationService.drainLegacyReservations(
           storeId!, { dryRun: false, limit: CARRINHOS_POR_LOTE }, token,
         )
-        restam = r.carts
+        // `carts` na resposta é o pendente ANTES desta passada — o backend o
+        // calcula percorrendo a lista inteira antes de aplicar o limite. Lê-lo
+        // como "quanto falta" deixaria a barra parada e o laço girando: o
+        // número não anda nunca. Quem falta é o ensaio, relido agora; quem
+        // andou é `outcomes`, que tem uma entrada por carrinho PROCESSADO.
+        const feitosNoLote = r.outcomes?.length ?? 0
+        restam = await quantoFalta()
         setProgresso({
           rodando: true, total, feitos: total - restam, lote, erro: null, ultimo: r,
         })
+        if (feitosNoLote === 0 && r.failed === 0) {
+          // Nada processado e nada falhou: a lista acabou, ou algo a filtrou
+          // toda. Parar é melhor do que girar.
+          break
+        }
         if (r.failed > 0) {
           // Cada falha é um carrinho que ficou com a reserva antiga intacta.
           // Parar aqui é a escolha certa: recuperável enquanto forem poucas.
