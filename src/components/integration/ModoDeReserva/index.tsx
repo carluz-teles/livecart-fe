@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useDefinirModoDeReserva, useModoDeReserva } from "@/hooks/integration"
+import { useModoDeReserva, useTrocaDeModoDeReserva } from "@/hooks/integration"
 import type { ModoDeReserva as Modo } from "@/types"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils"
 export function ModoDeReserva({ integrationId }: { integrationId: string }) {
   const [open, setOpen] = useState(false)
   const { data, isLoading } = useModoDeReserva(integrationId, { enabled: open })
-  const definir = useDefinirModoDeReserva(integrationId)
+  const troca = useTrocaDeModoDeReserva(integrationId, data)
 
   const divergente = data && data.modo !== data.modoEfetivo
 
@@ -75,8 +75,8 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 descricao="O pedido só vai para o ERP quando o pagamento entra. Nunca escrevemos no seu estoque."
                 selecionado={data.modo === "local"}
                 efetivo={data.modoEfetivo === "local"}
-                onSelect={() => definir.mutate("local")}
-                salvando={definir.isPending}
+                onSelect={() => troca.pedir("local")}
+                salvando={troca.salvando}
               />
 
               <OpcaoDeModo
@@ -86,8 +86,8 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 descricao="O pedido nasce no ERP no primeiro comentário e o próprio ERP tira a peça do saldo na hora."
                 selecionado={data.modo === "nativa"}
                 efetivo={data.modoEfetivo === "nativa"}
-                onSelect={() => definir.mutate("nativa")}
-                salvando={definir.isPending}
+                onSelect={() => troca.pedir("nativa")}
+                salvando={troca.salvando}
                 indisponivel={!data.capacidadeConfirmada}
               />
 
@@ -112,6 +112,41 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 </p>
                 <p className="text-sm text-muted-foreground">{data.preco}</p>
               </div>
+
+              {/* Sair do modo em que o ERP reserva tira de cena quem hoje segura
+                  a peça durante a live. É a única direção que confirma. */}
+              {troca.aConfirmar ? (
+                <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium text-destructive">
+                        O ERP vai parar de reservar durante a live
+                      </p>
+                      <p className="text-muted-foreground">
+                        Hoje o pedido nasce no seu ERP no primeiro comentário e é
+                        ele quem tira a peça do saldo. Se mudar, o pedido só vai
+                        para o ERP quando o pagamento entrar — e nesse intervalo
+                        quem segura a peça é só o LiveCart. Outro canal de venda
+                        continuará vendo a peça disponível.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={troca.cancelar}>
+                      Manter como está
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={troca.confirmar}
+                      disabled={troca.salvando}
+                    >
+                      Mudar mesmo assim
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
         </DialogContent>

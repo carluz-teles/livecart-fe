@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
@@ -80,4 +81,47 @@ export function useDefinirModoDeReserva(integrationId: string | undefined) {
       toast.error("Não consegui salvar o modo de reserva. Tente de novo.")
     },
   })
+}
+
+/**
+ * A TROCA de modo, com a confirmação que ela passou a exigir.
+ *
+ * Antes o modo era só um retrato: nada no fluxo do pedido o lia. Agora ele
+ * decide QUANDO o pedido nasce no ERP, e sair do modo em que o ERP reserva tira
+ * de cena quem hoje segura a peça durante a live. Um clique sem confirmação
+ * numa escolha desse tamanho é a diferença entre configurar e descobrir depois.
+ *
+ * Confirma só na direção que TIRA a reserva do ERP. O caminho inverso — ligar a
+ * reserva nativa — não precisa de aviso: ele adiciona uma trava, não remove.
+ */
+export function useTrocaDeModoDeReserva(
+  integrationId: string | undefined,
+  retrato: ModoDeReservaResponse | undefined
+) {
+  const definir = useDefinirModoDeReserva(integrationId)
+  const [aConfirmar, setAConfirmar] = useState<ModoDeReserva | null>(null)
+
+  const pedir = (modo: ModoDeReserva) => {
+    if (modo === retrato?.modo) return // já é o escolhido
+    const perdeReservaDoERP = modo === "local" && retrato?.modoEfetivo === "nativa"
+    if (perdeReservaDoERP) {
+      setAConfirmar(modo)
+      return
+    }
+    definir.mutate(modo)
+  }
+
+  const confirmar = () => {
+    if (!aConfirmar) return
+    definir.mutate(aConfirmar)
+    setAConfirmar(null)
+  }
+
+  return {
+    pedir,
+    confirmar,
+    cancelar: () => setAConfirmar(null),
+    aConfirmar,
+    salvando: definir.isPending,
+  }
 }

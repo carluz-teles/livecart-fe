@@ -18,7 +18,12 @@ export { useInstagramLives, instagramLivesKeys } from "./useInstagramLives"
 export { useProviderURLs, providerURLsKeys } from "./useProviderURLs"
 export { useERPHealthCheck, erpHealthCheckKeys } from "./useERPHealthCheck"
 export { useERPReserva, erpReservaKeys } from "./useERPReserva"
-export { useModoDeReserva, useDefinirModoDeReserva, modoDeReservaKeys } from "./useModoDeReserva"
+export {
+  useModoDeReserva,
+  useDefinirModoDeReserva,
+  useTrocaDeModoDeReserva,
+  modoDeReservaKeys,
+} from "./useModoDeReserva"
 export { useJoinCandidates, useCartJoinLink, useJoinOrders, joinKeys } from "./useJoinOrders"
 export { usePagarmeWebhookStatus, pagarmeWebhookStatusKeys } from "./usePagarmeWebhookStatus"
 export { useTestPagarmeWebhook } from "./useTestPagarmeWebhook"
