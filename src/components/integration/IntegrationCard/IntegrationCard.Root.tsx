@@ -28,6 +28,11 @@ const brandStyles: Record<IntegrationProvider, { gradient: string; ring: string;
     ring: "ring-[#FF6B35]/30",
     glow: "group-hover:shadow-[#FF6B35]/20",
   },
+  bling: {
+    gradient: "from-[#00B14F] to-[#4CD787]",
+    ring: "ring-[#00B14F]/30",
+    glow: "group-hover:shadow-[#00B14F]/20",
+  },
   twilio_whatsapp: {
     gradient: "from-[#25D366] to-[#128C7E]",
     ring: "ring-[#25D366]/30",

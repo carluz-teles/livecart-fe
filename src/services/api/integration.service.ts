@@ -2,6 +2,8 @@ import { apiClient } from "./client"
 import type {
   CartJoinLink,
   ERPReservaResponse,
+  ModoDeReserva,
+  ModoDeReservaResponse,
   JoinCandidate,
   JoinOrdersResult,
   Integration,
@@ -110,6 +112,26 @@ export const integrationService = {
   checkERPReserva: (storeId: string, id: string, token?: string | null) =>
     apiClient.get<ERPReservaResponse>(
       `/stores/${storeId}/integrations/${id}/erp/reserva`,
+      token,
+    ),
+
+  // Modo de reserva de estoque: quem segura a peça entre o comentário e o
+  // pagamento — o ERP (nativa) ou o contador do LiveCart (local).
+  getModoDeReserva: (storeId: string, id: string, token?: string | null) =>
+    apiClient.get<ModoDeReservaResponse>(
+      `/stores/${storeId}/integrations/${id}/erp/modo-reserva`,
+      token,
+    ),
+
+  setModoDeReserva: (
+    storeId: string,
+    id: string,
+    modo: ModoDeReserva,
+    token?: string | null,
+  ) =>
+    apiClient.put<ModoDeReservaResponse>(
+      `/stores/${storeId}/integrations/${id}/erp/modo-reserva`,
+      { modo },
       token,
     ),
 

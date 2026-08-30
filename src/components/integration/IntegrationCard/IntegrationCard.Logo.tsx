@@ -14,6 +14,7 @@ const brandColors: Record<IntegrationProvider, { bg: string; text: string }> = {
   mercado_pago: { bg: "bg-[#009EE3]/10", text: "text-[#009EE3]" },
   pagarme: { bg: "bg-[#65A300]/10", text: "text-[#65A300]" },
   tiny: { bg: "bg-[#FF6B35]/10", text: "text-[#FF6B35]" },
+  bling: { bg: "bg-[#00B14F]/10", text: "text-[#00B14F]" },
   instagram: { bg: "bg-gradient-to-br from-[#833AB4]/10 via-[#E1306C]/10 to-[#F77737]/10", text: "text-[#E1306C]" },
   melhor_envio: { bg: "bg-[#0FBF61]/10", text: "text-[#0FBF61]" },
   smartenvios: { bg: "bg-[#1D4ED8]/10", text: "text-[#1D4ED8]" },
@@ -58,6 +59,15 @@ function TinyLogo({ className }: { className?: string }) {
   )
 }
 
+function BlingLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2 3 6.5v11L12 22l9-4.5v-11L12 2zm0 2.3 6.6 3.3L12 10.9 5.4 7.6 12 4.3zM5 9.3l6 3v7.4l-6-3V9.3zm8 10.4v-7.4l6-3v7.4l-6 3z" />
+      <path d="m10.7 15.4-1.8-1.8 1-1 .8.8 2.4-2.4 1 1-3.4 3.4z" />
+    </svg>
+  )
+}
+
 function InstagramLogo({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -94,6 +104,7 @@ const logos: Record<IntegrationProvider, React.FC<{ className?: string }>> = {
   mercado_pago: MercadoPagoLogo,
   pagarme: PagarmeLogo,
   tiny: TinyLogo,
+  bling: BlingLogo,
   instagram: InstagramLogo,
   melhor_envio: MelhorEnvioLogo,
   smartenvios: SmartEnviosLogo,
