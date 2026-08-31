@@ -5,6 +5,7 @@ export type IntegrationProvider =
   | "mercado_pago"
   | "pagarme"
   | "tiny"
+  | "bling"
   | "instagram"
   | "melhor_envio"
   | "smartenvios"
@@ -152,6 +153,25 @@ export interface JoinOrdersResult {
 }
 
 export type ERPReservaStatus = "confirmada" | "indeterminada" | "nao_verificada"
+
+/**
+ * O modo de reserva de estoque, e o que o LiveCart de fato consegue fazer.
+ *
+ * `modo` é o que o lojista ESCOLHEU; `modoEfetivo` é o que vale de verdade.
+ * Eles divergem quando ele pede a reserva nativa mas a conta do ERP não a tem
+ * ligada — e a tela precisa mostrar os dois, senão ele escolhe e não entende
+ * por que nada mudou.
+ */
+export type ModoDeReserva = "nativa" | "local"
+
+export interface ModoDeReservaResponse {
+  modo: ModoDeReserva
+  modoEfetivo: ModoDeReserva
+  motivo: string
+  preco: string
+  capacidadeConfirmada: boolean
+  comoLigarNoErp?: string
+}
 
 export interface ERPReservaResponse {
   status: ERPReservaStatus

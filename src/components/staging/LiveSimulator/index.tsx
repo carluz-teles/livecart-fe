@@ -29,6 +29,8 @@ import { FlaskConical, Loader2, Radio, Send, SquareDashedBottom, X } from "lucid
 import { useStoreId } from "@/hooks/useUser"
 import { useEvents } from "@/hooks/event/useEvents"
 import { cn } from "@/lib/utils"
+import { Bloco, botao, Campo, entrada, FaixaDePerigo, Linha } from "../bancada-ui"
+import { PaymentSimulator } from "../PaymentSimulator"
 import {
   simulatorService,
   type SessaoSimulavel,
@@ -47,7 +49,7 @@ export function LiveSimulator() {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        aria-label="Abrir simulador de live (staging)"
+        aria-label="Abrir a bancada de staging"
         className={cn(
           "fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-md border border-r-0",
           "border-[#7c8b1a] bg-[#0b0e05] px-2 py-4 shadow-lg transition-all",
@@ -60,7 +62,7 @@ export function LiveSimulator() {
           style={{ writingMode: "vertical-rl" }}
         >
           <FlaskConical className="h-3.5 w-3.5 rotate-90" />
-          Simulador
+          Bancada
         </span>
       </button>
 
@@ -69,7 +71,10 @@ export function LiveSimulator() {
   )
 }
 
+type Aba = "live" | "pagamento"
+
 function Bancada({ onFechar }: { onFechar: () => void }) {
+  const [aba, setAba] = useState<Aba>("live")
   const { getToken } = useAuth()
   const { storeId } = useStoreId()
 
@@ -194,17 +199,9 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
       <aside
         className="relative flex h-full w-full max-w-[26rem] flex-col overflow-y-auto border-l border-[#7c8b1a]/50 bg-[#0b0e05] font-mono text-[#dfe8c4] shadow-2xl"
         role="dialog"
-        aria-label="Simulador de live (staging)"
+        aria-label="Bancada de staging"
       >
-        {/* Faixa de perigo: o primeiro sinal, antes de qualquer texto. */}
-        <div
-          className="h-2 w-full flex-shrink-0"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(45deg,#c4f82a 0 10px,#0b0e05 10px 20px)",
-          }}
-          aria-hidden
-        />
+        <FaixaDePerigo />
 
         <header className="flex items-start justify-between gap-3 border-b border-[#7c8b1a]/30 px-5 py-4">
           <div>
@@ -212,11 +209,12 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
               Staging · bancada de teste
             </p>
             <h2 className="mt-1 text-lg font-bold leading-tight text-[#f2f7e4]">
-              Simulador de live
+              {aba === "live" ? "Simulador de live" : "Simulador de pagamentos"}
             </h2>
             <p className="mt-1 text-[11px] leading-relaxed text-[#8a9a68]">
-              Fabrica o webhook que o Instagram mandaria e entrega ao mesmo
-              processamento do webhook real. Não existe em produção.
+              {aba === "live"
+                ? "Fabrica o webhook que o Instagram mandaria e entrega ao mesmo processamento do webhook real. Não existe em produção."
+                : "Encena o gateway aprovando a cobrança e entrega à mesma função que o webhook de pagamento real chama. Não existe em produção."}
             </p>
           </div>
           <button
@@ -229,7 +227,40 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
           </button>
         </header>
 
-        <div className="flex-1 space-y-5 px-5 py-5">
+        {/* As duas metades do mesmo teste: o comentário vira carrinho, e o
+            carrinho precisa ser pago para o resto do sistema acordar. Duas
+            gavetas na borda brigariam entre si; uma bancada com duas abas
+            corresponde ao gesto real. */}
+        <nav
+          className="flex gap-1 border-b border-[#7c8b1a]/30 px-3 pt-3"
+          aria-label="Abas da bancada"
+        >
+          {(
+            [
+              { v: "live", rotulo: "Live" },
+              { v: "pagamento", rotulo: "Pagamento" },
+            ] as const
+          ).map(({ v, rotulo }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setAba(v)}
+              aria-current={aba === v ? "page" : undefined}
+              className={cn(
+                "rounded-t px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors",
+                aba === v
+                  ? "border-b-2 border-[#c4f82a] bg-[#c4f82a]/10 text-[#c4f82a]"
+                  : "text-[#8a9a68] hover:text-[#c4f82a]",
+              )}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </nav>
+
+        {aba === "pagamento" ? <PaymentSimulator ativo /> : null}
+
+        <div className={cn("flex-1 space-y-5 px-5 py-5", aba !== "live" && "hidden")}>
           {/* ── 1. O EVENTO E A TRANSMISSÃO ──────────────────────────── */}
           <Bloco numero="01" titulo="A transmissão">
             <p className="text-[10px] leading-relaxed text-[#8a9a68]">
@@ -408,7 +439,7 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
 
         <footer className="border-t border-[#7c8b1a]/30 px-5 py-3">
           <p className="text-[10px] leading-relaxed text-[#8a9a68]">
-            As rotas deste painel não existem fora de staging — o servidor
+            As rotas das duas abas não existem fora de staging — o servidor
             responde 404 porque não há o que servir.
           </p>
         </footer>
@@ -417,56 +448,4 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
   )
 }
 
-/* ── peças ──────────────────────────────────────────────────────────── */
-
-const entrada =
-  "w-full rounded border border-[#7c8b1a]/40 bg-[#141a08] px-2 py-1.5 text-[11px] text-[#dfe8c4] placeholder:text-[#5e6b42] outline-none focus:border-[#c4f82a]"
-
-function botao(tipo: "primario" | "secundario") {
-  return cn(
-    "inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40",
-    tipo === "primario"
-      ? "bg-[#c4f82a] text-[#0b0e05] hover:bg-[#d4ff4a]"
-      : "border border-[#7c8b1a]/50 text-[#8a9a68] hover:border-[#c4f82a]/60 hover:text-[#c4f82a]",
-  )
-}
-
-function Bloco({
-  numero,
-  titulo,
-  apagado,
-  children,
-}: {
-  numero: string
-  titulo: string
-  apagado?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <section className={cn("space-y-2.5", apagado && "pointer-events-none opacity-35")}>
-      <h3 className="flex items-baseline gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a9a68]">
-        <span className="text-[#c4f82a]">{numero}</span>
-        {titulo}
-      </h3>
-      {children}
-    </section>
-  )
-}
-
-function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return (
-    <label className="block space-y-1">
-      <span className="text-[10px] uppercase tracking-wider text-[#8a9a68]">{rotulo}</span>
-      {children}
-    </label>
-  )
-}
-
-function Linha({ termo, valor, alerta }: { termo: string; valor: string; alerta?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-[#8a9a68]">{termo}</dt>
-      <dd className={cn("truncate", alerta ? "text-[#e0b84a]" : "text-[#dfe8c4]")}>{valor}</dd>
-    </div>
-  )
-}
+/* As peças moram em ../bancada-ui — as duas abas da bancada usam as mesmas. */

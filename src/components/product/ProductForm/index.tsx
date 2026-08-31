@@ -48,6 +48,8 @@ import { useIntegrations } from "@/hooks/integration"
 import { ProductFormERPSearch } from "./ProductForm.ERPSearch"
 import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
 import { ProductFormGroup } from "./ProductForm.GroupForm"
+import { ImageUploadButton } from "./ImageUploadButton"
+import { formatCentsBRL, digitsToCents } from "./priceMask"
 import { cn } from "@/lib/utils"
 import type { Product, CreateProductPayload, UpdateProductPayload, ProductSource } from "@/types/product.types"
 import type { ERPProduct, Integration } from "@/types"
@@ -491,7 +493,7 @@ function ManualFormStep({
             <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
             <span className="text-muted-foreground">
               <strong className="text-foreground">Importação automática:</strong> conecte seu
-              ERP (Tiny) pra importar produtos com preço e estoque direto de lá.{" "}
+              ERP (Tiny ou Bling) pra importar produtos com preço e estoque direto de lá.{" "}
               <Link
                 href="/settings/integrations"
                 className="font-medium text-primary underline-offset-2 hover:underline"
@@ -848,15 +850,42 @@ function ProductFormFields({ form, readOnlyFromERP = false }: ProductFormFieldsP
           }
           return (
             <FormItem>
-              <FormLabel>URL da Imagem</FormLabel>
-              <FormControl>
-                <Input
-                  type="url"
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>Link direto para a imagem do produto</FormDescription>
+              <FormLabel>Imagem do produto</FormLabel>
+              <div className="flex items-start gap-3">
+                {field.value ? (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={field.value}
+                      alt="Prévia da imagem do produto"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed bg-muted/40 text-muted-foreground">
+                    <Package className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <ImageUploadButton
+                    onUploaded={(url) =>
+                      form.setValue("imageUrl", url, { shouldValidate: true })
+                    }
+                  />
+                  {field.value && (
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("imageUrl", "")}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+              <FormDescription>
+                Envie uma imagem do produto (JPG, PNG, GIF ou WebP, até 5MB)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )
@@ -882,50 +911,20 @@ interface CurrencyInputProps {
 
 const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
   function CurrencyInput({ value, onChange, onBlur, name, readOnly = false }, ref) {
-    const [displayValue, setDisplayValue] = useState(() =>
-      value > 0 ? (value / 100).toFixed(2).replace(".", ",") : ""
-    )
+    const [displayValue, setDisplayValue] = useState(() => formatCentsBRL(value))
 
-    // Sync display when form resets (e.g. ERP product select)
+    // Sync display when the incoming value changes (ERP select / edit / reset).
     const [prevValue, setPrevValue] = useState(value)
     if (value !== prevValue) {
       setPrevValue(value)
-      setDisplayValue(value > 0 ? (value / 100).toFixed(2).replace(".", ",") : "")
+      setDisplayValue(formatCentsBRL(value))
     }
 
+    // Cents-accumulator mask: strip non-digits, parse as integer cents.
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-      const raw = e.target.value.replace(/[^\d,]/g, "")
-
-      // Allow only one comma
-      const parts = raw.split(",")
-      const sanitized = parts.length > 2
-        ? parts[0] + "," + parts.slice(1).join("")
-        : raw
-
-      // Limit decimal places to 2
-      const [integer, decimal] = sanitized.split(",")
-      const limited = decimal !== undefined
-        ? integer + "," + decimal.slice(0, 2)
-        : sanitized
-
-      setDisplayValue(limited)
-
-      const normalized = limited.replace(",", ".")
-      const cents = Math.round(parseFloat(normalized || "0") * 100)
-      onChange(isNaN(cents) ? 0 : cents)
-    }
-
-    function handleBlur() {
-      if (displayValue) {
-        const normalized = displayValue.replace(",", ".")
-        const num = parseFloat(normalized)
-        if (!isNaN(num) && num > 0) {
-          setDisplayValue(num.toFixed(2).replace(".", ","))
-        } else {
-          setDisplayValue("")
-        }
-      }
-      onBlur()
+      const cents = digitsToCents(e.target.value)
+      setDisplayValue(formatCentsBRL(cents))
+      onChange(cents)
     }
 
     return (
@@ -945,7 +944,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
               className={cn("pl-10", readOnly && "cursor-not-allowed bg-muted/50 text-muted-foreground")}
               value={displayValue}
               onChange={handleChange}
-              onBlur={handleBlur}
+              onBlur={onBlur}
               name={name}
               ref={ref}
               readOnly={readOnly}

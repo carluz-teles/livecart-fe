@@ -73,6 +73,7 @@ import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProb
 import { TinyHealthCheckDialog } from "@/components/integration/TinyHealthCheck/TinyHealthCheckDialog"
 import { ERPReserva } from "@/components/integration/ERPReserva"
 import { Drenagem } from "@/components/integration/Drenagem"
+import { ModoDeReserva } from "@/components/integration/ModoDeReserva"
 import {
   useIntegrations,
   integrationKeys,
@@ -135,6 +136,17 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     type: "erp",
     authType: "oauth_with_credentials",
     docHref: "/docs/integrations/tiny",
+  },
+  {
+    id: "bling",
+    name: "Bling",
+    description: "Bling ERP — importe produtos e mantenha o estoque em dia",
+    features: ["Importar produtos", "Estoque em tempo real", "Conexão em 1 clique"],
+    type: "erp",
+    // Um clique: o LiveCart tem um aplicativo próprio no Bling, então o lojista
+    // não precisa criar app nem colar client_id/secret como no Tiny.
+    authType: "oauth",
+    docHref: "/docs/integrations/bling",
   },
   {
     id: "instagram",
@@ -702,6 +714,24 @@ function IntegrationsContent() {
   const getProvidersByType = (type: IntegrationType) =>
     AVAILABLE_PROVIDERS.filter((p) => p.type === type)
 
+  // Uma loja integra UM ERP — Tiny OU Bling, nunca os dois.
+  //
+  // A regra é do banco (índice parcial uniq_integrations_store_one_erp), então
+  // tentar conectar o segundo falharia de qualquer forma. O que esta função
+  // evita é o lojista descobrir isso por um erro genérico depois de já ter
+  // percorrido a tela de autorização do outro ERP.
+  const erpJaConectado = AVAILABLE_PROVIDERS.filter((p) => p.type === "erp")
+    .map((p) => getConnectedIntegration(p.id))
+    .find((i): i is Integration => Boolean(i))
+
+  const bloqueadoPorOutroERP = (provider: ProviderConfig) =>
+    provider.type === "erp" &&
+    Boolean(erpJaConectado) &&
+    erpJaConectado?.provider !== provider.id
+
+  const nomeDoERPConectado =
+    AVAILABLE_PROVIDERS.find((p) => p.id === erpJaConectado?.provider)?.name ?? "outro ERP"
+
   const integrationToDisconnect = disconnectId
     ? integrations.find((i) => i.id === disconnectId)
     : null
@@ -898,13 +928,22 @@ function IntegrationsContent() {
                                     <Drenagem />
                                   </>
                                 ) : null}
+                                {/* O modo de reserva é escolha de QUALQUER ERP,
+                                    não só do Bling: a pergunta "quem segura a
+                                    peça" existe nos dois, e o padrão seguro
+                                    (local) vale para ambos. */}
+                                {provider.type === "erp" && connected.status === "active" ? (
+                                  <ModoDeReserva integrationId={connected.id} />
+                                ) : null}
                               </>
                             ) : (
                               <div className="space-y-2">
                                 <Button
                                   className="w-full"
                                   onClick={() => handleConnect(provider)}
-                                  disabled={connectOAuth.isPending}
+                                  disabled={
+                                    connectOAuth.isPending || bloqueadoPorOutroERP(provider)
+                                  }
                                 >
                                   {connectOAuth.isPending ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -913,6 +952,13 @@ function IntegrationsContent() {
                                   )}
                                   Conectar {provider.name}
                                 </Button>
+                                {bloqueadoPorOutroERP(provider) ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    Sua loja já usa o {nomeDoERPConectado}. Só é possível
+                                    manter um ERP conectado por vez — desconecte-o antes de
+                                    conectar o {provider.name}.
+                                  </p>
+                                ) : null}
                                 {provider.docHref && (
                                   <Link
                                     href={provider.docHref}

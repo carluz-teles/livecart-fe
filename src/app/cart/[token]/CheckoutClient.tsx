@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -15,6 +15,7 @@ import {
   Sparkles,
   ArrowRight,
   Truck,
+  Plus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -143,6 +144,7 @@ interface CheckoutContentProps {
 }
 
 function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
+  const router = useRouter()
   const {
     data: cart,
     error: cartError,
@@ -926,6 +928,18 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       />
 
       <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-6 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            onClick={() => router.push(`/cart/${token}/catalog`)}
+          >
+            <Plus className="h-4 w-4" />
+            Ver catálogo
+          </Button>
+        </div>
+
         {notifiedItems.length > 0 && (
           <div className="mb-6">
             <CheckoutPromotionBanner items={notifiedItems} />

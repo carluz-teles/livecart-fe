@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles } from "lucide-react"
+import { Sparkles, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { ImageUploadButton } from "./ImageUploadButton"
+import { formatCentsBRL, digitsToCents } from "./priceMask"
 
 export interface VariantDraft {
   optionValues: string[]
@@ -67,7 +69,7 @@ export function ProductFormVariantMatrix({
               <TableHead className="w-[140px]">Preço</TableHead>
               <TableHead className="w-[100px]">Estoque</TableHead>
               <TableHead className="w-[160px]">SKU</TableHead>
-              <TableHead className="w-[220px]">Imagem (URL)</TableHead>
+              <TableHead className="w-[220px]">Imagem</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,19 +120,31 @@ export function ProductFormVariantMatrix({
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="url"
-                      placeholder="https://..."
-                      value={variant.imageUrl ?? ""}
-                      onChange={(e) =>
-                        updateVariant(i, { imageUrl: e.target.value })
-                      }
-                      aria-invalid={!!error?.imageUrl}
-                      className={cn(
-                        "h-9 text-xs",
-                        error?.imageUrl && "border-destructive"
-                      )}
-                    />
+                    <div className="flex items-start gap-2">
+                      {variant.imageUrl ? (
+                        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={variant.imageUrl}
+                            alt="Prévia"
+                            className="h-full w-full object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateVariant(i, { imageUrl: "" })}
+                            aria-label="Remover imagem"
+                            className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-bl bg-background/80 text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : null}
+                      <ImageUploadButton
+                        label="Enviar"
+                        className="h-7 flex-1 text-xs"
+                        onUploaded={(url) => updateVariant(i, { imageUrl: url })}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )
@@ -154,7 +168,7 @@ function BulkActions({ variants, onChange }: BulkActionsProps) {
 
   const apply = () => {
     let next = variants
-    const price = bulkPrice ? toCents(bulkPrice) : null
+    const price = bulkPrice ? digitsToCents(bulkPrice) : null
     const stock = bulkStock !== "" ? parseInt(bulkStock, 10) : null
     if (price !== null && !Number.isNaN(price)) {
       next = next.map((v) => ({ ...v, price }))
@@ -186,7 +200,8 @@ function BulkActions({ variants, onChange }: BulkActionsProps) {
     <div className="flex items-center gap-2">
       <Input
         placeholder="Preço (R$)"
-        value={bulkPrice}
+        inputMode="decimal"
+        value={formatCentsBRL(digitsToCents(bulkPrice))}
         onChange={(e) => setBulkPrice(e.target.value)}
         className="h-8 w-28 text-xs"
       />
@@ -219,39 +234,20 @@ interface PriceCellProps {
 }
 
 function PriceCell({ value, onChange, error }: PriceCellProps) {
-  // Display in BRL decimal, store in cents.
-  const [display, setDisplay] = useState(() =>
-    value > 0 ? (value / 100).toFixed(2).replace(".", ",") : ""
-  )
+  // Cents-accumulator BRL mask. Stored value stays in cents.
+  const [display, setDisplay] = useState(() => formatCentsBRL(value))
 
   // Re-sync if the parent bulk-applied a price.
   const [prevValue, setPrevValue] = useState(value)
   if (value !== prevValue) {
     setPrevValue(value)
-    setDisplay(value > 0 ? (value / 100).toFixed(2).replace(".", ",") : "")
+    setDisplay(formatCentsBRL(value))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^\d,]/g, "")
-    const parts = raw.split(",")
-    const sanitized =
-      parts.length > 2 ? parts[0] + "," + parts.slice(1).join("") : raw
-    const [integer, decimal] = sanitized.split(",")
-    const limited =
-      decimal !== undefined ? integer + "," + decimal.slice(0, 2) : sanitized
-    setDisplay(limited)
-
-    const cents = toCents(limited)
-    onChange(Number.isNaN(cents) ? 0 : cents)
-  }
-
-  const handleBlur = () => {
-    if (display) {
-      const num = parseFloat(display.replace(",", "."))
-      if (!Number.isNaN(num) && num > 0) {
-        setDisplay(num.toFixed(2).replace(",", ",").replace(".", ","))
-      }
-    }
+    const cents = digitsToCents(e.target.value)
+    setDisplay(formatCentsBRL(cents))
+    onChange(cents)
   }
 
   return (
@@ -262,7 +258,6 @@ function PriceCell({ value, onChange, error }: PriceCellProps) {
       <Input
         value={display}
         onChange={handleChange}
-        onBlur={handleBlur}
         inputMode="decimal"
         placeholder="0,00"
         aria-invalid={!!error}
@@ -270,10 +265,4 @@ function PriceCell({ value, onChange, error }: PriceCellProps) {
       />
     </div>
   )
-}
-
-function toCents(display: string): number {
-  if (!display) return 0
-  const num = parseFloat(display.replace(",", "."))
-  return Math.round(num * 100)
 }

@@ -20,6 +20,7 @@ import { useImportERPProduct } from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { ERPProduct } from "@/types"
+import { useERPConectado } from "@/hooks/integration"
 
 interface ProductFormERPVariantPickerProps {
   open: boolean
@@ -38,6 +39,7 @@ export function ProductFormERPVariantPicker({
   integrationId,
   onImported,
 }: ProductFormERPVariantPickerProps) {
+  const erp = useERPConectado()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const importProduct = useImportERPProduct()
 
@@ -120,7 +122,7 @@ export function ProductFormERPVariantPicker({
           </DialogTitle>
           <DialogDescription>
             Esse produto tem {variants.length}{" "}
-            {variants.length === 1 ? "variante" : "variantes"} no Tiny. Marque as
+            {variants.length === 1 ? "variante" : "variantes"} no {erp.nome}. Marque as
             que quer importar — sem nenhuma marcada, todas serão importadas.
           </DialogDescription>
         </DialogHeader>

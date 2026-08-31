@@ -18,6 +18,12 @@ export { useInstagramLives, instagramLivesKeys } from "./useInstagramLives"
 export { useProviderURLs, providerURLsKeys } from "./useProviderURLs"
 export { useERPHealthCheck, erpHealthCheckKeys } from "./useERPHealthCheck"
 export { useERPReserva, erpReservaKeys } from "./useERPReserva"
+export {
+  useModoDeReserva,
+  useDefinirModoDeReserva,
+  useTrocaDeModoDeReserva,
+  modoDeReservaKeys,
+} from "./useModoDeReserva"
 export { useJoinCandidates, useCartJoinLink, useJoinOrders, joinKeys } from "./useJoinOrders"
 export { usePagarmeWebhookStatus, pagarmeWebhookStatusKeys } from "./usePagarmeWebhookStatus"
 export { useTestPagarmeWebhook } from "./useTestPagarmeWebhook"
@@ -35,3 +41,4 @@ export {
   whatsappRecoveryKeys,
 } from "./useWhatsApp"
 export * from "./useDrenagem"
+export { useERPConectado } from "./useERPConectado"

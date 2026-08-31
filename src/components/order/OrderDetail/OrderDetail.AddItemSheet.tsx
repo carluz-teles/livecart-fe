@@ -20,6 +20,7 @@ import { useProducts } from "@/hooks/product"
 import { useDebounce } from "@/hooks/shared/useDebounce"
 import { formatCurrency } from "@/lib/format"
 import type { Product } from "@/types"
+import { useERPConectado } from "@/hooks/integration"
 
 interface OrderDetailAddItemSheetProps {
   /** Produtos já no pedido — a linha existente é somada, não duplicada. */
@@ -54,7 +55,7 @@ export function OrderDetailAddItemSheet({
 
   const produtos: Product[] = data?.data ?? []
 
-  // Loja com ERP ativo: produto sem vínculo não chega ao Tiny. Sem ERP nenhum,
+  // Loja com ERP ativo: produto sem vínculo não chega ao ERP. Sem ERP nenhum,
   // TODO produto é assim e o aviso viraria ruído em cada linha.
   const { data: integracoes } = useIntegrations()
   const temERPAtivo = !!integracoes?.data?.some(
@@ -171,6 +172,9 @@ export function OrderDetailCatalogList({
   avisarSemVinculoERP,
   onAdd,
 }: OrderDetailCatalogListProps) {
+  // O nome do ERP vem daqui e desce por prop: item de lista não deve puxar
+  // dado próprio, e são N linhas para uma resposta só.
+  const erp = useERPConectado()
   return (
     <>
           {isLoading && (
@@ -204,6 +208,7 @@ export function OrderDetailCatalogList({
           <ul className="divide-y">
             {produtos.map((produto) => (
               <LinhaDeProduto
+                erp={erp.nome}
                 key={produto.id}
                 produto={produto}
                 jaNoPedido={productIdsNoPedido.includes(produto.id)}
@@ -234,7 +239,8 @@ function LinhaDeProduto({
   bloqueado,
   semVinculoERP,
   onAdd,
-}: LinhaDeProdutoProps) {
+  erp,
+}: LinhaDeProdutoProps & { erp: string }) {
   const semEstoque = produto.stock <= 0
 
   return (
@@ -270,13 +276,13 @@ function LinhaDeProduto({
           </Badge>
         )}
         {/* Produto sem vínculo com o ERP move só o estoque do LiveCart, e some
-            do pedido que o Tiny recebe quando a cliente pagar (a montagem do
+            do pedido que o ERP recebe quando a cliente pagar (a montagem do
             pedido pula item sem external_id). Aviso, não bloqueio: vender ele
             continua valendo, o que não pode é a lojista descobrir depois. */}
         {semVinculoERP && (
           <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-500">
             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-            Sem vínculo com o ERP — não entra no pedido do Tiny
+            Sem vínculo com o ERP — não entra no pedido do {erp}
           </p>
         )}
       </div>

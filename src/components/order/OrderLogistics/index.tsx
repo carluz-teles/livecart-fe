@@ -48,6 +48,7 @@ import {
   useFetchTracking,
 } from "@/hooks/shipping"
 import { useSyncInvoice } from "@/hooks/order"
+import { useERPConectado } from "@/hooks/integration"
 import { formatCurrency, formatDateTime } from "@/lib/format"
 import {
   shipmentStatusBucket,
@@ -144,6 +145,7 @@ export function OrderLogistics({ order }: OrderLogisticsProps) {
 // --------------------------------------------------------------------------
 function NoShipmentView({ order }: { order: OrderDetail }) {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const erp = useERPConectado()
   const blockers = collectBlockers(order)
   // The NFe gate is treated as a separate, dedicated panel — it has its own
   // recovery action ("Verificar NFe") and copy, so we surface it next to the
@@ -205,7 +207,7 @@ function NoShipmentView({ order }: { order: OrderDetail }) {
       </Button>
       {invoicePending && blockers.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          O botão fica disponível assim que a NFe for emitida na Tiny.
+          O botão fica disponível assim que a NFe for emitida no {erp.nome}.
         </p>
       )}
 
@@ -237,6 +239,10 @@ interface InvoiceStatusPanelProps {
 
 function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
   const syncInvoice = useSyncInvoice()
+  // O nome do ERP no meio da frase, e não "Tiny" cravado: este painel não é
+  // gateado por provider, então uma loja Bling lia "Emita a NFe no painel da
+  // Tiny" — instrução para um sistema que ela não usa.
+  const erp = useERPConectado()
   const invoice = order.erpInvoice
   const status = invoice?.status
 
@@ -251,7 +257,7 @@ function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
     } catch (err) {
       toast.error(
         (err as { message?: string })?.message ||
-          "Não foi possível verificar a NFe na Tiny.",
+          `Não foi possível verificar a NFe no ${erp.nome}.`,
       )
     }
   }
@@ -263,7 +269,7 @@ function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
           <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
           <div className="min-w-0 flex-1">
             <p className="font-medium text-emerald-900 dark:text-emerald-200">
-              NFe emitida na Tiny
+              NFe emitida no {erp.nome}
             </p>
             {invoice?.invoiceKey && (
               <p
@@ -296,8 +302,8 @@ function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
             </p>
             <p className="text-xs text-muted-foreground">
               {isCancelled
-                ? "Reemita a nota fiscal na Tiny para liberar o envio."
-                : "Corrija o cadastro na Tiny e reemita para gerar uma chave válida."}
+                ? `Reemita a nota fiscal no ${erp.nome} para liberar o envio.`
+                : `Corrija o cadastro no ${erp.nome} e reemita para gerar uma chave válida.`}
             </p>
             <Button
               size="sm"
@@ -330,10 +336,10 @@ function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
           <p className="font-medium text-amber-900 dark:text-amber-200">
             {status === "pending"
               ? "NFe enviada à SEFAZ — aguardando autorização"
-              : "Aguardando emissão da NFe na Tiny"}
+              : `Aguardando emissão da NFe no ${erp.nome}`}
           </p>
           <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-            Emita a NFe diretamente no painel da Tiny. O envio é liberado
+            Emita a NFe diretamente no painel do {erp.nome}. O envio é liberado
             automaticamente assim que a chave for autorizada.
           </p>
           <Button
@@ -348,7 +354,7 @@ function InvoiceStatusPanel({ order }: InvoiceStatusPanelProps) {
             ) : (
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Verificar NFe na Tiny
+            Verificar NFe no {erp.nome}
           </Button>
         </div>
       </div>

@@ -34,6 +34,7 @@ import {
   type VariantDraft,
 } from "./ProductForm.VariantMatrix"
 import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
+import { ImageUploadButton } from "./ImageUploadButton"
 import type { CreateProductGroupPayload } from "@/types"
 
 interface ProductFormGroupProps {
@@ -276,56 +277,34 @@ function GroupImagesField({ images, onAdd, onRemove }: GroupImagesFieldProps) {
       </p>
 
       {images.length > 0 && (
-        <ul className="space-y-1.5">
+        <ul className="flex flex-wrap gap-2">
           {images.map((url, i) => (
             <li
               key={i}
-              className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5 text-xs"
+              className="relative h-16 w-16 overflow-hidden rounded-md border bg-muted/40"
             >
-              <span className="flex-1 truncate font-mono">{url}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt="Imagem do grupo"
+                className="h-full w-full object-contain"
+              />
               <button
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label="Remover imagem"
-                className="text-muted-foreground hover:text-destructive"
+                className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-bl bg-background/80 text-muted-foreground hover:text-destructive"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </button>
             </li>
           ))}
         </ul>
       )}
 
-      <ImageUrlInput onAdd={onAdd} />
+      {/* Uploading adds the returned permanent URL straight to the gallery. */}
+      <ImageUploadButton onUploaded={(url) => onAdd(url)} />
     </div>
-  )
-}
-
-function ImageUrlInput({ onAdd }: { onAdd: (url: string) => void }) {
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        const input = e.currentTarget.elements.namedItem(
-          "url"
-        ) as HTMLInputElement
-        if (input.value.trim()) {
-          onAdd(input.value)
-          input.value = ""
-        }
-      }}
-      className="flex gap-2"
-    >
-      <Input
-        type="url"
-        name="url"
-        placeholder="https://..."
-        className="h-9 text-sm"
-      />
-      <Button type="submit" variant="outline" size="sm">
-        Adicionar
-      </Button>
-    </form>
   )
 }
 

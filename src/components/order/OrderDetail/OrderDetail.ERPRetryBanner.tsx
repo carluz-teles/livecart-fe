@@ -9,19 +9,24 @@ import { useRetryERPFinalisation } from "@/hooks/order"
 import { formatAttemptCount, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
+import { useERPConectado } from "@/hooks/integration"
 
-// O pedido pago cuja APROVAÇÃO no Tiny falhou.
+// O pedido pago cuja APROVAÇÃO no ERP falhou.
 //
 // O texto mudou junto com o modelo. Antes o pedido só nascia no pagamento, e
 // falhar aqui significava "a venda não chegou ao ERP" — daí "não foi enviado".
 // Agora o pedido nasce no primeiro comentário e já está lá desde a live; o que
 // pode falhar depois do pagamento é a APROVAÇÃO e a gravação das parcelas.
 //
-// Dizer "não foi enviado" mandaria o lojista procurar no Tiny um pedido que
+// Dizer "não foi enviado" mandaria o lojista procurar no ERP um pedido que
 // está bem na frente dele, em situação Aberta — e o faria criar um duplicado à
 // mão. A ação continua sendo a mesma, e continua necessária: são os dois pontos
 // que ainda marcam 'failed' (ver MarkFinalisationFailed).
 export function OrderDetailERPRetryBanner() {
+  // O nome do ERP CONECTADO, e não "Tiny" cravado. Este banner não tem gate de
+  // provider: numa loja Bling ele dizia "O pedido existe no Tiny" oito linhas
+  // acima do erro que começa com "bling: HTTP 400", na mesma tela.
+  const erp = useERPConectado()
   const ctx = use(OrderDetailContext)
   const retry = useRetryERPFinalisation()
 

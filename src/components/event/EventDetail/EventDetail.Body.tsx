@@ -7,6 +7,7 @@ import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
 import { EventWindowForm } from "@/components/event/EventWindowForm"
+import { EventCatalogSelect } from "@/components/event/EventCatalogSelect"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
 import { EventDetailKpis } from "./EventDetail.Kpis"
@@ -109,6 +110,7 @@ export function EventDetailBody() {
             Cada linha é uma transmissão deste evento. Os produtos que cada uma pode
             vender são configurados nela mesma, no botão &quot;Produtos&quot; da linha.
           </p>
+          <EventCatalogSelect eventId={event.id} />
           <EventDetailSessions />
         </TabsContent>
 
