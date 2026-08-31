@@ -79,6 +79,37 @@ export const uploadService = {
     return data as UploadLogoResponse
   },
 
+  // Uploads a product/variant image and returns a permanent public URL to
+  // store in the product's `imageUrl`. Mirrors uploadStoreLogo.
+  uploadProductImage: async (
+    file: File,
+    storeId: string,
+    token: string
+  ): Promise<string> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await fetch(
+      `${apiUrl}/stores/${storeId}/products/upload-image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || errorData.error || "Failed to upload image")
+    }
+
+    const { data } = await response.json()
+    return (data as { url: string }).url
+  },
+
   // Uploads a JPEG to storage and returns a public URL Instagram can fetch
   // when publishing the post.
   uploadInstagramMedia: async (

@@ -34,6 +34,7 @@ import {
   type VariantDraft,
 } from "./ProductForm.VariantMatrix"
 import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
+import { ImageUploadButton } from "./ImageUploadButton"
 import type { CreateProductGroupPayload } from "@/types"
 
 interface ProductFormGroupProps {
@@ -303,29 +304,33 @@ function GroupImagesField({ images, onAdd, onRemove }: GroupImagesFieldProps) {
 
 function ImageUrlInput({ onAdd }: { onAdd: (url: string) => void }) {
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        const input = e.currentTarget.elements.namedItem(
-          "url"
-        ) as HTMLInputElement
-        if (input.value.trim()) {
-          onAdd(input.value)
-          input.value = ""
-        }
-      }}
-      className="flex gap-2"
-    >
-      <Input
-        type="url"
-        name="url"
-        placeholder="https://..."
-        className="h-9 text-sm"
-      />
-      <Button type="submit" variant="outline" size="sm">
-        Adicionar
-      </Button>
-    </form>
+    <div className="space-y-2">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const input = e.currentTarget.elements.namedItem(
+            "url"
+          ) as HTMLInputElement
+          if (input.value.trim()) {
+            onAdd(input.value)
+            input.value = ""
+          }
+        }}
+        className="flex gap-2"
+      >
+        <Input
+          type="url"
+          name="url"
+          placeholder="https://..."
+          className="h-9 text-sm"
+        />
+        <Button type="submit" variant="outline" size="sm">
+          Adicionar
+        </Button>
+      </form>
+      {/* Uploading adds the returned permanent URL straight to the gallery. */}
+      <ImageUploadButton onUploaded={(url) => onAdd(url)} />
+    </div>
   )
 }
 

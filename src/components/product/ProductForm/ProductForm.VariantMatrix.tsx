@@ -15,6 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { ImageUploadButton } from "./ImageUploadButton"
+import { formatCentsBRL, digitsToCents } from "./priceMask"
 
 export interface VariantDraft {
   optionValues: string[]
@@ -118,19 +120,26 @@ export function ProductFormVariantMatrix({
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="url"
-                      placeholder="https://..."
-                      value={variant.imageUrl ?? ""}
-                      onChange={(e) =>
-                        updateVariant(i, { imageUrl: e.target.value })
-                      }
-                      aria-invalid={!!error?.imageUrl}
-                      className={cn(
-                        "h-9 text-xs",
-                        error?.imageUrl && "border-destructive"
-                      )}
-                    />
+                    <div className="space-y-1.5">
+                      <Input
+                        type="url"
+                        placeholder="https://..."
+                        value={variant.imageUrl ?? ""}
+                        onChange={(e) =>
+                          updateVariant(i, { imageUrl: e.target.value })
+                        }
+                        aria-invalid={!!error?.imageUrl}
+                        className={cn(
+                          "h-9 text-xs",
+                          error?.imageUrl && "border-destructive"
+                        )}
+                      />
+                      <ImageUploadButton
+                        label="Enviar"
+                        className="h-7 w-full text-xs"
+                        onUploaded={(url) => updateVariant(i, { imageUrl: url })}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )
@@ -154,7 +163,7 @@ function BulkActions({ variants, onChange }: BulkActionsProps) {
 
   const apply = () => {
     let next = variants
-    const price = bulkPrice ? toCents(bulkPrice) : null
+    const price = bulkPrice ? digitsToCents(bulkPrice) : null
     const stock = bulkStock !== "" ? parseInt(bulkStock, 10) : null
     if (price !== null && !Number.isNaN(price)) {
       next = next.map((v) => ({ ...v, price }))
@@ -186,7 +195,8 @@ function BulkActions({ variants, onChange }: BulkActionsProps) {
     <div className="flex items-center gap-2">
       <Input
         placeholder="Preço (R$)"
-        value={bulkPrice}
+        inputMode="decimal"
+        value={formatCentsBRL(digitsToCents(bulkPrice))}
         onChange={(e) => setBulkPrice(e.target.value)}
         className="h-8 w-28 text-xs"
       />
@@ -219,39 +229,20 @@ interface PriceCellProps {
 }
 
 function PriceCell({ value, onChange, error }: PriceCellProps) {
-  // Display in BRL decimal, store in cents.
-  const [display, setDisplay] = useState(() =>
-    value > 0 ? (value / 100).toFixed(2).replace(".", ",") : ""
-  )
+  // Cents-accumulator BRL mask. Stored value stays in cents.
+  const [display, setDisplay] = useState(() => formatCentsBRL(value))
 
   // Re-sync if the parent bulk-applied a price.
   const [prevValue, setPrevValue] = useState(value)
   if (value !== prevValue) {
     setPrevValue(value)
-    setDisplay(value > 0 ? (value / 100).toFixed(2).replace(".", ",") : "")
+    setDisplay(formatCentsBRL(value))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^\d,]/g, "")
-    const parts = raw.split(",")
-    const sanitized =
-      parts.length > 2 ? parts[0] + "," + parts.slice(1).join("") : raw
-    const [integer, decimal] = sanitized.split(",")
-    const limited =
-      decimal !== undefined ? integer + "," + decimal.slice(0, 2) : sanitized
-    setDisplay(limited)
-
-    const cents = toCents(limited)
-    onChange(Number.isNaN(cents) ? 0 : cents)
-  }
-
-  const handleBlur = () => {
-    if (display) {
-      const num = parseFloat(display.replace(",", "."))
-      if (!Number.isNaN(num) && num > 0) {
-        setDisplay(num.toFixed(2).replace(",", ",").replace(".", ","))
-      }
-    }
+    const cents = digitsToCents(e.target.value)
+    setDisplay(formatCentsBRL(cents))
+    onChange(cents)
   }
 
   return (
@@ -262,7 +253,6 @@ function PriceCell({ value, onChange, error }: PriceCellProps) {
       <Input
         value={display}
         onChange={handleChange}
-        onBlur={handleBlur}
         inputMode="decimal"
         placeholder="0,00"
         aria-invalid={!!error}
@@ -270,10 +260,4 @@ function PriceCell({ value, onChange, error }: PriceCellProps) {
       />
     </div>
   )
-}
-
-function toCents(display: string): number {
-  if (!display) return 0
-  const num = parseFloat(display.replace(",", "."))
-  return Math.round(num * 100)
 }
