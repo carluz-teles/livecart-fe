@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles } from "lucide-react"
+import { Sparkles, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -69,7 +69,7 @@ export function ProductFormVariantMatrix({
               <TableHead className="w-[140px]">Preço</TableHead>
               <TableHead className="w-[100px]">Estoque</TableHead>
               <TableHead className="w-[160px]">SKU</TableHead>
-              <TableHead className="w-[220px]">Imagem (URL)</TableHead>
+              <TableHead className="w-[220px]">Imagem</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -120,23 +120,28 @@ export function ProductFormVariantMatrix({
                     />
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1.5">
-                      <Input
-                        type="url"
-                        placeholder="https://..."
-                        value={variant.imageUrl ?? ""}
-                        onChange={(e) =>
-                          updateVariant(i, { imageUrl: e.target.value })
-                        }
-                        aria-invalid={!!error?.imageUrl}
-                        className={cn(
-                          "h-9 text-xs",
-                          error?.imageUrl && "border-destructive"
-                        )}
-                      />
+                    <div className="flex items-start gap-2">
+                      {variant.imageUrl ? (
+                        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded border bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={variant.imageUrl}
+                            alt="Prévia"
+                            className="h-full w-full object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateVariant(i, { imageUrl: "" })}
+                            aria-label="Remover imagem"
+                            className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-bl bg-background/80 text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : null}
                       <ImageUploadButton
                         label="Enviar"
-                        className="h-7 w-full text-xs"
+                        className="h-7 flex-1 text-xs"
                         onUploaded={(url) => updateVariant(i, { imageUrl: url })}
                       />
                     </div>

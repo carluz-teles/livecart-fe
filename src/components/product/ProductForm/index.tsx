@@ -867,22 +867,24 @@ function ProductFormFields({ form, readOnlyFromERP = false }: ProductFormFieldsP
                   </div>
                 )}
                 <div className="min-w-0 flex-1 space-y-2">
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      {...field}
-                    />
-                  </FormControl>
                   <ImageUploadButton
                     onUploaded={(url) =>
                       form.setValue("imageUrl", url, { shouldValidate: true })
                     }
                   />
+                  {field.value && (
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("imageUrl", "")}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Remover
+                    </button>
+                  )}
                 </div>
               </div>
               <FormDescription>
-                Cole um link direto ou envie uma imagem do seu computador
+                Envie uma imagem do produto (JPG, PNG, GIF ou WebP, até 5MB)
               </FormDescription>
               <FormMessage />
             </FormItem>
