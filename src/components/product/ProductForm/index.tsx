@@ -491,7 +491,7 @@ function ManualFormStep({
             <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
             <span className="text-muted-foreground">
               <strong className="text-foreground">Importação automática:</strong> conecte seu
-              ERP (Tiny) pra importar produtos com preço e estoque direto de lá.{" "}
+              ERP (Tiny ou Bling) pra importar produtos com preço e estoque direto de lá.{" "}
               <Link
                 href="/settings/integrations"
                 className="font-medium text-primary underline-offset-2 hover:underline"

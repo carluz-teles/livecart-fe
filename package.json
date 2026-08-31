@@ -6,11 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint && node scripts/verificar-erp-hardcoded.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "check:erp": "node scripts/verificar-erp-hardcoded.mjs"
   },
   "dependencies": {
     "@clerk/localizations": "^4.2.3",

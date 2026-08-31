@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/format"
 import { getERPSearchErrorMessage } from "@/lib/api-errors"
 import type { ERPProduct } from "@/types"
 import { ProductFormERPVariantPicker } from "./ProductFormERPVariantPicker"
+import { useERPConectado } from "@/hooks/integration"
 
 interface ProductFormERPSearchProps {
   integrationId: string
@@ -27,6 +28,9 @@ export function ProductFormERPSearch({
   onSelect,
   onImported,
 }: ProductFormERPSearchProps) {
+  // Sem gate de provider: em staging, onde o único ERP é o Bling, 100% das
+  // renderizações deste bloco diziam "O Tiny enviou N imagens".
+  const erp = useERPConectado()
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Imagem principal escolhida pelo lojista quando o Tiny devolve várias.
@@ -197,7 +201,7 @@ export function ProductFormERPSearch({
           <div>
             <p className="text-sm font-medium">Imagem principal</p>
             <p className="text-xs text-muted-foreground">
-              O Tiny enviou {selectedProduct.imageUrls!.length} imagens para este
+              O {erp.nome} enviou {selectedProduct.imageUrls!.length} imagens para este
               produto. Selecione qual será salva no LiveCart.
             </p>
           </div>
