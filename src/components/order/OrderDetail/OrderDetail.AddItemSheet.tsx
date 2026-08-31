@@ -270,7 +270,7 @@ function LinhaDeProduto({
           </Badge>
         )}
         {/* Produto sem vínculo com o ERP move só o estoque do LiveCart, e some
-            do pedido que o Tiny recebe quando a cliente pagar (a montagem do
+            do pedido que o ERP recebe quando a cliente pagar (a montagem do
             pedido pula item sem external_id). Aviso, não bloqueio: vender ele
             continua valendo, o que não pode é a lojista descobrir depois. */}
         {semVinculoERP && (

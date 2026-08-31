@@ -12,7 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useCartJoinLink, useJoinCandidates, useJoinOrders } from "@/hooks/integration"
+import {
+  useCartJoinLink,
+  useERPConectado,
+  useJoinCandidates,
+  useJoinOrders,
+} from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { JoinCandidate } from "@/types"
@@ -23,8 +28,12 @@ import { OrderDetailContext } from "./OrderDetailContext"
  * Juntar pedidos — no ERP, não aqui.
  *
  * A cliente já tinha um pedido em aberto e comentou na live: ficam dois pedidos
- * dela no Tiny, cada um segurando peça, cada um querendo o seu frete e a sua
+ * dela no ERP, cada um segurando peça, cada um querendo o seu frete e a sua
  * nota. Juntar resolve isso do lado de lá — um pedido só, com tudo dentro.
+ *
+ * O nome do ERP sai de useERPConectado e NÃO é cravado: o texto dizia "Tiny"
+ * em toda parte e mentia para qualquer loja Bling — "Juntar no Tiny" num ERP
+ * que não é o dela.
  *
  * Deste lado os pedidos continuam separados de propósito: foram duas compras, e
  * o lojista precisa poder olhar cada uma com o seu histórico e o seu pagamento.
@@ -36,6 +45,7 @@ export function OrderDetailJoin() {
   const [aberto, setAberto] = useState(false)
   const cartId = ctx?.state.order.id ?? ""
   const link = useCartJoinLink(cartId)
+  const erp = useERPConectado()
 
   if (!ctx || !cartId) return null
 
@@ -51,7 +61,7 @@ export function OrderDetailJoin() {
   // vencido mostrou "Juntar", o lojista escolheu o outro pedido, confirmou, e só
   // então levou o erro. O botão prometia o que a regra não ia entregar.
   if (!vinculo.canJoin && !ehJuntado) {
-    return <ImpedimentoDeJuncao motivo={vinculo.cannotJoinReason} />
+    return <ImpedimentoDeJuncao motivo={vinculo.cannotJoinReason} erp={erp.nome} />
   }
 
   // Pedido já juntado a outro: só informa, e aponta para o dono do pedido.
@@ -63,7 +73,7 @@ export function OrderDetailJoin() {
           Juntado ao pedido #{vinculo?.hostShortId}
         </p>
         <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-          No Tiny existe um pedido só, com os itens dos dois. Este continua aqui com o
+          No {erp.nome} existe um pedido só, com os itens dos dois. Este continua aqui com o
           histórico e o pagamento dele, mas não tem pedido próprio no ERP — o frete e a
           nota saem pelo #{vinculo?.hostShortId}.
         </p>
@@ -82,10 +92,10 @@ export function OrderDetailJoin() {
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
               {ehAnfitriao
-                ? `No Tiny é um pedido só, com os itens deste e do${
+                ? `No ${erp.nome} é um pedido só, com os itens deste e do${
                     (vinculo?.joinedShortIds?.length ?? 0) > 1 ? "s" : ""
                   } #${vinculo?.joinedShortIds?.join(", #")}. Um frete, uma nota.`
-                : "Se a cliente já tinha um pedido em aberto, junte os dois no Tiny — um frete e uma nota só. Aqui eles continuam separados."}
+                : `Se a cliente já tinha um pedido em aberto, junte os dois no ${erp.nome} — um frete e uma nota só. Aqui eles continuam separados.`}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
@@ -109,14 +119,14 @@ export function OrderDetailJoin() {
  * opção aqui?", que é a que o lojista faria olhando dois pedidos parecidos com
  * comportamentos diferentes.
  */
-function ImpedimentoDeJuncao({ motivo }: { motivo?: string }) {
+function ImpedimentoDeJuncao({ motivo, erp }: { motivo?: string; erp: string }) {
   const texto: Record<string, string> = {
     cancelado_ou_vencido:
       "Este pedido está cancelado ou venceu — não há venda viva a juntar.",
     estornado: "Este pedido foi estornado; o dinheiro já voltou.",
     faturado:
       "A nota deste pedido já foi emitida. Somar item nele seria emitir nota errada.",
-    pedido_cancelado_no_erp: "O pedido foi cancelado no Tiny.",
+    pedido_cancelado_no_erp: `O pedido foi cancelado no ${erp}.`,
     ja_juntado: "Este pedido já faz parte de outra junção.",
   }
   const msg = motivo ? texto[motivo] : undefined
@@ -144,6 +154,7 @@ function JoinDialog({
 }) {
   const candidatos = useJoinCandidates(cartId)
   const juntar = useJoinOrders()
+  const erp = useERPConectado()
   const [escolhido, setEscolhido] = useState<string | null>(null)
 
   const confirmar = () => {
@@ -152,7 +163,7 @@ function JoinDialog({
       { cartAId: cartId, cartBId: escolhido },
       {
         onSuccess: (r) => {
-          toast.success("Pedidos juntados no Tiny", {
+          toast.success(`Pedidos juntados no ${erp.nome}`, {
             description: r.orderReleased
               ? `Um pedido só agora. O ${r.orderReleased} foi cancelado lá.`
               : "Um pedido só agora.",
@@ -175,7 +186,7 @@ function JoinDialog({
         <DialogHeader>
           <DialogTitle>Juntar com o pedido #{shortId}</DialogTitle>
           <DialogDescription>
-            No Tiny os dois viram <strong>um pedido só</strong> — um frete, uma nota. Aqui
+            No {erp.nome} os dois viram <strong>um pedido só</strong> — um frete, uma nota. Aqui
             eles continuam separados, cada um com o seu histórico e o seu pagamento.
           </DialogDescription>
         </DialogHeader>
@@ -196,7 +207,7 @@ function JoinDialog({
             </p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               Se este pedido já tem pagamento, os outros pagos também ficam de fora:
-              juntar cancela um dos dois no Tiny, e cancelar pedido pago é estorno.
+              juntar cancela um dos dois no {erp.nome}, e cancelar pedido pago é estorno.
               Nesse caso despache os dois juntos, sem juntar os pedidos.
             </p>
           </div>
@@ -208,6 +219,7 @@ function JoinDialog({
                 candidato={c}
                 escolhido={escolhido === c.cartId}
                 onEscolher={() => setEscolhido(c.cartId)}
+                erp={erp.nome}
               />
             ))}
           </div>
@@ -217,7 +229,7 @@ function JoinDialog({
           <div className="flex items-start gap-2 rounded-lg border border-amber-300/70 bg-amber-50/70 px-3 py-2.5 dark:border-amber-800/50 dark:bg-amber-950/20">
             <TriangleAlert className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-700 dark:text-amber-400" />
             <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
-              Um dos dois pedidos será <strong>cancelado no Tiny</strong> e o outro fica com
+              Um dos dois pedidos será <strong>cancelado no {erp.nome}</strong> e o outro fica com
               tudo. Não dá para desfazer pelo painel.
             </p>
           </div>
@@ -234,7 +246,7 @@ function JoinDialog({
                 Juntando
               </>
             ) : (
-              "Juntar no Tiny"
+              `Juntar no ${erp.nome}`
             )}
           </Button>
         </div>
@@ -247,10 +259,12 @@ function CandidatoRow({
   candidato,
   escolhido,
   onEscolher,
+  erp,
 }: {
   candidato: JoinCandidate
   escolhido: boolean
   onEscolher: () => void
+  erp: string
 }) {
   const pago = candidato.paymentStatus === "paid"
   return (
@@ -275,7 +289,7 @@ function CandidatoRow({
           ) : null}
           {candidato.erpOrderNumber ? (
             <span className="font-mono text-[10px] text-muted-foreground">
-              Tiny nº {candidato.erpOrderNumber}
+              {erp} nº {candidato.erpOrderNumber}
             </span>
           ) : null}
         </span>
