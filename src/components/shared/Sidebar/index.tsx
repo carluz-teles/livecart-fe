@@ -15,6 +15,7 @@ import {
   Users,
   ShieldOff,
   Crown,
+  FolderOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser } from "@/hooks/useUser"
@@ -38,6 +39,7 @@ const navSections: NavSection[] = [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Eventos", href: "/events", icon: Calendar },
       { name: "Produtos", href: "/products", icon: Package },
+      { name: "Catálogos", href: "/catalogs", icon: FolderOpen },
       { name: "Pedidos", href: "/orders", icon: ShoppingCart },
       { name: "Clientes", href: "/customers", icon: Users },
       // Clientes VIP: carrinho eterno cross-evento. Vizinho de Clientes.
