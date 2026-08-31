@@ -91,6 +91,20 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 indisponivel={!data.capacidadeConfirmada}
               />
 
+              {/* Trancado ≠ proibido para sempre: assim que uma venda passar
+                  pelo ERP com a Reserva ligada, a observação chega sozinha no
+                  webhook de estoque e o cartão destrava. */}
+              {!data.capacidadeConfirmada && data.modo !== "nativa" ? (
+                <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+                  Só dá para delegar a reserva ao ERP depois de{" "}
+                  <strong className="text-foreground">vermos ele segurando estoque</strong> —
+                  e isso a gente descobre sozinho, na primeira venda com a Reserva ligada
+                  na sua conta. Ligar ou não é decisão sua, no painel do ERP;
+                  aqui a gente só não arrisca vender a mesma peça duas vezes achando
+                  que alguém está segurando.
+                </p>
+              ) : null}
+
               {divergente ? (
                 <div className="flex gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -179,13 +193,19 @@ function OpcaoDeModo({
     <button
       type="button"
       onClick={onSelect}
-      disabled={salvando}
+      // TRANCADO, e não só pintado. O selo "Requer configuração no ERP" já
+      // existia, mas o botão continuava clicável e o backend gravava assim
+      // mesmo — um bilhete numa porta destrancada. Na live o LiveCart parava de
+      // segurar a peça achando que o ERP a segurava; ninguém segurava, e a
+      // mesma peça era vendida duas vezes.
+      disabled={salvando || (indisponivel && !selecionado)}
       aria-pressed={selecionado}
       className={cn(
         "w-full rounded-lg border p-4 text-left transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selecionado ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-        salvando && "cursor-wait opacity-70"
+        salvando && "cursor-wait opacity-70",
+        indisponivel && !selecionado && "cursor-not-allowed opacity-60 hover:bg-transparent"
       )}
     >
       <div className="flex items-start gap-3">
@@ -211,7 +231,7 @@ function OpcaoDeModo({
             ) : null}
             {indisponivel && !efetivo ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                Requer configuração no ERP
+                Ainda não observamos o ERP reservando
               </span>
             ) : null}
           </div>
