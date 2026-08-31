@@ -387,7 +387,7 @@ export function CatalogClient({
               className="prod-grid"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))",
+                gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
                 gap: "20px",
               }}
             >
@@ -473,9 +473,9 @@ export function CatalogClient({
                     <div
                       style={{
                         display: "flex",
-                        alignItems: "baseline",
-                        justifyContent: "space-between",
-                        gap: "10px",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: "6px",
                       }}
                     >
                       <h3
@@ -492,7 +492,7 @@ export function CatalogClient({
                       <span
                         className="tnum"
                         style={{
-                          fontSize: "15px",
+                          fontSize: "17px",
                           fontWeight: 700,
                           whiteSpace: "nowrap",
                         }}
