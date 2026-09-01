@@ -96,12 +96,10 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                   webhook de estoque e o cartão destrava. */}
               {!data.capacidadeConfirmada && data.modo !== "nativa" ? (
                 <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                  Só dá para delegar a reserva ao ERP depois de{" "}
-                  <strong className="text-foreground">vermos ele segurando estoque</strong> —
-                  e isso a gente descobre sozinho, na primeira venda com a Reserva ligada
-                  na sua conta. Ligar ou não é decisão sua, no painel do ERP;
-                  aqui a gente só não arrisca vender a mesma peça duas vezes achando
-                  que alguém está segurando.
+                  Ainda não vimos este ERP segurando estoque — o que é normal
+                  enquanto não houver pedido em aberto lá. Ligar a Reserva é
+                  decisão sua, no painel do ERP; se já ligou, é só confirmar ao
+                  escolher.
                 </p>
               ) : null}
 
@@ -127,9 +125,11 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 <p className="text-sm text-muted-foreground">{data.preco}</p>
               </div>
 
-              {/* Sair do modo em que o ERP reserva tira de cena quem hoje segura
-                  a peça durante a live. É a única direção que confirma. */}
-              {troca.aConfirmar ? (
+              {/* Duas direções confirmam, por motivos opostos: sair do nativo
+                  tira de cena quem segura a peça hoje; entrar no nativo sem
+                  termos visto o ERP segurando é uma declaração do lojista sobre
+                  a configuração DELE, no ERP dele. */}
+              {troca.aConfirmar === "local" ? (
                 <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
                   <div className="flex gap-3">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
@@ -157,6 +157,32 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                       disabled={troca.salvando}
                     >
                       Mudar mesmo assim
+                    </Button>
+                  </div>
+                </div>
+              ) : troca.aConfirmar === "nativa" ? (
+                <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium text-amber-700 dark:text-amber-500">
+                        Confirma que a Reserva está ligada no seu ERP?
+                      </p>
+                      <p className="text-muted-foreground">
+                        Ainda não vimos este ERP segurando estoque — o que é normal
+                        se não houver pedido em aberto lá agora. A partir desta
+                        escolha o LiveCart <strong>para de segurar a peça</strong> e
+                        passa a contar com o ERP. Se a Reserva não estiver ligada,
+                        ninguém segura, e a mesma peça pode ser vendida duas vezes.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={troca.cancelar}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={troca.confirmar} disabled={troca.salvando}>
+                      Sim, está ligada
                     </Button>
                   </div>
                 </div>
@@ -198,14 +224,13 @@ function OpcaoDeModo({
       // mesmo — um bilhete numa porta destrancada. Na live o LiveCart parava de
       // segurar a peça achando que o ERP a segurava; ninguém segurava, e a
       // mesma peça era vendida duas vezes.
-      disabled={salvando || (indisponivel && !selecionado)}
+      disabled={salvando}
       aria-pressed={selecionado}
       className={cn(
         "w-full rounded-lg border p-4 text-left transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selecionado ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-        salvando && "cursor-wait opacity-70",
-        indisponivel && !selecionado && "cursor-not-allowed opacity-60 hover:bg-transparent"
+        salvando && "cursor-wait opacity-70"
       )}
     >
       <div className="flex items-start gap-3">
@@ -231,7 +256,7 @@ function OpcaoDeModo({
             ) : null}
             {indisponivel && !efetivo ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                Ainda não observamos o ERP reservando
+                Ainda não vimos o ERP reservando
               </span>
             ) : null}
           </div>

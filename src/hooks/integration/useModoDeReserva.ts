@@ -58,9 +58,21 @@ export function useDefinirModoDeReserva(integrationId: string | undefined) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (modo: ModoDeReserva): Promise<ModoDeReservaResponse> => {
+    mutationFn: async ({
+      modo,
+      confirmoQueOErpReserva,
+    }: {
+      modo: ModoDeReserva
+      confirmoQueOErpReserva?: boolean
+    }): Promise<ModoDeReservaResponse> => {
       const token = await getToken()
-      return integrationService.setModoDeReserva(storeId!, integrationId!, modo, token)
+      return integrationService.setModoDeReserva(
+        storeId!,
+        integrationId!,
+        modo,
+        token,
+        confirmoQueOErpReserva,
+      )
     },
     onSuccess: (data) => {
       queryClient.setQueryData(
@@ -103,17 +115,32 @@ export function useTrocaDeModoDeReserva(
 
   const pedir = (modo: ModoDeReserva) => {
     if (modo === retrato?.modo) return // já é o escolhido
+
+    // Sair do modo em que o ERP reserva tira de cena quem hoje segura a peça.
     const perdeReservaDoERP = modo === "local" && retrato?.modoEfetivo === "nativa"
-    if (perdeReservaDoERP) {
+
+    // Entrar no modo nativo SEM termos visto o ERP segurando é uma declaração
+    // do lojista: "eu liguei a Reserva lá". Ele pode estar certo — a
+    // configuração é dele, no ERP dele, e nós não conseguimos consultá-la —
+    // mas a escolha precisa ser consciente, porque a partir dela o LiveCart
+    // para de segurar a peça.
+    const assumeSemObservacao =
+      modo === "nativa" && retrato?.capacidadeConfirmada === false
+
+    if (perdeReservaDoERP || assumeSemObservacao) {
       setAConfirmar(modo)
       return
     }
-    definir.mutate(modo)
+    definir.mutate({ modo })
   }
 
   const confirmar = () => {
     if (!aConfirmar) return
-    definir.mutate(aConfirmar)
+    definir.mutate({
+      modo: aConfirmar,
+      // Só a entrada no nativo carrega a declaração.
+      confirmoQueOErpReserva: aConfirmar === "nativa",
+    })
     setAConfirmar(null)
   }
 
