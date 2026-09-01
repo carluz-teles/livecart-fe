@@ -123,15 +123,24 @@ export const integrationService = {
       token,
     ),
 
+  /**
+   * Grava o modo de reserva.
+   *
+   * `confirmoQueOErpReserva` é a declaração do lojista de que a Reserva está
+   * ligada no ERP dele — necessária para escolher "nativa" enquanto o LiveCart
+   * ainda não observou a conta segurando peça. Ligar a Reserva é configuração
+   * dele, no ERP dele, e não temos como consultá-la.
+   */
   setModoDeReserva: (
     storeId: string,
     id: string,
     modo: ModoDeReserva,
     token?: string | null,
+    confirmoQueOErpReserva?: boolean,
   ) =>
     apiClient.put<ModoDeReservaResponse>(
       `/stores/${storeId}/integrations/${id}/erp/modo-reserva`,
-      { modo },
+      { modo, confirmoQueOErpReserva: Boolean(confirmoQueOErpReserva) },
       token,
     ),
 
