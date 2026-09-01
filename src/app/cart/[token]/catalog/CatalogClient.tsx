@@ -58,12 +58,12 @@ const CATALOG_CSS = `
 .catalog-page .cat-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start;}
 .catalog-page .summary-col{position:sticky;top:20px;}
 @media(max-width:860px){
-  .catalog-page .cat-layout{grid-template-columns:1fr;gap:20px;}
-  .catalog-page .summary-col{order:-1;position:sticky;top:8px;z-index:20;}
+  .catalog-page .cat-layout{grid-template-columns:minmax(0,1fr);gap:20px;}
+  .catalog-page .summary-col{order:-1;position:static;}
   .catalog-page .summary-col>div{box-shadow:0 8px 24px -12px rgba(0,0,0,.35);}
 }
 @media(max-width:520px){
-  .catalog-page .prod-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
+  .catalog-page .prod-grid{grid-template-columns:1fr !important;gap:12px !important;}
 }
 `
 
@@ -106,6 +106,13 @@ export function CatalogClient({
   const maxQty = cart.maxQuantityPerItem
 
   const storeName = initialCart.store.name
+
+  // "Live em andamento" só quando a live está no ar — mesma lógica do checkout
+  // (CheckoutHeader/CheckoutClient): cart ativo E o evento é do tipo live (post/
+  // reel/story ou evento encerrado NÃO exibem).
+  const isLiveActive = cart.status === "active"
+  const isPost = !!cart.event?.type && cart.event.type !== "live"
+  const showLive = isLiveActive && !isPost
 
   const copyCode = async (code: string) => {
     try {
@@ -185,6 +192,7 @@ export function CatalogClient({
                 gap: "16px",
               }}
             >
+              {showLive && (
               <div
                 style={{
                   position: "absolute",
@@ -231,6 +239,7 @@ export function CatalogClient({
                 </span>
                 Live em andamento
               </div>
+              )}
               <div style={{ position: "relative" }}>
                 <div
                   style={{
@@ -952,6 +961,7 @@ export function CatalogClient({
                           )
                         })}
                       </div>
+                      {showLive && (
                       <div
                         style={{
                           position: "relative",
@@ -979,6 +989,7 @@ export function CatalogClient({
                           </span>
                         </p>
                       </div>
+                      )}
                       <div
                         style={{
                           display: "flex",
