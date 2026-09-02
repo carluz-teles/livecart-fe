@@ -39,6 +39,10 @@ import {
   formatRelativeTime,
 } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import {
+  fraseDoDesfecho,
+  type TomDoDesfecho,
+} from "@/lib/desfecho-do-comentario"
 import type { OrderComment, OrderDetail } from "@/types/cart.types"
 import type { ShipmentStatus } from "@/types/shipment.types"
 import { OrderDetailContext } from "./OrderDetailContext"
@@ -245,85 +249,25 @@ function ResumoDeFala({
 // O desfecho vai por TRÊS canais — tom, ícone e frase. Cor sozinha não serve:
 // quem não distingue verde de vermelho leria a mesma coisa nos três casos, e é
 // justamente a diferença entre eles que dá valor a esta seção.
-// `semAlvo` é a frase de quando não há produto para nomear — e ela importa
-// mais que as outras. O caso sem produto É o desfecho `no_product`: um título
-// vago ali ("pediu algo") esconde justamente a venda perdida que esta seção
-// existe para revelar.
-const DESFECHO: Record<
-  string,
-  { kind: EventKind; verbo: string; nota?: string; semAlvo?: string }
-> = {
-  added_to_cart: { kind: "comment_cart", verbo: "pediu" },
-  partial_fulfillment: {
-    kind: "comment_wait",
-    verbo: "pediu",
-    nota: "Só parte tinha estoque — o resto entrou na fila.",
-  },
-  waitlisted: {
-    kind: "comment_wait",
-    verbo: "entrou na fila de",
-    nota: "Sem estoque no momento do pedido.",
-  },
-  already_waitlisted: {
-    kind: "comment_wait",
-    verbo: "pediu de novo",
-    nota: "Já estava na fila deste produto.",
-  },
-  out_of_stock: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "Sem estoque e sem fila disponível.",
-    semAlvo: "pediu um item sem estoque",
-  },
-  no_product: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "Nenhum produto casou com o código.",
-    semAlvo: "pediu um código que não existe no catálogo",
-  },
-  max_quantity_reached: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "Acima do limite por comprador.",
-  },
-  not_in_promo: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "Produto fora desta promoção.",
-  },
-  event_ended: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "A live já tinha encerrado.",
-    semAlvo: "pediu depois do fim",
-  },
-  blocked: {
-    kind: "comment_miss",
-    verbo: "pediu",
-    nota: "Comprador bloqueado na loja.",
-    semAlvo: "tentou pedir",
-  },
+// A tradução do desfecho vive em lib/desfecho-do-comentario, compartilhada com
+// a lista de comentários do evento. Eram duas cópias da mesma tabela por umas
+// horas — e divergiriam no primeiro desfecho novo que o motor aprendesse.
+//
+// Aqui ela é adaptada ao vocabulário da linha do tempo: o tom vira um EventKind
+// (o mapa ICON/TONE já existente faz o resto), em vez de uma classe solta.
+const KIND_POR_TOM: Record<TomDoDesfecho, EventKind> = {
+  ok: "comment_cart",
+  espera: "comment_wait",
+  perdida: "comment_miss",
+  neutro: "comment",
 }
 
 function descreverComentario(
   c: OrderComment,
   handle: string,
 ): { kind: EventKind; title: string; description?: string } {
-  const quem = `@${handle}`
-  const d = DESFECHO[c.result]
-
-  // Sem intenção de compra — ou desfecho que ainda não conhecemos. Inventar uma
-  // frase para um código novo seria afirmar o que ninguém apurou; o comentário
-  // fica cinza, como sempre foi, e o texto continua visível.
-  if (!d) return { kind: "comment", title: `${quem} comentou` }
-
-  const qtd = c.quantity && c.quantity > 1 ? `${c.quantity}× ` : ""
-  const alvo = c.productName || (c.productKeyword ? `código ${c.productKeyword}` : "")
-  const title = alvo
-    ? `${quem} ${d.verbo} ${qtd}${alvo}`
-    : `${quem} ${d.semAlvo ?? d.verbo}`
-
-  return { kind: d.kind, title, description: d.nota }
+  const f = fraseDoDesfecho(handle, c)
+  return { kind: KIND_POR_TOM[f.tom], title: f.titulo, description: f.nota }
 }
 
 // A árvore de decisões do pedido (20/08/2026): tudo que o LiveCart fez com

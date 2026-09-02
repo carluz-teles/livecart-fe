@@ -10,6 +10,13 @@ import {
   Trash2,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import {
+  fraseDoDesfecho,
+  lerDesfecho,
+  TOM_CLASSE,
+  type TomDoDesfecho,
+} from "@/lib/desfecho-do-comentario"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -64,6 +71,7 @@ export function EventDetailComments() {
   const isStory = kindTypes.length > 0 && kindTypes.every((t) => t === "story")
   const { data: comments, isLoading } = useEventComments(eventId)
 
+  const [tomFiltro, setTomFiltro] = useState<TomDoDesfecho | "todos">("todos")
   const [replyFor, setReplyFor] = useState<EventComment | null>(null)
   const [replyText, setReplyText] = useState("")
   const [deleteFor, setDeleteFor] = useState<EventComment | null>(null)
@@ -71,6 +79,19 @@ export function EventDetailComments() {
   const reply = useReplyComment(eventId)
   const hide = useHideComment(eventId)
   const del = useDeleteComment(eventId)
+
+  // A CONTA QUE O LOJISTA REVISA DEPOIS DA LIVE.
+  //
+  // "Quantas falas não viraram venda?" é a pergunta que esta tela existe para
+  // responder, e ela não tinha resposta: `hasPurchaseIntent` diz que a
+  // compradora quis, não se conseguiu.
+  const porTom = { ok: 0, espera: 0, perdida: 0, neutro: 0 }
+  for (const c of comments ?? []) {
+    porTom[lerDesfecho(c.result)?.tom ?? "neutro"]++
+  }
+  const visiveis = (comments ?? []).filter(
+    (c) => tomFiltro === "todos" || (lerDesfecho(c.result)?.tom ?? "neutro") === tomFiltro,
+  )
 
   if (!ctx) return null
 
@@ -115,6 +136,38 @@ export function EventDetailComments() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Filtro por DESFECHO. Depois da live, a pergunta que o lojista faz é
+            "o que não virou venda?" — e antes disto ela não tinha resposta na
+            tela: era preciso ler comentário por comentário. */}
+        {!isLoading && comments && comments.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <FiltroDeDesfecho
+              ativo={tomFiltro === "todos"}
+              onClick={() => setTomFiltro("todos")}
+              rotulo="Tudo"
+              n={comments.length}
+            />
+            {(
+              [
+                ["ok", "Viraram item"],
+                ["espera", "Na fila"],
+                ["perdida", "Sem atender"],
+                ["neutro", "Sem intenção"],
+              ] as const
+            ).map(([tom, rotulo]) =>
+              porTom[tom] > 0 ? (
+                <FiltroDeDesfecho
+                  key={tom}
+                  ativo={tomFiltro === tom}
+                  onClick={() => setTomFiltro(tom)}
+                  rotulo={rotulo}
+                  n={porTom[tom]}
+                  tom={tom}
+                />
+              ) : null,
+            )}
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
@@ -133,8 +186,16 @@ export function EventDetailComments() {
                 {isStory ? "Nenhuma resposta ainda" : "Nenhum comentário ainda"}
               </p>
             </div>
+          ) : visiveis.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-muted-foreground">Nenhuma fala com esse desfecho.</p>
+              <Button variant="ghost" size="sm" onClick={() => setTomFiltro("todos")}>
+                Ver todas
+              </Button>
+            </div>
           ) : (
-            comments.map((comment) => (
+            visiveis.map((comment) => (
               <CommentRow
                 key={comment.id}
                 comment={comment}
@@ -230,6 +291,8 @@ function CommentRow({
   deletePending,
   readOnly = false,
 }: CommentRowProps) {
+  const desfecho = lerDesfecho(comment.result)
+  const frase = fraseDoDesfecho(comment.handle, comment)
   return (
     <div className="flex items-start gap-3 rounded-md border p-3">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
@@ -238,11 +301,24 @@ function CommentRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-medium">@{comment.handle}</span>
-          {comment.hasPurchaseIntent && (
+          {/* O DESFECHO, não a intenção.
+              "intenção de compra" dizia que ela QUIS comprar — nunca se
+              conseguiu. Um "quero o 9999" sem produto e um "1825 QUERO" que
+              virou item usavam o mesmo selo, e o primeiro é venda perdida. */}
+          {desfecho ? (
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[11px] font-medium",
+                TOM_CLASSE[desfecho.tom],
+              )}
+            >
+              {desfecho.rotulo}
+            </span>
+          ) : comment.hasPurchaseIntent ? (
             <Badge variant="secondary" className="text-xs">
               intenção de compra
             </Badge>
-          )}
+          ) : null}
           {comment.hidden && (
             <Badge variant="outline" className="text-xs text-muted-foreground">
               oculto
@@ -258,6 +334,12 @@ function CommentRow({
         >
           {comment.text}
         </p>
+        {frase && frase.tom !== "neutro" && (
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/80">
+            {frase.titulo.replace(`@${comment.handle} `, "")}
+            {frase.nota ? ` · ${frase.nota}` : ""}
+          </p>
+        )}
       </div>
       {readOnly ? null : (
       <div className="flex shrink-0 items-center gap-1">
@@ -323,5 +405,42 @@ function CommentRow({
       </div>
       )}
     </div>
+  )
+}
+
+/** Chip de filtro por desfecho. O número é parte do rótulo: sem ele o lojista
+ *  precisa clicar em cada um para descobrir onde está o problema. */
+function FiltroDeDesfecho({
+  ativo,
+  onClick,
+  rotulo,
+  n,
+  tom,
+}: {
+  ativo: boolean
+  onClick: () => void
+  rotulo: string
+  n: number
+  tom?: TomDoDesfecho
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        ativo
+          ? "border-foreground/25 bg-muted font-medium text-foreground"
+          : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+      )}
+    >
+      {tom && (
+        <span className={cn("h-1.5 w-1.5 rounded-full", TOM_CLASSE[tom])} aria-hidden />
+      )}
+      {rotulo}
+      <span className="tabular-nums opacity-70">{n}</span>
+    </button>
   )
 }
