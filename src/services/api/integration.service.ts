@@ -29,7 +29,6 @@ import type {
   WhatsAppStatus,
   ConnectWhatsAppPayload,
   WhatsAppRecoveryStats,
-  DrainReport,
 } from "@/types"
 
 export const integrationService = {
@@ -96,18 +95,6 @@ export const integrationService = {
       token,
     ),
 
-  // Migracao unica: troca a guarda do estoque das saidas manuais para os pedidos
-  // de venda. `dryRun` e o padrao do backend — omitir NAO escreve.
-  drainLegacyReservations: (
-    storeId: string,
-    body: { dryRun: boolean; limit?: number; maxSeconds?: number },
-    token?: string | null,
-  ) =>
-    apiClient.post<DrainReport>(
-      `/stores/${storeId}/integrations/erp/drain-legacy-reservations`,
-      body,
-      token,
-    ),
 
   checkERPReserva: (storeId: string, id: string, token?: string | null) =>
     apiClient.get<ERPReservaResponse>(

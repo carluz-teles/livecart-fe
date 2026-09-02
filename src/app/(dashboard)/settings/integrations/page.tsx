@@ -72,7 +72,6 @@ import { WhatsAppConnectDialog } from "@/components/integration/WhatsAppConnectD
 import { PagarmeWebhookProbe } from "@/components/integration/PagarmeWebhookProbe"
 import { TinyHealthCheckDialog } from "@/components/integration/TinyHealthCheck/TinyHealthCheckDialog"
 import { ERPReserva } from "@/components/integration/ERPReserva"
-import { Drenagem } from "@/components/integration/Drenagem"
 import { ModoDeReserva } from "@/components/integration/ModoDeReserva"
 import {
   useIntegrations,
@@ -925,7 +924,6 @@ function IntegrationsContent() {
                                   <>
                                     <TinyHealthCheckDialog integrationId={connected.id} />
                                     <ERPReserva integrationId={connected.id} />
-                                    <Drenagem />
                                   </>
                                 ) : null}
                                 {/* O modo de reserva é escolha de QUALQUER ERP,

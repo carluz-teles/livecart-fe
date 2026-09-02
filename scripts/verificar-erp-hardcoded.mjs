@@ -41,7 +41,6 @@ const PERMITIDOS = [
   { prefixo: "src/app/(dashboard)/docs/integrations/tiny/", porque: "guia do Tiny" },
   // Módulos que só existem para o Tiny e são gateados por provider.id === "tiny".
   { prefixo: "src/components/integration/TinyHealthCheck/", porque: "módulo do Tiny, gateado" },
-  { prefixo: "src/components/integration/Drenagem/", porque: "drenagem do modelo legado do Tiny" },
   { prefixo: "src/components/integration/ERPReserva/", porque: "módulo de Reserva do Tiny, gateado" },
   // Catálogo de vitrine e mapas de rótulo: "Tiny ERP" é o nome do produto.
   { prefixo: "src/app/(dashboard)/settings/integrations/page.tsx", porque: "catálogo por provider" },

@@ -40,5 +40,4 @@ export {
   whatsappKeys,
   whatsappRecoveryKeys,
 } from "./useWhatsApp"
-export * from "./useDrenagem"
 export { useERPConectado } from "./useERPConectado"
