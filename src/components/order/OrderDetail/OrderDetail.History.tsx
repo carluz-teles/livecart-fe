@@ -12,7 +12,9 @@ import {
   Package,
   PackageCheck,
   RotateCcw,
+  SearchX,
   Send,
+  ShoppingCart,
   TimerOff,
   Truck,
 } from "lucide-react"
@@ -37,7 +39,7 @@ import {
   formatRelativeTime,
 } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import type { OrderDetail } from "@/types/cart.types"
+import type { OrderComment, OrderDetail } from "@/types/cart.types"
 import type { ShipmentStatus } from "@/types/shipment.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 
@@ -45,6 +47,9 @@ type EventCategory = "customer" | "payment" | "logistics" | "system"
 type EventKind =
   | "created"
   | "comment"
+  | "comment_cart"
+  | "comment_wait"
+  | "comment_miss"
   | "dm_sent"
   | "dm_failed"
   | "dm_skipped"
@@ -88,6 +93,9 @@ const FILTERS: FilterChip[] = [
 const ICON: Record<EventKind, React.ComponentType<{ className?: string }>> = {
   created: Activity,
   comment: MessageCircle,
+  comment_cart: ShoppingCart,
+  comment_wait: Hourglass,
+  comment_miss: SearchX,
   dm_sent: Send,
   dm_failed: Send,
   dm_skipped: Send,
@@ -118,6 +126,9 @@ const NEUTRAL_TONE = "bg-muted text-muted-foreground"
 const TONE: Record<EventKind, string> = {
   created: NEUTRAL_TONE,
   comment: NEUTRAL_TONE,
+  comment_cart: SUCCESS_TONE,
+  comment_wait: WAIT_TONE,
+  comment_miss: ISSUE_TONE,
   dm_sent: SUCCESS_TONE,
   dm_failed: ISSUE_TONE,
   dm_skipped: NEUTRAL_TONE,
@@ -154,6 +165,167 @@ const DM_LABEL: Record<string, string> = {
   cart_recovery: "DM de recuperação de carrinho",
 }
 
+// O RESUMO QUE APARECE SEM CLIQUE.
+//
+// O cartão fechado mostrava só o ÚLTIMO evento, e a linha do tempo inteira
+// ficava atrás de "Ver eventos". Quem abre um pedido não descobria que houve
+// uma fala sem atender — a informação existia e ninguém a encontrava.
+//
+// Três números bastam, e o terceiro é o que justifica a tira: fala que não
+// virou nada é venda perdida, e ela precisa saltar antes do clique.
+function resumirFalas(events: TimelineEvent[]) {
+  let virouItem = 0
+  let naFila = 0
+  let perdidas = 0
+  let total = 0
+  for (const e of events) {
+    switch (e.kind) {
+      case "comment":
+        total++
+        break
+      case "comment_cart":
+        total++
+        virouItem++
+        break
+      case "comment_wait":
+        total++
+        naFila++
+        break
+      case "comment_miss":
+        total++
+        perdidas++
+        break
+    }
+  }
+  return { total, virouItem, naFila, perdidas }
+}
+
+// Número + ícone + palavra. O tom é reforço, nunca o único canal — a tira tem
+// de significar a mesma coisa para quem não separa verde de vermelho.
+function ResumoDeFala({
+  tom,
+  Icone,
+  n,
+  rotulo,
+  unico,
+}: {
+  tom: string
+  Icone: React.ComponentType<{ className?: string }>
+  n: number
+  rotulo: string
+  unico: string
+}) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span
+        className={cn("flex h-4 w-4 items-center justify-center rounded-full", tom)}
+        aria-hidden
+      >
+        <Icone className="h-2.5 w-2.5" />
+      </span>
+      <span className="text-muted-foreground">
+        {n} {n === 1 ? unico : rotulo}
+      </span>
+    </span>
+  )
+}
+
+// O QUE ACONTECEU COM CADA FALA DA COMPRADORA.
+//
+// A linha do tempo mostrava "@fulana comentou" e o texto — e três desfechos
+// muito diferentes ficavam idênticos:
+//
+//   "2074"       virou item                (venda)
+//   "2096"       entrou na fila            (venda adiada)
+//   "quero 9999" não casou com produto     (VENDA PERDIDA)
+//
+// A terceira é a que o lojista precisa ver, e era a mais invisível das três.
+// O motor da live sempre soube o desfecho; ele só nunca tinha chegado à tela.
+//
+// O desfecho vai por TRÊS canais — tom, ícone e frase. Cor sozinha não serve:
+// quem não distingue verde de vermelho leria a mesma coisa nos três casos, e é
+// justamente a diferença entre eles que dá valor a esta seção.
+// `semAlvo` é a frase de quando não há produto para nomear — e ela importa
+// mais que as outras. O caso sem produto É o desfecho `no_product`: um título
+// vago ali ("pediu algo") esconde justamente a venda perdida que esta seção
+// existe para revelar.
+const DESFECHO: Record<
+  string,
+  { kind: EventKind; verbo: string; nota?: string; semAlvo?: string }
+> = {
+  added_to_cart: { kind: "comment_cart", verbo: "pediu" },
+  partial_fulfillment: {
+    kind: "comment_wait",
+    verbo: "pediu",
+    nota: "Só parte tinha estoque — o resto entrou na fila.",
+  },
+  waitlisted: {
+    kind: "comment_wait",
+    verbo: "entrou na fila de",
+    nota: "Sem estoque no momento do pedido.",
+  },
+  already_waitlisted: {
+    kind: "comment_wait",
+    verbo: "pediu de novo",
+    nota: "Já estava na fila deste produto.",
+  },
+  out_of_stock: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "Sem estoque e sem fila disponível.",
+    semAlvo: "pediu um item sem estoque",
+  },
+  no_product: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "Nenhum produto casou com o código.",
+    semAlvo: "pediu um código que não existe no catálogo",
+  },
+  max_quantity_reached: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "Acima do limite por comprador.",
+  },
+  not_in_promo: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "Produto fora desta promoção.",
+  },
+  event_ended: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "A live já tinha encerrado.",
+    semAlvo: "pediu depois do fim",
+  },
+  blocked: {
+    kind: "comment_miss",
+    verbo: "pediu",
+    nota: "Comprador bloqueado na loja.",
+    semAlvo: "tentou pedir",
+  },
+}
+
+function descreverComentario(
+  c: OrderComment,
+  handle: string,
+): { kind: EventKind; title: string; description?: string } {
+  const quem = `@${handle}`
+  const d = DESFECHO[c.result]
+
+  // Sem intenção de compra — ou desfecho que ainda não conhecemos. Inventar uma
+  // frase para um código novo seria afirmar o que ninguém apurou; o comentário
+  // fica cinza, como sempre foi, e o texto continua visível.
+  if (!d) return { kind: "comment", title: `${quem} comentou` }
+
+  const qtd = c.quantity && c.quantity > 1 ? `${c.quantity}× ` : ""
+  const alvo = c.productName || (c.productKeyword ? `código ${c.productKeyword}` : "")
+  const title = alvo
+    ? `${quem} ${d.verbo} ${qtd}${alvo}`
+    : `${quem} ${d.semAlvo ?? d.verbo}`
+
+  return { kind: d.kind, title, description: d.nota }
+}
+
 // A árvore de decisões do pedido (20/08/2026): tudo que o LiveCart fez com
 // este carrinho, em ordem, com desfecho — comentário, DM (enviada OU não, e o
 // porquê), fila (entrou, liberou, venceu), prazo, pagamento, ERP, envio. O
@@ -172,11 +344,13 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
   })
 
   for (const c of order.comments ?? []) {
+    const d = descreverComentario(c, order.customerHandle)
     out.push({
       category: "customer",
-      kind: "comment",
+      kind: d.kind,
       date: c.createdAt,
-      title: `@${order.customerHandle} comentou`,
+      title: d.title,
+      description: d.description,
       message: c.text,
     })
   }
@@ -414,6 +588,7 @@ export function OrderDetailHistory() {
   if (!ctx || !order) return null
 
   const lastEvent = events[events.length - 1]
+  const falas = resumirFalas(events)
   const hasAlert = events.some((e) => e.kind === "issue")
   const filteredEvents =
     filter === "all" ? events : events.filter((e) => e.category === filter)
@@ -455,6 +630,40 @@ export function OrderDetailHistory() {
               <p className="text-xs text-muted-foreground">
                 {formatRelativeTime(lastEvent.date)}
               </p>
+              {falas.total > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="text-muted-foreground">
+                    {falas.total} {falas.total === 1 ? "fala" : "falas"} na live
+                  </span>
+                  {falas.virouItem > 0 && (
+                    <ResumoDeFala
+                      tom={SUCCESS_TONE}
+                      Icone={ShoppingCart}
+                      n={falas.virouItem}
+                      rotulo="viraram item"
+                      unico="virou item"
+                    />
+                  )}
+                  {falas.naFila > 0 && (
+                    <ResumoDeFala
+                      tom={WAIT_TONE}
+                      Icone={Hourglass}
+                      n={falas.naFila}
+                      rotulo="na fila"
+                      unico="na fila"
+                    />
+                  )}
+                  {falas.perdidas > 0 && (
+                    <ResumoDeFala
+                      tom={ISSUE_TONE}
+                      Icone={SearchX}
+                      n={falas.perdidas}
+                      rotulo="sem atender"
+                      unico="sem atender"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <p className="flex-1 text-sm text-muted-foreground">
