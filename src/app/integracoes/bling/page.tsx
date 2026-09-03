@@ -1,23 +1,46 @@
 import type { Metadata } from "next"
+import Image from "next/image"
+import {
+  ArrowRight,
+  Boxes,
+  Check,
+  FileText,
+  Instagram,
+  Package,
+  Radio,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+} from "lucide-react"
+
+import { IntegrationCardLogo } from "@/components/integration/IntegrationCard/IntegrationCard.Logo"
+import { Button } from "@/components/ui/button"
 
 /**
  * MANUAL PÚBLICO DA INTEGRAÇÃO COM O BLING.
  *
  * O Bling exige que todo aplicativo publicado na Central de Extensões tenha uma
- * página de manual acessível SEM login — quem lê ainda não é cliente, e mandar
- * essa pessoa para uma tela de senha é perder a instalação.
+ * página de instruções acessível SEM login — quem lê ainda não é cliente, e
+ * mandar essa pessoa para uma tela de senha é perder a instalação.
  *
- * Por isso a rota entra na allowlist do middleware e a página não toca em
- * sessão, contexto de loja nem React Query. É um documento estático: renderiza
- * no servidor, não hidrata nada, e continua de pé mesmo se a API estiver fora.
+ * Por isso a rota fica fora do matcher do middleware e a página não toca em
+ * sessão, contexto de loja nem React Query: renderiza no servidor, não hidrata
+ * nada e continua de pé mesmo com a API fora.
  *
- * ═══ POR QUE ELA NÃO SE PARECE COM O APP ═══
+ * ═══ A IDENTIDADE É A DA CASA ═══
  *
- * O painel é uma ferramenta de trabalho — denso, rápido, cheio de estado. Isto
- * é um documento: alguém decidindo se confia na integração. Por isso a página
- * tem paleta e composição próprias (papel quente, serifada em display, mono nos
- * rótulos, numerais grandes na margem) em vez dos tokens do dashboard. As cores
- * vivem em variáveis locais justamente para o tema do app não vazar para cá.
+ * Nada aqui é inventado. O topo escuro com o brilho âmbar, o grid de 56px, o
+ * badge de borda âmbar e o botão preto-sobre-âmbar são os MESMOS da landing
+ * page (`components/marketing/landing-hero`), e o corpo claro segue o ritmo das
+ * seções dela. Uma página institucional com paleta própria é uma marca a mais
+ * para o cliente decorar — e a primeira versão desta tela cometeu exatamente
+ * esse erro.
+ *
+ * A única liberdade tomada é de acessibilidade: o âmbar da marca (--primary,
+ * HSL 37.7 92% 50%) rende cerca de 2:1 sobre branco, o que reprova para texto.
+ * Onde ele é TEXTO em fundo claro, entra amber-700; onde é elemento gráfico
+ * (círculo, borda, brilho), o âmbar cheio fica.
  *
  * A estrutura segue o "modelo de manual" do Bling, na ordem que eles pedem:
  * requisitos → passos no Bling → passos no integrador → contato.
@@ -29,8 +52,55 @@ export const metadata: Metadata = {
     "Como conectar sua conta Bling ao LiveCart e transformar comentários de live do Instagram em pedidos de venda.",
 }
 
-// Documento estático: nada aqui muda entre um acesso e outro.
 export const dynamic = "force-static"
+
+const APP = "https://app.livecart.com.br"
+
+const REQUISITOS = [
+  {
+    icone: Sparkles,
+    titulo: "Uma conta no LiveCart",
+    corpo: (
+      <>
+        Obrigatória, e precisa existir <em>antes</em> de autorizar a integração.
+        Crie a sua em{" "}
+        <Ancora href={`${APP}/register`}>app.livecart.com.br/register</Ancora> —
+        é gratuito e leva um minuto.
+      </>
+    ),
+  },
+  {
+    icone: ShieldCheck,
+    titulo: "Uma conta Bling ativa",
+    corpo: (
+      <>
+        Com permissão para instalar aplicativos da Central de Extensões. Se você
+        não é o administrador da conta, peça a quem for.
+      </>
+    ),
+  },
+  {
+    icone: Boxes,
+    titulo: "Produtos cadastrados no Bling",
+    corpo: (
+      <>
+        Com preço e saldo em estoque. O LiveCart lê o seu catálogo do Bling — ele
+        não cria produtos por lá.
+      </>
+    ),
+  },
+  {
+    icone: RefreshCw,
+    titulo: "Um ERP por loja",
+    corpo: (
+      <>
+        Cada loja do LiveCart conecta <strong>um</strong> ERP. Se a sua já
+        estiver ligada a outro sistema, desconecte antes — assim não fica dúvida
+        sobre quem manda no estoque.
+      </>
+    ),
+  },
+]
 
 const PASSOS_BLING = [
   {
@@ -44,12 +114,12 @@ const PASSOS_BLING = [
   {
     titulo: "Clique em Instalar aplicativo",
     corpo:
-      "O Bling vai mostrar quais permissões o LiveCart precisa: produtos, estoque, pedidos de venda, contatos e notas fiscais.",
+      "O Bling mostra as permissões que o LiveCart pede: produtos, estoque, pedidos de venda, contatos e notas fiscais.",
   },
   {
     titulo: "Autorize o acesso",
     corpo:
-      "Ao confirmar, o Bling gera as credenciais da conexão. Você pode revogar esse acesso quando quiser, pela mesma tela.",
+      "Ao confirmar, o Bling gera as credenciais da conexão. Você revoga quando quiser, pela mesma tela.",
   },
 ]
 
@@ -61,7 +131,7 @@ const PASSOS_LIVECART = [
   {
     titulo: "Clique em Conectar no cartão do Bling",
     corpo:
-      "Você é levado para o Bling, faz login com o seu próprio usuário e confirma as permissões. Não é preciso criar aplicativo nem copiar chaves.",
+      "Você é levado ao Bling, entra com o seu próprio usuário e confirma as permissões. Sem criar aplicativo, sem copiar chave nenhuma.",
   },
   {
     titulo: "Importe seu catálogo",
@@ -76,312 +146,309 @@ const PASSOS_LIVECART = [
   {
     titulo: "Faça sua live",
     corpo:
-      "A partir daí é automático: comentário vira carrinho, a compradora recebe o link no Direct e o pedido de venda nasce no seu Bling.",
+      "Daí em diante é automático: comentário vira carrinho, a compradora recebe o link no Direct e o pedido de venda nasce no seu Bling.",
   },
 ]
 
 const DEPOIS = [
   {
+    icone: Package,
     titulo: "Pedido de venda no Bling",
     corpo:
-      "Cada carrinho vira um pedido, com o contato da compradora criado ou atualizado. Itens adicionados ou removidos durante a live acompanham o pedido.",
+      "Cada carrinho vira um pedido, com o contato da compradora criado ou atualizado. Itens somados ou removidos durante a live acompanham o pedido.",
   },
   {
+    icone: Boxes,
     titulo: "Estoque espelhado",
     corpo:
-      "O Bling continua sendo o dono do saldo. Quando ele muda por qualquer motivo — outra venda, entrada de nota, ajuste manual — o LiveCart é avisado.",
+      "O Bling continua dono do saldo. Quando ele muda por qualquer motivo — outra venda, entrada de nota, ajuste manual — o LiveCart é avisado.",
   },
   {
+    icone: Wallet,
     titulo: "Pagamento e situação",
     corpo:
       "Pagamento confirmado atualiza a situação do pedido, com forma de pagamento e parcelas registradas.",
   },
   {
+    icone: FileText,
     titulo: "Nota fiscal",
     corpo:
       "Emitiu a NF-e no Bling? O LiveCart reconhece e reflete no pedido, sem você avisar.",
   },
 ]
 
+const DUVIDAS = [
+  {
+    pergunta: "Preciso criar um aplicativo no Bling?",
+    resposta:
+      "Não. O LiveCart já tem um aplicativo publicado na Central de Extensões, então você não gera nem cola client_id ou client_secret em lugar nenhum.",
+  },
+  {
+    pergunta: "Meus produtos vão ser alterados no Bling?",
+    resposta:
+      "Não. O LiveCart lê o catálogo e escreve pedidos de venda e contatos. Cadastro, preço e saldo continuam sendo editados por você, no Bling.",
+  },
+  {
+    pergunta: "E se um produto esgotar no meio da live?",
+    resposta:
+      "A compradora entra numa fila de espera em vez de perder a compra. Se o saldo voltar no Bling, o LiveCart avisa quem estava na fila.",
+  },
+  {
+    pergunta: "Como eu desconecto?",
+    resposta:
+      "Pelo painel do LiveCart, em Configurações → Integrações, ou revogando o acesso do aplicativo direto na sua conta Bling. Os dois caminhos encerram a conexão.",
+  },
+]
+
 export default function ManualBlingPage() {
   return (
-    <div className="manual">
-      {/* A paleta e a tipografia vivem aqui, e não nos tokens do app, para o
-          documento ficar igual em qualquer tema — inclusive quando o Bling
-          abre o link numa aba sem preferência nenhuma definida. */}
-      <style>{`
-        .manual {
-          --papel: #f7f4ee;
-          --papel-fundo: #efeae0;
-          --tinta: #1a1815;
-          --tinta-suave: #6b6357;
-          --regua: #ddd5c6;
-          --acento: #b4451f;
-          --acento-fraco: #f0e2d8;
-          color-scheme: light;
-          background-color: var(--papel);
-          color: var(--tinta);
-          min-height: 100vh;
-          /* Grão de papel: um ruído fraquíssimo que tira o achatamento do
-             fundo chapado sem virar textura visível. */
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-        }
-        .dark .manual {
-          --papel: #15130f;
-          --papel-fundo: #1d1a15;
-          --tinta: #f1ede5;
-          --tinta-suave: #9c9385;
-          --regua: #302b24;
-          --acento: #e5825a;
-          --acento-fraco: #2a201a;
-          color-scheme: dark;
-        }
-        .manual ::selection { background: var(--acento); color: var(--papel); }
-      `}</style>
+    <div className="bg-background">
+      {/* ══ TOPO ══════════════════════════════════════════════════════════
+          Mesmo tratamento do hero da landing page: neutral-950, gradiente
+          âmbar→laranja, dois brilhos borrados e a grade de 56px. É assim que
+          o LiveCart se apresenta — e um manual é apresentação. */}
+      <header className="relative overflow-hidden bg-neutral-950 text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-neutral-950 to-orange-950" />
+        <div className="absolute inset-0 opacity-50">
+          <div className="absolute -left-1/4 -top-1/3 h-[600px] w-[600px] rounded-full bg-gradient-to-r from-orange-500/25 to-amber-500/25 blur-3xl" />
+          <div className="absolute -bottom-1/2 -right-1/4 h-[500px] w-[500px] rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 blur-3xl" />
+        </div>
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+          }}
+        />
 
-      {/* ── CABEÇALHO ───────────────────────────────────────────────────── */}
-      <header className="border-b" style={{ borderColor: "var(--regua)" }}>
-        <div className="mx-auto max-w-3xl px-6 pb-14 pt-16 sm:px-8 sm:pt-24">
-          <p
-            className="font-mono text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--acento)" }}
-          >
-            Manual de integração
-          </p>
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="flex h-16 items-center justify-between">
+            <a href={APP} aria-label="LiveCart">
+              <Image
+                src="/livecart/logotipo-footer.png"
+                alt="LiveCart"
+                width={190}
+                height={51}
+                priority
+                className="h-7 w-auto"
+              />
+            </a>
+            <a
+              href={APP}
+              className="text-sm font-medium text-neutral-300 transition-colors hover:text-white"
+            >
+              Ir para o app
+            </a>
+          </div>
 
-          <h1
-            className="mt-5 font-serif text-4xl leading-[1.08] tracking-tight sm:text-5xl"
-            style={{ color: "var(--tinta)" }}
-          >
-            LiveCart <span style={{ color: "var(--regua)" }}>+</span> Bling
-          </h1>
-
-          <p
-            className="mt-6 max-w-xl font-serif text-lg leading-relaxed"
-            style={{ color: "var(--tinta-suave)" }}
-          >
-            O LiveCart transforma comentários de live e post do Instagram em
-            pedidos de venda no seu Bling. A compradora comenta o código do
-            produto, recebe o link de pagamento no Direct, e o pedido nasce no
-            seu ERP — durante a transmissão, não depois dela.
-          </p>
-
-          <dl
-            className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t pt-6 font-mono text-[11px] uppercase tracking-[0.14em]"
-            style={{ borderColor: "var(--regua)", color: "var(--tinta-suave)" }}
-          >
-            <div>
-              <dt className="opacity-60">Tempo de instalação</dt>
-              <dd className="mt-1" style={{ color: "var(--tinta)" }}>
-                cerca de 5 minutos
-              </dd>
+          <div className="pb-20 pt-14 sm:pb-24 sm:pt-20">
+            {/* O par de marcas diz o assunto antes de qualquer palavra. */}
+            <div className="flex items-center gap-3">
+              <span className="flex size-12 items-center justify-center rounded-xl bg-amber-400/15 ring-1 ring-amber-400/30">
+                <Radio className="size-5 text-amber-300" />
+              </span>
+              <span className="text-lg text-neutral-500">+</span>
+              <IntegrationCardLogo provider="bling" size="md" className="size-12" />
             </div>
-            <div>
-              <dt className="opacity-60">Autenticação</dt>
-              <dd className="mt-1" style={{ color: "var(--tinta)" }}>
-                OAuth 2.0
-              </dd>
+
+            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
+              <Sparkles className="size-3.5" />
+              Manual de integração
             </div>
-            <div>
-              <dt className="opacity-60">Custo no Bling</dt>
-              <dd className="mt-1" style={{ color: "var(--tinta)" }}>
-                sem custo adicional
-              </dd>
+
+            <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+              Conecte o Bling e transforme comentários em{" "}
+              <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
+                pedidos de venda
+              </span>
+            </h1>
+
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-neutral-300">
+              A compradora comenta o código do produto na sua live do Instagram,
+              recebe o link de pagamento no Direct, e o pedido nasce no seu Bling
+              — durante a transmissão, não depois dela.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 bg-amber-400 text-base font-semibold text-black hover:bg-amber-300"
+              >
+                <a href={`${APP}/settings/integrations`}>
+                  Conectar meu Bling
+                  <ArrowRight className="ml-2 size-4" />
+                </a>
+              </Button>
+              <p className="text-sm text-neutral-400">
+                Leva cerca de 5 minutos · sem custo adicional no Bling
+              </p>
             </div>
-          </dl>
+
+            <dl className="mt-14 grid gap-6 border-t border-white/10 pt-8 sm:grid-cols-3">
+              <Estatistica rotulo="Autenticação" valor="OAuth 2.0" />
+              <Estatistica rotulo="Instalação" valor="Cerca de 5 minutos" />
+              <Estatistica rotulo="Custo no Bling" valor="Sem custo adicional" />
+            </dl>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 sm:px-8">
-        {/* ── REQUISITOS ────────────────────────────────────────────────── */}
-        <section className="pt-16" aria-labelledby="requisitos">
-          <Rotulo>Antes de começar</Rotulo>
-          <h2
-            id="requisitos"
-            className="mt-3 font-serif text-2xl tracking-tight sm:text-3xl"
-          >
-            O que você precisa ter
-          </h2>
-
-          <div
-            className="mt-7 space-y-5 border-l-2 py-1 pl-6"
-            style={{ borderColor: "var(--acento)" }}
-          >
-            <Requisito titulo="Uma conta no LiveCart">
-              A conta é obrigatória e precisa existir <em>antes</em> de
-              autorizar a integração. Crie a sua em{" "}
-              <Link href="https://app.livecart.com.br/register">
-                app.livecart.com.br/register
-              </Link>
-              . O cadastro é gratuito e leva um minuto.
-            </Requisito>
-
-            <Requisito titulo="Uma conta Bling ativa">
-              Com permissão para instalar aplicativos da Central de Extensões.
-              Se você não é o administrador da conta, peça a quem for.
-            </Requisito>
-
-            <Requisito titulo="Produtos cadastrados no Bling">
-              Com preço e saldo em estoque. O LiveCart lê o seu catálogo do
-              Bling — ele não cria produtos por lá.
-            </Requisito>
-
-            <Requisito titulo="Um ERP por loja">
-              Cada loja do LiveCart conecta <strong>um</strong> ERP. Se a sua já
-              estiver ligada a outro sistema, desconecte antes de conectar o
-              Bling — assim não fica dúvida sobre quem manda no estoque.
-            </Requisito>
-          </div>
-        </section>
-
-        <Divisor />
-
-        {/* ── PASSOS NO BLING ───────────────────────────────────────────── */}
-        <Passos
-          numero="01"
-          rotulo="Passos no Bling"
-          titulo="Instale o aplicativo"
-          resumo="Se você prefere começar pelo Bling, o caminho é a Central de Extensões."
-          passos={PASSOS_BLING}
-        />
-
-        {/* ── PASSOS NO INTEGRADOR ──────────────────────────────────────── */}
-        <Passos
-          numero="02"
-          rotulo="Passos no LiveCart"
-          titulo="Conecte e importe o catálogo"
-          resumo="Você também pode começar por aqui: o LiveCart leva você ao Bling na hora de autorizar. É o mesmo destino, e é o caminho mais curto."
-          passos={PASSOS_LIVECART}
-        />
-
-        <Divisor />
-
-        {/* ── O QUE ACONTECE DEPOIS ─────────────────────────────────────── */}
-        <section aria-labelledby="depois">
-          <Rotulo>Depois de conectar</Rotulo>
-          <h2
-            id="depois"
-            className="mt-3 font-serif text-2xl tracking-tight sm:text-3xl"
-          >
-            O que passa a acontecer sozinho
-          </h2>
-
-          <div className="mt-8 grid gap-px sm:grid-cols-2" style={{ backgroundColor: "var(--regua)" }}>
-            {DEPOIS.map((item) => (
+      <main>
+        {/* ══ REQUISITOS ═════════════════════════════════════════════════ */}
+        <Secao id="requisitos" eyebrow="Antes de começar" titulo="O que você precisa ter">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {REQUISITOS.map(({ icone: Icone, titulo, corpo }) => (
               <div
-                key={item.titulo}
-                className="p-6"
-                style={{ backgroundColor: "var(--papel-fundo)" }}
+                key={titulo}
+                className="rounded-xl border bg-card p-6 transition-colors hover:border-primary/40"
               >
-                <h3 className="font-serif text-lg">{item.titulo}</h3>
-                <p
-                  className="mt-2 text-sm leading-relaxed"
-                  style={{ color: "var(--tinta-suave)" }}
-                >
-                  {item.corpo}
+                <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Icone className="size-5 text-amber-700 dark:text-amber-400" />
+                </span>
+                <h3 className="mt-4 font-bold tracking-tight">{titulo}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {corpo}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Secao>
+
+        {/* ══ PASSOS NO BLING ════════════════════════════════════════════ */}
+        <Secao
+          id="no-bling"
+          eyebrow="Passos no Bling"
+          titulo="Instale o aplicativo"
+          lead="Se você prefere começar pelo Bling, o caminho é a Central de Extensões."
+          alternado
+        >
+          <Passos passos={PASSOS_BLING} />
+        </Secao>
+
+        {/* ══ PASSOS NO INTEGRADOR ═══════════════════════════════════════ */}
+        <Secao
+          id="no-livecart"
+          eyebrow="Passos no LiveCart"
+          titulo="Conecte e importe o catálogo"
+          lead="Você também pode começar por aqui — o LiveCart leva você ao Bling na hora de autorizar. Mesmo destino, caminho mais curto."
+        >
+          <Passos passos={PASSOS_LIVECART} />
+
+          <div className="mt-12 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 text-base font-semibold"
+            >
+              <a href={`${APP}/settings/integrations`}>
+                Ir para Integrações
+                <ArrowRight className="ml-2 size-4" />
+              </a>
+            </Button>
+          </div>
+        </Secao>
+
+        {/* ══ DEPOIS DE CONECTAR ═════════════════════════════════════════ */}
+        <Secao
+          id="depois"
+          eyebrow="Depois de conectar"
+          titulo="O que passa a acontecer sozinho"
+          alternado
+        >
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {DEPOIS.map(({ icone: Icone, titulo, corpo }) => (
+              <div key={titulo} className="rounded-xl border bg-card p-6">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
+                    <Icone className="size-4" />
+                  </span>
+                  <h3 className="font-bold tracking-tight">{titulo}</h3>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {corpo}
                 </p>
               </div>
             ))}
           </div>
 
-          <p
-            className="mt-6 text-sm leading-relaxed"
-            style={{ color: "var(--tinta-suave)" }}
-          >
-            O LiveCart <strong>não reserva estoque no Bling</strong>. Ele segura
-            a disponibilidade do lado dele durante a live e só grava o pedido —
-            o saldo do Bling continua sendo a única verdade.
-          </p>
-        </section>
+          {/* Dito com todas as letras porque é a pergunta que o lojista de ERP
+              faz primeiro — e prometer reserva seria vender o que não existe. */}
+          <div className="mt-6 flex gap-3 rounded-xl border border-primary/20 bg-primary/5 p-5">
+            <Check className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-400" />
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              O LiveCart{" "}
+              <strong className="text-foreground">
+                não reserva estoque no Bling
+              </strong>
+              . Ele segura a disponibilidade do lado dele durante a live e só
+              grava o pedido — o saldo do Bling continua sendo a única verdade.
+            </p>
+          </div>
+        </Secao>
 
-        <Divisor />
-
-        {/* ── DÚVIDAS FREQUENTES ────────────────────────────────────────── */}
-        <section aria-labelledby="duvidas">
-          <Rotulo>Dúvidas frequentes</Rotulo>
-          <h2
-            id="duvidas"
-            className="mt-3 font-serif text-2xl tracking-tight sm:text-3xl"
-          >
-            Antes de nos chamar
-          </h2>
-
-          <dl className="mt-8 divide-y" style={{ borderColor: "var(--regua)" }}>
-            <Duvida pergunta="Preciso criar um aplicativo no Bling?">
-              Não. O LiveCart já tem um aplicativo publicado na Central de
-              Extensões, então você não precisa gerar nem colar client_id ou
-              client_secret em lugar nenhum.
-            </Duvida>
-            <Duvida pergunta="Meus produtos vão ser alterados no Bling?">
-              Não. O LiveCart lê o catálogo e escreve pedidos de venda e
-              contatos. Cadastro de produto, preço e saldo continuam sendo
-              editados por você, no Bling.
-            </Duvida>
-            <Duvida pergunta="E se um produto esgotar no meio da live?">
-              A compradora entra numa fila de espera em vez de perder a compra.
-              Se o saldo voltar no Bling, o LiveCart avisa quem estava na fila.
-            </Duvida>
-            <Duvida pergunta="Como eu desconecto?">
-              Pelo painel do LiveCart, em Configurações → Integrações, ou
-              revogando o acesso do aplicativo direto na sua conta Bling. Os dois
-              caminhos encerram a conexão.
-            </Duvida>
+        {/* ══ DÚVIDAS ════════════════════════════════════════════════════ */}
+        <Secao id="duvidas" eyebrow="Dúvidas frequentes" titulo="Antes de nos chamar">
+          <dl className="mt-12 divide-y rounded-xl border bg-card">
+            {DUVIDAS.map(({ pergunta, resposta }) => (
+              <div key={pergunta} className="p-6">
+                <dt className="font-bold tracking-tight">{pergunta}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {resposta}
+                </dd>
+              </div>
+            ))}
           </dl>
-        </section>
+        </Secao>
 
-        <Divisor />
-
-        {/* ── CONTATO ───────────────────────────────────────────────────── */}
-        <section aria-labelledby="suporte" className="pb-4">
-          <Rotulo>Contato</Rotulo>
-          <h2
-            id="suporte"
-            className="mt-3 font-serif text-2xl tracking-tight sm:text-3xl"
-          >
-            Suporte
-          </h2>
-
-          <p
-            className="mt-4 max-w-xl leading-relaxed"
-            style={{ color: "var(--tinta-suave)" }}
-          >
+        {/* ══ SUPORTE ════════════════════════════════════════════════════ */}
+        <Secao id="suporte" eyebrow="Contato" titulo="Suporte" alternado>
+          <p className="mt-4 max-w-xl text-lg text-muted-foreground">
             Travou em algum passo, ou algo não chegou no Bling como você
             esperava? Fale com a gente — respondemos no mesmo dia útil.
           </p>
 
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:gap-12">
-            <Contato rotulo="E-mail" valor="suporte@livecart.app" href="mailto:suporte@livecart.app" />
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
             <Contato
+              icone={Instagram}
+              rotulo="E-mail"
+              valor="suporte@livecart.app"
+              href="mailto:suporte@livecart.app"
+            />
+            <Contato
+              icone={Sparkles}
               rotulo="Central de ajuda"
               valor="app.livecart.com.br/support"
-              href="https://app.livecart.com.br/support"
+              href={`${APP}/support`}
             />
           </div>
-        </section>
+        </Secao>
       </main>
 
-      {/* ── RODAPÉ ──────────────────────────────────────────────────────── */}
-      <footer
-        className="mt-20 border-t"
-        style={{ borderColor: "var(--regua)", backgroundColor: "var(--papel-fundo)" }}
-      >
-        {/* Colofão empilhado, e não em linha: a razão social com CNPJ já ocupa
-            a medida inteira, e jogar os links no mesmo eixo os deixava colados
-            no número — parecia continuação dele. */}
-        <div
-          className="mx-auto max-w-3xl px-6 py-10 font-mono text-[11px] uppercase leading-relaxed tracking-[0.14em] sm:px-8"
-          style={{ color: "var(--tinta-suave)" }}
-        >
-          <p>LiveCart — Dahlemtech Solutions Ltda</p>
-          <p className="mt-1 opacity-70">CNPJ 54.350.351/0001-51</p>
-          <p className="mt-4 flex gap-6">
-            <Link href="https://app.livecart.com.br/privacy" discreto>
-              Privacidade
-            </Link>
-            <Link href="https://app.livecart.com.br/terms" discreto>
-              Termos
-            </Link>
-          </p>
+      {/* ══ RODAPÉ ═══════════════════════════════════════════════════════ */}
+      <footer className="bg-neutral-950 text-neutral-400">
+        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+          <Image
+            src="/livecart/logotipo-footer.png"
+            alt="LiveCart"
+            width={190}
+            height={51}
+            className="h-7 w-auto"
+          />
+          <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Dahlemtech Solutions Ltda · CNPJ 54.350.351/0001-51
+            </p>
+            <p className="flex gap-6">
+              <a href={`${APP}/privacy`} className="transition-colors hover:text-white">
+                Privacidade
+              </a>
+              <a href={`${APP}/terms`} className="transition-colors hover:text-white">
+                Termos
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>
@@ -389,177 +456,128 @@ export default function ManualBlingPage() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   PEÇAS DO DOCUMENTO
+   PEÇAS
    ══════════════════════════════════════════════════════════════════════ */
 
-function Rotulo({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="font-mono text-[11px] uppercase tracking-[0.22em]"
-      style={{ color: "var(--acento)" }}
-    >
-      {children}
-    </p>
-  )
-}
-
-function Divisor() {
-  return (
-    <div className="py-16">
-      <hr style={{ borderColor: "var(--regua)" }} />
-    </div>
-  )
-}
-
-function Requisito({
+/** Ritmo das seções da landing page: eyebrow âmbar, título bold, lead muted. */
+function Secao({
+  id,
+  eyebrow,
   titulo,
+  lead,
+  alternado,
   children,
 }: {
+  id: string
+  eyebrow: string
   titulo: string
+  lead?: string
+  alternado?: boolean
   children: React.ReactNode
 }) {
   return (
-    <div>
-      <h3 className="font-serif text-lg leading-snug">{titulo}</h3>
-      <p
-        className="mt-1 text-sm leading-relaxed"
-        style={{ color: "var(--tinta-suave)" }}
-      >
-        {children}
-      </p>
-    </div>
-  )
-}
-
-/** Um bloco de passos numerados. O numeral grande na margem é a assinatura do
- *  documento: dá a quem só folheia a noção de "são duas etapas, não vinte". */
-function Passos({
-  numero,
-  rotulo,
-  titulo,
-  resumo,
-  passos,
-}: {
-  numero: string
-  rotulo: string
-  titulo: string
-  resumo: string
-  passos: { titulo: string; corpo: string }[]
-}) {
-  return (
-    <section aria-labelledby={`etapa-${numero}`} className="relative">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-6 right-0 select-none font-mono text-[7rem] leading-none tracking-tighter sm:-top-10 sm:text-[9rem]"
-        style={{ color: "var(--regua)", opacity: 0.5 }}
-      >
-        {numero}
-      </div>
-
-      <div className="relative">
-        <Rotulo>{rotulo}</Rotulo>
+    <section
+      id={id}
+      aria-labelledby={`${id}-titulo`}
+      className={alternado ? "bg-muted/40 py-20 sm:py-24" : "bg-background py-20 sm:py-24"}
+    >
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <p className="text-sm font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+          {eyebrow}
+        </p>
         <h2
-          id={`etapa-${numero}`}
-          className="mt-3 font-serif text-2xl tracking-tight sm:text-3xl"
+          id={`${id}-titulo`}
+          className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl"
         >
           {titulo}
         </h2>
-        <p
-          className="mt-4 max-w-xl leading-relaxed"
-          style={{ color: "var(--tinta-suave)" }}
-        >
-          {resumo}
-        </p>
-
-        <ol className="mt-10 space-y-8">
-          {passos.map((p, i) => (
-            <li key={p.titulo} className="flex gap-5 sm:gap-7">
-              <span
-                className="w-7 shrink-0 pt-1 text-right font-mono text-sm tabular-nums"
-                style={{ color: "var(--acento)" }}
-                aria-hidden
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-serif text-lg leading-snug">{p.titulo}</h3>
-                <p
-                  className="mt-1.5 leading-relaxed"
-                  style={{ color: "var(--tinta-suave)" }}
-                >
-                  {p.corpo}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
+        {lead && (
+          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            {lead}
+          </p>
+        )}
+        {children}
       </div>
     </section>
   )
 }
 
-function Duvida({
-  pergunta,
-  children,
-}: {
-  pergunta: string
-  children: React.ReactNode
-}) {
+/** Passos numerados com o disco âmbar→laranja da landing page, ligados por uma
+ *  linha vertical: a linha é o que faz a lista virar percurso. */
+function Passos({ passos }: { passos: { titulo: string; corpo: string }[] }) {
   return (
-    <div className="py-5 first:pt-0">
-      <dt className="font-serif text-lg leading-snug">{pergunta}</dt>
-      <dd
-        className="mt-1.5 max-w-xl leading-relaxed"
-        style={{ color: "var(--tinta-suave)" }}
-      >
-        {children}
-      </dd>
+    <ol className="mt-12 space-y-0">
+      {passos.map((p, i) => (
+        <li key={p.titulo} className="relative flex gap-5 pb-8 last:pb-0">
+          {i < passos.length - 1 && (
+            <span
+              aria-hidden
+              className="absolute left-5 top-11 h-[calc(100%-1.75rem)] w-px bg-border"
+            />
+          )}
+          <span className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-bold text-white shadow-sm">
+            {i + 1}
+          </span>
+          <div className="min-w-0 flex-1 pt-1">
+            <h3 className="font-bold tracking-tight">{p.titulo}</h3>
+            <p className="mt-1.5 leading-relaxed text-muted-foreground">
+              {p.corpo}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function Estatistica({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+        {rotulo}
+      </dt>
+      <dd className="mt-1.5 font-semibold text-white">{valor}</dd>
     </div>
   )
 }
 
 function Contato({
+  icone: Icone,
   rotulo,
   valor,
   href,
 }: {
+  icone: React.ComponentType<{ className?: string }>
   rotulo: string
   valor: string
   href: string
 }) {
   return (
-    <div>
-      <p
-        className="font-mono text-[11px] uppercase tracking-[0.14em]"
-        style={{ color: "var(--tinta-suave)" }}
-      >
-        {rotulo}
-      </p>
-      <p className="mt-1.5 font-serif text-lg">
-        <Link href={href}>{valor}</Link>
-      </p>
-    </div>
+    <a
+      href={href}
+      className="group flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
+    >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Icone className="size-5 text-amber-700 dark:text-amber-400" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {rotulo}
+        </span>
+        <span className="mt-0.5 block truncate font-semibold group-hover:text-amber-700 dark:group-hover:text-amber-400">
+          {valor}
+        </span>
+      </span>
+    </a>
   )
 }
 
-/** Âncora com sublinhado de régua — o sublinhado é o sinal, nunca só a cor. */
-function Link({
-  href,
-  children,
-  discreto,
-}: {
-  href: string
-  children: React.ReactNode
-  discreto?: boolean
-}) {
+/** Âncora dentro de texto corrido. Sublinhada, e não só colorida. */
+function Ancora({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={href}
-      className="underline decoration-1 underline-offset-4 transition-colors hover:decoration-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-      style={{
-        color: discreto ? "inherit" : "var(--acento)",
-        textDecorationColor: "var(--regua)",
-      }}
+      className="font-medium text-amber-700 underline decoration-amber-700/30 underline-offset-4 transition-colors hover:decoration-amber-700 dark:text-amber-400 dark:decoration-amber-400/30 dark:hover:decoration-amber-400"
     >
       {children}
     </a>
