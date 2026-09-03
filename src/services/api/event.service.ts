@@ -131,30 +131,9 @@ export const eventService = {
   listCarts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
 
-  // Event Details - List comments (with Instagram comment IDs) for moderation
+  // Event Details - as falas de cada transmissão, com o desfecho de cada uma.
   listComments: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<EventCommentsResponse>(`/stores/${storeId}/lives/${eventId}/comments`, token),
-
-  // Comment moderation — reply (public), hide/unhide, delete via Instagram Graph API
-  replyComment: (storeId: string, commentId: string, text: string, token?: string | null) =>
-    apiClient.post<{ commentId: string; replied: boolean }>(
-      `/stores/${storeId}/integrations/instagram/comments/${commentId}/reply`,
-      { text },
-      token
-    ),
-
-  hideComment: (storeId: string, commentId: string, hidden: boolean, token?: string | null) =>
-    apiClient.post<{ commentId: string; hidden: boolean }>(
-      `/stores/${storeId}/integrations/instagram/comments/${commentId}/hide`,
-      { hidden },
-      token
-    ),
-
-  deleteComment: (storeId: string, commentId: string, token?: string | null) =>
-    apiClient.delete<{ commentId: string; deleted: boolean }>(
-      `/stores/${storeId}/integrations/instagram/comments/${commentId}`,
-      token
-    ),
 
   // Event Details - List carts currently in checkout phase (live merchant view)
   listActiveCheckouts: (storeId: string, eventId: string, token?: string | null) =>

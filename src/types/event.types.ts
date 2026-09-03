@@ -423,7 +423,15 @@ export interface EventComment {
   handle: string
   text: string
   hasPurchaseIntent: boolean
-  /** Mirrors the Instagram hide state so the hide button toggles hide ↔ unhide. */
+  /**
+   * A transmissao em que a fala aconteceu.
+   *
+   * Uma campanha guarda-chuva tem varias — live de segunda, story de terca,
+   * post de quinta — e sem isto a lista era um caldo so: nao havia como rever
+   * UMA transmissao. Vazio nas falas anteriores ao vinculo por sessao.
+   */
+  sessionId?: string
+  /** Espelha o estado de oculto no Instagram (so leitura nesta tela). */
   hidden: boolean
   createdAt: string
   /**

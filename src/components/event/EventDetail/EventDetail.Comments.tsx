@@ -1,22 +1,30 @@
 "use client"
 
-import { use, useState } from "react"
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  MessageCircle,
-  MessageSquareReply,
-  Trash2,
-} from "lucide-react"
+/**
+ * O QUE FOI DITO NA TRANSMISSÃO, E O QUE VIROU VENDA.
+ *
+ * ═══ POR TRANSMISSÃO, E NÃO POR CAMPANHA ═══
+ *
+ * Uma campanha guarda-chuva tem várias: a live de segunda, o story de terça, o
+ * post de quinta. A lista era um caldo só — 142 falas de três dias juntas, sem
+ * como rever UMA transmissão. E rever uma transmissão é justamente o gesto: "o
+ * que aconteceu na live de ontem?".
+ *
+ * ═══ SEM MODERAÇÃO ═══
+ *
+ * Havia botões de responder, ocultar e excluir. Eles não funcionam em
+ * comentário de LIVE — a moderação do Instagram é de comentário de post, e a
+ * live não expõe isso. Botão que não funciona é pior do que botão ausente:
+ * quem clica aprende a desconfiar da tela inteira.
+ *
+ * O que sobrou é uma linha do tempo de leitura, com HORÁRIO — sem ele isto era
+ * uma lista, não uma linha do tempo, e numa live o quando é metade da história
+ * (a rajada de dez falas no mesmo minuto é o pico da transmissão).
+ */
+
+import { use, useMemo, useState } from "react"
+import { Instagram, MessageCircle, Radio, Users, Video } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import {
-  fraseDoDesfecho,
-  lerDesfecho,
-  TOM_CLASSE,
-  type TomDoDesfecho,
-} from "@/lib/desfecho-do-comentario"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,402 +34,265 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
+import { useEventComments } from "@/hooks/event"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  useEventComments,
-  useReplyComment,
-  useHideComment,
-  useDeleteComment,
-} from "@/hooks/event"
-import type { EventComment } from "@/types/event.types"
-import { getEventKind } from "@/lib/event-kind"
+  fraseDoDesfecho,
+  lerDesfecho,
+  TOM_CLASSE,
+  type TomDoDesfecho,
+} from "@/lib/desfecho-do-comentario"
+import { cn } from "@/lib/utils"
+import type { EventComment, EventSession } from "@/types/event.types"
 import { EventDetailContext } from "./EventDetailContext"
+
+/** Ícone por tipo de transmissão — o lojista reconhece a live pelo símbolo. */
+const ICONE_DO_TIPO: Record<string, React.ComponentType<{ className?: string }>> = {
+  live: Radio,
+  post: Instagram,
+  reel: Video,
+  story: Users,
+}
+
+const ROTULO_DO_TIPO: Record<string, string> = {
+  live: "Live",
+  post: "Post",
+  reel: "Reel",
+  story: "Story",
+}
+
+function nomeDaTransmissao(s: EventSession): string {
+  const rotulo = ROTULO_DO_TIPO[s.type] ?? s.type
+  return `${rotulo} ${s.sequenceOrder}`
+}
+
+/** "19:42" — o horário da fala, na hora local de quem lê. */
+function horario(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+}
+
+/** "03/09" — só aparece quando a fala é de outro dia que a anterior. */
+function dia(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+}
 
 export function EventDetailComments() {
   const ctx = use(EventDetailContext)
   const eventId = ctx?.state.event.id ?? ""
-  // Story só conversa por DM: não existe comentário público para moderar, então
-  // a lista vira somente leitura. Só quando a campanha INTEIRA é de story — se
-  // ela tiver uma live junto, os comentários dela são moderáveis.
-  const kindTypes = ctx ? getEventKind(ctx.state.event).types : []
-  const isStory = kindTypes.length > 0 && kindTypes.every((t) => t === "story")
+  const sessoes = ctx?.state.event.sessions ?? []
   const { data: comments, isLoading } = useEventComments(eventId)
 
+  const [sessaoFiltro, setSessaoFiltro] = useState<string>("todas")
   const [tomFiltro, setTomFiltro] = useState<TomDoDesfecho | "todos">("todos")
-  const [replyFor, setReplyFor] = useState<EventComment | null>(null)
-  const [replyText, setReplyText] = useState("")
-  const [deleteFor, setDeleteFor] = useState<EventComment | null>(null)
 
-  const reply = useReplyComment(eventId)
-  const hide = useHideComment(eventId)
-  const del = useDeleteComment(eventId)
+  // As duas contagens são derivadas, nunca guardadas: guardar contagem obriga a
+  // invalidá-la, e a lista já está na mão.
+  const { porSessao, daSessao, porTom, visiveis } = useMemo(() => {
+    const todas = comments ?? []
 
-  // A CONTA QUE O LOJISTA REVISA DEPOIS DA LIVE.
-  //
-  // "Quantas falas não viraram venda?" é a pergunta que esta tela existe para
-  // responder, e ela não tinha resposta: `hasPurchaseIntent` diz que a
-  // compradora quis, não se conseguiu.
-  const porTom = { ok: 0, espera: 0, perdida: 0, neutro: 0 }
-  for (const c of comments ?? []) {
-    porTom[lerDesfecho(c.result)?.tom ?? "neutro"]++
-  }
-  const visiveis = (comments ?? []).filter(
-    (c) => tomFiltro === "todos" || (lerDesfecho(c.result)?.tom ?? "neutro") === tomFiltro,
-  )
+    const porSessao = new Map<string, number>()
+    for (const c of todas) {
+      const k = c.sessionId || "sem-sessao"
+      porSessao.set(k, (porSessao.get(k) ?? 0) + 1)
+    }
+
+    const daSessao =
+      sessaoFiltro === "todas"
+        ? todas
+        : todas.filter((c) => (c.sessionId || "sem-sessao") === sessaoFiltro)
+
+    // O desfecho é contado DENTRO da transmissão escolhida. Contar sobre a
+    // campanha inteira faria os números da tira mentirem sobre o que está na
+    // tela — e é justamente para conferir uma transmissão que ela existe.
+    const porTom = { ok: 0, espera: 0, perdida: 0, neutro: 0 }
+    for (const c of daSessao) porTom[lerDesfecho(c.result)?.tom ?? "neutro"]++
+
+    const visiveis =
+      tomFiltro === "todos"
+        ? daSessao
+        : daSessao.filter((c) => (lerDesfecho(c.result)?.tom ?? "neutro") === tomFiltro)
+
+    return { porSessao, daSessao, porTom, visiveis }
+  }, [comments, sessaoFiltro, tomFiltro])
 
   if (!ctx) return null
 
-  const submitReply = () => {
-    if (!replyFor || !replyText.trim()) return
-    reply.mutate(
-      { commentId: replyFor.platformCommentId, text: replyText.trim() },
-      {
-        onSuccess: () => {
-          setReplyFor(null)
-          setReplyText("")
-        },
-      }
-    )
-  }
-
-  const confirmDelete = () => {
-    if (!deleteFor) return
-    del.mutate(deleteFor.platformCommentId, { onSuccess: () => setDeleteFor(null) })
-  }
+  const total = comments?.length ?? 0
+  // Só as transmissões que TÊM fala entram no seletor: oferecer uma live sem
+  // comentário é oferecer uma tela vazia.
+  const comFala = sessoes.filter((s) => (porSessao.get(s.id) ?? 0) > 0)
+  const semSessao = porSessao.get("sem-sessao") ?? 0
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageCircle className="h-4 w-4" />
-              {isStory ? "Respostas por DM" : "Comentários"}
+              Comentários
             </CardTitle>
             <CardDescription>
-              {isStory
-                ? "Quem respondeu seu Story por DM e entrou no carrinho."
-                : "Responda, oculte ou exclua os comentários desta transmissão no Instagram"}
+              O que foi dito em cada transmissão, e o que virou venda.
             </CardDescription>
           </div>
-          {comments && comments.length > 0 && (
-            <Badge variant="secondary">
-              {comments.length} {isStory ? "resposta(s)" : "comentário(s)"}
+          {total > 0 && (
+            <Badge variant="secondary" className="shrink-0">
+              {total} {total === 1 ? "comentário" : "comentários"}
             </Badge>
           )}
         </div>
       </CardHeader>
+
       <CardContent>
-        {/* Filtro por DESFECHO. Depois da live, a pergunta que o lojista faz é
-            "o que não virou venda?" — e antes disto ela não tinha resposta na
-            tela: era preciso ler comentário por comentário. */}
-        {!isLoading && comments && comments.length > 0 && (
-          <div className="mb-3 flex flex-wrap items-center gap-1.5">
-            <FiltroDeDesfecho
-              ativo={tomFiltro === "todos"}
-              onClick={() => setTomFiltro("todos")}
-              rotulo="Tudo"
-              n={comments.length}
-            />
-            {(
-              [
-                ["ok", "Viraram item"],
-                ["espera", "Na fila"],
-                ["perdida", "Sem atender"],
-                ["neutro", "Sem intenção"],
-              ] as const
-            ).map(([tom, rotulo]) =>
-              porTom[tom] > 0 ? (
-                <FiltroDeDesfecho
-                  key={tom}
-                  ativo={tomFiltro === tom}
-                  onClick={() => setTomFiltro(tom)}
-                  rotulo={rotulo}
-                  n={porTom[tom]}
-                  tom={tom}
-                />
-              ) : null,
-            )}
-          </div>
-        )}
-        <div className="flex flex-col gap-2">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+        {isLoading ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 rounded-md border p-3">
                 <Skeleton className="h-7 w-7 rounded-full" />
                 <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-24" />
-                  <Skeleton className="h-3.5 w-48" />
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-3.5 w-56" />
                 </div>
               </div>
-            ))
-          ) : !comments || comments.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-muted-foreground">
-                {isStory ? "Nenhuma resposta ainda" : "Nenhum comentário ainda"}
-              </p>
-            </div>
-          ) : visiveis.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-muted-foreground">Nenhuma fala com esse desfecho.</p>
-              <Button variant="ghost" size="sm" onClick={() => setTomFiltro("todos")}>
-                Ver todas
-              </Button>
-            </div>
-          ) : (
-            visiveis.map((comment) => (
-              <CommentRow
-                key={comment.id}
-                comment={comment}
-                readOnly={isStory}
-                onReply={() => {
-                  setReplyFor(comment)
-                  setReplyText("")
-                }}
-                onHide={() =>
-                  // Toggle: hidden comments get unhidden, visible ones get hidden.
-                  hide.mutate({ commentId: comment.platformCommentId, hidden: !comment.hidden })
-                }
-                onDelete={() => setDeleteFor(comment)}
-                hidePending={hide.isPending}
-                deletePending={del.isPending}
+            ))}
+          </div>
+        ) : total === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-12 text-center">
+            <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
+            <p className="text-muted-foreground">Nenhum comentário ainda</p>
+            <p className="max-w-sm text-sm text-muted-foreground/70">
+              As falas aparecem aqui conforme a transmissão acontece, com o que cada
+              uma virou.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {/* ── TRANSMISSÃO ─────────────────────────────────────────────
+                Primeiro eixo, e o mais importante: a pergunta é "o que
+                aconteceu NAQUELA live". Só aparece quando há mais de uma
+                transmissão com fala — num evento de uma live só, o seletor
+                seria um botão que não escolhe nada. */}
+            {comFala.length + (semSessao > 0 ? 1 : 0) > 1 && (
+              <Eixo rotulo="Transmissão">
+                <Chip
+                  ativo={sessaoFiltro === "todas"}
+                  onClick={() => setSessaoFiltro("todas")}
+                  rotulo="Todas"
+                  n={total}
+                />
+                {comFala.map((s) => {
+                  const Icone = ICONE_DO_TIPO[s.type] ?? Radio
+                  return (
+                    <Chip
+                      key={s.id}
+                      ativo={sessaoFiltro === s.id}
+                      onClick={() => setSessaoFiltro(s.id)}
+                      rotulo={nomeDaTransmissao(s)}
+                      n={porSessao.get(s.id) ?? 0}
+                      Icone={Icone}
+                    />
+                  )
+                })}
+                {semSessao > 0 && (
+                  <Chip
+                    ativo={sessaoFiltro === "sem-sessao"}
+                    onClick={() => setSessaoFiltro("sem-sessao")}
+                    rotulo="Sem transmissão"
+                    n={semSessao}
+                  />
+                )}
+              </Eixo>
+            )}
+
+            {/* ── DESFECHO ────────────────────────────────────────────────
+                Segundo eixo. Contado dentro da transmissão escolhida. */}
+            <Eixo rotulo="Desfecho">
+              <Chip
+                ativo={tomFiltro === "todos"}
+                onClick={() => setTomFiltro("todos")}
+                rotulo="Tudo"
+                n={daSessao.length}
               />
-            ))
-          )}
-        </div>
+              {(
+                [
+                  ["ok", "Viraram item"],
+                  ["espera", "Na fila"],
+                  ["perdida", "Sem atender"],
+                  ["neutro", "Sem intenção"],
+                ] as const
+              ).map(([tom, rotulo]) =>
+                porTom[tom] > 0 ? (
+                  <Chip
+                    key={tom}
+                    ativo={tomFiltro === tom}
+                    onClick={() => setTomFiltro(tom)}
+                    rotulo={rotulo}
+                    n={porTom[tom]}
+                    tom={tom}
+                  />
+                ) : null,
+              )}
+            </Eixo>
+
+            {visiveis.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
+                <p className="text-muted-foreground">Nenhuma fala com esse desfecho.</p>
+                <Button variant="ghost" size="sm" onClick={() => setTomFiltro("todos")}>
+                  Ver todas
+                </Button>
+              </div>
+            ) : (
+              <ol className="flex flex-col gap-1.5">
+                {visiveis.map((c, i) => (
+                  <Fala
+                    key={c.id}
+                    comment={c}
+                    // A data só aparece na virada do dia. Repetir "03/09" em
+                    // cem linhas seguidas é ruído; mostrá-la quando muda é a
+                    // única forma de saber que a lista atravessou a meia-noite.
+                    mostrarDia={i === 0 || dia(c.createdAt) !== dia(visiveis[i - 1].createdAt)}
+                  />
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
       </CardContent>
-
-      {/* Reply dialog (creates a public reply comment on Instagram) */}
-      <Dialog open={!!replyFor} onOpenChange={(open) => !open && setReplyFor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Responder comentário</DialogTitle>
-            <DialogDescription>
-              Sua resposta será publicada como comentário no Instagram, em resposta a
-              @{replyFor?.handle}.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            placeholder="Escreva sua resposta..."
-            rows={3}
-            maxLength={1000}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReplyFor(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={submitReply} disabled={!replyText.trim() || reply.isPending}>
-              {reply.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Publicar resposta
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteFor} onOpenChange={(open) => !open && setDeleteFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir comentário?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O comentário de @{deleteFor?.handle} será removido permanentemente do
-              Instagram. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   )
 }
 
-interface CommentRowProps {
-  comment: EventComment
-  onReply: () => void
-  onHide: () => void
-  onDelete: () => void
-  hidePending: boolean
-  deletePending: boolean
-  // Story DM replies aren't real comments — render without moderation actions.
-  readOnly?: boolean
-}
-
-function CommentRow({
-  comment,
-  onReply,
-  onHide,
-  onDelete,
-  hidePending,
-  deletePending,
-  readOnly = false,
-}: CommentRowProps) {
-  const desfecho = lerDesfecho(comment.result)
-  const frase = fraseDoDesfecho(comment.handle, comment)
+/** Um eixo de filtro: rótulo à esquerda, chips à direita. */
+function Eixo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border p-3">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-        {comment.handle.charAt(0).toUpperCase()}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">@{comment.handle}</span>
-          {/* O DESFECHO, não a intenção.
-              "intenção de compra" dizia que ela QUIS comprar — nunca se
-              conseguiu. Um "quero o 9999" sem produto e um "1825 QUERO" que
-              virou item usavam o mesmo selo, e o primeiro é venda perdida. */}
-          {desfecho ? (
-            <span
-              className={cn(
-                "rounded px-1.5 py-0.5 text-[11px] font-medium",
-                TOM_CLASSE[desfecho.tom],
-              )}
-            >
-              {desfecho.rotulo}
-            </span>
-          ) : comment.hasPurchaseIntent ? (
-            <Badge variant="secondary" className="text-xs">
-              intenção de compra
-            </Badge>
-          ) : null}
-          {comment.hidden && (
-            <Badge variant="outline" className="text-xs text-muted-foreground">
-              oculto
-            </Badge>
-          )}
-        </div>
-        <p
-          className={
-            comment.hidden
-              ? "text-sm leading-relaxed text-muted-foreground/60 line-through"
-              : "text-sm leading-relaxed text-muted-foreground"
-          }
-        >
-          {comment.text}
-        </p>
-        {frase && frase.tom !== "neutro" && (
-          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/80">
-            {frase.titulo.replace(`@${comment.handle} `, "")}
-            {frase.nota ? ` · ${frase.nota}` : ""}
-          </p>
-        )}
-      </div>
-      {readOnly ? null : (
-      <div className="flex shrink-0 items-center gap-1">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onReply}>
-                <MessageSquareReply className="h-4 w-4" />
-                <span className="sr-only">Responder comentário</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Responder (comentário público)</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onHide}
-                disabled={hidePending}
-              >
-                {hidePending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : comment.hidden ? (
-                  <Eye className="h-4 w-4" />
-                ) : (
-                  <EyeOff className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {comment.hidden ? "Reexibir comentário" : "Ocultar comentário"}
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{comment.hidden ? "Reexibir comentário" : "Ocultar comentário"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={onDelete}
-                disabled={deletePending}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Excluir comentário</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Excluir comentário</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      )}
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <span className="text-xs font-medium text-muted-foreground">{rotulo}</span>
+      {children}
     </div>
   )
 }
 
-/** Chip de filtro por desfecho. O número é parte do rótulo: sem ele o lojista
- *  precisa clicar em cada um para descobrir onde está o problema. */
-function FiltroDeDesfecho({
+function Chip({
   ativo,
   onClick,
   rotulo,
   n,
   tom,
+  Icone,
 }: {
   ativo: boolean
   onClick: () => void
   rotulo: string
   n: number
   tom?: TomDoDesfecho
+  Icone?: React.ComponentType<{ className?: string }>
 }) {
   return (
     <button
@@ -436,11 +307,77 @@ function FiltroDeDesfecho({
           : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground",
       )}
     >
-      {tom && (
-        <span className={cn("h-1.5 w-1.5 rounded-full", TOM_CLASSE[tom])} aria-hidden />
-      )}
+      {/* O ponto de cor é REFORÇO do rótulo, nunca o único sinal. */}
+      {tom && <span className={cn("h-1.5 w-1.5 rounded-full", TOM_CLASSE[tom])} aria-hidden />}
+      {Icone && <Icone className="h-3 w-3" aria-hidden />}
       {rotulo}
       <span className="tabular-nums opacity-70">{n}</span>
     </button>
+  )
+}
+
+function Fala({ comment, mostrarDia }: { comment: EventComment; mostrarDia: boolean }) {
+  const d = lerDesfecho(comment.result)
+  const frase = fraseDoDesfecho(comment.handle, comment)
+
+  return (
+    <li>
+      {mostrarDia && (
+        <p className="px-1 pb-1 pt-2 text-xs font-medium text-muted-foreground">
+          {dia(comment.createdAt)}
+        </p>
+      )}
+      <div className="flex items-start gap-3 rounded-md border p-3">
+        {/* O horário à esquerda, em tabular: é o que faz disto uma linha do
+            tempo, e alinhado ele deixa a rajada visível — dez falas no mesmo
+            minuto é o pico da transmissão. */}
+        <span className="w-10 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground">
+          {horario(comment.createdAt)}
+        </span>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+          {comment.handle.charAt(0).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">@{comment.handle}</span>
+            {d ? (
+              <span
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[11px] font-medium",
+                  TOM_CLASSE[d.tom],
+                )}
+              >
+                {d.rotulo}
+              </span>
+            ) : comment.hasPurchaseIntent ? (
+              <Badge variant="secondary" className="text-xs">
+                intenção de compra
+              </Badge>
+            ) : null}
+            {comment.hidden && (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                oculto no Instagram
+              </Badge>
+            )}
+          </div>
+          <p
+            className={cn(
+              "text-sm leading-relaxed",
+              comment.hidden
+                ? "text-muted-foreground/60 line-through"
+                : "text-muted-foreground",
+            )}
+          >
+            {comment.text}
+          </p>
+          {frase.tom !== "neutro" && (
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/80">
+              {frase.titulo.replace(`@${comment.handle} `, "")}
+              {frase.nota ? ` · ${frase.nota}` : ""}
+            </p>
+          )}
+        </div>
+      </div>
+    </li>
   )
 }
