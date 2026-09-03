@@ -5,7 +5,8 @@ import {
   Boxes,
   Check,
   FileText,
-  Instagram,
+  LifeBuoy,
+  Mail,
   Package,
   Radio,
   RefreshCw,
@@ -411,14 +412,18 @@ export default function ManualBlingPage() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             <Contato
-              icone={Instagram}
+              icone={Mail}
               rotulo="E-mail"
-              valor="suporte@livecart.app"
-              href="mailto:suporte@livecart.app"
+              valor="eng@livecart.com.br"
+              href="mailto:eng@livecart.com.br"
             />
+            {/* A central de ajuda vive dentro do painel e exige login. Quem lê
+                este manual pode ainda não ter conta — mandar essa pessoa para
+                uma tela de senha é o erro que a página inteira existe para
+                evitar. Por isso ela vem rotulada como o que é. */}
             <Contato
-              icone={Sparkles}
-              rotulo="Central de ajuda"
+              icone={LifeBuoy}
+              rotulo="Central de ajuda · para clientes"
               valor="app.livecart.com.br/support"
               href={`${APP}/support`}
             />
