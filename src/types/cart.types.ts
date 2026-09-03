@@ -123,6 +123,19 @@ export interface OrderComment {
   id: string
   text: string
   createdAt: string
+  /**
+   * Desfecho apurado pelo motor da live, cru: added_to_cart, waitlisted,
+   * out_of_stock, no_product, blocked, no_intent…
+   *
+   * Sem ele, tres coisas muito diferentes ficavam com a mesma cara na linha do
+   * tempo: virou item, foi para a fila, nao casou com produto nenhum. A ultima
+   * e uma venda perdida, e era a mais invisivel das tres.
+   */
+  result: string
+  /** Vazio quando o comentario nao casou com produto — o caso que mais importa. */
+  productName?: string
+  productKeyword?: string
+  quantity?: number
 }
 
 export interface OrderCustomer {

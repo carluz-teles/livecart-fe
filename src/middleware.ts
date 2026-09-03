@@ -29,6 +29,10 @@ const isPublicRoute = createRouteMatcher([
   "/accept-invite(.*)",
   "/privacy",
   "/terms",
+  // Manual público da integração com o ERP. O Bling exige que o aplicativo
+  // publicado na Central de Extensões tenha instruções acessíveis SEM login:
+  // quem lê ainda não é cliente, e uma tela de senha aqui perde a instalação.
+  "/integracoes/(.*)",
 ])
 
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)"])
@@ -190,7 +194,12 @@ export const config = {
     // never touch Clerk (cart checkout, marketing pages). Excluding them
     // here avoids the Clerk handshake redirect on first visit, which is
     // critical for shopper-facing checkout LCP.
-    "/((?!_next|cart|privacy|terms|robots\\.txt|sitemap\\.xml|favicon\\.ico|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // `integracoes` entra aqui, e não só na allowlist de rotas públicas, por
+    // um motivo específico: quando o Clerk falha em resolver a sessão (cookie
+    // preso de outra instância, por exemplo), o middleware limpa os cookies e
+    // manda pro /login ANTES de perguntar se a rota é pública. Um manual que
+    // o Bling exige ser aberto sem login não pode depender dessa ordem.
+    "/((?!_next|cart|privacy|terms|integracoes|robots\\.txt|sitemap\\.xml|favicon\\.ico|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],

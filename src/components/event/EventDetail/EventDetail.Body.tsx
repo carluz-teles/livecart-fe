@@ -18,6 +18,7 @@ import { EventDetailSessions } from "./EventDetail.Sessions"
 import { EventDetailMetrics } from "./EventDetail.Metrics"
 import { EventDetailUndelivered } from "./EventDetail.Undelivered"
 import { EventDetailCarts } from "./EventDetail.Carts"
+import { EventDetailComments } from "./EventDetail.Comments"
 import { EventDetailActiveCheckouts } from "./EventDetail.ActiveCheckouts"
 import { EventDetailCheckoutUpsell } from "./EventDetail.CheckoutUpsell"
 import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
@@ -63,6 +64,13 @@ export function EventDetailBody() {
               </Badge>
             )}
           </TabsTrigger>
+          {/* ABA PRÓPRIA, e não um cartão na visão geral.
+              O componente existia desde sempre e não estava montado em lugar
+              nenhum — UI morta: o lojista não tinha como ver o que foi dito na
+              transmissão. E ele não cabe na visão geral: são centenas de falas
+              com filtro próprio, e enfiá-las na grade de métricas enterraria a
+              pergunta que elas respondem ("o que não virou venda?"). */}
+          <TabsTrigger value="comments">Comentários</TabsTrigger>
           <TabsTrigger value="metrics">Métricas</TabsTrigger>
           <TabsTrigger value="coupons">Cupons</TabsTrigger>
         </TabsList>
@@ -112,6 +120,10 @@ export function EventDetailBody() {
           </p>
           <EventCatalogSelect eventId={event.id} />
           <EventDetailSessions />
+        </TabsContent>
+
+        <TabsContent value="comments" className="mt-6">
+          <EventDetailComments />
         </TabsContent>
 
         <TabsContent value="metrics" className="mt-6">
