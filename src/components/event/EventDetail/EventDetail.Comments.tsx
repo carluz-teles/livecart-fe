@@ -6,24 +6,34 @@
  * ═══ POR TRANSMISSÃO, E NÃO POR CAMPANHA ═══
  *
  * Uma campanha guarda-chuva tem várias: a live de segunda, o story de terça, o
- * post de quinta. A lista era um caldo só — 142 falas de três dias juntas, sem
- * como rever UMA transmissão. E rever uma transmissão é justamente o gesto: "o
- * que aconteceu na live de ontem?".
+ * post de quinta. E rever UMA transmissão é o gesto: "o que aconteceu na live
+ * de ontem?".
+ *
+ * O corte é do SERVIDOR. A primeira versão desta tela filtrava no cliente e o
+ * seletor simplesmente não aparecia: a campanha tem milhares de falas, a
+ * página traz as primeiras em ordem de chegada, e elas são todas da primeira
+ * transmissão. A tela montava as opções sobre o que tinha em mão, concluía "só
+ * existe uma transmissão" e escondia o filtro — o lojista não conseguia pedir a
+ * segunda porque a tela nem sabia que ela existia.
+ *
+ * Por isso o eixo de transmissão vem de `event.sessions`, que a campanha
+ * sempre traz inteira e com o total REAL de cada uma. O que está carregado
+ * nunca decide o que pode ser escolhido.
  *
  * ═══ SEM MODERAÇÃO ═══
  *
  * Havia botões de responder, ocultar e excluir. Eles não funcionam em
- * comentário de LIVE — a moderação do Instagram é de comentário de post, e a
- * live não expõe isso. Botão que não funciona é pior do que botão ausente:
- * quem clica aprende a desconfiar da tela inteira.
+ * comentário de LIVE — a moderação do Instagram é de comentário de post. Botão
+ * que não funciona é pior do que botão ausente: quem clica aprende a
+ * desconfiar da tela inteira.
  *
- * O que sobrou é uma linha do tempo de leitura, com HORÁRIO — sem ele isto era
- * uma lista, não uma linha do tempo, e numa live o quando é metade da história
- * (a rajada de dez falas no mesmo minuto é o pico da transmissão).
+ * O que sobrou é uma linha do tempo de leitura, com HORÁRIO — numa live o
+ * quando é metade da história (a rajada de dez falas no mesmo minuto é o pico
+ * da transmissão).
  */
 
 import { use, useMemo, useState } from "react"
-import { Instagram, MessageCircle, Radio, Users, Video } from "lucide-react"
+import { Instagram, Loader2, MessageCircle, Radio, Users, Video } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -61,8 +71,7 @@ const ROTULO_DO_TIPO: Record<string, string> = {
 }
 
 function nomeDaTransmissao(s: EventSession): string {
-  const rotulo = ROTULO_DO_TIPO[s.type] ?? s.type
-  return `${rotulo} ${s.sequenceOrder}`
+  return `${ROTULO_DO_TIPO[s.type] ?? s.type} ${s.sequenceOrder}`
 }
 
 /** "19:42" — o horário da fala, na hora local de quem lê. */
@@ -81,52 +90,53 @@ function dia(iso: string): string {
     : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
 }
 
+const TODAS = "todas"
+
 export function EventDetailComments() {
   const ctx = use(EventDetailContext)
   const eventId = ctx?.state.event.id ?? ""
-  const sessoes = ctx?.state.event.sessions ?? []
-  const { data: comments, isLoading } = useEventComments(eventId)
+  const sessoes = useMemo(() => ctx?.state.event.sessions ?? [], [ctx])
 
-  const [sessaoFiltro, setSessaoFiltro] = useState<string>("todas")
+  const [sessaoFiltro, setSessaoFiltro] = useState<string>(TODAS)
   const [tomFiltro, setTomFiltro] = useState<TomDoDesfecho | "todos">("todos")
 
-  // As duas contagens são derivadas, nunca guardadas: guardar contagem obriga a
-  // invalidá-la, e a lista já está na mão.
-  const { porSessao, daSessao, porTom, visiveis } = useMemo(() => {
-    const todas = comments ?? []
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useEventComments(eventId, sessaoFiltro === TODAS ? undefined : sessaoFiltro)
 
-    const porSessao = new Map<string, number>()
-    for (const c of todas) {
-      const k = c.sessionId || "sem-sessao"
-      porSessao.set(k, (porSessao.get(k) ?? 0) + 1)
-    }
+  // Trocar de transmissão troca a QUERY, não filtra o que está na tela. As
+  // contagens de desfecho, essas sim, são derivadas do que veio.
+  const { carregadas, porTom, visiveis } = useMemo(() => {
+    const carregadas = data?.pages.flat() ?? []
 
-    const daSessao =
-      sessaoFiltro === "todas"
-        ? todas
-        : todas.filter((c) => (c.sessionId || "sem-sessao") === sessaoFiltro)
-
-    // O desfecho é contado DENTRO da transmissão escolhida. Contar sobre a
-    // campanha inteira faria os números da tira mentirem sobre o que está na
-    // tela — e é justamente para conferir uma transmissão que ela existe.
     const porTom = { ok: 0, espera: 0, perdida: 0, neutro: 0 }
-    for (const c of daSessao) porTom[lerDesfecho(c.result)?.tom ?? "neutro"]++
+    for (const c of carregadas) porTom[lerDesfecho(c.result)?.tom ?? "neutro"]++
 
     const visiveis =
       tomFiltro === "todos"
-        ? daSessao
-        : daSessao.filter((c) => (lerDesfecho(c.result)?.tom ?? "neutro") === tomFiltro)
+        ? carregadas
+        : carregadas.filter((c) => (lerDesfecho(c.result)?.tom ?? "neutro") === tomFiltro)
 
-    return { porSessao, daSessao, porTom, visiveis }
-  }, [comments, sessaoFiltro, tomFiltro])
+    return { carregadas, porTom, visiveis }
+  }, [data, tomFiltro])
 
   if (!ctx) return null
 
-  const total = comments?.length ?? 0
-  // Só as transmissões que TÊM fala entram no seletor: oferecer uma live sem
-  // comentário é oferecer uma tela vazia.
-  const comFala = sessoes.filter((s) => (porSessao.get(s.id) ?? 0) > 0)
-  const semSessao = porSessao.get("sem-sessao") ?? 0
+  // Só as transmissões que TÊM fala entram no seletor, e o total vem da
+  // própria transmissão: oferecer uma live sem comentário é oferecer uma tela
+  // vazia, e contar pelo que está carregado era o defeito.
+  const comFala = sessoes.filter((s) => s.totalComments > 0)
+  const totalDaCampanha = sessoes.reduce((soma, s) => soma + s.totalComments, 0)
+  const esperadas =
+    sessaoFiltro === TODAS
+      ? totalDaCampanha
+      : (comFala.find((s) => s.id === sessaoFiltro)?.totalComments ?? 0)
+
+  const trocarSessao = (id: string) => {
+    setSessaoFiltro(id)
+    // O desfecho volta para "Tudo": "sem atender" escolhido numa live pode não
+    // existir na outra, e cair numa tela vazia parece transmissão sem fala.
+    setTomFiltro("todos")
+  }
 
   return (
     <Card>
@@ -141,129 +151,149 @@ export function EventDetailComments() {
               O que foi dito em cada transmissão, e o que virou venda.
             </CardDescription>
           </div>
-          {total > 0 && (
+          {totalDaCampanha > 0 && (
             <Badge variant="secondary" className="shrink-0">
-              {total} {total === 1 ? "comentário" : "comentários"}
+              {totalDaCampanha.toLocaleString("pt-BR")}{" "}
+              {totalDaCampanha === 1 ? "comentário" : "comentários"}
             </Badge>
           )}
         </div>
       </CardHeader>
 
       <CardContent>
-        {isLoading ? (
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-md border p-3">
-                <Skeleton className="h-7 w-7 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-32" />
-                  <Skeleton className="h-3.5 w-56" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : total === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-center">
-            <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
-            <p className="text-muted-foreground">Nenhum comentário ainda</p>
-            <p className="max-w-sm text-sm text-muted-foreground/70">
-              As falas aparecem aqui conforme a transmissão acontece, com o que cada
-              uma virou.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {/* ── TRANSMISSÃO ─────────────────────────────────────────────
-                Primeiro eixo, e o mais importante: a pergunta é "o que
-                aconteceu NAQUELA live". Só aparece quando há mais de uma
-                transmissão com fala — num evento de uma live só, o seletor
-                seria um botão que não escolhe nada. */}
-            {comFala.length + (semSessao > 0 ? 1 : 0) > 1 && (
-              <Eixo rotulo="Transmissão">
+        <div className="flex flex-col gap-4">
+          {/* ── TRANSMISSÃO ─────────────────────────────────────────────
+              Primeiro eixo, e o mais importante: a pergunta é "o que
+              aconteceu NAQUELA live". Fica de pé durante o carregamento —
+              ele não depende das falas, e some-lo a cada troca faria a
+              tela piscar embaixo do dedo. */}
+          {comFala.length > 1 && (
+            <Eixo rotulo="Transmissão">
+              <Chip
+                ativo={sessaoFiltro === TODAS}
+                onClick={() => trocarSessao(TODAS)}
+                rotulo="Todas"
+                n={totalDaCampanha}
+              />
+              {comFala.map((s) => (
                 <Chip
-                  ativo={sessaoFiltro === "todas"}
-                  onClick={() => setSessaoFiltro("todas")}
-                  rotulo="Todas"
-                  n={total}
+                  key={s.id}
+                  ativo={sessaoFiltro === s.id}
+                  onClick={() => trocarSessao(s.id)}
+                  rotulo={nomeDaTransmissao(s)}
+                  n={s.totalComments}
+                  Icone={ICONE_DO_TIPO[s.type] ?? Radio}
                 />
-                {comFala.map((s) => {
-                  const Icone = ICONE_DO_TIPO[s.type] ?? Radio
-                  return (
+              ))}
+            </Eixo>
+          )}
+
+          {isLoading ? (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-md border p-3">
+                  <Skeleton className="h-7 w-7 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-32" />
+                    <Skeleton className="h-3.5 w-56" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : carregadas.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-muted-foreground">Nenhum comentário ainda</p>
+              <p className="max-w-sm text-sm text-muted-foreground/70">
+                As falas aparecem aqui conforme a transmissão acontece, com o que cada
+                uma virou.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── DESFECHO ────────────────────────────────────────────
+                  Segundo eixo, contado sobre o que está CARREGADO. Daí a
+                  nota no fim da linha: sem ela "Todas 384" logo acima de
+                  "Tudo 10" lê como contradição, e o lojista concluiria que
+                  a tela errou a conta em vez de que ela tem mais para
+                  buscar. O denominador tem que morar onde a dúvida nasce. */}
+              <Eixo rotulo="Desfecho">
+                <Chip
+                  ativo={tomFiltro === "todos"}
+                  onClick={() => setTomFiltro("todos")}
+                  rotulo="Tudo"
+                  n={carregadas.length}
+                />
+                {(
+                  [
+                    ["ok", "Viraram item"],
+                    ["espera", "Na fila"],
+                    ["perdida", "Sem atender"],
+                    ["neutro", "Sem intenção"],
+                  ] as const
+                ).map(([tom, rotulo]) =>
+                  porTom[tom] > 0 ? (
                     <Chip
-                      key={s.id}
-                      ativo={sessaoFiltro === s.id}
-                      onClick={() => setSessaoFiltro(s.id)}
-                      rotulo={nomeDaTransmissao(s)}
-                      n={porSessao.get(s.id) ?? 0}
-                      Icone={Icone}
+                      key={tom}
+                      ativo={tomFiltro === tom}
+                      onClick={() => setTomFiltro(tom)}
+                      rotulo={rotulo}
+                      n={porTom[tom]}
+                      tom={tom}
                     />
-                  )
-                })}
-                {semSessao > 0 && (
-                  <Chip
-                    ativo={sessaoFiltro === "sem-sessao"}
-                    onClick={() => setSessaoFiltro("sem-sessao")}
-                    rotulo="Sem transmissão"
-                    n={semSessao}
-                  />
+                  ) : null,
+                )}
+                {esperadas > carregadas.length && (
+                  <span className="w-full text-xs text-muted-foreground/70">
+                    Contado sobre as {carregadas.length.toLocaleString("pt-BR")} falas já
+                    carregadas, de {esperadas.toLocaleString("pt-BR")}.
+                  </span>
                 )}
               </Eixo>
-            )}
 
-            {/* ── DESFECHO ────────────────────────────────────────────────
-                Segundo eixo. Contado dentro da transmissão escolhida. */}
-            <Eixo rotulo="Desfecho">
-              <Chip
-                ativo={tomFiltro === "todos"}
-                onClick={() => setTomFiltro("todos")}
-                rotulo="Tudo"
-                n={daSessao.length}
-              />
-              {(
-                [
-                  ["ok", "Viraram item"],
-                  ["espera", "Na fila"],
-                  ["perdida", "Sem atender"],
-                  ["neutro", "Sem intenção"],
-                ] as const
-              ).map(([tom, rotulo]) =>
-                porTom[tom] > 0 ? (
-                  <Chip
-                    key={tom}
-                    ativo={tomFiltro === tom}
-                    onClick={() => setTomFiltro(tom)}
-                    rotulo={rotulo}
-                    n={porTom[tom]}
-                    tom={tom}
-                  />
-                ) : null,
+              {visiveis.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">Nenhuma fala com esse desfecho.</p>
+                  <Button variant="ghost" size="sm" onClick={() => setTomFiltro("todos")}>
+                    Ver todas
+                  </Button>
+                </div>
+              ) : (
+                <ol className="flex flex-col gap-1.5">
+                  {visiveis.map((c, i) => (
+                    <Fala
+                      key={c.id}
+                      comment={c}
+                      // A data só aparece na virada do dia. Repetir "03/09" em
+                      // cem linhas é ruído; mostrá-la quando muda é a única
+                      // forma de saber que a lista atravessou a meia-noite.
+                      mostrarDia={
+                        i === 0 || dia(c.createdAt) !== dia(visiveis[i - 1].createdAt)
+                      }
+                    />
+                  ))}
+                </ol>
               )}
-            </Eixo>
 
-            {visiveis.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center">
-                <MessageCircle className="h-8 w-8 text-muted-foreground/50" />
-                <p className="text-muted-foreground">Nenhuma fala com esse desfecho.</p>
-                <Button variant="ghost" size="sm" onClick={() => setTomFiltro("todos")}>
-                  Ver todas
-                </Button>
-              </div>
-            ) : (
-              <ol className="flex flex-col gap-1.5">
-                {visiveis.map((c, i) => (
-                  <Fala
-                    key={c.id}
-                    comment={c}
-                    // A data só aparece na virada do dia. Repetir "03/09" em
-                    // cem linhas seguidas é ruído; mostrá-la quando muda é a
-                    // única forma de saber que a lista atravessou a meia-noite.
-                    mostrarDia={i === 0 || dia(c.createdAt) !== dia(visiveis[i - 1].createdAt)}
-                  />
-                ))}
-              </ol>
-            )}
-          </div>
-        )}
+              {hasNextPage && (
+                <div className="flex justify-center pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage && (
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    )}
+                    Carregar mais falas
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -311,7 +341,7 @@ function Chip({
       {tom && <span className={cn("h-1.5 w-1.5 rounded-full", TOM_CLASSE[tom])} aria-hidden />}
       {Icone && <Icone className="h-3 w-3" aria-hidden />}
       {rotulo}
-      <span className="tabular-nums opacity-70">{n}</span>
+      <span className="tabular-nums opacity-70">{n.toLocaleString("pt-BR")}</span>
     </button>
   )
 }

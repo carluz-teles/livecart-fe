@@ -132,8 +132,28 @@ export const eventService = {
     apiClient.get<EventCartsResponse>(`/stores/${storeId}/lives/${eventId}/carts`, token),
 
   // Event Details - as falas de cada transmissão, com o desfecho de cada uma.
-  listComments: (storeId: string, eventId: string, token?: string | null) =>
-    apiClient.get<EventCommentsResponse>(`/stores/${storeId}/lives/${eventId}/comments`, token),
+  /** As falas de cada transmissão, com o desfecho de cada uma.
+   *
+   *  `sessionId` corta no SERVIDOR, e não pode virar filtro de cliente: uma
+   *  campanha de uma semana passa de 16 mil falas, a página pega as primeiras
+   *  em ordem de chegada, e elas são todas da primeira transmissão. Filtrar
+   *  depois de ler nunca alcançaria a segunda. */
+  listComments: (
+    storeId: string,
+    eventId: string,
+    params: { sessionId?: string; limit: number; offset: number },
+    token?: string | null,
+  ) => {
+    const q = new URLSearchParams({
+      limit: String(params.limit),
+      offset: String(params.offset),
+    })
+    if (params.sessionId) q.set("sessionId", params.sessionId)
+    return apiClient.get<EventCommentsResponse>(
+      `/stores/${storeId}/lives/${eventId}/comments?${q}`,
+      token,
+    )
+  },
 
   // Event Details - List carts currently in checkout phase (live merchant view)
   listActiveCheckouts: (storeId: string, eventId: string, token?: string | null) =>

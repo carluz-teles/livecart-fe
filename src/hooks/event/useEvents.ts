@@ -17,7 +17,7 @@ export const eventKeys = {
   detailStats: (storeId: string, eventId: string) => [...eventKeys.all, "detail-stats", storeId, eventId] as const,
   sessionMetrics: (storeId: string, eventId: string) => [...eventKeys.all, "session-metrics", storeId, eventId] as const,
   detailCarts: (storeId: string, eventId: string) => [...eventKeys.all, "detail-carts", storeId, eventId] as const,
-  detailComments: (storeId: string, eventId: string) => [...eventKeys.all, "detail-comments", storeId, eventId] as const,
+  detailComments: (storeId: string, eventId: string, sessionId?: string) => [...eventKeys.all, "detail-comments", storeId, eventId, sessionId ?? "todas"] as const,
   detailProducts: (storeId: string, eventId: string) => [...eventKeys.all, "detail-products", storeId, eventId] as const,
   detailPulse: (storeId: string, eventId: string) => [...eventKeys.all, "detail-pulse", storeId, eventId] as const,
   // Live mode
