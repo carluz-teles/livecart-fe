@@ -268,8 +268,9 @@ export function CheckoutPixDisplay({
                 Seu carrinho mudou
               </h3>
               <p className="max-w-sm text-sm text-amber-800/80">
-                O código anterior era de {formatCurrency(invalidatedBy)} e foi
-                cancelado. Seu pedido agora é {formatCurrency(expectedAmount)}.
+                O código anterior era de {formatCurrency(invalidatedBy)}. Não o utilize.
+                Seu pedido agora é {formatCurrency(expectedAmount)}. Pode ser necessário
+                aguardar a expiração do código anterior para gerar outro.
               </p>
             </>
           ) : (

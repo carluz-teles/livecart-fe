@@ -175,6 +175,8 @@ export interface OrderStore {
 }
 
 export interface OrderDetail extends Order {
+  paymentReviewRequired?: boolean
+  erpPendingItems?: number
   // Cart token; the public buyer link is `${origin}/cart/${token}`. Used by
   // the admin "copiar link do checkout" action.
   token: string
@@ -528,6 +530,7 @@ export interface PublicCheckoutPayment {
 }
 
 export interface PublicCheckoutCart {
+  paymentReviewRequired?: boolean
   id: string
   token: string
   status: CartStatus
@@ -693,6 +696,7 @@ export interface GeneratePixResponse {
 export interface PaymentStatusResponse {
   status: CartStatus
   paymentStatus: string
+  paymentReviewRequired?: boolean
   paidAt: string | null
   message?: string
 }
