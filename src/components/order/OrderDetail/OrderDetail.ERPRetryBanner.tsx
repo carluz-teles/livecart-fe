@@ -34,7 +34,30 @@ export function OrderDetailERPRetryBanner() {
   const { order } = ctx.state
   const finalisation = order.erpFinalisation
 
-  if (!finalisation || finalisation.status !== "failed") return null
+  const warnings = order.paymentReviewRequired || (order.erpPendingItems ?? 0) > 0 ? (
+    <div
+      role="alert"
+      className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 print:hidden"
+    >
+      {order.paymentReviewRequired && (
+        <p className="text-sm font-medium">
+          Pagamento recebido em conferência: a cobrança e o carrinho divergem.
+          Confira os valores antes de liberar o pedido ou solicitar outro pagamento.
+        </p>
+      )}
+      {(order.erpPendingItems ?? 0) > 0 && (
+        <p className="text-sm">
+          {order.erpPendingItems} item(ns) aguardam confirmação no {erp.nome}.
+          A sincronização será retomada automaticamente. Confira a grade no ERP
+          antes de separar a mercadoria.
+        </p>
+      )}
+    </div>
+  ) : null
+
+  if (order.paymentReviewRequired || !finalisation || finalisation.status !== "failed") {
+    return warnings
+  }
 
   const handleRetry = () => {
     retry.mutate(
@@ -60,41 +83,42 @@ export function OrderDetailERPRetryBanner() {
   const lastAttempt = finalisation.lastAttemptAt
 
   return (
-    <div
-      role="alert"
-      className="flex flex-col gap-4 rounded-lg border border-destructive/40 bg-destructive/5 p-4 print:hidden"
-    >
-      <div className="flex items-start gap-3">
-        <AlertTriangle
-          className="mt-0.5 h-5 w-5 shrink-0 text-destructive"
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-sm font-semibold text-destructive">
-            Pedido pago, mas não foi aprovado no ERP
-          </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            O pedido existe no Tiny e continua segurando o estoque — nenhuma
-            unidade foi liberada. O que faltou foi aprová-lo e gravar o
-            pagamento. Tente de novo abaixo; se o erro persistir, contate o
-            suporte.
-          </p>
+    <>
+      {warnings}
+      <div
+        role="alert"
+        className="flex flex-col gap-4 rounded-lg border border-destructive/40 bg-destructive/5 p-4 print:hidden"
+      >
+        <div className="flex items-start gap-3">
+          <AlertTriangle
+            className="mt-0.5 h-5 w-5 shrink-0 text-destructive"
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-sm font-semibold text-destructive">
+              Pedido pago, mas não foi aprovado no ERP
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              A finalização no {erp.nome} está pendente. Confira a grade, o estoque e
+              o pagamento no ERP. Tente novamente abaixo; se o erro persistir,
+              contate o suporte.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {finalisation.lastError && (
-        <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border bg-background/60 p-3 font-mono text-xs leading-relaxed text-foreground/80">
-          {finalisation.lastError}
-        </pre>
-      )}
+        {finalisation.lastError && (
+          <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border bg-background/60 p-3 font-mono text-xs leading-relaxed text-foreground/80">
+            {finalisation.lastError}
+          </pre>
+        )}
 
-      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-        <p className="text-xs text-muted-foreground">
-          {formatAttemptCount(attempts)}
-          {lastAttempt && (
-            <>
-              {" · "}
-              <span>última em {formatDateTime(lastAttempt)}</span>
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <p className="text-xs text-muted-foreground">
+            {formatAttemptCount(attempts)}
+            {lastAttempt && (
+              <>
+                {" · "}
+                <span>última em {formatDateTime(lastAttempt)}</span>
             </>
           )}
         </p>
@@ -113,5 +137,6 @@ export function OrderDetailERPRetryBanner() {
         </Button>
       </div>
     </div>
+    </>
   )
 }

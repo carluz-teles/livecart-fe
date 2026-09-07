@@ -328,7 +328,10 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   useEffect(() => {
     if (!paymentStatusData || !isProcessing) return
 
-    if (paymentStatusData.paymentStatus === "paid") {
+    if (paymentStatusData.paymentReviewRequired) {
+      setIsProcessing(false)
+      refetchCart()
+    } else if (paymentStatusData.paymentStatus === "paid") {
       setIsProcessing(false)
       setPaymentSuccess(true)
       refetchCart()
@@ -812,6 +815,10 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
         retryHref={`/cart/${token}`}
       />
     )
+  }
+
+  if (cart.paymentReviewRequired) {
+    return <CheckoutErrorScreen message="Recebemos um pagamento, mas o carrinho mudou após a geração da cobrança. A loja precisa conferir os valores. Não faça outro pagamento." retryHref={`/cart/${token}`} />
   }
 
   if (cart.paymentStatus === "paid" || paymentSuccess) {
