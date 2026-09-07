@@ -74,8 +74,10 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     }
     // New comment / DM reply → comments feed + stats.
     if (pulse.comments !== prev.comments) {
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailComments(storeId, id) })
+      // O prefixo inclui todas as seleções, inclusive uma transmissão aberta.
+      queryClient.invalidateQueries({ queryKey: eventKeys.commentsRoot(storeId, id) })
       queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId, id) })
     }
   }, [pulse, storeId, id, queryClient])
 
@@ -92,6 +94,7 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     if (storeId) {
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId, id) })
       queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId, id) })
+      queryClient.invalidateQueries({ queryKey: eventKeys.commentsRoot(storeId, id) })
     }
     refetchStats()
     refetchCarts()

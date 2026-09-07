@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Aperture,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   Layers,
   BookOpen,
+  MessageCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -198,7 +200,7 @@ export default function EventsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Eventos"
-        description="Dentro de um evento ficam as transmissões — a live, o post, o reel, o story — e um carrinho único por cliente, somando tudo que ele pediu do começo ao fim."
+        description="Acompanhe suas transmissões, os pedidos e os comentários de cada evento."
       >
         {/* Entrada permanente para a explicação: o banner abaixo é
             dispensável, e depois de dispensado não pode levar o modelo junto. */}
@@ -217,7 +219,7 @@ export default function EventsPage() {
           visita apareceria numa regravação do roteiro do App Review da Meta. */}
       <EventModelCallout />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatsCard
           title="Total de Eventos"
           value={stats?.totalEvents ?? stats?.totalLives ?? 0}
@@ -252,9 +254,9 @@ export default function EventsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Eventos</CardTitle>
+          <CardTitle>Seus eventos</CardTitle>
           <CardDescription>
-            Visualize e gerencie todos os seus eventos.
+            Abra um evento para acompanhar as vendas ou acesse seus comentários diretamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -363,9 +365,9 @@ export default function EventsPage() {
                               <KindIcon className="h-3 w-3" />
                               {kind.label}
                             </Badge>
-                            <span className="transition-colors group-hover:text-primary">
+                            <Link href={`/events/${event.id}`} onClick={(e) => e.stopPropagation()} className="rounded-sm transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                               {event.title || "Sem titulo"}
-                            </span>
+                            </Link>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -389,6 +391,11 @@ export default function EventsPage() {
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={`/events/${event.id}?tab=comments`} aria-label={`Ver comentários de ${event.title || "evento sem título"}`} title="Ver comentários">
+                                <MessageCircle data-icon="inline-start" />
+                              </Link>
+                            </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button

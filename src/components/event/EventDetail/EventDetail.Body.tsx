@@ -1,13 +1,14 @@
 "use client"
 
 import { use } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { EventCoupons } from "@/components/event/EventCoupons"
 import { EventUpsells } from "@/components/event/EventUpsells"
 import { ReconnectForm } from "@/components/event/ReconnectForm"
 import { EventWindowForm } from "@/components/event/EventWindowForm"
 import { EventCatalogSelect } from "@/components/event/EventCatalogSelect"
+import { EventDetailNavigation } from "./EventDetail.Navigation"
 import { EventDetailContext } from "./EventDetailContext"
 import { EventDetailLiveControl } from "./EventDetail.LiveControl"
 import { EventDetailKpis } from "./EventDetail.Kpis"
@@ -25,55 +26,29 @@ import { EventDetailEndEventDialog } from "./EventDetail.EndEventDialog"
 import { EventDetailCreateSessionDialog } from "./EventDetail.CreateSessionDialog"
 import { EventDetailModelBanner } from "./EventDetail.ModelBanner"
 
-// Single Tabs root drives the four sub-screens. Visão geral is the dense
-// one: it leans on the OrderDetail 8/4 grid — operational stuff in the main
-// column (sessions, carts, live state), analytics summary in the aside
-// (funnel, top performers).
+// A aba fica na URL para links diretos e para preservar a seleção no reload.
 export function EventDetailBody() {
   const ctx = use(EventDetailContext)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const requestedTab = searchParams.get("tab") ?? "overview"
+  const activeTab = ["overview", "sessions", "comments", "metrics", "upsells", "coupons"].includes(requestedTab) ? requestedTab : "overview"
   if (!ctx) return null
   const { event, crashRecoveryOpen, editEventOpen } = ctx.state
   const { setCrashRecoveryOpen, setEditEventOpen, refresh } = ctx.actions
   const sessionCount = event.sessions?.length ?? 0
+  const changeTab = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === "overview") params.delete("tab")
+    else params.set("tab", value)
+    router.replace(`${pathname}${params.size ? `?${params}` : ""}`, { scroll: false })
+  }
 
   return (
     <>
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          {/* Aba própria (copy deck §5.3). A tabela vivia enterrada no meio da
-              visão geral e DUPLICADA dentro de Métricas — duas cópias da mesma
-              lista, e nenhuma delas parecendo o segundo nível da campanha. */}
-          <TabsTrigger value="sessions">
-            Sessões
-            {sessionCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {sessionCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          {/* A aba "Produtos" da campanha SAIU: a lista de produtos vendáveis é
-              de cada transmissão. Uma lista aqui escrevia em todas as sessões
-              de uma vez — o contrário de "a live vende tudo e o story vende uma
-              peça". Agora ela mora na aba Sessões, na linha da transmissão. */}
-          <TabsTrigger value="upsells">
-            Upsells
-            {event.upsellCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {event.upsellCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          {/* ABA PRÓPRIA, e não um cartão na visão geral.
-              O componente existia desde sempre e não estava montado em lugar
-              nenhum — UI morta: o lojista não tinha como ver o que foi dito na
-              transmissão. E ele não cabe na visão geral: são centenas de falas
-              com filtro próprio, e enfiá-las na grade de métricas enterraria a
-              pergunta que elas respondem ("o que não virou venda?"). */}
-          <TabsTrigger value="comments">Comentários</TabsTrigger>
-          <TabsTrigger value="metrics">Métricas</TabsTrigger>
-          <TabsTrigger value="coupons">Cupons</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={changeTab} className="min-w-0 w-full">
+        <EventDetailNavigation sessionCount={sessionCount} upsellCount={event.upsellCount} />
 
         <TabsContent value="overview" className="mt-6 flex flex-col gap-6">
           {/* Antes dos números: o que estes números são. A tela abria direto
@@ -123,7 +98,7 @@ export function EventDetailBody() {
         </TabsContent>
 
         <TabsContent value="comments" className="mt-6">
-          <EventDetailComments />
+          <EventDetailComments key={event.id} />
         </TabsContent>
 
         <TabsContent value="metrics" className="mt-6">
