@@ -1,5 +1,7 @@
 "use client"
 
+import { ListPagination } from "@/components/shared/ListPagination"
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -41,8 +43,16 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { StatsCard } from "@/components/shared/StatsCard"
 import { useListParams } from "@/hooks/shared/useListParams"
 import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
-import { useEvents, useEventStats, useEndEvent, useDeleteEvent } from "@/hooks/event"
-import type { Event, EventFilters as EventFiltersType } from "@/types/event.types"
+import {
+  useEvents,
+  useEventStats,
+  useEndEvent,
+  useDeleteEvent,
+} from "@/hooks/event"
+import type {
+  Event,
+  EventFilters as EventFiltersType,
+} from "@/types/event.types"
 import {
   Card,
   CardContent,
@@ -81,10 +91,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 // Icon mapping for event statuses
 const EVENT_STATUS_ICONS = {
-  "calendar": Calendar,
-  "radio": Radio,
+  calendar: Calendar,
+  radio: Radio,
   "check-circle": CheckCircle,
-  "instagram": Instagram,
+  instagram: Instagram,
 } as const
 
 // Ícone da espécie da campanha, derivada das sessões.
@@ -111,14 +121,25 @@ export default function EventsPage() {
     setFilters,
     resetFilters,
     params,
+    pagination,
+    setPage,
   } = useListParams<EventFiltersType>({
     defaultSearch: searchParams.get("q") ?? "",
+    defaultPage: Math.max(1, Number(searchParams.get("page")) || 1),
   })
 
-  useListUrlMirror("/events", { q: search || null })
+  useListUrlMirror("/events", {
+    q: search || null,
+    page: pagination.page > 1 ? String(pagination.page) : null,
+  })
 
-  const { data, isLoading, error } = useEvents(params)
-  const { data: stats, isLoading: statsLoading } = useEventStats()
+  const { data, isLoading, isFetching, error, refetch } = useEvents(params)
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useEventStats()
   const endEvent = useEndEvent()
   const deleteEvent = useDeleteEvent()
 
@@ -154,7 +175,7 @@ export default function EventsPage() {
             description: error.message || "Tente novamente mais tarde.",
           })
         },
-      }
+      },
     )
   }
 
@@ -188,7 +209,9 @@ export default function EventsPage() {
 
   function handleReconnect(event: Event) {
     // Check if there's an active session to reconnect to
-    const activeSession = event.sessions?.find(s => s.status === "active" || s.status === "live")
+    const activeSession = event.sessions?.find(
+      (s) => s.status === "active" || s.status === "live",
+    )
     if (activeSession) {
       setReconnectEvent(event)
     } else {
@@ -226,6 +249,7 @@ export default function EventsPage() {
           description="eventos criados"
           icon={Calendar}
           isLoading={statsLoading}
+          unavailable={!stats && !statsLoading}
         />
         <StatsCard
           title="Ativos Agora"
@@ -233,6 +257,7 @@ export default function EventsPage() {
           description="eventos vendendo"
           icon={Radio}
           isLoading={statsLoading}
+          unavailable={!stats && !statsLoading}
           variant="success"
         />
         <StatsCard
@@ -241,6 +266,7 @@ export default function EventsPage() {
           description="carrinhos criados"
           icon={ShoppingCart}
           isLoading={statsLoading}
+          unavailable={!stats && !statsLoading}
         />
         <StatsCard
           title="Receita Total"
@@ -248,15 +274,32 @@ export default function EventsPage() {
           description="em vendas"
           icon={DollarSign}
           isLoading={statsLoading}
+          unavailable={!stats && !statsLoading}
           variant="success"
         />
       </div>
 
+      {statsError && (
+        <QueryFeedback
+          title="Não foi possível atualizar o resumo dos eventos"
+          stale={!!stats}
+          retry={() => void refetchStats()}
+        />
+      )}
+      {error && (
+        <QueryFeedback
+          title="Não foi possível atualizar os eventos"
+          stale={!!data}
+          retry={() => void refetch()}
+          busy={isFetching}
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Seus eventos</CardTitle>
           <CardDescription>
-            Abra um evento para acompanhar as vendas ou acesse seus comentários diretamente.
+            Abra um evento para acompanhar as vendas ou acesse seus comentários
+            diretamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -288,25 +331,31 @@ export default function EventsPage() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                      </TableCell>
                     </TableRow>
                   ))
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-destructive">
-                      Erro ao carregar eventos. Tente novamente.
-                    </TableCell>
-                  </TableRow>
-                ) : events.length === 0 ? (
+                ) : !data ? null : events.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center">
                       {hasActiveFilters ? (
                         <>
-                          <p className="font-medium">Nenhum evento com esses filtros</p>
+                          <p className="font-medium">
+                            Nenhum evento com esses filtros
+                          </p>
                           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
                             Tente limpar os filtros ou mudar o período.
                           </p>
@@ -324,11 +373,14 @@ export default function EventsPage() {
                         </>
                       ) : (
                         <>
-                          <p className="font-medium">Você ainda não tem eventos</p>
+                          <p className="font-medium">
+                            Você ainda não tem eventos
+                          </p>
                           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                            Um evento é a sua venda — pode ser uma live de duas horas ou uma
-                            semana inteira de publicações. Crie o evento primeiro e depois
-                            adicione as transmissões: live, post, reel ou story.
+                            Um evento é a sua venda — pode ser uma live de duas
+                            horas ou uma semana inteira de publicações. Crie o
+                            evento primeiro e depois adicione as transmissões:
+                            live, post, reel ou story.
                           </p>
                           <div className="mt-3">
                             <EventForm />
@@ -342,7 +394,10 @@ export default function EventsPage() {
                     // A espécie sai das SESSÕES da campanha (event.sessionTypes),
                     // nunca de event.type — essa coluna deixa de existir.
                     const kind = getEventKind(event)
-                    const config = getEventStatusDisplay(event.status, kind.isPublicationOnly)
+                    const config = getEventStatusDisplay(
+                      event.status,
+                      kind.isPublicationOnly,
+                    )
                     const StatusIcon = EVENT_STATUS_ICONS[config.icon]
                     const KindIcon = KIND_ICONS[kind.icon]
                     return (
@@ -365,7 +420,11 @@ export default function EventsPage() {
                               <KindIcon className="h-3 w-3" />
                               {kind.label}
                             </Badge>
-                            <Link href={`/events/${event.id}`} onClick={(e) => e.stopPropagation()} className="rounded-sm transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            <Link
+                              href={`/events/${event.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded-sm transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
                               {event.title || "Sem titulo"}
                             </Link>
                           </div>
@@ -380,7 +439,9 @@ export default function EventsPage() {
                             {config.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">{event.totalOrders}</TableCell>
+                        <TableCell className="text-center">
+                          {event.totalOrders}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span>{formatRelativeDate(event.createdAt)}</span>
@@ -392,7 +453,11 @@ export default function EventsPage() {
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/events/${event.id}?tab=comments`} aria-label={`Ver comentários de ${event.title || "evento sem título"}`} title="Ver comentários">
+                              <Link
+                                href={`/events/${event.id}?tab=comments`}
+                                aria-label={`Ver comentários de ${event.title || "evento sem título"}`}
+                                title="Ver comentários"
+                              >
                                 <MessageCircle data-icon="inline-start" />
                               </Link>
                             </Button>
@@ -417,7 +482,9 @@ export default function EventsPage() {
                                     onde existe transmissão ao vivo. */}
                                 {(event.status === "active" ||
                                   event.status === "scheduled") && (
-                                  <DropdownMenuItem onClick={() => handleNewSession(event)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleNewSession(event)}
+                                  >
                                     <Plus className="mr-2 h-4 w-4" />
                                     Nova sessão
                                   </DropdownMenuItem>
@@ -425,13 +492,17 @@ export default function EventsPage() {
                                 {event.status === "active" && (
                                   <>
                                     {kind.hasLive && (
-                                      <DropdownMenuItem onClick={() => handleReconnect(event)}>
+                                      <DropdownMenuItem
+                                        onClick={() => handleReconnect(event)}
+                                      >
                                         <RefreshCw className="mr-2 h-4 w-4" />
                                         Reconectar
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleEndEvent(event)}>
+                                    <DropdownMenuItem
+                                      onClick={() => handleEndEvent(event)}
+                                    >
                                       <Square className="mr-2 h-4 w-4" />
                                       Finalizar evento
                                     </DropdownMenuItem>
@@ -461,6 +532,14 @@ export default function EventsPage() {
           <p className="mt-3 text-xs text-muted-foreground">
             Clique em uma linha para ver os detalhes do evento
           </p>
+          <ListPagination
+            {...pagination}
+            total={data?.pagination.total}
+            totalPages={data?.pagination.totalPages}
+            onPageChange={setPage}
+            busy={isFetching}
+            noun="eventos"
+          />
         </CardContent>
       </Card>
 
@@ -483,13 +562,17 @@ export default function EventsPage() {
       )}
 
       {/* End Event Confirmation Dialog */}
-      <AlertDialog open={!!endingEvent} onOpenChange={(open) => !open && setEndingEvent(null)}>
+      <AlertDialog
+        open={!!endingEvent}
+        onOpenChange={(open) => !open && setEndingEvent(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Finalizar evento</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja finalizar o evento &quot;{endingEvent?.title}&quot;?
-              Esta acao ira encerrar todas as sessoes ativas e finalizar os carrinhos pendentes.
+              Tem certeza que deseja finalizar o evento &quot;
+              {endingEvent?.title}&quot;? Esta acao ira encerrar todas as
+              sessoes ativas e finalizar os carrinhos pendentes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -502,13 +585,16 @@ export default function EventsPage() {
       </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingEvent} onOpenChange={(open) => !open && setDeletingEvent(null)}>
+      <AlertDialog
+        open={!!deletingEvent}
+        onOpenChange={(open) => !open && setDeletingEvent(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir evento</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o evento &quot;{deletingEvent?.title}&quot;?
-              Esta acao nao pode ser desfeita.
+              Tem certeza que deseja excluir o evento &quot;
+              {deletingEvent?.title}&quot;? Esta acao nao pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -11,6 +11,7 @@ export interface CustomerShippingAddress {
 }
 
 export interface Customer {
+  blocked?: boolean
   id: string
   handle: string
   email?: string | null
@@ -48,6 +49,7 @@ export interface CustomerStats {
 
 // Filters for customer listing
 export interface CustomerFilters {
+  blockedOnly?: boolean
   hasOrders?: boolean
   orderCountMin?: number
   orderCountMax?: number

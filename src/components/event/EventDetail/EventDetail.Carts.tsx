@@ -1,5 +1,6 @@
 "use client"
 
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Ban, Clock, Copy, Loader2, ShoppingCart } from "lucide-react"
@@ -51,7 +52,7 @@ import { EventDetailContext } from "./EventDetailContext"
 export function EventDetailCarts() {
   const ctx = use(EventDetailContext)
   if (!ctx) return null
-  const { event, carts, cartsLoading } = ctx.state
+  const { event, carts, cartsLoading, cartsError } = ctx.state
 
   return (
     <Card>
@@ -63,10 +64,10 @@ export function EventDetailCarts() {
               Pedidos
             </CardTitle>
             <CardDescription>
-              Uma linha por carrinho. Como o carrinho é um só por cliente na campanha, a
-              mesma pessoa aparece uma vez — com os itens de todas as sessões somados. Se
-              ela já pagou e voltou a comprar, aparece um segundo carrinho, com link
-              próprio.
+              Uma linha por carrinho. Como o carrinho é um só por cliente na
+              campanha, a mesma pessoa aparece uma vez — com os itens de todas
+              as sessões somados. Se ela já pagou e voltou a comprar, aparece um
+              segundo carrinho, com link próprio.
             </CardDescription>
           </div>
           {carts.length > 0 && (
@@ -74,7 +75,14 @@ export function EventDetailCarts() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-3">
+        {cartsError && (
+          <QueryFeedback
+            title="Não foi possível atualizar os pedidos do evento"
+            stale={carts.length > 0}
+            retry={ctx.actions.refresh}
+          />
+        )}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -92,16 +100,31 @@ export function EventDetailCarts() {
               {cartsLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-10" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="mx-auto h-4 w-8" /></TableCell>
-                    <TableCell><Skeleton className="ml-auto h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="ml-auto h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-10" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="mx-auto h-4 w-8" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="ml-auto h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="ml-auto h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
                   </TableRow>
                 ))
-              ) : carts.length === 0 ? (
+              ) : cartsError && carts.length === 0 ? null : carts.length ===
+                0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -118,7 +141,9 @@ export function EventDetailCarts() {
                   // posicao na lista nao e, porque ela vem por created_at DESC.
                   // Usar o indice fazia o mesmo "S{n}" apontar para sessoes
                   // diferentes nesta tabela e na de Sessoes.
-                  const session = event.sessions?.find((s) => s.id === cart.sessionId)
+                  const session = event.sessions?.find(
+                    (s) => s.id === cart.sessionId,
+                  )
                   return (
                     <CartRow
                       key={cart.id}
@@ -156,7 +181,11 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
     cart.paymentStatus !== "refunded" &&
     cart.status !== "cancelled" &&
     cart.status !== "expired"
-  const statusConfig = getStatusConfig(ORDER_STATUS_CONFIG, cart.status, "active")
+  const statusConfig = getStatusConfig(
+    ORDER_STATUS_CONFIG,
+    cart.status,
+    "active",
+  )
   const paymentConfig = cart.paymentStatus
     ? getStatusConfig(PAYMENT_STATUS_CONFIG, cart.paymentStatus, "pending")
     : null
@@ -164,7 +193,9 @@ function CartRow({ cart, eventId, sessionNumber }: CartRowProps) {
   // O badge de "Pago" vem de `payment_status`: `carts.status` nunca recebe o
   // valor 'paid', então um carrinho pago continua em 'active'/'checkout'.
   const displayConfig =
-    paymentConfig && cart.paymentStatus === "paid" ? paymentConfig : statusConfig
+    paymentConfig && cart.paymentStatus === "paid"
+      ? paymentConfig
+      : statusConfig
   const displayHint =
     paymentConfig && cart.paymentStatus === "paid"
       ? "Pagamento confirmado. Se o cliente comprar de novo nesta campanha, abre um carrinho novo com link próprio."

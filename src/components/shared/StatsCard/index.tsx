@@ -16,6 +16,8 @@ interface StatsCardProps {
     label: string
   }
   isLoading?: boolean
+  unavailable?: boolean
+  compact?: boolean
   variant?: "default" | "success" | "warning" | "danger" | "info"
   className?: string
   // Override the value's typography (size, tracking, family). Useful when a
@@ -64,6 +66,8 @@ export function StatsCard({
   icon: Icon,
   trend,
   isLoading = false,
+  unavailable = false,
+  compact = false,
   variant = "default",
   className,
   valueClassName,
@@ -77,21 +81,26 @@ export function StatsCard({
         "hover:shadow-lg hover:shadow-primary/5",
         "hover:-translate-y-0.5",
         "border-border/50 hover:border-border",
-        className
+        className,
       )}
     >
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader
+        className={cn(
+          "relative flex flex-row items-center justify-between gap-2 space-y-0 pb-2",
+          compact && "p-4 pb-2",
+        )}
+      >
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
         {Icon && (
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110",
-              styles.iconBg
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110",
+              styles.iconBg,
             )}
           >
             <Icon className={cn("h-4 w-4", styles.iconColor)} />
@@ -99,25 +108,26 @@ export function StatsCard({
         )}
       </CardHeader>
 
-      <CardContent className="relative">
+      <CardContent className={cn("relative", compact && "p-4 pt-0")}>
         <div className="flex items-baseline gap-2">
           {isLoading ? (
             <Skeleton className="h-8 w-24" />
           ) : (
             <span
               className={cn(
-                "text-2xl font-bold tracking-tight",
+                "font-bold tracking-tight",
+                compact ? "text-lg sm:text-2xl" : "text-2xl",
                 valueClassName,
               )}
             >
-              {value}
+              {unavailable ? "—" : value}
             </span>
           )}
-          {trend && !isLoading && (
+          {trend && !isLoading && !unavailable && (
             <span
               className={cn(
                 "text-xs font-medium",
-                trend.value >= 0 ? styles.trendPositive : styles.trendNegative
+                trend.value >= 0 ? styles.trendPositive : styles.trendNegative,
               )}
             >
               {trend.value >= 0 ? "+" : ""}
@@ -125,10 +135,12 @@ export function StatsCard({
             </span>
           )}
         </div>
-        {description && (
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        {(description || unavailable) && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {unavailable ? "Dados indisponíveis" : description}
+          </p>
         )}
-        {trend && !isLoading && (
+        {trend && !isLoading && !unavailable && (
           <p className="mt-0.5 text-[10px] text-muted-foreground/70">
             {trend.label}
           </p>

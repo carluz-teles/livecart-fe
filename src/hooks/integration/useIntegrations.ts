@@ -1,28 +1,36 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
 import type { IntegrationListResponse } from "@/types"
+import { refreshProductsAfterResync } from "./resync-cache"
 
 export const integrationKeys = {
   all: ["integrations"] as const,
   lists: () => [...integrationKeys.all, "list"] as const,
   list: (storeId: string) => [...integrationKeys.lists(), storeId] as const,
   details: () => [...integrationKeys.all, "detail"] as const,
-  detail: (storeId: string, id: string) => [...integrationKeys.details(), storeId, id] as const,
+  detail: (storeId: string, id: string) =>
+    [...integrationKeys.details(), storeId, id] as const,
 }
 
 export function useIntegrations() {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
+  const queryClient = useQueryClient()
 
   return useQuery({
     queryKey: integrationKeys.list(storeId ?? ""),
     queryFn: async (): Promise<IntegrationListResponse> => {
       const token = await getToken()
-      return integrationService.list(storeId!, token)
+      const result = await integrationService.list(storeId!, token)
+      const previous = queryClient.getQueryData<IntegrationListResponse>(
+        integrationKeys.list(storeId!),
+      )
+      refreshProductsAfterResync(queryClient, storeId!, previous, result)
+      return result
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
     // Enquanto uma varredura do ERP roda, a lista se reconsulta sozinha: é ela
@@ -47,12 +55,17 @@ export function useIntegrations() {
  * varreduras sobre a mesma cota do ERP.
  */
 export function useERPResyncRunning() {
-  const { data } = useIntegrations()
+  const { data, error, isPending, isFetching, refetch } = useIntegrations()
   const erp = data?.data?.find((i) => i.type === "erp" && i.status === "active")
   return {
     running: Boolean(erp?.erpResyncRunning),
     done: erp?.erpResyncDone ?? 0,
     total: erp?.erpResyncTotal ?? 0,
     integrationId: erp?.id,
+    integration: erp,
+    error,
+    isPending,
+    isFetching,
+    refetch,
   }
 }

@@ -1,13 +1,10 @@
 "use client"
 
-import { use } from "react"
+import { use, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { OrderDetailWorkflow } from "./OrderDetail.Workflow"
 import { Facebook, Instagram, MessageCircle, Radio } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/cart.types"
@@ -48,42 +45,51 @@ export function OrderDetailBody() {
       <OrderDetailQuoteDocument />
 
       <div className="flex flex-col gap-4 print:hidden">
-      {/* High-priority banner: paid carts whose Tiny order failed to finalise.
+        {/* High-priority banner: paid carts whose Tiny order failed to finalise.
           Lives above the grid so it's the first thing the merchant sees on
           opening the page — the action it surfaces (retry) blocks fulfilment. */}
-      <OrderDetailERPRetryBanner />
+        <OrderDetailWorkflow />
+        <section id="order-erp" tabIndex={-1} className="scroll-mt-4">
+          <OrderDetailERPRetryBanner />
+        </section>
 
-      {/* Estado terminal (cancelado/expirado) ou cancelamento revertido pelo
+        {/* Estado terminal (cancelado/expirado) ou cancelamento revertido pelo
           pagamento: explica a consequência antes de o lojista ler os cards. */}
-      <OrderDetailStatusBanner />
+        <OrderDetailStatusBanner />
 
-      {/* Juntar pedidos acontece no ERP: um pedido só lá, com o conteúdo dos
+        {/* Juntar pedidos acontece no ERP: um pedido só lá, com o conteúdo dos
           dois. Aqui eles seguem separados, e esta seção é o que torna o vínculo
           visível — sem ela o lojista trataria um dos dois como pedido solto e
           mandaria frete duplicado. */}
-      <OrderDetailJoin />
+        <OrderDetailJoin />
 
-      {/* Mobile stacks the rail above the items because those cards carry the
+        {/* Mobile stacks the rail above the items because those cards carry the
           highest-signal info post-live ("entrou dinheiro? quem é? pra onde vai?").
           Desktop reverts to natural main / aside flow. */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        <main className="order-2 flex flex-col gap-4 lg:col-span-8 lg:order-none">
-          <OrderDetailItems />
-          {/* Logo abaixo dos itens: é a continuação da mesma pergunta ("o que
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
+            <OrderDetailItems />
+            {/* Logo abaixo dos itens: é a continuação da mesma pergunta ("o que
               ela pediu?"), e o que está em fila explica a diferença entre o que
               ela pediu e o que a tabela cobra. */}
-          <OrderDetailWaitlist />
-          <OrderDetailUpsell />
-          <OrderDetailLogistics />
-          <OrderDetailHistory />
-        </main>
-        <aside className="order-1 flex flex-col gap-4 lg:col-span-4 lg:order-none">
-          <OrderDetailPayment />
-          <OrderDetailCustomer />
-          <OrderDetailShipping />
-          <SummaryLiveCard order={order} />
-        </aside>
-      </div>
+            <OrderDetailWaitlist />
+            <OrderDetailUpsell />
+            <section id="order-logistics" tabIndex={-1} className="scroll-mt-4">
+              <OrderDetailLogistics />
+            </section>
+            <section id="order-history" tabIndex={-1} className="scroll-mt-4">
+              <OrderDetailHistory />
+            </section>
+          </div>
+          <aside className="flex min-w-0 flex-col gap-4 lg:col-span-4">
+            <section id="order-payment" tabIndex={-1} className="scroll-mt-4">
+              <OrderDetailPayment />
+            </section>
+            <OrderDetailCustomer />
+            <OrderDetailShipping />
+            <SummaryLiveCard order={order} />
+          </aside>
+        </div>
       </div>
     </>
   )
@@ -94,6 +100,7 @@ interface LiveCardProps {
 }
 
 function SummaryLiveCard({ order }: LiveCardProps) {
+  const [expanded, setExpanded] = useState(false)
   const PlatformIcon = PLATFORM_ICON[order.livePlatform] ?? null
   const platformLabel =
     order.livePlatform.charAt(0).toUpperCase() + order.livePlatform.slice(1)
@@ -127,18 +134,27 @@ function SummaryLiveCard({ order }: LiveCardProps) {
               Comentários do cliente ({comments.length})
             </p>
             <ul className="space-y-2">
-              {comments.map((c) => (
-                <li
-                  key={c.id}
-                  className="rounded-md bg-muted/40 px-2.5 py-1.5"
-                >
-                  <p className="text-sm leading-snug">{c.text}</p>
+              {(expanded ? comments : comments.slice(0, 3)).map((c) => (
+                <li key={c.id} className="rounded-md bg-muted/40 px-2.5 py-1.5">
+                  <p className="break-words text-sm leading-snug">{c.text}</p>
                   <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
                     {formatTime(c.createdAt)}
                   </p>
                 </li>
               ))}
             </ul>
+            {comments.length > 3 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-expanded={expanded}
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded
+                  ? "Mostrar menos"
+                  : `Ver os ${comments.length} comentários`}
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

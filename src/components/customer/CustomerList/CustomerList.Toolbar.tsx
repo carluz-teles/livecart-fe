@@ -11,17 +11,16 @@ import { CustomerListContext } from "./CustomerListContext"
 export function CustomerListToolbar() {
   const ctx = use(CustomerListContext)
   if (!ctx) return null
-  const { search, filters, showBlockedOnly, blockedHandles } = ctx.state
+  const { search, filters, showBlockedOnly } = ctx.state
   const { setSearch, setFilters, setShowBlockedOnly } = ctx.actions
 
-  const blockedCount = blockedHandles.size
-
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex-1">
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative min-w-[180px] flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por @handle..."
+          aria-label="Buscar clientes"
+          placeholder="Buscar @perfil ou e-mail…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8"
@@ -30,24 +29,16 @@ export function CustomerListToolbar() {
       <Button
         variant={showBlockedOnly ? "default" : "outline"}
         size="sm"
+        aria-pressed={showBlockedOnly}
         onClick={() => setShowBlockedOnly(!showBlockedOnly)}
         className={cn(
           "gap-1.5",
-          showBlockedOnly && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          showBlockedOnly &&
+            "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         )}
       >
         <Ban className="h-4 w-4" />
         Bloqueados
-        {blockedCount > 0 && (
-          <span
-            className={cn(
-              "ml-1 rounded-full px-1.5 text-xs font-medium tabular-nums",
-              showBlockedOnly ? "bg-destructive-foreground/20" : "bg-muted",
-            )}
-          >
-            {blockedCount}
-          </span>
-        )}
       </Button>
       <CustomerFilters filters={filters} onChange={setFilters} />
     </div>

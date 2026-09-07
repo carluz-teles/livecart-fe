@@ -85,7 +85,10 @@ export function isOrderTerminal(order: Order): boolean {
 
 // Selo do estado terminal. Ícone + palavra: quem não distingue as cores (ou
 // está imprimindo em preto e branco) continua lendo o que aconteceu.
-const TERMINAL_BADGE: Record<string, { label: string; Icon: LucideIcon; hint: string }> = {
+const TERMINAL_BADGE: Record<
+  string,
+  { label: string; Icon: LucideIcon; hint: string }
+> = {
   cancelled: {
     label: "Cancelado",
     Icon: Ban,
@@ -152,7 +155,8 @@ export const orderColumns: ColumnDef<Order>[] = [
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                Pagamento confirmado mas o pedido não foi enviado para o ERP. Abra para tentar novamente.
+                Pagamento confirmado, mas houve falha na aprovação do pedido no
+                ERP. Abra o pedido para conferir e tentar novamente.
               </TooltipContent>
             </Tooltip>
           )}
@@ -193,7 +197,9 @@ export const orderColumns: ColumnDef<Order>[] = [
   {
     id: "totalAmount",
     header: ({ column }) => (
-      <SortHeader column={column} align="right">Total</SortHeader>
+      <SortHeader column={column} align="right">
+        Total
+      </SortHeader>
     ),
     enableSorting: true,
     meta: { sortKey: "total_amount", align: "right" },
@@ -280,7 +286,8 @@ export const orderColumns: ColumnDef<Order>[] = [
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
-          {formatDate(row.original.createdAt)} {formatTime(row.original.createdAt)}
+          {formatDate(row.original.createdAt)}{" "}
+          {formatTime(row.original.createdAt)}
         </TooltipContent>
       </Tooltip>
     ),

@@ -20,33 +20,33 @@ export default function DashboardLayout({
   return (
     <AppProviders>
       <OnboardingGuard>
-      {/* fixed inset-0 em vez de h-screen: 100vh não é exatamente a altura
+        {/* fixed inset-0 em vez de h-screen: 100vh não é exatamente a altura
           visível do viewport, e a sobra (8px medidos em produção) fazia o
           documento rolar junto com o <main> — duas barras de rolagem lado a
           lado no canto direito. Fora do fluxo, o shell é sempre o viewport
           exato e só o <main> rola. print:static devolve o fluxo normal na
           impressão, senão só a primeira página sairia. */}
-      <div className="fixed inset-0 flex overflow-hidden print:static print:h-auto print:overflow-visible">
-        <div className="print:hidden">
-          <Sidebar />
-        </div>
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <TrialBanner />
-          <div className="print:hidden">
-            <Header />
+        <div className="fixed inset-0 flex overflow-hidden print:static print:h-auto print:overflow-visible">
+          <div className="hidden shrink-0 lg:block print:hidden">
+            <Sidebar />
           </div>
-          <main className="flex-1 overflow-y-auto bg-surface-secondary p-6 print:overflow-visible print:bg-white print:p-0">
-            {children}
-          </main>
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <TrialBanner />
+            <div className="print:hidden">
+              <Header />
+            </div>
+            <main className="min-w-0 flex-1 overflow-y-auto bg-surface-secondary p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-      {/* Bancada de teste de staging. O componente devolve null fora de
+        {/* Bancada de teste de staging. O componente devolve null fora de
           staging, e as rotas que ele chama nem existem lá — ver
           components/staging/LiveSimulator. print:hidden porque isto nunca faz
           parte de um documento impresso. */}
-      <div className="print:hidden">
-        <LiveSimulator />
-      </div>
+        <div className="print:hidden">
+          <LiveSimulator />
+        </div>
       </OnboardingGuard>
     </AppProviders>
   )

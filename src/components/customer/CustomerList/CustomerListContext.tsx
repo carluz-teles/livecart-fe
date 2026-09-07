@@ -11,6 +11,8 @@ import type { Pagination, Sorting } from "@/types/api.types"
 export interface CustomerListState {
   customers: Customer[]
   isLoading: boolean
+  isFetching: boolean
+  statsError: Error | null
   error: Error | null
   total: number
   totalPages: number
@@ -29,6 +31,8 @@ export interface CustomerListState {
 }
 
 export interface CustomerListActions {
+  retry: () => void
+  clearFilters: () => void
   setSearch: (search: string) => void
   setFilters: (filters: CustomerFilters) => void
   setPage: (page: number) => void
@@ -43,4 +47,5 @@ export interface CustomerListContextValue {
   actions: CustomerListActions
 }
 
-export const CustomerListContext = createContext<CustomerListContextValue | null>(null)
+export const CustomerListContext =
+  createContext<CustomerListContextValue | null>(null)
