@@ -6,12 +6,24 @@
 // gráfico de vendas por produto (redundantes); mix de pagamento foi pro
 // Financeiro.
 
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
 import { useState } from "react"
-import { DollarSign, MessageCircle, ShoppingCart, TrendingUp } from "lucide-react"
+import {
+  DollarSign,
+  MessageCircle,
+  ShoppingCart,
+  TrendingUp,
+} from "lucide-react"
 import { Bar, BarChart, XAxis, YAxis } from "recharts"
 
 import { formatCurrency } from "@/lib/format"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
@@ -54,7 +66,10 @@ function bucketFor(range: PeriodRange): "day" | "week" | "month" {
   return "month"
 }
 
-function bucketLabel(bucket: string, granularity: "day" | "week" | "month"): string {
+function bucketLabel(
+  bucket: string,
+  granularity: "day" | "week" | "month",
+): string {
   const d = new Date(bucket + "T00:00:00")
   if (granularity === "month") {
     return d.toLocaleDateString("pt-BR", { month: "short" })
@@ -67,10 +82,30 @@ export default function DashboardPage() {
   const [range, setRange] = useState<PeriodRange>(() => rangeForPreset("30d"))
 
   const granularity = bucketFor(range)
-  const { data: overview, isLoading: overviewLoading } = useOverview(range)
-  const { data: series, isLoading: seriesLoading } = useRevenueSeries(range, granularity)
-  const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts(range)
-  const { data: topBuyersData, isLoading: topBuyersLoading } = useTopBuyers(range)
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    error: overviewError,
+    refetch: refetchOverview,
+  } = useOverview(range)
+  const {
+    data: series,
+    isLoading: seriesLoading,
+    error: seriesError,
+    refetch: refetchSeries,
+  } = useRevenueSeries(range, granularity)
+  const {
+    data: topProductsData,
+    isLoading: topProductsLoading,
+    error: topProductsError,
+    refetch: refetchTopProducts,
+  } = useTopProducts(range)
+  const {
+    data: topBuyersData,
+    isLoading: topBuyersLoading,
+    error: topBuyersError,
+    refetch: refetchTopBuyers,
+  } = useTopBuyers(range)
 
   const topProducts = topProductsData?.data ?? []
   const topBuyers = topBuyersData?.data ?? []
@@ -112,6 +147,13 @@ export default function DashboardPage() {
           {/* Ativação: some quando a loja completa os primeiros passos */}
           <GettingStartedCard />
 
+          {overviewError && (
+            <QueryFeedback
+              title="Não foi possível atualizar os indicadores"
+              stale={!!overview}
+              retry={() => void refetchOverview()}
+            />
+          )}
           {/* KPIs do período — todos coerentes com o filtro */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatsCard
@@ -120,6 +162,7 @@ export default function DashboardPage() {
               description="pedidos pagos no período"
               icon={DollarSign}
               isLoading={overviewLoading}
+              unavailable={!overview && !overviewLoading}
               variant="success"
             />
             <StatsCard
@@ -132,6 +175,7 @@ export default function DashboardPage() {
               }
               icon={ShoppingCart}
               isLoading={overviewLoading}
+              unavailable={!overview && !overviewLoading}
             />
             <StatsCard
               title="Ticket médio"
@@ -139,6 +183,7 @@ export default function DashboardPage() {
               description="por pedido pago"
               icon={TrendingUp}
               isLoading={overviewLoading}
+              unavailable={!overview && !overviewLoading}
             />
             <StatsCard
               title="Gerado pelo LiveCart"
@@ -150,12 +195,15 @@ export default function DashboardPage() {
               }
               icon={MessageCircle}
               isLoading={overviewLoading}
+              unavailable={!overview && !overviewLoading}
               variant="info"
             />
           </div>
 
           {/* Funil com estados */}
-          <FunnelStates data={overview} isLoading={overviewLoading} />
+          {(overview || overviewLoading) && (
+            <FunnelStates data={overview} isLoading={overviewLoading} />
+          )}
 
           {/* Receita ao longo do tempo (granularidade adaptativa) */}
           <Card>
@@ -170,14 +218,24 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {seriesError && (
+                <QueryFeedback
+                  title="Não foi possível atualizar a receita"
+                  stale={!!series}
+                  retry={() => void refetchSeries()}
+                />
+              )}
               {seriesLoading ? (
                 <Skeleton className="h-[300px] w-full" />
-              ) : chartItems.length === 0 ? (
+              ) : !series ? null : chartItems.length === 0 ? (
                 <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
                   Sem vendas no período selecionado.
                 </div>
               ) : (
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-[300px] w-full"
+                >
                   <BarChart accessibilityLayer data={chartItems}>
                     <XAxis
                       dataKey="label"
@@ -196,7 +254,11 @@ export default function DashboardPage() {
                       cursor={false}
                       content={<ChartTooltipContent hideLabel />}
                     />
-                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={6} />
+                    <Bar
+                      dataKey="revenue"
+                      fill="var(--color-revenue)"
+                      radius={6}
+                    />
                   </BarChart>
                 </ChartContainer>
               )}
@@ -211,13 +273,20 @@ export default function DashboardPage() {
                 <CardDescription>Mais vendidos no período</CardDescription>
               </CardHeader>
               <CardContent>
+                {topProductsError && (
+                  <QueryFeedback
+                    title="Não foi possível atualizar os produtos mais vendidos"
+                    stale={!!topProductsData}
+                    retry={() => void refetchTopProducts()}
+                  />
+                )}
                 {topProductsLoading ? (
                   <div className="space-y-4">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
-                ) : topProducts.length === 0 ? (
+                ) : !topProductsData ? null : topProducts.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
                     Sem vendas no período.
                   </p>
@@ -229,8 +298,12 @@ export default function DashboardPage() {
                           {i + 1}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">#{p.keyword}</p>
+                          <p className="truncate text-sm font-medium">
+                            {p.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            #{p.keyword}
+                          </p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-semibold">
@@ -253,13 +326,20 @@ export default function DashboardPage() {
                 <CardDescription>Quem mais comprou no período</CardDescription>
               </CardHeader>
               <CardContent>
+                {topBuyersError && (
+                  <QueryFeedback
+                    title="Não foi possível atualizar os maiores compradores"
+                    stale={!!topBuyersData}
+                    retry={() => void refetchTopBuyers()}
+                  />
+                )}
                 {topBuyersLoading ? (
                   <div className="space-y-4">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
-                ) : topBuyers.length === 0 ? (
+                ) : !topBuyersData ? null : topBuyers.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
                     Sem compras no período.
                   </p>
@@ -271,9 +351,12 @@ export default function DashboardPage() {
                           {i + 1}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">@{b.handle}</p>
+                          <p className="truncate text-sm font-medium">
+                            @{b.handle}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {b.totalOrders} {b.totalOrders === 1 ? "pedido" : "pedidos"}
+                            {b.totalOrders}{" "}
+                            {b.totalOrders === 1 ? "pedido" : "pedidos"}
                           </p>
                         </div>
                         <p className="text-sm font-semibold">

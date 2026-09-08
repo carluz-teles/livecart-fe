@@ -31,6 +31,13 @@ import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
 
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
+import { IntegrationOverview } from "@/components/integration/IntegrationOverview"
+import {
+  ERPResyncStatus,
+  integrationDate,
+} from "@/components/product/ERPResyncButton/ERPResyncStatus"
+import { ERPResyncButton } from "@/components/product/ERPResyncButton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -87,11 +94,7 @@ import {
   useProviderURLs,
   usePagarmeWebhookStatus,
 } from "@/hooks/integration"
-import type {
-  Integration,
-  IntegrationProvider,
-  IntegrationType,
-} from "@/types"
+import type { Integration, IntegrationProvider, IntegrationType } from "@/types"
 import type { ApiError } from "@/types/api.types"
 import { cn } from "@/lib/utils"
 
@@ -130,7 +133,8 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   {
     id: "tiny",
     name: "Tiny ERP",
-    description: "Tiny (atual Olist) — sincronize produtos e pedidos automaticamente",
+    description:
+      "Tiny (atual Olist) — sincronize produtos e pedidos automaticamente",
     features: ["Importar produtos", "Sincronizar estoque"],
     type: "erp",
     authType: "oauth_with_credentials",
@@ -140,7 +144,11 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     id: "bling",
     name: "Bling",
     description: "Bling ERP — importe produtos e mantenha o estoque em dia",
-    features: ["Importar produtos", "Estoque em tempo real", "Conexão em 1 clique"],
+    features: [
+      "Importar produtos",
+      "Estoque em tempo real",
+      "Conexão em 1 clique",
+    ],
     type: "erp",
     // Um clique: o LiveCart tem um aplicativo próprio no Bling, então o lojista
     // não precisa criar app nem colar client_id/secret como no Tiny.
@@ -151,7 +159,11 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
     id: "instagram",
     name: "Instagram",
     description: "Capture comentários das suas lives em tempo real",
-    features: ["Comentários em tempo real", "Detecção de pedidos", "DMs automáticas"],
+    features: [
+      "Comentários em tempo real",
+      "Detecção de pedidos",
+      "DMs automáticas",
+    ],
     type: "social",
     authType: "oauth",
     docHref: "/docs/integrations/instagram",
@@ -159,8 +171,13 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   {
     id: "melhor_envio",
     name: "Melhor Envio",
-    description: "Cote frete no checkout com Correios, Jadlog e outras transportadoras",
-    features: ["Cotação em tempo real", "Múltiplas transportadoras", "Prazo e preço reais"],
+    description:
+      "Cote frete no checkout com Correios, Jadlog e outras transportadoras",
+    features: [
+      "Cotação em tempo real",
+      "Múltiplas transportadoras",
+      "Prazo e preço reais",
+    ],
     type: "shipping",
     authType: "oauth",
     docHref: "/docs/integrations/melhor-envio",
@@ -168,8 +185,13 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   {
     id: "smartenvios",
     name: "SmartEnvios",
-    description: "Cote frete e gerencie envios com Jadlog, Total Express e outras",
-    features: ["Cotação em tempo real", "Criação de envio", "Etiquetas e rastreio"],
+    description:
+      "Cote frete e gerencie envios com Jadlog, Total Express e outras",
+    features: [
+      "Cotação em tempo real",
+      "Criação de envio",
+      "Etiquetas e rastreio",
+    ],
     type: "shipping",
     authType: "api_key",
     docHref: "/docs/integrations/smartenvios",
@@ -186,7 +208,10 @@ const AVAILABLE_PROVIDERS: ProviderConfig[] = [
   // },
 ]
 
-const categoryConfig: Record<IntegrationType, { label: string; icon: React.ReactNode; description: string }> = {
+const categoryConfig: Record<
+  IntegrationType,
+  { label: string; icon: React.ReactNode; description: string }
+> = {
   payment: {
     label: "Pagamentos",
     icon: <CreditCard className="h-4 w-4" />,
@@ -295,7 +320,7 @@ function providerWebhookCopy(provider: string): ProviderWebhookCopy {
 // accountInfo. Missing / empty values are skipped so the caller can omit
 // the whole card when the result is empty.
 function buildAccountFields(
-  info: Record<string, unknown> | undefined
+  info: Record<string, unknown> | undefined,
 ): AccountField[] {
   if (!info) return []
 
@@ -309,13 +334,15 @@ function buildAccountFields(
   const fields: AccountField[] = []
 
   const username = str("username")
-  if (username) fields.push({ label: "Usuário", value: `@${username}`, icon: User })
+  if (username)
+    fields.push({ label: "Usuário", value: `@${username}`, icon: User })
 
   const name = str("name")
   if (name) fields.push({ label: "Nome", value: name, icon: User })
 
   const id = str("id")
-  if (id) fields.push({ label: "ID da Conta", value: id, icon: Activity, mono: true })
+  if (id)
+    fields.push({ label: "ID da Conta", value: id, icon: Activity, mono: true })
 
   const email = str("email")
   if (email) fields.push({ label: "Email", value: email, icon: User })
@@ -329,7 +356,13 @@ function buildAccountFields(
 function IntegrationsContent() {
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
-  const { data, isLoading } = useIntegrations()
+  const {
+    data,
+    isLoading,
+    error: integrationsError,
+    isFetching,
+    refetch,
+  } = useIntegrations()
   const connectOAuth = useConnectOAuth()
   const connectApiKey = useConnectApiKey()
   const connectTiny = useConnectTiny()
@@ -340,7 +373,9 @@ function IntegrationsContent() {
   const updatePriority = useUpdateIntegrationPriority()
 
   const [disconnectId, setDisconnectId] = useState<string | null>(null)
-  const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(null)
+  const [apiKeyDialog, setApiKeyDialog] = useState<IntegrationProvider | null>(
+    null,
+  )
   const [apiKey, setApiKey] = useState("")
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [smartEnviosRotating, setSmartEnviosRotating] = useState(false)
@@ -389,7 +424,10 @@ function IntegrationsContent() {
     )
   const primaryPaymentId = paymentChain[0]?.id
 
-  const handleReorderPayment = (integrationId: string, direction: "up" | "down") => {
+  const handleReorderPayment = (
+    integrationId: string,
+    direction: "up" | "down",
+  ) => {
     const idx = paymentChain.findIndex((p) => p.id === integrationId)
     if (idx === -1) return
     const swapIdx = direction === "up" ? idx - 1 : idx + 1
@@ -512,7 +550,7 @@ function IntegrationsContent() {
     }
     if (secretEnv !== publicEnv) {
       setPagarmeError(
-        "As chaves precisam ser do mesmo ambiente (ambas de teste ou ambas de produção)."
+        "As chaves precisam ser do mesmo ambiente (ambas de teste ou ambas de produção).",
       )
       return
     }
@@ -532,7 +570,7 @@ function IntegrationsContent() {
           // validate the webhook right after connecting, instead of hunting
           // for it later.
           const pagarmeProvider = AVAILABLE_PROVIDERS.find(
-            (p) => p.id === "pagarme"
+            (p) => p.id === "pagarme",
           )
           if (integration && pagarmeProvider) {
             handleOpenDetails(integration, pagarmeProvider, true)
@@ -546,7 +584,7 @@ function IntegrationsContent() {
               : "Falha ao conectar Pagar.me. Tente novamente."
           setPagarmeError(apiErr?.message || fallback)
         },
-      }
+      },
     )
   }
 
@@ -575,7 +613,7 @@ function IntegrationsContent() {
             toast.success(
               smartEnviosRotating
                 ? "Token da SmartEnvios atualizado."
-                : "SmartEnvios conectado com sucesso!"
+                : "SmartEnvios conectado com sucesso!",
             )
             closeApiKeyDialog()
           },
@@ -587,7 +625,7 @@ function IntegrationsContent() {
                 : "Falha ao conectar SmartEnvios. Tente novamente."
             setApiKeyError(apiErr?.message || fallback)
           },
-        }
+        },
       )
       return
     }
@@ -606,7 +644,7 @@ function IntegrationsContent() {
         onError: () => {
           setApiKeyError("Falha ao conectar. Verifique a chave de API.")
         },
-      }
+      },
     )
   }
 
@@ -636,7 +674,7 @@ function IntegrationsContent() {
           setTinyClientId("")
           setTinyClientSecret("")
         },
-      }
+      },
     )
   }
 
@@ -654,7 +692,10 @@ function IntegrationsContent() {
     })
   }
 
-  const handleTestConnection = (integrationId: string, providerName: string) => {
+  const handleTestConnection = (
+    integrationId: string,
+    providerName: string,
+  ) => {
     setTestingId(integrationId)
     testConnection.mutate(integrationId, {
       onSuccess: (result) => {
@@ -677,7 +718,7 @@ function IntegrationsContent() {
   const handleOpenDetails = (
     integration: Integration,
     provider: ProviderConfig,
-    autoTestWebhook = false
+    autoTestWebhook = false,
   ) => {
     setDetailsSheet({ integration, provider, autoTestWebhook })
     setDetailsLoading(true)
@@ -704,9 +745,11 @@ function IntegrationsContent() {
     setDetailsData(null)
   }
 
-  const getConnectedIntegration = (providerId: IntegrationProvider): Integration | undefined => {
+  const getConnectedIntegration = (
+    providerId: IntegrationProvider,
+  ): Integration | undefined => {
     return integrations.find(
-      (i) => i.provider === providerId && (i.status === "active" || i.status === "pending_auth")
+      (i) => i.provider === providerId && i.status !== "disconnected",
     )
   }
 
@@ -729,7 +772,8 @@ function IntegrationsContent() {
     erpJaConectado?.provider !== provider.id
 
   const nomeDoERPConectado =
-    AVAILABLE_PROVIDERS.find((p) => p.id === erpJaConectado?.provider)?.name ?? "outro ERP"
+    AVAILABLE_PROVIDERS.find((p) => p.id === erpJaConectado?.provider)?.name ??
+    "outro ERP"
 
   const integrationToDisconnect = disconnectId
     ? integrations.find((i) => i.id === disconnectId)
@@ -746,24 +790,57 @@ function IntegrationsContent() {
     )
   }
 
+  if (!data)
+    return (
+      <QueryFeedback
+        title="Não foi possível carregar as integrações"
+        retry={() => void refetch()}
+        busy={isFetching}
+      />
+    )
+
   return (
-    <div className="space-y-8">
+    <div className="flex min-w-0 flex-col gap-6">
+      {integrationsError && (
+        <QueryFeedback
+          title="Não foi possível atualizar as integrações"
+          stale
+          retry={() => void refetch()}
+          busy={isFetching}
+        />
+      )}
+      <IntegrationOverview
+        integrations={integrations}
+        onDetails={(integration) => {
+          const provider = AVAILABLE_PROVIDERS.find(
+            (p) => p.id === integration.provider,
+          )
+          if (provider) void handleOpenDetails(integration, provider)
+        }}
+      />
       {/* Available Integrations by Category */}
       <section className="space-y-4">
         <div>
-          <h2 className="font-semibold tracking-tight">Adicionar Integrações</h2>
+          <h2 className="font-semibold tracking-tight">Gerenciar serviços</h2>
           <p className="text-sm text-muted-foreground">
-            Conecte novos serviços para expandir as funcionalidades
+            Conexões, configurações e diagnóstico por área da operação.
           </p>
         </div>
 
-        <Tabs defaultValue="payment" className="w-full">
-          <TabsList className="mb-6 h-auto w-full justify-start border-b bg-transparent p-0">
+        <Tabs
+          defaultValue={
+            Object.hasOwn(categoryConfig, searchParams.get("tab") ?? "")
+              ? searchParams.get("tab")!
+              : "erp"
+          }
+          className="w-full"
+        >
+          <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto border-b bg-transparent p-0">
             {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
               const config = categoryConfig[type]
               const providersInCategory = getProvidersByType(type)
               const connectedCount = providersInCategory.filter((p) =>
-                getConnectedIntegration(p.id)
+                getConnectedIntegration(p.id),
               ).length
 
               return (
@@ -773,14 +850,17 @@ function IntegrationsContent() {
                   className={cn(
                     "relative rounded-none border-b-2 border-transparent px-4 pb-3 pt-2",
                     "data-[state=active]:border-primary data-[state=active]:bg-transparent",
-                    "data-[state=active]:shadow-none"
+                    "data-[state=active]:shadow-none",
                   )}
                 >
                   <div className="flex items-center gap-2">
                     {config.icon}
                     <span>{config.label}</span>
                     {connectedCount > 0 && (
-                      <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 px-1.5 text-xs"
+                      >
                         {connectedCount}/{providersInCategory.length}
                       </Badge>
                     )}
@@ -796,7 +876,17 @@ function IntegrationsContent() {
 
             return (
               <TabsContent key={type} value={type} className="mt-0 space-y-4">
-                <p className="text-sm text-muted-foreground">{config.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  {config.description}
+                </p>
+                {type === "erp" && erpJaConectado?.status === "active" && (
+                  <div className="flex flex-col gap-3">
+                    <ERPResyncStatus />
+                    <div>
+                      <ERPResyncButton />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   {providers.map((provider) => {
@@ -818,13 +908,22 @@ function IntegrationsContent() {
                       >
                         <div className="flex h-full flex-col p-5">
                           <div className="flex items-start gap-4">
-                            <IntegrationCard.Logo provider={provider.id} size="lg" />
+                            <IntegrationCard.Logo
+                              provider={provider.id}
+                              size="lg"
+                            />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-semibold">{provider.name}</h3>
+                                <h3 className="font-semibold">
+                                  {provider.name}
+                                </h3>
                                 {isConnected && (
                                   <IntegrationCard.Status
-                                    status={connected.status === "active" ? "active" : "pending"}
+                                    status={
+                                      connected.status === "pending_auth"
+                                        ? "pending"
+                                        : connected.status
+                                    }
                                   />
                                 )}
                                 {isConnected &&
@@ -865,6 +964,15 @@ function IntegrationsContent() {
                             </div>
                           </div>
 
+                          {connected && (
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              {connected.status === "error"
+                                ? "A conexão precisa de atenção. Abra os detalhes para diagnosticar e reconectar."
+                                : connected.status === "pending_auth"
+                                  ? "Autorização pendente. Abra os detalhes para concluir a conexão."
+                                  : `Última sincronização registrada: ${integrationDate(connected.lastSyncedAt)}`}
+                            </p>
+                          )}
                           <div className="mt-auto space-y-2 pt-4">
                             {isConnected ? (
                               <>
@@ -873,7 +981,9 @@ function IntegrationsContent() {
                                     variant="outline"
                                     size="sm"
                                     className="flex-1"
-                                    onClick={() => handleOpenDetails(connected, provider)}
+                                    onClick={() =>
+                                      handleOpenDetails(connected, provider)
+                                    }
                                   >
                                     <Info className="mr-1.5 h-3.5 w-3.5" />
                                     Ver detalhes
@@ -885,10 +995,14 @@ function IntegrationsContent() {
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         disabled={
-                                          chainIdx === 0 || updatePriority.isPending
+                                          chainIdx === 0 ||
+                                          updatePriority.isPending
                                         }
                                         onClick={() =>
-                                          handleReorderPayment(connected.id, "up")
+                                          handleReorderPayment(
+                                            connected.id,
+                                            "up",
+                                          )
                                         }
                                         title="Promover prioridade"
                                       >
@@ -899,11 +1013,15 @@ function IntegrationsContent() {
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                         disabled={
-                                          chainIdx === paymentChain.length - 1 ||
+                                          chainIdx ===
+                                            paymentChain.length - 1 ||
                                           updatePriority.isPending
                                         }
                                         onClick={() =>
-                                          handleReorderPayment(connected.id, "down")
+                                          handleReorderPayment(
+                                            connected.id,
+                                            "down",
+                                          )
                                         }
                                         title="Reduzir prioridade"
                                       >
@@ -915,14 +1033,20 @@ function IntegrationsContent() {
                                     variant="ghost"
                                     size="sm"
                                     className="text-muted-foreground hover:text-destructive"
-                                    onClick={() => setDisconnectId(connected.id)}
+                                    aria-label={`Desconectar ${provider.name}`}
+                                    onClick={() =>
+                                      setDisconnectId(connected.id)
+                                    }
                                   >
                                     <Unplug className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
-                                {provider.id === "tiny" && connected.status === "active" ? (
+                                {provider.id === "tiny" &&
+                                connected.status === "active" ? (
                                   <>
-                                    <TinyHealthCheckDialog integrationId={connected.id} />
+                                    <TinyHealthCheckDialog
+                                      integrationId={connected.id}
+                                    />
                                     <ERPReserva integrationId={connected.id} />
                                   </>
                                 ) : null}
@@ -930,7 +1054,8 @@ function IntegrationsContent() {
                                     não só do Bling: a pergunta "quem segura a
                                     peça" existe nos dois, e o padrão seguro
                                     (local) vale para ambos. */}
-                                {provider.type === "erp" && connected.status === "active" ? (
+                                {provider.type === "erp" &&
+                                connected.status === "active" ? (
                                   <ModoDeReserva integrationId={connected.id} />
                                 ) : null}
                               </>
@@ -940,7 +1065,9 @@ function IntegrationsContent() {
                                   className="w-full"
                                   onClick={() => handleConnect(provider)}
                                   disabled={
-                                    connectOAuth.isPending || bloqueadoPorOutroERP(provider)
+                                    !!integrationsError ||
+                                    connectOAuth.isPending ||
+                                    bloqueadoPorOutroERP(provider)
                                   }
                                 >
                                   {connectOAuth.isPending ? (
@@ -952,9 +1079,10 @@ function IntegrationsContent() {
                                 </Button>
                                 {bloqueadoPorOutroERP(provider) ? (
                                   <p className="text-xs text-muted-foreground">
-                                    Sua loja já usa o {nomeDoERPConectado}. Só é possível
-                                    manter um ERP conectado por vez — desconecte-o antes de
-                                    conectar o {provider.name}.
+                                    Sua loja já usa o {nomeDoERPConectado}. Só é
+                                    possível manter um ERP conectado por vez —
+                                    desconecte-o antes de conectar o{" "}
+                                    {provider.name}.
                                   </p>
                                 ) : null}
                                 {provider.docHref && (
@@ -981,13 +1109,18 @@ function IntegrationsContent() {
       </section>
 
       {/* Disconnect Confirmation */}
-      <AlertDialog open={!!disconnectId} onOpenChange={() => setDisconnectId(null)}>
+      <AlertDialog
+        open={!!disconnectId}
+        onOpenChange={() => setDisconnectId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Desconectar {providerToDisconnect?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Desconectar {providerToDisconnect?.name}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              A integração com {providerToDisconnect?.name} será removida. Você precisará
-              reconectar para usar os recursos novamente.
+              A integração com {providerToDisconnect?.name} será removida. Você
+              precisará reconectar para usar os recursos novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1029,7 +1162,9 @@ function IntegrationsContent() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="api-key">
-                {apiKeyDialog === "smartenvios" ? "Token do embarcador" : "Chave de API"}{" "}
+                {apiKeyDialog === "smartenvios"
+                  ? "Token do embarcador"
+                  : "Chave de API"}{" "}
                 <span className="text-destructive">*</span>
               </Label>
               <SecretInput
@@ -1079,7 +1214,10 @@ function IntegrationsContent() {
       </Dialog>
 
       {/* WhatsApp connect wizard (PRD 006) */}
-      <WhatsAppConnectDialog open={whatsappDialog} onOpenChange={setWhatsappDialog} />
+      <WhatsAppConnectDialog
+        open={whatsappDialog}
+        onOpenChange={setWhatsappDialog}
+      />
 
       {/* Tiny OAuth Credentials Dialog */}
       <Dialog open={tinyDialog} onOpenChange={() => setTinyDialog(false)}>
@@ -1096,8 +1234,8 @@ function IntegrationsContent() {
               >
                 Configurações → Aplicativos
               </a>{" "}
-              da Tiny e cole as URLs abaixo nos campos correspondentes antes
-              de continuar.
+              da Tiny e cole as URLs abaixo nos campos correspondentes antes de
+              continuar.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
@@ -1110,8 +1248,8 @@ function IntegrationsContent() {
                     URLs para configurar no app da Tiny
                   </p>
                   <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-                    Cole estas URLs nos campos correspondentes do app na Tiny
-                    e salve antes de continuar. Sem isso, o OAuth falha e os
+                    Cole estas URLs nos campos correspondentes do app na Tiny e
+                    salve antes de continuar. Sem isso, o OAuth falha e os
                     webhooks de estoque/produto não chegam na Livecart.
                   </p>
                 </div>
@@ -1179,7 +1317,9 @@ function IntegrationsContent() {
             </Button>
             <Button
               onClick={handleConnectTiny}
-              disabled={connectTiny.isPending || !tinyClientId || !tinyClientSecret}
+              disabled={
+                connectTiny.isPending || !tinyClientId || !tinyClientSecret
+              }
             >
               {connectTiny.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1217,7 +1357,9 @@ function IntegrationsContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
-            <PagarmeConnectWizard webhookUrl={pagarmeProviderURLs.data?.webhookUrl} />
+            <PagarmeConnectWizard
+              webhookUrl={pagarmeProviderURLs.data?.webhookUrl}
+            />
 
             {pagarmeProviderURLs.isError && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -1319,11 +1461,16 @@ function IntegrationsContent() {
           <SheetHeader>
             <div className="flex items-center gap-3">
               {detailsSheet && (
-                <IntegrationCard.Logo provider={detailsSheet.provider.id} size="md" />
+                <IntegrationCard.Logo
+                  provider={detailsSheet.provider.id}
+                  size="md"
+                />
               )}
               <div>
                 <SheetTitle>{detailsSheet?.provider.name}</SheetTitle>
-                <SheetDescription>{detailsSheet?.provider.description}</SheetDescription>
+                <SheetDescription>
+                  {detailsSheet?.provider.description}
+                </SheetDescription>
               </div>
             </div>
           </SheetHeader>
@@ -1331,7 +1478,9 @@ function IntegrationsContent() {
           <div className="mt-6 space-y-6">
             {/* Status Section */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Status da Conexão</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">
+                Status da Conexão
+              </h4>
               <div className="rounded-lg border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Status</span>
@@ -1346,7 +1495,9 @@ function IntegrationsContent() {
                   <span className="text-sm">Conectado em</span>
                   <span className="text-sm text-muted-foreground">
                     {currentDetailsIntegration?.createdAt
-                      ? new Date(currentDetailsIntegration.createdAt).toLocaleDateString("pt-BR", {
+                      ? new Date(
+                          currentDetailsIntegration.createdAt,
+                        ).toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",
@@ -1364,104 +1515,116 @@ function IntegrationsContent() {
                 The copy is provider-aware: each provider has its own panel
                 name (Tiny, Pagar.me, Mercado Pago, Melhor Envio) so a Tiny
                 tip never shows up under a Mercado Pago integration. */}
-            {currentDetailsIntegration && detailsSheet && (() => {
-              const { redirectUrl, webhookUrl, webhookStatus, webhookLastPingAt } =
-                currentDetailsIntegration
-              const hasAny = !!(redirectUrl || webhookUrl)
-              if (!hasAny) return null
+            {currentDetailsIntegration &&
+              detailsSheet &&
+              (() => {
+                const {
+                  redirectUrl,
+                  webhookUrl,
+                  webhookStatus,
+                  webhookLastPingAt,
+                } = currentDetailsIntegration
+                const hasAny = !!(redirectUrl || webhookUrl)
+                if (!hasAny) return null
 
-              const providerCopy = providerWebhookCopy(detailsSheet.provider.id)
-              const isActive = webhookStatus === "active"
-              const lastPingLabel = webhookLastPingAt
-                ? formatDistanceToNow(new Date(webhookLastPingAt), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })
-                : null
+                const providerCopy = providerWebhookCopy(
+                  detailsSheet.provider.id,
+                )
+                const isActive = webhookStatus === "active"
+                const lastPingLabel = webhookLastPingAt
+                  ? formatDistanceToNow(new Date(webhookLastPingAt), {
+                      addSuffix: true,
+                      locale: ptBR,
+                    })
+                  : null
 
-              return (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Webhook
-                  </h4>
-                  <div className="space-y-3 rounded-lg border p-4">
-                    {/* Webhook health — only meaningful when the provider
+                return (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Webhook
+                    </h4>
+                    <div className="space-y-3 rounded-lg border p-4">
+                      {/* Webhook health — only meaningful when the provider
                         actually pings us back (Tiny). For providers that
                         don't ping on save we hide the badge so the section
                         doesn't read "não confirmado" forever. Pagar.me is
                         skipped entirely: its dedicated probe below is the single
                         source of truth (real test + delivery history), so this
                         generic block would only duplicate and contradict it. */}
-                    {detailsSheet.provider.id === "pagarme" ? null : providerCopy.showHealth &&
-                      isActive ? (
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
-                          <Webhook className="h-3 w-3 text-emerald-600" />
+                      {detailsSheet.provider.id ===
+                      "pagarme" ? null : providerCopy.showHealth && isActive ? (
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10">
+                            <Webhook className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">Webhook ativo</p>
+                            {lastPingLabel && (
+                              <p className="text-xs text-muted-foreground">
+                                Último sinal {lastPingLabel}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">Webhook ativo</p>
-                          {lastPingLabel && (
-                            <p className="text-xs text-muted-foreground">
-                              Último sinal {lastPingLabel}
+                      ) : providerCopy.showHealth ? (
+                        <div className="flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                              Webhook não configurado — os pedidos não vão
+                              sincronizar
                             </p>
-                          )}
+                            <ol className="list-decimal space-y-1 pl-4 text-xs text-red-800/90 dark:text-red-200/80">
+                              <li>
+                                Copie a <strong>URL de Webhook</strong> logo
+                                abaixo
+                              </li>
+                              <li>{providerCopy.healthHint}</li>
+                              <li>
+                                Cole a URL, clique em <strong>Salvar</strong> no
+                                painel do provedor e volte aqui — a confirmação
+                                aparece sozinha após o primeiro sinal
+                              </li>
+                            </ol>
+                          </div>
                         </div>
-                      </div>
-                    ) : providerCopy.showHealth ? (
-                      <div className="flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <p className="text-sm font-semibold text-red-900 dark:text-red-200">
-                            Webhook não configurado — os pedidos não vão sincronizar
-                          </p>
-                          <ol className="list-decimal space-y-1 pl-4 text-xs text-red-800/90 dark:text-red-200/80">
-                            <li>Copie a <strong>URL de Webhook</strong> logo abaixo</li>
-                            <li>{providerCopy.healthHint}</li>
-                            <li>
-                              Cole a URL, clique em <strong>Salvar</strong> no painel do
-                              provedor e volte aqui — a confirmação aparece sozinha após o
-                              primeiro sinal
-                            </li>
-                          </ol>
-                        </div>
-                      </div>
-                    ) : null}
+                      ) : null}
 
-                    {detailsSheet.provider.id !== "pagarme" &&
-                      providerCopy.showHealth &&
-                      (webhookUrl || redirectUrl) && <Separator />}
+                      {detailsSheet.provider.id !== "pagarme" &&
+                        providerCopy.showHealth &&
+                        (webhookUrl || redirectUrl) && <Separator />}
 
-                    {/* Pagar.me-specific probe: queries the gateway's hooks
+                      {/* Pagar.me-specific probe: queries the gateway's hooks
                         history to confirm the merchant cadastrou a URL no
                         painel. Other providers either ping us back on save
                         (Tiny) or rely on the live event reception. */}
-                    {detailsSheet.provider.id === "pagarme" &&
-                      currentDetailsIntegration?.id && (
-                        <PagarmeWebhookProbe
-                          integrationId={currentDetailsIntegration.id}
-                          autoRunLiveTest={detailsSheet.autoTestWebhook}
+                      {detailsSheet.provider.id === "pagarme" &&
+                        currentDetailsIntegration?.id && (
+                          <PagarmeWebhookProbe
+                            integrationId={currentDetailsIntegration.id}
+                            autoRunLiveTest={detailsSheet.autoTestWebhook}
+                          />
+                        )}
+
+                      {webhookUrl && (
+                        <CopyableURL
+                          label="URL de Webhook"
+                          value={webhookUrl}
+                          description={providerCopy.webhookHint}
                         />
                       )}
 
-                    {webhookUrl && (
-                      <CopyableURL
-                        label="URL de Webhook"
-                        value={webhookUrl}
-                        description={providerCopy.webhookHint}
-                      />
-                    )}
-
-                    {redirectUrl && (
-                      <CopyableURL
-                        label="URL de Redirecionamento (OAuth)"
-                        value={redirectUrl}
-                        description={providerCopy.redirectHint}
-                      />
-                    )}
+                      {redirectUrl && (
+                        <CopyableURL
+                          label="URL de Redirecionamento (OAuth)"
+                          value={redirectUrl}
+                          description={providerCopy.redirectHint}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })()}
+                )
+              })()}
 
             {/* Account Info — omitted entirely when the provider returns no
                 usable fields. Failures are already surfaced by the "Último
@@ -1493,7 +1656,7 @@ function IntegrationsContent() {
                                 <p
                                   className={cn(
                                     "font-medium break-words",
-                                    f.mono && "font-mono text-sm break-all"
+                                    f.mono && "font-mono text-sm break-all",
                                   )}
                                 >
                                   {f.value}
@@ -1538,7 +1701,9 @@ function IntegrationsContent() {
             {/* Connection Test Section */}
             {detailsData && (
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">Último Teste</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Último Teste
+                </h4>
                 <div className="rounded-lg border p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Resultado</span>
@@ -1565,19 +1730,24 @@ function IntegrationsContent() {
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Latência</span>
                     </div>
-                    <span className="text-sm font-mono">{detailsData.latencyMs}ms</span>
+                    <span className="text-sm font-mono">
+                      {detailsData.latencyMs}ms
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Testado em</span>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(detailsData.testedAt).toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(detailsData.testedAt).toLocaleDateString(
+                        "pt-BR",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </span>
                   </div>
                 </div>
@@ -1601,10 +1771,10 @@ function IntegrationsContent() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               A rotação substitui o token atualmente salvo pelo que você
-              informar a seguir. Use só quando você já tem o novo token em
-              mãos — gerado no painel da SmartEnvios — ou se suspeita que o
-              atual foi comprometido. Enquanto você não confirmar o novo
-              token, o atual continua valendo.
+              informar a seguir. Use só quando você já tem o novo token em mãos
+              — gerado no painel da SmartEnvios — ou se suspeita que o atual foi
+              comprometido. Enquanto você não confirmar o novo token, o atual
+              continua valendo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

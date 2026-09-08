@@ -7,8 +7,7 @@ import { useStoreId } from "@/hooks/useUser"
 import type { EventComment } from "@/types/event.types"
 import { eventKeys } from "./useEvents"
 
-/** Teto do servidor por página. Pedir mais é clamped lá para 100, então este
- *  número não é preferência: é o que a API realmente entrega. */
+/** Teto aceito pelo servidor por página. Valores acima de 200 voltam a 100. */
 export const FALAS_POR_PAGINA = 200
 
 /**

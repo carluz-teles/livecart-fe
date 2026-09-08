@@ -5,7 +5,8 @@ import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
-import { productKeys } from "@/hooks/product/useProducts"
+import { integrationKeys } from "./useIntegrations"
+import type { IntegrationListResponse } from "@/types"
 
 export function useStartERPResync() {
   const { getToken } = useAuth()
@@ -16,9 +17,38 @@ export function useStartERPResync() {
     mutationFn: async (integrationId: string) => {
       if (!storeId) throw new Error("Store ID not found")
       const token = await getToken()
-      return integrationService.startERPResync(storeId, integrationId, token)
+      const result = await integrationService.startERPResync(
+        storeId,
+        integrationId,
+        token,
+      )
+      return { ...result, storeId }
     },
-    onSuccess: ({ products }) => {
+    onSuccess: async ({ products, storeId }, integrationId) => {
+      if (storeId) {
+        const queryKey = integrationKeys.list(storeId)
+        await queryClient.cancelQueries({ queryKey })
+        if (products > 0) {
+          queryClient.setQueryData<IntegrationListResponse>(
+            queryKey,
+            (previous) =>
+              previous && {
+                ...previous,
+                data: previous.data.map((integration) =>
+                  integration.id === integrationId
+                    ? {
+                        ...integration,
+                        erpResyncRunning: true,
+                        erpResyncDone: 0,
+                        erpResyncTotal: products,
+                      }
+                    : integration,
+                ),
+              },
+          )
+        }
+        await queryClient.invalidateQueries({ queryKey })
+      }
       // Zero produtos não é erro: é uma loja que ainda não importou nada desse
       // ERP. Dizer "sincronização iniciada" ali seria mentira educada.
       if (products === 0) {
@@ -29,15 +59,10 @@ export function useStartERPResync() {
         `${products} ${products === 1 ? "produto entrou" : "produtos entraram"} na sincronização`,
         {
           description:
-            "O trabalho corre em segundo plano, no ritmo que o ERP permite. Atualize a lista em alguns minutos para ver os saldos corrigidos.",
+            "Acompanhe o progresso na tela. A lista será atualizada quando o processamento terminar.",
           duration: 8000,
         },
       )
-      // A varredura é assíncrona: isto não traz os saldos novos, só garante que
-      // a lista não fique presa num cache antigo quando o lojista voltar.
-      if (storeId) {
-        queryClient.invalidateQueries({ queryKey: productKeys.lists() })
-      }
     },
     onError: () => {
       toast.error("Não foi possível iniciar a sincronização")

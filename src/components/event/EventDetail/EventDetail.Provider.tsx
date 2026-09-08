@@ -33,16 +33,19 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
   const {
     data: stats,
     isLoading: statsLoading,
+    error: statsError,
     refetch: refetchStats,
   } = useEventDetailStats(id)
   const {
     data: carts,
     isLoading: cartsLoading,
+    error: cartsError,
     refetch: refetchCarts,
   } = useEventCarts(id)
   const {
     data: products,
     isLoading: productsLoading,
+    error: productsError,
     refetch: refetchProducts,
   } = useEventSoldProducts(id)
 
@@ -66,16 +69,33 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     // pagamento. O resultado é que o banner de divergência — o alarme que
     // deveria provar que a métrica fecha — disparava como comportamento
     // normal, e o lojista aprendia a ignorá-lo.
-    if (pulse.orders !== prev.orders || pulse.ordersChangedAt !== prev.ordersChangedAt) {
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailCarts(storeId, id) })
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailProducts(storeId, id) })
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
-      queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId, id) })
+    if (
+      pulse.orders !== prev.orders ||
+      pulse.ordersChangedAt !== prev.ordersChangedAt
+    ) {
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.detailCarts(storeId, id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.detailProducts(storeId, id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.detailStats(storeId, id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.sessionMetrics(storeId, id),
+      })
     }
     // New comment / DM reply → comments feed + stats.
     if (pulse.comments !== prev.comments) {
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailComments(storeId, id) })
-      queryClient.invalidateQueries({ queryKey: eventKeys.detailStats(storeId, id) })
+      // O prefixo inclui todas as seleções, inclusive uma transmissão aberta.
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.commentsRoot(storeId, id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.detailStats(storeId, id),
+      })
+      queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId, id) })
     }
   }, [pulse, storeId, id, queryClient])
 
@@ -91,7 +111,12 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     // depois de adicionar uma sessão espera ver a sessão nova nas duas fontes.
     if (storeId) {
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId, id) })
-      queryClient.invalidateQueries({ queryKey: eventKeys.sessionMetrics(storeId, id) })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.sessionMetrics(storeId, id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.commentsRoot(storeId, id),
+      })
     }
     refetchStats()
     refetchCarts()
@@ -112,10 +137,13 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
       event,
       stats,
       statsLoading,
+      statsError,
       carts: carts ?? [],
       cartsLoading,
+      cartsError,
       products: products ?? [],
       productsLoading,
+      productsError,
       endEventOpen,
       createSessionOpen,
       crashRecoveryOpen,

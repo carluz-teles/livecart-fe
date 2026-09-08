@@ -1,7 +1,15 @@
 "use client"
 
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
 import { use } from "react"
-import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Eye, ShoppingBag } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Ban,
+  Eye,
+  ShoppingBag,
+} from "lucide-react"
 import { formatCurrency, formatDate, formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -66,11 +74,21 @@ function LoadingRow() {
           <Skeleton className="h-4 w-32" />
         </div>
       </TableCell>
-      <TableCell><Skeleton className="mx-auto h-4 w-8" /></TableCell>
-      <TableCell><Skeleton className="ml-auto h-4 w-24" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-      <TableCell><Skeleton className="ml-auto h-8 w-8 rounded-md" /></TableCell>
+      <TableCell>
+        <Skeleton className="mx-auto h-4 w-8" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="ml-auto h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="ml-auto h-8 w-8 rounded-md" />
+      </TableCell>
     </TableRow>
   )
 }
@@ -117,12 +135,14 @@ function CustomerRow({ customer, isBlocked }: CustomerRowProps) {
                   className="gap-0.5 px-1.5 py-0 text-[10px] uppercase tracking-wide"
                 >
                   <Ban className="h-2.5 w-2.5" />
-                  Bloq.
+                  Bloqueado
                 </Badge>
               )}
             </span>
             {customer.email && (
-              <span className="text-xs text-muted-foreground">{customer.email}</span>
+              <span className="hidden text-xs text-muted-foreground sm:block">
+                {customer.email}
+              </span>
             )}
           </div>
         </div>
@@ -136,15 +156,16 @@ function CustomerRow({ customer, isBlocked }: CustomerRowProps) {
       <TableCell className="text-right font-medium tabular-nums">
         {formatCurrency(customer.totalSpent)}
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
+      <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
         {formatDate(customer.firstOrderAt)}
       </TableCell>
-      <TableCell className="text-sm">
+      <TableCell className="hidden text-sm md:table-cell">
         {customer.lastOrderAt ? formatRelativeDate(customer.lastOrderAt) : "-"}
       </TableCell>
       <TableCell className="text-right">
         <Button
           variant="ghost"
+          aria-label={`Ver detalhes de @${customer.handle}`}
           size="icon"
           className="h-8 w-8"
           onClick={(e) => {
@@ -163,62 +184,96 @@ function CustomerRow({ customer, isBlocked }: CustomerRowProps) {
 export function CustomerListTable() {
   const ctx = use(CustomerListContext)
   if (!ctx) return null
-  const { customers, isLoading, error, blockedHandles } = ctx.state
+  const {
+    customers,
+    isLoading,
+    isFetching,
+    error,
+    blockedHandles,
+    search,
+    showBlockedOnly,
+    filters,
+  } = ctx.state
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Cliente</TableHead>
-            <TableHead className="w-28 text-center">
-              <SortHeader column="total_orders" label="Pedidos" align="center" />
-            </TableHead>
-            <TableHead className="w-44 text-right">
-              <SortHeader column="total_spent" label="Total gasto" align="right" />
-            </TableHead>
-            <TableHead className="w-40">
-              <SortHeader column="first_order_at" label="Primeira compra" />
-            </TableHead>
-            <TableHead className="w-40">
-              <SortHeader column="last_order_at" label="Última compra" />
-            </TableHead>
-            <TableHead className="w-12"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => <LoadingRow key={i} />)
-          ) : error ? (
+    <div className="flex flex-col gap-3">
+      {error && (
+        <QueryFeedback
+          title="Não foi possível atualizar os clientes"
+          stale={customers.length > 0}
+          retry={ctx.actions.retry}
+          busy={isFetching}
+        />
+      )}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="h-32 text-center text-destructive">
-                Erro ao carregar clientes. Tente recarregar a página.
-              </TableCell>
+              <TableHead>Cliente</TableHead>
+              <TableHead className="w-28 text-center">
+                <SortHeader
+                  column="total_orders"
+                  label="Pedidos pagos"
+                  align="center"
+                />
+              </TableHead>
+              <TableHead className="w-44 text-right">
+                <SortHeader
+                  column="total_spent"
+                  label="Total gasto"
+                  align="right"
+                />
+              </TableHead>
+              <TableHead className="hidden w-40 lg:table-cell">
+                <SortHeader column="first_order_at" label="Primeira compra" />
+              </TableHead>
+              <TableHead className="hidden w-40 md:table-cell">
+                <SortHeader column="last_order_at" label="Última compra" />
+              </TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
-          ) : customers.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-32 text-center">
-                <div className="flex flex-col items-center gap-2 text-sm">
-                  <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="font-medium">Nenhum cliente encontrado</p>
-                  <p className="text-xs text-muted-foreground">
-                    Os clientes aparecem aqui assim que comentam em uma transmissão da
-                    sua campanha e geram um carrinho.
-                  </p>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            customers.map((customer) => (
-              <CustomerRow
-                key={customer.id}
-                customer={customer}
-                isBlocked={blockedHandles.has(customer.handle.toLowerCase())}
-              />
-            ))
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <LoadingRow key={i} />)
+            ) : error && customers.length === 0 ? null : customers.length ===
+              0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center">
+                  <div className="flex flex-col items-center gap-2 text-sm">
+                    <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
+                    <p className="font-medium">Nenhum cliente encontrado</p>
+                    <p className="text-xs text-muted-foreground">
+                      {search ||
+                      showBlockedOnly ||
+                      Object.values(filters).some(
+                        (value) => value !== undefined,
+                      )
+                        ? "Nenhum cliente corresponde à busca e aos filtros selecionados."
+                        : "Os clientes aparecem aqui quando suas interações geram um carrinho."}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={ctx.actions.clearFilters}
+                    >
+                      Limpar busca e filtros
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              customers.map((customer) => (
+                <CustomerRow
+                  key={customer.id}
+                  customer={customer}
+                  isBlocked={blockedHandles.has(customer.handle.toLowerCase())}
+                />
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

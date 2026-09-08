@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useUser, useClerk } from "@clerk/nextjs"
 import { Moon, Sun, LogOut, User, Settings, ChevronsUpDown } from "lucide-react"
 import { NotificationsBell } from "@/components/notification/NotificationsBell"
+import { MobileNavigation } from "@/components/shared/Sidebar/MobileNavigation"
 import { useTheme } from "next-themes"
 
 import { isDarkModeAllowed } from "@/lib/env"
@@ -43,8 +44,10 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background px-6">
-      <div />
+    <header className="flex h-16 items-center justify-between gap-2 border-b bg-background px-3 sm:px-6">
+      <div>
+        <MobileNavigation />
+      </div>
 
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
@@ -72,10 +75,14 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
+              aria-label="Abrir menu da conta"
               className="ml-2 flex items-center gap-2 px-2"
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.imageUrl} alt={user?.fullName || "Avatar"} />
+                <AvatarImage
+                  src={user?.imageUrl}
+                  alt={user?.fullName || "Avatar"}
+                />
                 <AvatarFallback className="text-xs">
                   {getInitials(user?.fullName)}
                 </AvatarFallback>
@@ -118,7 +125,10 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-destructive focus:text-destructive"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </DropdownMenuItem>

@@ -44,7 +44,11 @@ export function OrderDetailHeader() {
   const { order } = ctx.state
 
   const statusCfg = getStatusConfig(ORDER_STATUS_CONFIG, order.status, "active")
-  const paymentCfg = getStatusConfig(PAYMENT_STATUS_CONFIG, order.paymentStatus, "pending")
+  const paymentCfg = getStatusConfig(
+    PAYMENT_STATUS_CONFIG,
+    order.paymentStatus,
+    "pending",
+  )
 
   const handleOpenInstagramDM = () => {
     if (order.customerHandle) {
@@ -57,11 +61,11 @@ export function OrderDetailHeader() {
       {/* Fora da impressão inteiro: o documento tem cabeçalho próprio (nome da
           loja, número, data). Deixar este aqui imprimiria dois títulos, um
           deles com badges de estado interno. */}
-      <div className="flex items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between print:hidden">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href={backHref}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border transition-colors hover:bg-accent print:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-accent print:hidden"
             aria-label="Voltar para pedidos"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -92,8 +96,8 @@ export function OrderDetailHeader() {
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs">
-                    Esse cliente está bloqueado na loja. Pedidos antigos
-                    seguem normais; novas compras dele serão ignoradas.
+                    Esse cliente está bloqueado na loja. Pedidos antigos seguem
+                    normais; novas compras dele serão ignoradas.
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -107,7 +111,7 @@ export function OrderDetailHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 print:hidden">
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
           {(navigation.prev || navigation.next) && (
             <div className="flex items-center gap-1">
               <Tooltip>

@@ -28,7 +28,8 @@ import { useERPResyncRunning, useStartERPResync } from "@/hooks/integration"
  */
 export function ERPResyncButton() {
   const [confirming, setConfirming] = useState(false)
-  const { running, done, total, integrationId } = useERPResyncRunning()
+  const { running, done, total, integrationId, error, isPending } =
+    useERPResyncRunning()
   const resync = useStartERPResync()
 
   if (!integrationId) return null
@@ -44,7 +45,7 @@ export function ERPResyncButton() {
       <Button
         variant="outline"
         onClick={() => setConfirming(true)}
-        disabled={pending}
+        disabled={pending || !!error || isPending}
         aria-busy={pending}
       >
         {pending ? (
@@ -73,10 +74,10 @@ export function ERPResyncButton() {
                   estoque, preço e dados de envio com o que estiver lá agora.
                 </p>
                 <p>
-                  É o que corrige de uma vez os produtos importados antes de você
-                  escolher qual saldo o LiveCart usa — a configuração vale para
-                  as próximas sincronizações, mas não reescreve sozinha o que já
-                  estava salvo.
+                  É o que corrige de uma vez os produtos importados antes de
+                  você escolher qual saldo o LiveCart usa — a configuração vale
+                  para as próximas sincronizações, mas não reescreve sozinha o
+                  que já estava salvo.
                 </p>
                 <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
                   A varredura corre em segundo plano e respeita o limite de

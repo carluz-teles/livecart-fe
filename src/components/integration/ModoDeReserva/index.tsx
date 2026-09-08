@@ -31,13 +31,22 @@ import { cn } from "@/lib/utils"
  */
 export function ModoDeReserva({ integrationId }: { integrationId: string }) {
   const [open, setOpen] = useState(false)
-  const { data, isLoading } = useModoDeReserva(integrationId, { enabled: open })
+  const { data, isLoading, isError } = useModoDeReserva(integrationId)
   const troca = useTrocaDeModoDeReserva(integrationId, data)
 
   const divergente = data && data.modo !== data.modoEfetivo
 
   return (
     <>
+      <p className="text-xs leading-relaxed text-muted-foreground" aria-live="polite">
+        {isError
+          ? "Não foi possível conferir quando os pedidos serão enviados. Abra a configuração de reserva para tentar novamente."
+          : isLoading || !data
+            ? "Conferindo envio dos pedidos…"
+            : data.modoEfetivo === "local"
+              ? "Envio ao ERP no checkout: o pedido é criado quando a compradora inicia o pagamento. Durante a live, a reserva fica no LiveCart."
+              : "Envio ao ERP durante a live: o primeiro produto cria o pedido, e os próximos comentários atualizam seus itens."}
+      </p>
       <Button
         variant="outline"
         size="sm"
@@ -72,7 +81,7 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                 valor="local"
                 titulo="O LiveCart segura"
                 icone={<Store className="h-4 w-4" />}
-                descricao="O pedido só vai para o ERP quando o pagamento entra. Nunca escrevemos no seu estoque."
+                descricao="O pedido vai para o ERP quando a compradora inicia o pagamento no checkout. Até lá, a reserva fica no LiveCart."
                 selecionado={data.modo === "local"}
                 efetivo={data.modoEfetivo === "local"}
                 onSelect={() => troca.pedir("local")}
@@ -140,7 +149,7 @@ export function ModoDeReserva({ integrationId }: { integrationId: string }) {
                       <p className="text-muted-foreground">
                         Hoje o pedido nasce no seu ERP no primeiro comentário e é
                         ele quem tira a peça do saldo. Se mudar, o pedido só vai
-                        para o ERP quando o pagamento entrar — e nesse intervalo
+                        para o ERP quando o pagamento for iniciado — e nesse intervalo
                         quem segura a peça é só o LiveCart. Outro canal de venda
                         continuará vendo a peça disponível.
                       </p>

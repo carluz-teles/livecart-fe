@@ -52,26 +52,22 @@ export function EventDetailHeader() {
   const subtitle = parts.join(" · ")
 
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-start gap-4">
+    <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         <Link
           href={backHref}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-accent"
+          className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Voltar para eventos"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0">
-          {/* Só "Campanha". Era "Campanha · Post", e numa campanha de uma
-              sessão só isso vestia o evento com a identidade da transmissão —
-              o cabeçalho dizia "post" e o lojista lia a tela inteira como a de
-              um post. A espécie continua visível no badge ao lado, que é
-              informação da sessão, não do container. */}
+          {/* O tipo de mídia pertence às transmissões, exibidas no badge. */}
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Campanha
+            Evento
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="break-words text-2xl font-semibold tracking-tight [overflow-wrap:anywhere]">
               {event.title || "Sem título"}
             </h1>
             <Badge
@@ -90,11 +86,11 @@ export function EventDetailHeader() {
               {statusCfg.label}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground sm:text-sm">{subtitle}</p>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
         <Button variant="outline" size="sm" onClick={refresh}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Atualizar

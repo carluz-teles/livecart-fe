@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useId, useMemo } from "react"
 import type { CustomerFilters as CustomerFiltersType } from "@/types/customer.types"
 import {
   FilterPanel,
@@ -15,11 +15,20 @@ interface CustomerFiltersProps {
 }
 
 export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
+  const dateId = useId()
   const activeCount = useMemo(() => {
     let count = 0
     if (filters.hasOrders !== undefined) count++
-    if (filters.orderCountMin !== undefined || filters.orderCountMax !== undefined) count++
-    if (filters.totalSpentMin !== undefined || filters.totalSpentMax !== undefined) count++
+    if (
+      filters.orderCountMin !== undefined ||
+      filters.orderCountMax !== undefined
+    )
+      count++
+    if (
+      filters.totalSpentMin !== undefined ||
+      filters.totalSpentMax !== undefined
+    )
+      count++
     if (filters.dateFrom || filters.dateTo) count++
     return count
   }, [filters])
@@ -45,7 +54,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
     >
       <FilterSection title="Comportamento">
         <FilterToggle
-          label="Apenas clientes com pedidos"
+          label="Apenas clientes com pedidos pagos"
           checked={filters.hasOrders || false}
           onChange={(checked) =>
             onChange({ ...filters, hasOrders: checked || undefined })
@@ -53,7 +62,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
         />
       </FilterSection>
 
-      <FilterSection title="Quantidade de Pedidos">
+      <FilterSection title="Quantidade de pedidos pagos">
         <FilterRange
           minValue={filters.orderCountMin}
           maxValue={filters.orderCountMax}
@@ -68,7 +77,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
         />
       </FilterSection>
 
-      <FilterSection title="Valor Total Gasto">
+      <FilterSection title="Total em pedidos pagos">
         <FilterRange
           minValue={filters.totalSpentMin}
           maxValue={filters.totalSpentMax}
@@ -89,9 +98,15 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
       <FilterSection title="Período de Cadastro">
         <div className="space-y-3">
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">De</label>
+            <label
+              htmlFor={`${dateId}-from`}
+              className="text-sm text-muted-foreground mb-1 block"
+            >
+              De
+            </label>
             <input
               type="date"
+              id={`${dateId}-from`}
               value={filters.dateFrom || ""}
               onChange={(e) =>
                 onChange({ ...filters, dateFrom: e.target.value || undefined })
@@ -100,9 +115,15 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Até</label>
+            <label
+              htmlFor={`${dateId}-to`}
+              className="text-sm text-muted-foreground mb-1 block"
+            >
+              Até
+            </label>
             <input
               type="date"
+              id={`${dateId}-to`}
               value={filters.dateTo || ""}
               onChange={(e) =>
                 onChange({ ...filters, dateTo: e.target.value || undefined })
