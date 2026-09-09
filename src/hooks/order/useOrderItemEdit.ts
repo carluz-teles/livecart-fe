@@ -11,46 +11,17 @@ import { productKeys } from "@/hooks/product/useProducts"
 import type { ApiError } from "@/types/api.types"
 import type { OrderDetail } from "@/types"
 
-// Edição dos itens de um pedido aguardando pagamento.
-//
-// Cada operação é uma ida ao servidor que MOVE ESTOQUE de verdade: baixa (ou
-// devolve) unidade no LiveCart e lança reserva no ERP, atravessando o limitador
-// de ~1 requisição por segundo do Tiny. Isso governa o desenho inteiro deste
-// hook:
-//
-//   • o stepper acumula localmente e manda UMA requisição — clicar "+" três
-//     vezes é quantidade 4, não três lançamentos de estoque em fila;
-//   • cada linha tem estado próprio de "salvando", porque a resposta demora e
-//     travar a tela inteira faria a lojista achar que travou;
-//   • falha volta ao valor do servidor e diz o motivo — estoque insuficiente,
-//     teto do produto e "mudou enquanto você editava" pedem ações diferentes.
-
-// stepperDebounceMs é a janela em que os cliques no stepper viram um só envio.
-//
-// 600ms é longo para um input de texto e curto para um clique deliberado: cobre
-// a rajada de quem ajusta de 2 para 5 sem deixar a lojista esperando depois do
-// último clique.
 const stepperDebounceMs = 600
 
 interface UseOrderItemEditOptions {
   orderId: string
-  /** Falso para pedido pago/cancelado/expirado: a tela nem oferece a edição. */
   enabled: boolean
+  syncProcessing?: boolean
 }
 
 export interface OrderItemEdit {
-  /** Quantidade a MOSTRAR na linha: o valor pendente do stepper, se houver. */
   displayQuantity: (itemId: string, serverQuantity: number) => number
-  /**
-   * Esta linha tem requisição EM VOO — trava os controles e mostra o spinner.
-   *
-   * Não inclui a espera do debounce, e a diferença é a feature: travar durante o
-   * debounce impede o segundo clique, e sem o segundo clique acumular não existe
-   * (ir de 2 para 5 viraria uma alteração para 3 e mais nada). Enquanto a janela
-   * corre, o stepper continua clicável mostrando o número que ela está montando.
-   */
   isSaving: (itemId: string) => boolean
-  /** Alguma requisição em voo — trava o "Adicionar produto" durante uma edição. */
   isAnyBusy: boolean
   setQuantity: (itemId: string, quantity: number) => void
   removeItem: (itemId: string) => void
@@ -58,185 +29,122 @@ export interface OrderItemEdit {
   isAdding: boolean
 }
 
-export function useOrderItemEdit({
-  orderId,
-  enabled,
-}: UseOrderItemEditOptions): OrderItemEdit {
+export function useOrderItemEdit({ orderId, enabled, syncProcessing = false }: UseOrderItemEditOptions): OrderItemEdit {
   const { getToken } = useAuth()
   const { storeId } = useStoreId()
   const queryClient = useQueryClient()
-
-  // Quantidade que a lojista está montando, por item, antes do envio.
   const [pending, setPending] = useState<Record<string, number>>({})
-  // Itens com requisição em voo — separado de `pending` porque o valor sai de
-  // `pending` no momento do envio e a linha precisa continuar travada.
   const [inFlight, setInFlight] = useState<Record<string, boolean>>({})
+  // A ref takes effect in the click handler, before React renders disabled buttons.
+  const claimed = useRef(new Set<string>())
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const editable = useRef(enabled && !syncProcessing)
+  editable.current = enabled && !syncProcessing
 
-  // Timer pendente numa linha que sai da tela (a lojista navegou) enviaria uma
-  // alteração que ela não vê acontecer. Limpar no unmount evita isso.
   useEffect(() => {
-    const pendentes = timers.current
-    return () => {
-      Object.values(pendentes).forEach(clearTimeout)
-    }
+    const active = timers.current
+    return () => Object.values(active).forEach(clearTimeout)
   }, [])
 
-  // A resposta é o pedido inteiro relido: escreve no cache do detalhe e
-  // invalida a superfície de pedidos (o total mudou, então as abas e os KPIs
-  // também) e a de produtos (o estoque mudou).
-  const applyFreshOrder = useCallback(
-    (fresh: OrderDetail) => {
-      queryClient.setQueryData(orderKeys.detail(storeId ?? "", orderId), fresh)
-      queryClient.invalidateQueries({ queryKey: orderKeys.all })
-      queryClient.invalidateQueries({ queryKey: productKeys.all })
-    },
-    [queryClient, storeId, orderId],
-  )
+  const claim = useCallback((id: string) => {
+    if (!editable.current || claimed.current.has(id)) return false
+    claimed.current.add(id)
+    setInFlight((current) => ({ ...current, [id]: true }))
+    return true
+  }, [])
 
-  const describeFailure = useCallback((error: unknown): string => {
+  const release = useCallback((id: string) => {
+    claimed.current.delete(id)
+    setInFlight(({ [id]: _, ...rest }) => rest)
+    setPending(({ [id]: _, ...rest }) => rest)
+  }, [])
+
+  const refresh = useCallback(async () => {
+    // Concurrent responses can arrive out of order. Read current server state
+    // instead of replacing the detail cache with an older mutation response.
+    await queryClient.invalidateQueries({ queryKey: orderKeys.all })
+    void queryClient.invalidateQueries({ queryKey: productKeys.all })
+  }, [queryClient])
+
+  const describeFailure = (error: unknown) => {
     const apiError = error as ApiError | undefined
-    // A mensagem do servidor é específica e acionável ("apenas 2 em estoque",
-    // "a quantidade deste item mudou enquanto você editava"). Substituí-la por
-    // um texto genérico apagaria exatamente o que a lojista precisa saber.
-    return apiError?.message || apiError?.error || "Não foi possível alterar o item"
-  }, [])
+    return apiError?.message || apiError?.error || "Confira o pedido antes de tentar novamente."
+  }
 
-  const quantityMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      const token = await getToken()
-      return orderService.setItemQuantity(storeId!, orderId, itemId, quantity, token)
-    },
-  })
-
-  const removeMutation = useMutation({
-    mutationFn: async ({ itemId }: { itemId: string }) => {
-      const token = await getToken()
-      return orderService.removeItem(storeId!, orderId, itemId, token)
-    },
-  })
-
-  const addMutation = useMutation({
-    mutationFn: async ({
-      productId,
-      quantity,
-    }: {
-      productId: string
+  const mutation = useMutation({
+    mutationFn: async (edit: {
+      kind: "set" | "remove" | "add"
+      id: string
       quantity: number
-    }) => {
+      requestId: string
+    }): Promise<OrderDetail> => {
       const token = await getToken()
-      return orderService.addItem(storeId!, orderId, { productId, quantity }, token)
+      if (edit.kind === "set") return orderService.setItemQuantity(storeId!, orderId, edit.id, edit.quantity, token, edit.requestId)
+      if (edit.kind === "remove") return orderService.removeItem(storeId!, orderId, edit.id, token, edit.requestId)
+      return orderService.addItem(storeId!, orderId, { productId: edit.id, quantity: edit.quantity }, token, edit.requestId)
     },
+    retry: false,
   })
+  const mutateAsync = mutation.mutateAsync
 
-  const setQuantity = useCallback(
-    (itemId: string, quantity: number) => {
-      if (!enabled || quantity < 1) return
-
-      setPending((atual) => ({ ...atual, [itemId]: quantity }))
-
-      clearTimeout(timers.current[itemId])
-      timers.current[itemId] = setTimeout(() => {
-        delete timers.current[itemId]
-        setInFlight((atual) => ({ ...atual, [itemId]: true }))
-
-        quantityMutation.mutate(
-          { itemId, quantity },
-          {
-            onSuccess: (fresh) => {
-              applyFreshOrder(fresh)
-              // O pendente sai só agora: enquanto a requisição corria, ele era o
-              // número na tela. Tirá-lo antes faria a linha piscar o valor antigo.
-              setPending(({ [itemId]: _, ...resto }) => resto)
-            },
-            onError: (error) => {
-              // Volta para o valor do servidor descartando o pendente — insistir
-              // num número que o servidor recusou é o caminho para a lojista
-              // achar que salvou.
-              setPending(({ [itemId]: _, ...resto }) => resto)
-              toast.error("Quantidade não alterada", {
-                description: describeFailure(error),
-              })
-            },
-            onSettled: () => {
-              setInFlight(({ [itemId]: _, ...resto }) => resto)
-            },
-          },
-        )
-      }, stepperDebounceMs)
-    },
-    [enabled, quantityMutation, applyFreshOrder, describeFailure],
-  )
-
-  const removeItem = useCallback(
-    (itemId: string) => {
-      if (!enabled) return
-      // Um stepper pendente nesta linha perdeu o sentido — o item vai sair.
-      clearTimeout(timers.current[itemId])
-      delete timers.current[itemId]
-      setPending(({ [itemId]: _, ...resto }) => resto)
-      setInFlight((atual) => ({ ...atual, [itemId]: true }))
-
-      removeMutation.mutate(
-        { itemId },
-        {
-          onSuccess: (fresh) => {
-            applyFreshOrder(fresh)
-            toast.success("Item removido", {
-              description: "O estoque voltou para o catálogo.",
-            })
-          },
-          onError: (error) => {
-            toast.error("Item não removido", { description: describeFailure(error) })
-          },
-          onSettled: () => {
-            setInFlight(({ [itemId]: _, ...resto }) => resto)
-          },
-        },
-      )
-    },
-    [enabled, removeMutation, applyFreshOrder, describeFailure],
-  )
-
-  const addItem = useCallback(
-    async (productId: string, quantity: number) => {
-      if (!enabled) return
-      try {
-        const fresh = await addMutation.mutateAsync({ productId, quantity })
-        applyFreshOrder(fresh)
-        toast.success("Produto adicionado", {
-          description:
-            "O estoque foi reservado. A cliente precisa escolher o frete de novo.",
+  const send = useCallback(async (kind: "set" | "remove" | "add", id: string, quantity: number) => {
+    const lockId = kind === "add" ? "add" : id
+    if (!claim(lockId)) return
+    try {
+      const fresh = await mutateAsync({ kind, id, quantity, requestId: crypto.randomUUID() })
+      if (kind !== "set") {
+        toast.success(kind === "remove" ? "Remoção salva" : "Produto adicionado", {
+          description: fresh.erpItemSync?.pending
+            ? "Sincronizando com o ERP. Você pode acompanhar o andamento no pedido."
+            : "Pedido atualizado. A cliente precisa escolher o frete novamente.",
         })
-      } catch (error) {
-        toast.error("Produto não adicionado", {
-          description: describeFailure(error),
-        })
-        throw error
       }
-    },
-    [enabled, addMutation, applyFreshOrder, describeFailure],
-  )
+    } catch (error) {
+      toast.error("Não foi possível confirmar a alteração", { description: describeFailure(error) })
+      if (kind === "add") throw error
+    } finally {
+      // Each invocation owns its cleanup. Per-call mutate callbacks only run
+      // for the last observer when several edits are submitted together.
+      try {
+        await refresh()
+      } finally {
+        release(lockId)
+      }
+    }
+  }, [claim, mutateAsync, refresh, release])
 
-  const displayQuantity = useCallback(
-    (itemId: string, serverQuantity: number) => pending[itemId] ?? serverQuantity,
-    [pending],
-  )
+  const setQuantity = useCallback((itemId: string, quantity: number) => {
+    if (!editable.current || claimed.current.has(itemId) || quantity < 1) return
+    setPending((current) => ({ ...current, [itemId]: quantity }))
+    clearTimeout(timers.current[itemId])
+    timers.current[itemId] = setTimeout(() => {
+      delete timers.current[itemId]
+      if (!editable.current) {
+        setPending(({ [itemId]: _, ...rest }) => rest)
+        toast.info("Aguarde a sincronização para ajustar esta quantidade.")
+        return
+      }
+      void send("set", itemId, quantity)
+    }, stepperDebounceMs)
+  }, [send])
 
-  const isSaving = useCallback(
-    (itemId: string) => !!inFlight[itemId],
-    [inFlight],
-  )
+  const removeItem = useCallback((itemId: string) => {
+    if (!editable.current || claimed.current.has(itemId)) return
+    clearTimeout(timers.current[itemId])
+    delete timers.current[itemId]
+    setPending(({ [itemId]: _, ...rest }) => rest)
+    void send("remove", itemId, 0)
+  }, [send])
+
+  const addItem = useCallback((productId: string, quantity: number) => send("add", productId, quantity), [send])
 
   return {
-    displayQuantity,
-    isSaving,
-    // `pending` fica FORA: com ele aqui, começar a ajustar uma quantidade
-    // desabilitava o botão de adicionar produto por 600ms sem nada em voo.
-    isAnyBusy: Object.keys(inFlight).length > 0 || addMutation.isPending,
+    displayQuantity: (id, serverQuantity) => pending[id] ?? serverQuantity,
+    isSaving: (id) => syncProcessing || !!inFlight[id],
+    isAnyBusy: syncProcessing || Object.keys(inFlight).length > 0,
+    isAdding: !!inFlight.add,
     setQuantity,
     removeItem,
     addItem,
-    isAdding: addMutation.isPending,
   }
 }

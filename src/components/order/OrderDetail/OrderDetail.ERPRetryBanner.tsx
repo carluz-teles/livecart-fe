@@ -34,7 +34,24 @@ export function OrderDetailERPRetryBanner() {
   const { order } = ctx.state
   const finalisation = order.erpFinalisation
 
-  const warnings = order.paymentReviewRequired || (order.erpPendingItems ?? 0) > 0 ? (
+  const sync = order.erpItemSync
+  const syncNotice = sync?.pending ? (
+    <div role="status" className="space-y-1 rounded-lg border bg-muted/40 p-4 print:hidden">
+      <p className="flex items-center gap-2 text-sm font-medium">
+        <RefreshCw aria-hidden className={`size-4 ${sync.processing ? "animate-spin" : ""}`} />
+        {sync.lastError ? "Sincronização aguardando nova tentativa" : "Alterações salvas · sincronizando com o ERP"}
+      </p>
+      <p className="text-sm text-muted-foreground">
+        {sync.lastError
+          ? "A última tentativa não foi concluída. O sistema tentará novamente automaticamente; você pode sair desta tela."
+          : "Você pode sair desta tela. O andamento será atualizado automaticamente."}
+        {" "}O pagamento fica disponível após a confirmação.
+      </p>
+    </div>
+  ) : null
+  const warnings = <>
+    {syncNotice}
+    {order.paymentReviewRequired || (!sync?.pending && (order.erpPendingItems ?? 0) > 0) ? (
     <div
       role="alert"
       className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 print:hidden"
@@ -53,7 +70,8 @@ export function OrderDetailERPRetryBanner() {
         </p>
       )}
     </div>
-  ) : null
+  ) : null}
+  </>
 
   if (order.paymentReviewRequired || !finalisation || finalisation.status !== "failed") {
     return warnings

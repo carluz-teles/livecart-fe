@@ -844,6 +844,20 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     return <CheckoutErrorScreen message="Este carrinho não está disponível para pagamento." />
   }
 
+  if (cart.erpItemSync?.pending) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-lg items-center px-6">
+        <div role="status" className="space-y-3 rounded-xl border bg-card p-6">
+          <h1 className="text-xl font-semibold">A loja está atualizando seu pedido</h1>
+          <p className="text-sm text-muted-foreground">
+            Aguarde a confirmação dos itens para escolher o frete e pagar.
+            Esta tela será atualizada automaticamente.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
   const isLiveActive = cart.status === "active"
   // Publicação (post/reel/story) usa o copy de promoção; só a live usa "Live em
   // andamento". O campo vem de live_sessions.type — live_events.type não existe

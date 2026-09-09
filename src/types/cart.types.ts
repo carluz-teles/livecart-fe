@@ -177,6 +177,7 @@ export interface OrderStore {
 export interface OrderDetail extends Order {
   paymentReviewRequired?: boolean
   erpPendingItems?: number
+  erpItemSync?: ERPItemSync
   // Cart token; the public buyer link is `${origin}/cart/${token}`. Used by
   // the admin "copiar link do checkout" action.
   token: string
@@ -529,7 +530,15 @@ export interface PublicCheckoutPayment {
   authorizationCode?: string
 }
 
+export interface ERPItemSync {
+  pending: boolean
+  processing: boolean
+  lastError?: string
+  attempts: number
+}
+
 export interface PublicCheckoutCart {
+  erpItemSync?: ERPItemSync
   paymentReviewRequired?: boolean
   id: string
   token: string

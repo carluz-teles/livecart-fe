@@ -25,5 +25,6 @@ export function useCheckoutCart(
     // 1s interval reading Date.now() — refetching on focus would churn
     // the cart object and remount the Mercado Pago Secure Fields iframes.
     refetchOnWindowFocus: false,
+    refetchInterval: (query) => query.state.data?.erpItemSync?.pending ? 2000 : false,
   })
 }

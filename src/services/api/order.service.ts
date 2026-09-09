@@ -127,11 +127,14 @@ export const orderService = {
     orderId: string,
     payload: { productId: string; quantity: number },
     token?: string | null,
+    requestId?: string,
   ) =>
     apiClient.post<OrderDetail>(
       `/stores/${storeId}/orders/${orderId}/items`,
       payload,
       token,
+      undefined,
+      requestId ? { "Idempotency-Key": requestId } : undefined,
     ),
 
   // Quantidade ABSOLUTA, não delta: o servidor recusa o passo obsoleto com 409
@@ -142,11 +145,13 @@ export const orderService = {
     itemId: string,
     quantity: number,
     token?: string | null,
+    requestId?: string,
   ) =>
     apiClient.patch<OrderDetail>(
       `/stores/${storeId}/orders/${orderId}/items/${itemId}`,
       { quantity },
       token,
+      requestId ? { "Idempotency-Key": requestId } : undefined,
     ),
 
   removeItem: (
@@ -154,10 +159,12 @@ export const orderService = {
     orderId: string,
     itemId: string,
     token?: string | null,
+    requestId?: string,
   ) =>
     apiClient.delete<OrderDetail>(
       `/stores/${storeId}/orders/${orderId}/items/${itemId}`,
       token,
+      requestId ? { "Idempotency-Key": requestId } : undefined,
     ),
 
   // Pagamento recebido FORA do LiveCart. Roda o mesmo ciclo de um pagamento do
