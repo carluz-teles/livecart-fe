@@ -56,7 +56,7 @@ export function OrderDetailItems() {
 
 function ItensDoPedido({ order }: { order: OrderDetail }) {
   const editavel = isOrderItemEditable(order)
-  const edit = useOrderItemEdit({ orderId: order.id, enabled: editavel })
+  const edit = useOrderItemEdit({ orderId: order.id, enabled: editavel, syncProcessing: order.erpItemSync?.processing })
 
   // Desde a 000107 o pedido tem uma linha por (produto, sessão): o mesmo
   // produto comprado na live de segunda e no story de quinta chega em DUAS
@@ -274,13 +274,14 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
               {item.quantity === 1
                 ? "1 unidade volta"
                 : `${item.quantity} unidades voltam`}{" "}
-              para o catálogo, com a reserva estornada no ERP. Para trazer de
+              para o catálogo após a confirmação da atualização no ERP. Para trazer de
               volta você adiciona o produto outra vez.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction
+              disabled={edit.isSaving(item.id)}
               onClick={() => edit.removeItem(item.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

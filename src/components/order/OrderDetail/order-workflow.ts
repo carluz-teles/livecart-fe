@@ -38,7 +38,7 @@ export function orderWorkflow(order: OrderDetail) {
     },
     {
       title: "Aprovação no ERP",
-      state:
+      state: order.erpItemSync?.pending ? (order.erpItemSync.lastError ? "attention" : "waiting") :
         (order.erpPendingItems ?? 0) > 0 || finalisation === "failed"
           ? "attention"
           : finalisation === "done"
@@ -46,7 +46,7 @@ export function orderWorkflow(order: OrderDetail) {
             : finalisation === "pending"
               ? "waiting"
               : "unknown",
-      detail:
+      detail: order.erpItemSync?.pending ? "Sincronizando itens" :
         (order.erpPendingItems ?? 0) > 0
           ? `${order.erpPendingItems} itens pendentes`
           : finalisation === "done"
@@ -108,6 +108,12 @@ export function orderWorkflow(order: OrderDetail) {
       text: "Pedido encerrado. Consulte o pagamento e o histórico antes de qualquer nova ação.",
       target: "order-payment",
       label: "Ver pagamento",
+    }
+  else if (order.erpItemSync?.pending)
+    next = {
+      text: "As alterações estão salvas. Aguarde a sincronização antes de liberar o pagamento.",
+      target: "order-erp",
+      label: "Acompanhar sincronização",
     }
   else if (!paid)
     next = {

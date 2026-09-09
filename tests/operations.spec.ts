@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { QueryClient } from "@tanstack/react-query"
+import { orderService } from "../src/services/api/order.service"
 import { orderWorkflow } from "../src/components/order/OrderDetail/order-workflow"
 import { refreshProductsAfterResync } from "../src/hooks/integration/resync-cache"
 import { productKeys } from "../src/hooks/product/useProducts"
@@ -122,5 +123,47 @@ test("progresso, primeira consulta e outra integração não invalidam produtos"
       false,
     )
     client.clear()
+  }
+})
+
+test("edição persistida ainda aguarda sincronização mesmo sem itens na grade", () => {
+  const result = orderWorkflow(order({
+    paymentStatus: "pending",
+    erpPendingItems: 0,
+    erpItemSync: { pending: true, processing: true, attempts: 1 },
+  }))
+  expect(result.steps[1]).toMatchObject({ state: "waiting", detail: "Sincronizando itens" })
+  expect(result.next.target).toBe("order-erp")
+  expect(result.next.text).toContain("Aguarde a sincronização")
+})
+
+test("falha de sincronização aparece como pendência e pagamento em conferência tem prioridade", () => {
+  const pending = { pending: true, processing: false, attempts: 2, lastError: "ERP indisponível" }
+  expect(orderWorkflow(order({ erpItemSync: pending })).steps[1].state).toBe("attention")
+  expect(orderWorkflow(order({ erpItemSync: pending, paymentReviewRequired: true })).next.target).toBe("order-payment")
+})
+
+test("edições enviam a mesma chave fornecida pelo chamador em adição, quantidade e remoção", async () => {
+  const originalFetch = globalThis.fetch
+  const calls: { method: string; headers: Headers; body: string | undefined }[] = []
+  globalThis.fetch = async (_url, init) => {
+    calls.push({ method: init!.method!, headers: new Headers(init!.headers), body: init?.body as string | undefined })
+    return new Response(JSON.stringify({ data: { id: "order", erpItemSync: { pending: true } } }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    })
+  }
+  const key = "56854638-d61f-4574-9c24-7e9f2a9b97ad"
+  try {
+    await orderService.addItem("store", "order", { productId: "product", quantity: 2 }, "token", key)
+    await orderService.setItemQuantity("store", "order", "item", 3, "token", key)
+    await orderService.removeItem("store", "order", "item", "token", key)
+    expect(calls.map((call) => call.method)).toEqual(["POST", "PATCH", "DELETE"])
+    expect(calls.map((call) => call.headers.get("Idempotency-Key"))).toEqual([key, key, key])
+    expect(calls.every((call) => call.headers.get("Authorization") === "Bearer token")).toBe(true)
+    expect(JSON.parse(calls[0].body!)).toEqual({ productId: "product", quantity: 2 })
+    expect(JSON.parse(calls[1].body!)).toEqual({ quantity: 3 })
+    expect(calls[2].body).toBeUndefined()
+  } finally {
+    globalThis.fetch = originalFetch
   }
 })
