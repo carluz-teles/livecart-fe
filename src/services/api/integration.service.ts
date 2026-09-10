@@ -273,6 +273,20 @@ export const integrationService = {
       token
     ),
 
+  // Complete a Pagar.me Hub (Partner App) install: forward the short-lived
+  // authorization_code the Hub returned on the redirect so the backend can
+  // exchange it for the merchant accessToken and activate the integration.
+  installPagarmeHub: (
+    storeId: string,
+    authorizationCode: string,
+    token?: string | null
+  ) =>
+    apiClient.post<Integration>(
+      `/stores/${storeId}/integrations/payment/pagarme/hub/install`,
+      { authorizationCode },
+      token
+    ),
+
   // Reads Pagar.me's recent delivery history (no public API to list
   // subscriptions, so we infer "configured" from a matching URL). Returns
   // configured=false when no recent delivery hit our endpoint.

@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, Suspense, useEffect, useState } from "react"
+import { Fragment, Suspense, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import {
@@ -88,6 +88,7 @@ import {
   useConnectTiny,
   useConnectSmartEnvios,
   useConnectPagarme,
+  useInstallPagarmeHub,
   useDisconnectIntegration,
   useTestConnection,
   useUpdateIntegrationPriority,
@@ -368,6 +369,7 @@ function IntegrationsContent() {
   const connectTiny = useConnectTiny()
   const connectSmartEnvios = useConnectSmartEnvios()
   const connectPagarme = useConnectPagarme()
+  const installPagarmeHub = useInstallPagarmeHub()
   const disconnectIntegration = useDisconnectIntegration()
   const testConnection = useTestConnection()
   const updatePriority = useUpdateIntegrationPriority()
@@ -392,6 +394,9 @@ function IntegrationsContent() {
   const [pagarmeWebhookUser, setPagarmeWebhookUser] = useState("")
   const [pagarmeWebhookPass, setPagarmeWebhookPass] = useState("")
   const [pagarmeError, setPagarmeError] = useState<string | null>(null)
+  // Guards the one-time Hub authorization_code exchange against a double-fire
+  // (strict mode / re-render) — the code is single-use and expires in ~180s.
+  const pagarmeCodeHandledRef = useRef<string | null>(null)
   const pagarmeProviderURLs = useProviderURLs("pagarme", pagarmeDialog)
   const [detailsSheet, setDetailsSheet] = useState<{
     integration: Integration
@@ -474,6 +479,25 @@ function IntegrationsContent() {
       window.history.replaceState({}, "", "/settings/integrations")
     }
 
+    // Pagar.me Hub redirect: the merchant comes back with a short-lived
+    // authorization_code we exchange server-side for the merchant accessToken.
+    // The store comes from the authenticated session, so no state to correlate.
+    const authorizationCode = searchParams.get("authorization_code")
+    if (
+      authorizationCode &&
+      pagarmeCodeHandledRef.current !== authorizationCode
+    ) {
+      pagarmeCodeHandledRef.current = authorizationCode
+      installPagarmeHub.mutate(authorizationCode, {
+        onSuccess: () => toast.success("Pagar.me conectado com sucesso!"),
+        onError: () =>
+          toast.error(
+            "Falha ao concluir a instalação do Pagar.me. O código pode ter expirado — tente conectar novamente.",
+          ),
+      })
+      window.history.replaceState({}, "", "/settings/integrations")
+    }
+
     if (error) {
       const errorMessages: Record<string, string> = {
         missing_code: "Código de autorização não encontrado",
@@ -484,7 +508,29 @@ function IntegrationsContent() {
       toast.error(errorMessages[error] || "Erro ao conectar integração")
       window.history.replaceState({}, "", "/settings/integrations")
     }
+    // installPagarmeHub is a stable react-query mutation; the ref guard makes
+    // the code exchange fire once, so we intentionally key only off searchParams.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
+
+  // Builds the Pagar.me Hub authorize URL the "Conectar" button redirects to.
+  // Mirrors the official mundipagg/hub-button widget verbatim, so we skip
+  // embedding their script and keep our own button: production drops the
+  // /{environment} segment, while an env starting with "dev" is inserted
+  // literally (…/apps/dev/{key}/…). The Hub sends the merchant back to
+  // redirectUrl with ?authorization_code=… after they authorize. Returns null
+  // when the Hub app isn't configured, so the flow falls back to the manual
+  // sk_/pk_ dialog.
+  const buildPagarmeHubInstallUrl = (): string | null => {
+    const publicAppKey = process.env.NEXT_PUBLIC_PAGARME_APP_PUBLIC_KEY
+    if (!publicAppKey || typeof window === "undefined") return null
+
+    const redirectUrl = `${window.location.origin}/settings/integrations`
+    const env = process.env.NEXT_PUBLIC_PAGARME_HUB_ENV ?? "production"
+    const envSegment = env.toLowerCase().startsWith("dev") ? `/${env}` : ""
+
+    return `https://hub.pagar.me/pt-BR/apps${envSegment}/${publicAppKey}/authorize?redirect=${redirectUrl}`
+  }
 
   const handleConnect = (provider: ProviderConfig) => {
     switch (provider.authType) {
@@ -500,6 +546,13 @@ function IntegrationsContent() {
         // Pagar.me has its own dialog (secret + public + webhook auth);
         // the generic single-key dialog only fits Tiny / SmartEnvios.
         if (provider.id === "pagarme") {
+          // Prefer the Hub (Partner App) install when configured; fall back to
+          // the manual sk_/pk_ dialog until the Hub app is set up.
+          const hubUrl = buildPagarmeHubInstallUrl()
+          if (hubUrl) {
+            window.location.href = hubUrl
+            break
+          }
           setPagarmeDialog(true)
           break
         }

@@ -9,6 +9,7 @@ export {
 export { useImportERPProduct } from "./useImportERPProduct"
 export { useConnectTiny } from "./useConnectTiny"
 export { useConnectPagarme } from "./useConnectPagarme"
+export { useInstallPagarmeHub } from "./useInstallPagarmeHub"
 export { useDisconnectIntegration } from "./useDisconnectIntegration"
 export { useStartERPResync } from "./useStartERPResync"
 export { useUpdateIntegrationPriority } from "./useUpdateIntegrationPriority"
