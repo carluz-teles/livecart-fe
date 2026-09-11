@@ -1,32 +1,22 @@
-import {
-  MessageCircleQuestion,
-  Search,
-  PackageSearch,
-  ClipboardList,
-  Send,
-  Wallet,
-  FileCheck,
-  RefreshCw,
-} from "lucide-react"
+import { Clock, Instagram, Radio } from "lucide-react"
 
-const customerQuotes = [
-  "Quero esse.",
-  "Tem M?",
-  "Quanto custa?",
-  "Me manda o link.",
-  "Quero 2.",
-  "Onde compro?",
-]
+const messages = [
+  { channel: "live", user: "@ana.reis", text: "quero 2 do preto 🔥" },
+  { channel: "instagram", user: "@ju.costa", text: "tem esse na M? me manda o link" },
+  { channel: "instagram", user: "@pedro.alves", text: "tem no tamanho GG? 👀" },
+  { channel: "live", user: "@lu.martins", text: "quero esse, quanto fica?" },
+  { channel: "instagram", user: "@bia.santos", text: "me manda o link 🙏" },
+] as const
 
 const manualSteps = [
-  { icon: MessageCircleQuestion, label: "Responder o cliente" },
-  { icon: Search, label: "Identificar o produto" },
-  { icon: PackageSearch, label: "Consultar estoque" },
-  { icon: ClipboardList, label: "Montar o pedido" },
-  { icon: Send, label: "Enviar o checkout" },
-  { icon: Wallet, label: "Acompanhar o pagamento" },
-  { icon: FileCheck, label: "Registrar a venda" },
-  { icon: RefreshCw, label: "Atualizar o ERP" },
+  "Responder",
+  "Identificar o produto",
+  "Consultar estoque",
+  "Montar o pedido",
+  "Enviar o checkout",
+  "Acompanhar o pagamento",
+  "Registrar a venda",
+  "Atualizar o ERP",
 ]
 
 export function LandingProblemSection() {
@@ -42,47 +32,78 @@ export function LandingProblemSection() {
             estar.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Hoje, a jornada de compra não começa necessariamente na sua loja
-            virtual — ela começa em uma conversa.
+            A compra quase nunca começa na sua loja virtual. Ela começa numa
+            conversa.
           </p>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
-          {customerQuotes.map((quote) => (
-            <span
-              key={quote}
-              className="rounded-full border border-border bg-card px-4 py-2.5 text-center text-sm font-semibold text-foreground shadow-sm"
-            >
-              &quot;{quote}&quot;
-            </span>
-          ))}
-        </div>
-
-        <p className="mx-auto mt-8 max-w-2xl text-center text-base text-muted-foreground">
-          Essas conversas acontecem no Instagram, em comentários, Stories e
-          lives. O problema é que transformar cada uma delas em uma venda
-          normalmente exige alguém para:
-        </p>
-
-        <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {manualSteps.map((step) => (
-            <div
-              key={step.label}
-              className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
-            >
-              <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <step.icon className="size-5" />
+        <div className="mx-auto mt-14 grid max-w-5xl items-center gap-10 sm:grid-cols-2 sm:gap-14">
+          {/* Mensagens de hoje */}
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg shadow-black/5">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Mensagens de hoje
               </span>
-              <span className="text-sm font-semibold leading-snug text-foreground">
-                {step.label}
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="size-1.5 animate-pulse rounded-full bg-red-500" />
+                ao vivo
               </span>
             </div>
-          ))}
-        </div>
+            <div className="flex flex-col gap-3 p-4">
+              {messages.map((m) => (
+                <div key={m.user} className="flex items-center gap-2.5">
+                  <span
+                    className={
+                      m.channel === "live"
+                        ? "flex size-[30px] shrink-0 items-center justify-center rounded-full bg-red-500 text-white"
+                        : "flex size-[30px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#833AB4] to-[#F77737] text-white"
+                    }
+                  >
+                    {m.channel === "live" ? (
+                      <Radio className="size-3.5" />
+                    ) : (
+                      <Instagram className="size-3.5" />
+                    )}
+                  </span>
+                  <span className="rounded-2xl rounded-bl-md bg-secondary px-3.5 py-2 text-sm">
+                    <strong>{m.user}</strong>{" "}
+                    <span className="text-muted-foreground">{m.text}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <p className="mt-12 text-center text-xl font-bold tracking-tight sm:text-2xl">
-          A LiveCart automatiza esse processo.
-        </p>
+          {/* Custo do manual */}
+          <div>
+            <h3 className="text-2xl font-extrabold tracking-tight sm:text-[32px]">
+              Seus clientes já querem comprar.
+            </h3>
+            <p className="mt-4 text-[16.5px] leading-relaxed text-muted-foreground">
+              Gerar interesse não é o problema. O difícil é transformar cada
+              conversa em venda sem precisar de uma equipe inteira
+              respondendo, procurando produto, montando pedido e cobrando.
+            </p>
+            <div className="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Clock className="size-[15px] text-destructive" />
+              O caminho manual, hoje
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {manualSteps.map((step) => (
+                <span
+                  key={step}
+                  className="rounded-full border border-border bg-secondary/50 px-3.5 py-1.5 text-sm font-medium text-muted-foreground"
+                >
+                  {step}
+                </span>
+              ))}
+            </div>
+            <p className="mt-7 text-xl font-extrabold leading-snug tracking-tight sm:text-2xl">
+              A <span className="text-primary">LiveCart</span> automatiza esse
+              processo.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   )

@@ -32,9 +32,9 @@ export const faqs = [
       "É justamente esse trabalho que a LiveCart tira das suas costas. Os dados da conversa viram um pedido que segue sozinho para os sistemas que você conectou.",
   },
   {
-    question: "A LiveCart usa inteligência artificial?",
+    question: "Como o cliente compra durante a live?",
     answer:
-      "Sim. A plataforma utiliza IA e automações para interpretar mensagens e identificar intenções de compra, permitindo que o cliente se comunique de forma mais natural.",
+      "Você define um código para cada produto. Durante a live, quem digita o código no comentário recebe uma resposta imediata com o carrinho e o link de checkout.",
   },
 ]
 

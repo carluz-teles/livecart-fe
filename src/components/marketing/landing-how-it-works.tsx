@@ -1,25 +1,25 @@
-import { MessageSquareHeart, Sparkles, ShoppingCart, Send, CircleCheck, ArrowDown } from "lucide-react"
+import { Hash, Keyboard, ShoppingCart, Send, CircleCheck, ArrowDown } from "lucide-react"
 
 const steps = [
   {
-    icon: MessageSquareHeart,
-    title: "Cliente demonstra interesse",
-    caption: "No comentário, Direct, Story ou live",
+    icon: Hash,
+    title: "Você define o código",
+    caption: "Um código curto para cada produto",
   },
   {
-    icon: Sparkles,
-    title: "A LiveCart entende a intenção",
-    caption: "Produto, quantidade e variação identificados na conversa",
+    icon: Keyboard,
+    title: "O cliente digita o código",
+    caption: "No comentário da live, no Direct ou nos Stories",
   },
   {
     icon: ShoppingCart,
-    title: "O pedido é criado",
-    caption: "O carrinho é montado automaticamente na sua operação",
+    title: "A LiveCart responde na hora",
+    caption: "O carrinho é criado na hora com o produto certo",
   },
   {
     icon: Send,
     title: "O checkout é enviado",
-    caption: "O cliente recebe o link pra finalizar a compra",
+    caption: "O cliente recebe o link para finalizar a compra",
   },
   {
     icon: CircleCheck,
@@ -46,8 +46,8 @@ export function LandingHowItWorks() {
             Do &quot;quero&quot; ao pagamento, sem trabalho manual
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            A LiveCart conecta seus canais de comunicação à sua operação de
-            vendas, em qualquer canal onde a conversa acontecer.
+            A LiveCart liga seus canais de conversa à sua operação de vendas,
+            esteja o cliente onde estiver.
           </p>
         </div>
 
