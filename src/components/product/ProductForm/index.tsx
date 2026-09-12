@@ -44,6 +44,7 @@ import {
 } from "@/schemas/product.schema"
 import { useCreateProduct } from "@/hooks/product/useCreateProduct"
 import { useUpdateProduct } from "@/hooks/product/useUpdateProduct"
+import { productFormFromERP, createProductPayload, updateProductPayload } from "@/hooks/product/product-form"
 import { useIntegrations } from "@/hooks/integration"
 import { ProductFormERPSearch } from "./ProductForm.ERPSearch"
 import { ProductFormShippingFields } from "./ProductForm.ShippingFields"
@@ -51,7 +52,7 @@ import { ProductFormGroup } from "./ProductForm.GroupForm"
 import { ImageUploadButton } from "./ImageUploadButton"
 import { formatCentsBRL, digitsToCents } from "./priceMask"
 import { cn } from "@/lib/utils"
-import type { Product, CreateProductPayload, UpdateProductPayload, ProductSource } from "@/types/product.types"
+import type { Product, ProductSource } from "@/types/product.types"
 import type { ERPProduct, Integration } from "@/types"
 
 interface ProductFormProps {
@@ -204,24 +205,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
 
   const handleERPProductSelect = useCallback(
     (erpProduct: ERPProduct) => {
-      // Spread ERP shipping over the defaults so anything the ERP didn't send
-      // (sku, insurance) keeps its empty default — but weight + dimensions
-      // come pre-filled when present. Partial ERP shipping (e.g. weight only)
-      // still falls under the schema's all-or-nothing rule, so the user is
-      // prompted to complete it before saving.
-      const shipping = erpProduct.shipping
-        ? { ...defaultShippingProfile, ...erpProduct.shipping }
-        : defaultShippingProfile
-
-      form.reset({
-        name: erpProduct.name,
-        price: erpProduct.price,
-        stock: erpProduct.stock,
-        imageUrl: erpProduct.imageUrl || "",
-        externalSource: selectedSource,
-        externalId: erpProduct.id,
-        shipping,
-      })
+      form.reset(productFormFromERP(erpProduct, selectedSource))
       setStep("form")
     },
     [form, selectedSource]
@@ -241,24 +225,8 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
   }, [form, selectedSource])
 
   async function onSubmit(data: CreateProductFormData | UpdateProductFormData) {
-    // Backend treats shipping as all-or-nothing — sending dims as null mixed
-    // with packageFormat returns 400. Omit the whole object when no dimension
-    // was filled in. The schema already forbids partial dimensions.
-    const hasShippingDims =
-      data.shipping.weightGrams != null ||
-      data.shipping.heightCm != null ||
-      data.shipping.widthCm != null ||
-      data.shipping.lengthCm != null
-
     if (isEditing) {
-      const payload: UpdateProductPayload = {
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        imageUrl: data.imageUrl || undefined,
-        active: (data as UpdateProductFormData).active,
-        ...(hasShippingDims ? { shipping: data.shipping } : {}),
-      }
+      const payload = updateProductPayload(data as UpdateProductFormData, product)
 
       updateProduct.mutate(
         { id: product.id, payload },
@@ -276,15 +244,7 @@ export function ProductForm({ product, open, onOpenChange, onSuccess, trigger }:
         }
       )
     } else {
-      const payload: CreateProductPayload = {
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        externalSource: data.externalSource,
-        imageUrl: data.imageUrl || undefined,
-        externalId: data.externalId || undefined,
-        ...(hasShippingDims ? { shipping: data.shipping } : {}),
-      }
+      const payload = createProductPayload(data)
 
       createProduct.mutate(payload, {
         onSuccess: () => {

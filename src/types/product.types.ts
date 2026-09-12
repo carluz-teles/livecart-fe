@@ -12,9 +12,8 @@ export interface ShippingProfile {
   // Identificadores do produto. Moram aqui porque o SKU já morava — os dois vão
   // para a etiqueta e os dois alimentam a busca do catálogo.
   //
-  // `barcode` é opcional porque este tipo serve resposta E payload: a API sempre
-  // devolve o campo, mas os formulários não o enviam — o código de barras vem do
-  // ERP, não é algo que a lojista digita.
+  // Opcional para payloads antigos. A importação transporta o GTIN do ERP como
+  // texto; uma edição que omite o identificador deve preservar o valor salvo.
   sku: string
   barcode?: string
   packageFormat: PackageFormat
@@ -72,7 +71,7 @@ export interface UpdateProductPayload {
   imageUrl?: string
   stock: number
   active: boolean
-  shipping?: ShippingProfile
+  shipping?: Omit<ShippingProfile, "sku"> & { sku?: string }
 }
 
 // Filters for product listing
