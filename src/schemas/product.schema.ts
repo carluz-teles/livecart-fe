@@ -12,6 +12,7 @@ export const shippingProfileSchema = z
     widthCm: positiveInt.nullable(),
     lengthCm: positiveInt.nullable(),
     sku: z.string().max(100, "SKU deve ter no máximo 100 caracteres"),
+    barcode: z.string().optional(),
     packageFormat: z.enum(["box", "roll", "letter"]),
     insuranceValueCents: z
       .number({ message: "Valor inválido" })

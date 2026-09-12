@@ -232,6 +232,7 @@ export interface ERPVariant {
 export interface ERPProduct {
   id: string
   sku?: string
+  gtin?: string
   name: string
   price: number // cents
   stock: number
@@ -466,5 +467,4 @@ export interface WhatsAppRecoveryStats {
   cartsRecovered: number
   revenueRecoveredCents: number
 }
-
 
