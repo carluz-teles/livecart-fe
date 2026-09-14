@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { useRetryERPFinalisation } from "@/hooks/order"
+import { getApiErrorMessage } from "@/lib/api-errors"
 import { formatAttemptCount, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
@@ -83,15 +84,17 @@ export function OrderDetailERPRetryBanner() {
       {
         onSuccess: (refreshed) => {
           if (refreshed.erpFinalisation?.status === "done") {
-            toast.success("Pedido aprovado no ERP")
+            toast.success("Pedido conciliado com o ERP")
           } else if (refreshed.erpFinalisation?.status === "failed") {
             toast.error(
               "O ERP recusou de novo. Confira a mensagem e contate o suporte se persistir.",
             )
           }
         },
-        onError: () => {
-          toast.error("Não foi possível tentar de novo agora")
+        onError: (error) => {
+          toast.error("Não foi possível concluir a sincronização", {
+            description: getApiErrorMessage(error, "Confira a situação do pedido e tente novamente."),
+          })
         },
       },
     )
