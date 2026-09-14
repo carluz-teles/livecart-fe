@@ -192,6 +192,7 @@ export const orderService = {
       `/stores/${storeId}/orders/${id}/retry-erp`,
       {},
       token,
+      180_000, // ERP finalisation may wait for the store's rate-limit queue.
     ),
 
   // Forces a fetch of the NFe state from the active ERP (today: Tiny). The
