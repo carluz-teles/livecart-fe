@@ -16,7 +16,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { PlanCard } from "@/components/billing/PlanCard"
 import { formatCurrency } from "@/lib/format"
-import { BILLING_INTERVAL_LABELS, PRO_PLAN_PRICE_CENTS } from "@/lib/constants"
+import { billingIntervalDetails } from "@/lib/billing-presentation"
+import { QueryFeedback } from "@/components/shared/QueryFeedback"
 import { useBillingActivation, useOpenPortal, useStartCheckout } from "@/hooks/billing"
 import type { ApiError, BillingInterval } from "@/types"
 
@@ -32,7 +33,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
 function BillingContent() {
   // Retorno do Stripe Checkout (?billing=success): o hook cuida do toast,
   // do polling até a ativação e do re-sync do usuário.
-  const { subscription: sub, isLoading, isActivating } = useBillingActivation()
+  const { subscription: sub, isLoading, isActivating, error, isFetching, refetch } = useBillingActivation()
   const checkout = useStartCheckout()
   const portal = useOpenPortal()
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly")
@@ -41,6 +42,7 @@ function BillingContent() {
   const isTrial = sub?.status === "trialing" || sub?.status === "paused"
   const isSubscribed = sub?.plan === "pro" && !isTrial
   const planName = sub?.plan === "enterprise" ? "Enterprise" : isSubscribed ? "Pro" : "—"
+  const interval = billingIntervalDetails(sub?.billingInterval)
 
   const handleSubscribe = () => {
     checkout.mutate(billingInterval, {
@@ -58,8 +60,26 @@ function BillingContent() {
     )
   }
 
+  if (!sub) {
+    return (
+      <QueryFeedback
+        title="Não foi possível carregar sua assinatura"
+        retry={() => void refetch()}
+        busy={isFetching}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {error ? (
+        <QueryFeedback
+          title="Não foi possível atualizar sua assinatura"
+          stale
+          retry={() => void refetch()}
+          busy={isFetching}
+        />
+      ) : null}
       {/* Assinatura atual */}
       <Card>
         <CardHeader>
@@ -122,8 +142,10 @@ function BillingContent() {
           )}
           {isSubscribed && (
             <p className="text-sm text-muted-foreground">
-              {formatCurrency(PRO_PLAN_PRICE_CENTS[sub!.billingInterval])} · cobrança{" "}
-              {BILLING_INTERVAL_LABELS[sub!.billingInterval].toLowerCase()}
+              {interval
+                ? `Valor de tabela: ${formatCurrency(interval.listPriceCents)} · cobrança ${interval.label}.`
+                : "Intervalo de cobrança indisponível no momento."}{" "}
+              Consulte descontos e valores finais em Gerenciar assinatura.
             </p>
           )}
           {sub?.currentPeriodEnd &&
@@ -136,7 +158,7 @@ function BillingContent() {
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Próxima cobrança em{" "}
+                Próxima renovação em{" "}
                 {new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")}
               </p>
             ))}
