@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency } from "@/lib/format"
-import { BILLING_INTERVAL_LABELS, PRO_PLAN_PRICE_CENTS } from "@/lib/constants"
+import { billingIntervalDetails } from "@/lib/billing-presentation"
 import { usePeriodUsage, useStatement, useSubscription } from "@/hooks/billing"
 import { useRevenueByPayment } from "@/hooks/dashboard"
 import { PaymentMethodChart } from "@/components/analytics/PaymentMethodChart"
@@ -36,9 +36,8 @@ export function FinanceiroPanel() {
   const { data: recovery } = useWhatsAppRecoveryStats()
   const { data: revenueByPayment, isLoading: paymentLoading } = useRevenueByPayment()
 
-  const flat = sub?.billingInterval ? PRO_PLAN_PRICE_CENTS[sub.billingInterval] : 0
+  const interval = billingIntervalDetails(sub?.billingInterval)
   const isTrial = sub?.status === "trialing"
-  const nextTotal = flat
 
   return (
     <div className="space-y-6">
@@ -101,9 +100,7 @@ export function FinanceiroPanel() {
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1.5">
               <ReceiptText className="size-4 text-primary" />
-              Próxima fatura {sub?.currentPeriodEnd && !isTrial
-                ? `(${new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")})`
-                : ""}
+              Valor de tabela do plano
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -116,9 +113,12 @@ export function FinanceiroPanel() {
               </>
             ) : (
               <>
-                <p className="text-3xl font-bold">{formatCurrency(nextTotal)}</p>
+                <p className="text-3xl font-bold">
+                  {interval ? formatCurrency(interval.listPriceCents) : "—"}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Plano Pro · cobrança {sub?.billingInterval ? BILLING_INTERVAL_LABELS[sub.billingInterval].toLowerCase() : ""}
+                  {interval ? `Plano Pro · cobrança ${interval.label}.` : "Intervalo de cobrança indisponível."}{" "}
+                  Descontos e valores finais em Plano e cobrança.
                 </p>
               </>
             )}

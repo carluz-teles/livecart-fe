@@ -62,6 +62,9 @@ export function useBillingActivation() {
   return {
     subscription: subscriptionQuery.data,
     isLoading: subscriptionQuery.isLoading,
+    error: subscriptionQuery.error,
+    isFetching: subscriptionQuery.isFetching,
+    refetch: subscriptionQuery.refetch,
     // true enquanto aguardamos o webhook confirmar a ativação
     isActivating: activating && status !== "active",
   }
