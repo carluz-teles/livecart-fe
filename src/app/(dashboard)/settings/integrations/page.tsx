@@ -8,7 +8,6 @@ import {
   ExternalLink,
   Unplug,
   Loader2,
-  Zap,
   Info,
   User,
   Clock,
@@ -32,6 +31,8 @@ import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
 
 import { QueryFeedback } from "@/components/shared/QueryFeedback"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
+import { IntegrationConnectionStatus } from "@/components/integration/IntegrationConnectionStatus"
 import { IntegrationOverview } from "@/components/integration/IntegrationOverview"
 import {
   ERPResyncStatus,
@@ -93,7 +94,6 @@ import {
   useTestConnection,
   useUpdateIntegrationPriority,
   useProviderURLs,
-  usePagarmeWebhookStatus,
 } from "@/hooks/integration"
 import type { Integration, IntegrationProvider, IntegrationType } from "@/types"
 import type { ApiError } from "@/types/api.types"
@@ -356,6 +356,15 @@ function buildAccountFields(
 
 function IntegrationsContent() {
   const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get("tab")
+    return AVAILABLE_PROVIDERS.some((provider) => provider.type === tab)
+      ? tab!
+      : "erp"
+  })
+  useListUrlMirror("/settings/integrations", {
+    tab: activeTab === "erp" ? null : activeTab,
+  })
   const queryClient = useQueryClient()
   const {
     data,
@@ -382,7 +391,6 @@ function IntegrationsContent() {
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [smartEnviosRotating, setSmartEnviosRotating] = useState(false)
   const [rotateConfirmOpen, setRotateConfirmOpen] = useState(false)
-  const [testingId, setTestingId] = useState<string | null>(null)
   const [tinyDialog, setTinyDialog] = useState(false)
   const [tinyClientId, setTinyClientId] = useState("")
   const [tinyClientSecret, setTinyClientSecret] = useState("")
@@ -745,29 +753,6 @@ function IntegrationsContent() {
     })
   }
 
-  const handleTestConnection = (
-    integrationId: string,
-    providerName: string,
-  ) => {
-    setTestingId(integrationId)
-    testConnection.mutate(integrationId, {
-      onSuccess: (result) => {
-        setTestingId(null)
-        if (result.success) {
-          toast.success(`${providerName}: ${result.message}`, {
-            description: `Latência: ${result.latencyMs}ms`,
-          })
-        } else {
-          toast.error(`${providerName}: ${result.message}`)
-        }
-      },
-      onError: () => {
-        setTestingId(null)
-        toast.error("Falha ao testar conexão")
-      },
-    })
-  }
-
   const handleOpenDetails = (
     integration: Integration,
     provider: ProviderConfig,
@@ -836,11 +821,7 @@ function IntegrationsContent() {
     : null
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <IntegrationOverview.Skeleton />
   }
 
   if (!data)
@@ -853,7 +834,7 @@ function IntegrationsContent() {
     )
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-8">
       {integrationsError && (
         <QueryFeedback
           title="Não foi possível atualizar as integrações"
@@ -872,292 +853,317 @@ function IntegrationsContent() {
         }}
       />
       {/* Available Integrations by Category */}
-      <section className="space-y-4">
+      <section
+        id="integration-catalog"
+        aria-labelledby="integration-catalog-heading"
+        tabIndex={-1}
+        className="flex scroll-mt-6 flex-col gap-5 focus:outline-none"
+      >
         <div>
-          <h2 className="font-semibold tracking-tight">Gerenciar serviços</h2>
+          <h2
+            id="integration-catalog-heading"
+            className="text-lg font-semibold tracking-tight"
+          >
+            Gerenciar serviços
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Conexões, configurações e diagnóstico por área da operação.
+            Escolha uma área para conectar ou configurar seus serviços.
           </p>
         </div>
 
-        <Tabs
-          defaultValue={
-            Object.hasOwn(categoryConfig, searchParams.get("tab") ?? "")
-              ? searchParams.get("tab")!
-              : "erp"
-          }
-          className="w-full"
-        >
-          <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto border-b bg-transparent p-0">
-            {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="mb-5 min-w-0 overflow-x-auto pb-1">
+            <TabsList
+              aria-label="Áreas de integração"
+              className="h-auto min-w-full justify-start gap-1 p-1"
+            >
+              {(Object.keys(categoryConfig) as IntegrationType[])
+                .filter((type) => getProvidersByType(type).length > 0)
+                .map((type) => {
+                  const config = categoryConfig[type]
+                  const providersInCategory = getProvidersByType(type)
+                  const connectedCount = providersInCategory.filter((p) =>
+                    getConnectedIntegration(p.id),
+                  ).length
+
+                  return (
+                    <TabsTrigger
+                      key={type}
+                      value={type}
+                      className={cn(
+                        "min-h-10 flex-1 gap-2 px-3 py-2",
+                        "data-[state=active]:shadow-sm",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {config.icon}
+                        <span>{config.label}</span>
+                        {connectedCount > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="ml-1 h-5 px-1.5 text-xs"
+                          >
+                            {connectedCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </TabsTrigger>
+                  )
+                })}
+            </TabsList>
+          </div>
+
+          {(Object.keys(categoryConfig) as IntegrationType[])
+            .filter((type) => getProvidersByType(type).length > 0)
+            .map((type) => {
               const config = categoryConfig[type]
-              const providersInCategory = getProvidersByType(type)
-              const connectedCount = providersInCategory.filter((p) =>
-                getConnectedIntegration(p.id),
-              ).length
+              const providers = getProvidersByType(type)
 
               return (
-                <TabsTrigger
+                <TabsContent
                   key={type}
                   value={type}
-                  className={cn(
-                    "relative rounded-none border-b-2 border-transparent px-4 pb-3 pt-2",
-                    "data-[state=active]:border-primary data-[state=active]:bg-transparent",
-                    "data-[state=active]:shadow-none",
-                  )}
+                  className="mt-0 flex-col gap-4 data-[state=active]:flex"
                 >
-                  <div className="flex items-center gap-2">
-                    {config.icon}
-                    <span>{config.label}</span>
-                    {connectedCount > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-1 h-5 px-1.5 text-xs"
-                      >
-                        {connectedCount}/{providersInCategory.length}
-                      </Badge>
-                    )}
-                  </div>
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-
-          {(Object.keys(categoryConfig) as IntegrationType[]).map((type) => {
-            const config = categoryConfig[type]
-            const providers = getProvidersByType(type)
-
-            return (
-              <TabsContent key={type} value={type} className="mt-0 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {config.description}
-                </p>
-                {type === "erp" && erpJaConectado?.status === "active" && (
-                  <div className="flex flex-col gap-3">
-                    <ERPResyncStatus />
-                    <div>
+                  <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                    <p className="text-sm text-muted-foreground">
+                      {config.description}
+                    </p>
+                    {type === "erp" && erpJaConectado?.status === "active" ? (
                       <ERPResyncButton />
-                    </div>
+                    ) : null}
                   </div>
-                )}
+                  {type === "erp" && erpJaConectado?.erpResyncRunning ? (
+                    <ERPResyncStatus />
+                  ) : null}
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {providers.map((provider) => {
-                    const connected = getConnectedIntegration(provider.id)
-                    const isConnected = !!connected
-                    const showReorder =
-                      type === "payment" && paymentChain.length > 1
-                    const chainIdx = showReorder
-                      ? paymentChain.findIndex((p) => p.id === connected?.id)
-                      : -1
-                    const isPrimary =
-                      type === "payment" && connected?.id === primaryPaymentId
+                  <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    {providers.map((provider) => {
+                      const connected = getConnectedIntegration(provider.id)
+                      const isConnected = !!connected
+                      const showReorder =
+                        type === "payment" && paymentChain.length > 1
+                      const chainIdx = showReorder
+                        ? paymentChain.findIndex((p) => p.id === connected?.id)
+                        : -1
+                      const isPrimary =
+                        type === "payment" && connected?.id === primaryPaymentId
 
-                    return (
-                      <IntegrationCard
-                        key={provider.id}
-                        provider={provider.id}
-                        connected={isConnected}
-                      >
-                        <div className="flex h-full flex-col p-5">
-                          <div className="flex items-start gap-4">
-                            <IntegrationCard.Logo
-                              provider={provider.id}
-                              size="lg"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-semibold">
-                                  {provider.name}
-                                </h3>
-                                {isConnected && (
-                                  <IntegrationCard.Status
-                                    status={
-                                      connected.status === "pending_auth"
-                                        ? "pending"
-                                        : connected.status
-                                    }
-                                  />
-                                )}
-                                {isConnected &&
-                                  connected.status === "active" &&
-                                  connected.webhookStatus === "pending" && (
-                                    <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
-                                      <AlertTriangle className="h-3 w-3" />
-                                      Webhook pendente
+                      return (
+                        <IntegrationCard
+                          key={provider.id}
+                          provider={provider.id}
+                          connected={isConnected}
+                        >
+                          <div className="flex h-full flex-col gap-5 p-5">
+                            <div className="flex items-start gap-4">
+                              <IntegrationCard.Logo
+                                provider={provider.id}
+                                size="md"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="font-semibold">
+                                    {provider.name}
+                                  </h3>
+                                  {connected ? (
+                                    <IntegrationConnectionStatus
+                                      integration={connected}
+                                    />
+                                  ) : null}
+                                  {isPrimary && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                      <Star
+                                        className="size-3"
+                                        aria-hidden="true"
+                                      />
+                                      Primário
                                     </span>
                                   )}
-                                {isPrimary && (
-                                  <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                                    <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
-                                    Primário
-                                  </span>
-                                )}
-                                {showReorder && chainIdx >= 0 && !isPrimary && (
-                                  <span className="text-[11px] font-medium text-muted-foreground">
-                                    Fallback #{chainIdx + 1}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-1 text-sm text-muted-foreground">
-                                {provider.description}
-                              </p>
+                                  {showReorder &&
+                                    chainIdx >= 0 &&
+                                    !isPrimary && (
+                                      <span className="text-[11px] font-medium text-muted-foreground">
+                                        Alternativa #{chainIdx + 1}
+                                      </span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  {provider.description}
+                                </p>
 
-                              {/* Features */}
-                              <div className="mt-3 flex min-h-[52px] flex-wrap content-start gap-1.5">
-                                {provider.features.map((feature) => (
-                                  <span
-                                    key={feature}
-                                    className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                                  >
-                                    {feature}
-                                  </span>
-                                ))}
+                                {/* Features */}
+                                <ul className="mt-3 flex flex-col gap-1.5">
+                                  {provider.features.map((feature) => (
+                                    <li
+                                      key={feature}
+                                      className="flex items-center gap-2 text-xs text-muted-foreground"
+                                    >
+                                      <Check
+                                        className="size-3.5 shrink-0"
+                                        aria-hidden="true"
+                                      />
+                                      {feature}
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
                             </div>
-                          </div>
 
-                          {connected && (
-                            <p className="mt-3 text-xs text-muted-foreground">
-                              {connected.status === "error"
-                                ? "A conexão precisa de atenção. Abra os detalhes para diagnosticar e reconectar."
-                                : connected.status === "pending_auth"
-                                  ? "Autorização pendente. Abra os detalhes para concluir a conexão."
-                                  : `Última sincronização registrada: ${integrationDate(connected.lastSyncedAt)}`}
-                            </p>
-                          )}
-                          <div className="mt-auto space-y-2 pt-4">
-                            {isConnected ? (
-                              <>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1"
-                                    onClick={() =>
-                                      handleOpenDetails(connected, provider)
-                                    }
-                                  >
-                                    <Info className="mr-1.5 h-3.5 w-3.5" />
-                                    Ver detalhes
-                                  </Button>
-                                  {showReorder && chainIdx >= 0 && (
-                                    <div className="flex items-center gap-0.5 rounded-md border border-border bg-background">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        disabled={
-                                          chainIdx === 0 ||
-                                          updatePriority.isPending
-                                        }
-                                        onClick={() =>
-                                          handleReorderPayment(
-                                            connected.id,
-                                            "up",
-                                          )
-                                        }
-                                        title="Promover prioridade"
-                                      >
-                                        <ArrowUp className="h-3.5 w-3.5" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        disabled={
-                                          chainIdx ===
-                                            paymentChain.length - 1 ||
-                                          updatePriority.isPending
-                                        }
-                                        onClick={() =>
-                                          handleReorderPayment(
-                                            connected.id,
-                                            "down",
-                                          )
-                                        }
-                                        title="Reduzir prioridade"
-                                      >
-                                        <ArrowDown className="h-3.5 w-3.5" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-muted-foreground hover:text-destructive"
-                                    aria-label={`Desconectar ${provider.name}`}
-                                    onClick={() =>
-                                      setDisconnectId(connected.id)
-                                    }
-                                  >
-                                    <Unplug className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                                {provider.id === "tiny" &&
-                                connected.status === "active" ? (
-                                  <>
-                                    <TinyHealthCheckDialog
-                                      integrationId={connected.id}
-                                    />
-                                    <ERPReserva integrationId={connected.id} />
-                                  </>
-                                ) : null}
-                                {/* O modo de reserva é escolha de QUALQUER ERP,
-                                    não só do Bling: a pergunta "quem segura a
-                                    peça" existe nos dois, e o padrão seguro
-                                    (local) vale para ambos. */}
-                                {provider.type === "erp" &&
-                                connected.status === "active" ? (
-                                  <ModoDeReserva integrationId={connected.id} />
-                                ) : null}
-                              </>
-                            ) : (
-                              <div className="space-y-2">
-                                <Button
-                                  className="w-full"
-                                  onClick={() => handleConnect(provider)}
-                                  disabled={
-                                    !!integrationsError ||
-                                    connectOAuth.isPending ||
-                                    bloqueadoPorOutroERP(provider)
-                                  }
-                                >
-                                  {connectOAuth.isPending ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <ExternalLink className="mr-2 h-4 w-4" />
-                                  )}
-                                  Conectar {provider.name}
-                                </Button>
-                                {bloqueadoPorOutroERP(provider) ? (
-                                  <p className="text-xs text-muted-foreground">
-                                    Sua loja já usa o {nomeDoERPConectado}. Só é
-                                    possível manter um ERP conectado por vez —
-                                    desconecte-o antes de conectar o{" "}
-                                    {provider.name}.
-                                  </p>
-                                ) : null}
-                                {provider.docHref && (
-                                  <Link
-                                    href={provider.docHref}
-                                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                  >
-                                    <BookOpen className="h-3.5 w-3.5" />
-                                    Ver tutorial passo a passo
-                                  </Link>
-                                )}
-                              </div>
+                            {connected && (
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {connected.status === "error"
+                                  ? "A conexão precisa de atenção. Abra os detalhes para diagnosticar e reconectar."
+                                  : connected.status === "pending_auth"
+                                    ? "Autorização pendente. Abra os detalhes para concluir a conexão."
+                                    : `Última sincronização registrada: ${integrationDate(connected.lastSyncedAt)}`}
+                              </p>
                             )}
+                            <div className="mt-auto flex flex-col gap-3 border-t pt-4">
+                              {isConnected ? (
+                                <>
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex-1"
+                                      onClick={() =>
+                                        handleOpenDetails(connected, provider)
+                                      }
+                                    >
+                                      <Info className="mr-1.5 h-3.5 w-3.5" />
+                                      Gerenciar conexão
+                                    </Button>
+                                    {showReorder && chainIdx >= 0 && (
+                                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-background">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          disabled={
+                                            chainIdx === 0 ||
+                                            updatePriority.isPending
+                                          }
+                                          onClick={() =>
+                                            handleReorderPayment(
+                                              connected.id,
+                                              "up",
+                                            )
+                                          }
+                                          title="Promover prioridade"
+                                          aria-label={`Promover prioridade de ${provider.name}`}
+                                        >
+                                          <ArrowUp className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          disabled={
+                                            chainIdx ===
+                                              paymentChain.length - 1 ||
+                                            updatePriority.isPending
+                                          }
+                                          onClick={() =>
+                                            handleReorderPayment(
+                                              connected.id,
+                                              "down",
+                                            )
+                                          }
+                                          title="Reduzir prioridade"
+                                          aria-label={`Reduzir prioridade de ${provider.name}`}
+                                        >
+                                          <ArrowDown className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-muted-foreground hover:text-destructive"
+                                      aria-label={`Desconectar ${provider.name}`}
+                                      onClick={() =>
+                                        setDisconnectId(connected.id)
+                                      }
+                                    >
+                                      <Unplug className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                  {provider.type === "erp" &&
+                                  connected.status === "active" ? (
+                                    <details className="rounded-lg bg-muted/50">
+                                      <summary className="cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                        Estoque e diagnóstico
+                                      </summary>
+                                      <div className="flex flex-col gap-2 px-3 pb-3">
+                                        {provider.id === "tiny" ? (
+                                          <>
+                                            <TinyHealthCheckDialog
+                                              integrationId={connected.id}
+                                            />
+                                            <ERPReserva
+                                              integrationId={connected.id}
+                                            />
+                                          </>
+                                        ) : null}
+                                        <ModoDeReserva
+                                          integrationId={connected.id}
+                                        />
+                                      </div>
+                                    </details>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <div className="flex flex-col gap-3">
+                                  <Button
+                                    variant={
+                                      bloqueadoPorOutroERP(provider)
+                                        ? "secondary"
+                                        : "default"
+                                    }
+                                    className="w-full"
+                                    onClick={() => handleConnect(provider)}
+                                    disabled={
+                                      !!integrationsError ||
+                                      connectOAuth.isPending ||
+                                      bloqueadoPorOutroERP(provider)
+                                    }
+                                  >
+                                    {connectOAuth.isPending ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <ExternalLink className="mr-2 h-4 w-4" />
+                                    )}
+                                    Conectar {provider.name}
+                                  </Button>
+                                  {bloqueadoPorOutroERP(provider) ? (
+                                    <p className="text-xs text-muted-foreground">
+                                      Sua loja já usa o {nomeDoERPConectado}. Só
+                                      é possível manter um ERP conectado por vez
+                                      — desconecte-o antes de conectar o{" "}
+                                      {provider.name}.
+                                    </p>
+                                  ) : null}
+                                  {provider.docHref && (
+                                    <Link
+                                      href={provider.docHref}
+                                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                    >
+                                      <BookOpen className="h-3.5 w-3.5" />
+                                      Como conectar
+                                    </Link>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </IntegrationCard>
-                    )
-                  })}
-                </div>
-              </TabsContent>
-            )
-          })}
+                        </IntegrationCard>
+                      )
+                    })}
+                  </div>
+                </TabsContent>
+              )
+            })}
         </Tabs>
       </section>
 
@@ -1844,13 +1850,7 @@ function IntegrationsContent() {
 
 export default function IntegrationsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
+    <Suspense fallback={<IntegrationOverview.Skeleton />}>
       <IntegrationsContent />
     </Suspense>
   )
