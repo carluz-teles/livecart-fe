@@ -12,6 +12,19 @@ export type IntegrationProvider =
   | "twilio_whatsapp"
 export type IntegrationStatus = "pending_auth" | "active" | "error" | "disconnected"
 
+export interface ERPResyncProgress {
+  runId: string
+  status: "idle" | "queued" | "running" | "retrying" | "completed" | "completed_with_errors" | "failed" | "interrupted"
+  total: number
+  done: number
+  succeeded: number
+  failed: number
+  startedAt: string
+  updatedAt: string
+  finishedAt?: string
+  nextAttemptAt: string
+}
+
 export interface Integration {
   id: string
   storeId: string
@@ -20,8 +33,9 @@ export interface Integration {
   status: IntegrationStatus
   metadata?: Record<string, unknown>
   /** Uma releitura em massa dos produtos deste ERP está em andamento agora. */
+  erpResync?: ERPResyncProgress
   erpResyncRunning?: boolean
-  /** Progresso da releitura. Só valem enquanto erpResyncRunning é true. */
+  /** Contadores de compatibilidade; o resumo final permanece disponível. */
   erpResyncDone?: number
   erpResyncTotal?: number
   lastSyncedAt?: string
