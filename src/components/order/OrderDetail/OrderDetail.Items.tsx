@@ -38,6 +38,7 @@ import { OrderDetailContext } from "./OrderDetailContext"
 // lojista. Aqui é só para não oferecer o que já sabemos que será recusado — a
 // garantia é do servidor, com a leitura fresca no instante da escrita.
 export function isOrderItemEditable(order: OrderDetail): boolean {
+  if (order.erpItemSync?.blocked || order.paymentReviewRequired || order.erpInvoice?.status === "authorized") return false
   if (order.paymentStatus === "paid" || order.paymentStatus === "refunded") return false
   if (order.status === "cancelled" || order.status === "expired") return false
   if (order.expiresAt && new Date(order.expiresAt).getTime() < Date.now()) return false

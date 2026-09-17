@@ -39,11 +39,13 @@ export function OrderDetailERPRetryBanner() {
   const syncNotice = sync?.pending ? (
     <div role="status" className="space-y-1 rounded-lg border bg-muted/40 p-4 print:hidden">
       <p className="flex items-center gap-2 text-sm font-medium">
-        <RefreshCw aria-hidden className={`size-4 ${sync.processing ? "animate-spin" : ""}`} />
-        {sync.lastError ? "Sincronização aguardando nova tentativa" : "Alterações salvas · sincronizando com o ERP"}
+        {sync.blocked ? <AlertTriangle aria-hidden className="size-4" /> : <RefreshCw aria-hidden className={`size-4 ${sync.processing ? "animate-spin" : ""}`} />}
+        {sync.blocked ? "Alterações precisam de conferência no ERP" : sync.lastError ? "Sincronização aguardando nova tentativa" : "Alterações salvas · sincronizando com o ERP"}
       </p>
       <p className="text-sm text-muted-foreground">
-        {sync.lastError
+        {sync.blocked
+          ? "A sincronização foi pausada para preservar a venda e o estoque. Confira os itens e o pagamento com a loja antes de conciliar este pedido."
+          : sync.lastError
           ? "A última tentativa não foi concluída. O sistema tentará novamente automaticamente; você pode sair desta tela."
           : "Você pode sair desta tela. O andamento será atualizado automaticamente."}
         {" "}O pagamento fica disponível após a confirmação.

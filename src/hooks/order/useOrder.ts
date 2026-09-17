@@ -17,7 +17,7 @@ export function useOrder(id: string) {
       const token = await getToken()
       return orderService.getById(storeId!, id, token)
     },
-    refetchInterval: (query) => query.state.data?.erpItemSync?.pending ? 2000 : false,
+    refetchInterval: (query) => query.state.data?.erpItemSync?.pending ? (query.state.data.erpItemSync.blocked ? 30000 : 2000) : false,
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId && !!id,
   })
 }

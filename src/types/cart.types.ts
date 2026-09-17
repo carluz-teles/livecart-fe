@@ -533,6 +533,7 @@ export interface PublicCheckoutPayment {
 export interface ERPItemSync {
   pending: boolean
   processing: boolean
+  blocked?: boolean
   lastError?: string
   attempts: number
 }
