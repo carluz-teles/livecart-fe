@@ -135,7 +135,7 @@ export const integrationService = {
   // Devolve quantos entraram na varredura; o trabalho corre em segundo plano,
   // no ritmo que o rate limit do ERP permite.
   startERPResync: (storeId: string, id: string, token?: string | null) =>
-    apiClient.post<{ products: number }>(
+    apiClient.post<{ products: number; progress?: import("@/types/integration.types").ERPResyncProgress }>(
       `/stores/${storeId}/integrations/${id}/erp/resync`,
       {},
       token,

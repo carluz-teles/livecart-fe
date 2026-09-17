@@ -66,8 +66,9 @@ export function OrderDetailERPRetryBanner() {
       {(order.erpPendingItems ?? 0) > 0 && (
         <p className="text-sm">
           {order.erpPendingItems} item(ns) aguardam confirmação no {erp.nome}.
-          A sincronização será retomada automaticamente. Confira a grade no ERP
-          antes de separar a mercadoria.
+          Confira a grade no ERP antes de separar a mercadoria. Se o pedido já
+          estiver faturado ou encerrado, a pendência precisa ser conciliada
+          antes de confirmar esses itens.
         </p>
       )}
     </div>

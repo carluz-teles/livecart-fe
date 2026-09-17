@@ -880,7 +880,7 @@ function IntegrationsContent() {
                       <ERPResyncButton />
                     ) : null}
                   </div>
-                  {type === "erp" && erpJaConectado?.erpResyncRunning ? (
+                  {type === "erp" && erpJaConectado?.status === "active" ? (
                     <ERPResyncStatus />
                   ) : null}
 

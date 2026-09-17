@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
 import { useStoreId } from "@/hooks/useUser"
 import type { IntegrationListResponse } from "@/types"
+import { resyncProgress } from "./resync-progress"
 import { refreshProductsAfterResync } from "./resync-cache"
 
 export const integrationKeys = {
@@ -33,16 +34,11 @@ export function useIntegrations() {
       return result
     },
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId,
-    // Enquanto uma varredura do ERP roda, a lista se reconsulta sozinha: é ela
-    // que move o contador "X de N" e destrava os botões quando o trabalho acaba.
-    // Sem isso o lojista ficaria com o botão desabilitado até recarregar a
-    // página na mão, sem saber que já podia clicar.
-    //
-    // Dez segundos porque o servidor grava o progresso a cada cinco produtos, e
-    // um intervalo maior deixaria o número parado tempo suficiente para o botão
-    // voltar a parecer travado.
+    // Poll active work frequently and discover runs started by another user.
     refetchInterval: (query) =>
-      query.state.data?.data?.some((i) => i.erpResyncRunning) ? 10_000 : false,
+      query.state.data?.data?.some((i) => i.erpResyncRunning)
+        ? 5_000
+        : query.state.data?.data?.some((i) => i.type === "erp" && i.status === "active") ? 30_000 : false,
   })
 }
 
@@ -57,10 +53,10 @@ export function useIntegrations() {
 export function useERPResyncRunning() {
   const { data, error, isPending, isFetching, refetch } = useIntegrations()
   const erp = data?.data?.find((i) => i.type === "erp" && i.status === "active")
+  const progress = resyncProgress(erp)
   return {
-    running: Boolean(erp?.erpResyncRunning),
-    done: erp?.erpResyncDone ?? 0,
-    total: erp?.erpResyncTotal ?? 0,
+    ...progress,
+    progress,
     integrationId: erp?.id,
     integration: erp,
     error,
