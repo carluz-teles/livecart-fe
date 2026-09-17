@@ -2,7 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Building2, Users, Puzzle, CreditCard, Wallet } from "lucide-react"
+import {
+  User,
+  Building2,
+  Users,
+  Puzzle,
+  CreditCard,
+  Wallet,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
@@ -51,6 +58,7 @@ export default function SettingsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const isIntegrationsPage = pathname === "/settings/integrations"
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,8 +75,20 @@ export default function SettingsLayout({
       {/* Settings Content */}
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Settings Sidebar */}
-        <aside className="lg:w-64">
-          <nav className="flex flex-col gap-1">
+        <aside
+          className={cn(
+            "min-w-0 lg:shrink-0",
+            isIntegrationsPage ? "lg:w-52" : "lg:w-64",
+          )}
+        >
+          <nav
+            className={cn(
+              "flex gap-1",
+              isIntegrationsPage
+                ? "overflow-x-auto pb-1 lg:flex-col"
+                : "flex-col",
+            )}
+          >
             {settingsNav.map((item) => {
               const isActive = pathname === item.href
 
@@ -77,10 +97,10 @@ export default function SettingsLayout({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -92,7 +112,14 @@ export default function SettingsLayout({
         </aside>
 
         {/* Page Content */}
-        <div className="flex-1 lg:max-w-2xl">{children}</div>
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            isIntegrationsPage ? "lg:max-w-4xl" : "lg:max-w-2xl",
+          )}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )
