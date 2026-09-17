@@ -24,7 +24,7 @@ export function useStartERPResync() {
       )
       return { ...result, storeId }
     },
-    onSuccess: async ({ products, storeId }, integrationId) => {
+    onSuccess: async ({ products, progress, storeId }, integrationId) => {
       if (storeId) {
         const queryKey = integrationKeys.list(storeId)
         await queryClient.cancelQueries({ queryKey })
@@ -39,8 +39,9 @@ export function useStartERPResync() {
                     ? {
                         ...integration,
                         erpResyncRunning: true,
-                        erpResyncDone: 0,
-                        erpResyncTotal: products,
+                        erpResyncDone: progress?.done ?? integration.erpResyncDone ?? 0,
+                        erpResyncTotal: progress?.total ?? products,
+                        erpResync: progress,
                       }
                     : integration,
                 ),
@@ -56,7 +57,7 @@ export function useStartERPResync() {
         return
       }
       toast.success(
-        `${products} ${products === 1 ? "produto entrou" : "produtos entraram"} na sincronização`,
+        `Sincronização de ${products} ${products === 1 ? "produto" : "produtos"} agendada`,
         {
           description:
             "Acompanhe o progresso na tela. A lista será atualizada quando o processamento terminar.",
