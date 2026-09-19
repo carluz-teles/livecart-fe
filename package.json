@@ -13,7 +13,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "check:erp": "node scripts/verificar-erp-hardcoded.mjs",
-    "test:operations": "playwright test --config=playwright.operations.config.ts"
+    "test:operations": "playwright test --config=playwright.operations.config.ts",
+    "test:erp-import": "playwright test --config=playwright.import-audit.config.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.2.3",

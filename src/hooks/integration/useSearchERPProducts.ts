@@ -22,11 +22,12 @@ function useDebounce<T>(value: T, delay: number): T {
 export function useSearchERPProducts(integrationId: string, search: string) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
-  const debouncedSearch = useDebounce(search, 300)
+  const debouncedSearch = useDebounce(search.trim(), 500)
 
-  return useQuery<ERPProductSearchResponse, ApiError>({
-    queryKey: [...integrationKeys.all, "erp-products", integrationId, debouncedSearch],
-    queryFn: async (): Promise<ERPProductSearchResponse> => {
+  const settling = search.trim() !== debouncedSearch
+  const query = useQuery<ERPProductSearchResponse, ApiError>({
+    queryKey: [...integrationKeys.all, "erp-products", storeId, integrationId, debouncedSearch],
+    queryFn: async ({ signal }): Promise<ERPProductSearchResponse> => {
       const token = await getToken()
       try {
         return await integrationService.searchProducts(
@@ -34,6 +35,7 @@ export function useSearchERPProducts(integrationId: string, search: string) {
           integrationId,
           debouncedSearch,
           token,
+          signal,
         )
       } catch (err) {
         const apiError = err as ApiError
@@ -44,6 +46,8 @@ export function useSearchERPProducts(integrationId: string, search: string) {
         throw apiError
       }
     },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       if (error?.status && error.status >= 400 && error.status < 500) return false
       // 503 é o ERP pedindo para esperar. Repetir sozinho empurra mais consulta
@@ -58,6 +62,7 @@ export function useSearchERPProducts(integrationId: string, search: string) {
       !storeLoading &&
       !!storeId &&
       !!integrationId &&
-      debouncedSearch.length >= 2,
+      !settling && debouncedSearch.length >= 2,
   })
+  return { ...query, data: settling ? undefined : query.data, isLoading: settling || query.isLoading, isError: !settling && query.isError }
 }

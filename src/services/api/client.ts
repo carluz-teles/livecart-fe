@@ -28,7 +28,8 @@ async function request<T>(
   body?: unknown,
   token?: string | null,
   timeoutMs: number = DEFAULT_TIMEOUT,
-  extraHeaders?: Record<string, string>
+  extraHeaders?: Record<string, string>,
+  signal?: AbortSignal
 ): Promise<T> {
   const send = async (authToken?: string | null) => {
     const headers: HeadersInit = {
@@ -43,15 +44,24 @@ async function request<T>(
     // segunda nascer já cancelada quando o timeout tivesse disparado.
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+    const cancel = () => controller.abort()
+    if (signal?.aborted) cancel()
+    signal?.addEventListener("abort", cancel, { once: true })
     try {
-      return await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       })
+      const json = response.status === 204 ? undefined : await response.json().catch((error) => {
+        if (controller.signal.aborted || response.ok) throw error
+        return { message: "An error occurred" }
+      })
+      return { status: response.status, ok: response.ok, json }
     } finally {
       clearTimeout(timeoutId)
+      signal?.removeEventListener("abort", cancel)
     }
   }
 
@@ -71,7 +81,7 @@ async function request<T>(
     }
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: "An error occurred" }))
+      const err = res.json
       throw { status: res.status, ...err } as ApiError
     }
 
@@ -80,9 +90,10 @@ async function request<T>(
       return undefined as T
     }
 
-    const json = await res.json()
+    const json = res.json
     return json.data as T
   } catch (error) {
+    if (signal?.aborted) throw error
     if (error instanceof Error && error.name === "AbortError") {
       throw { status: 408, message: "Request timeout" } as ApiError
     }
@@ -174,7 +185,7 @@ async function multipartRequest<T>(
 }
 
 export const apiClient = {
-  get: <T>(url: string, token?: string | null) => request<T>("GET", url, undefined, token),
+  get: <T>(url: string, token?: string | null, signal?: AbortSignal, timeoutMs?: number) => request<T>("GET", url, undefined, token, timeoutMs, undefined, signal),
   post: <T>(url: string, body: unknown, token?: string | null, timeoutMs?: number, headers?: Record<string, string>) =>
     request<T>("POST", url, body, token, timeoutMs, headers),
   put: <T>(url: string, body: unknown, token?: string | null) => request<T>("PUT", url, body, token),

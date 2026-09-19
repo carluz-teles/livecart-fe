@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useERPProductDetails } from "@/hooks/integration/useERPProductDetails"
 import { useSearchERPProducts } from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
 import { getERPSearchErrorMessage } from "@/lib/api-errors"
@@ -35,11 +36,14 @@ export function ProductFormERPSearch({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Imagem principal escolhida pelo lojista quando o Tiny devolve várias.
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [pickerParent, setPickerParent] = useState<ERPProduct | null>(null)
-  const { data, isLoading, isError, error } = useSearchERPProducts(integrationId, search)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const { data, isLoading, isError, error, refetch } = useSearchERPProducts(integrationId, search)
 
   const products = data?.products ?? []
-  const selectedProduct = products.find((p) => p.id === selectedId)
+  const selectedPreview = products.find((p) => p.id === selectedId)
+  const details = useERPProductDetails(integrationId, selectedPreview)
+  const selectedProduct = selectedPreview?.detailsPending ? details.data : selectedPreview
+  const pickerParent = pickerOpen && selectedProduct?.isParent ? selectedProduct : null
   const showResults = search.length >= 2
 
   const isVariantParent = (p: ERPProduct) =>
@@ -48,14 +52,8 @@ export function ProductFormERPSearch({
   function handleSelect(product: ERPProduct) {
     // Produto já no catálogo: não permite selecionar/reimportar.
     if (product.alreadyImported) return
-    if (isVariantParent(product)) {
-      // Parents skip the form pre-fill flow — they need a separate picker
-      // to choose which variants to bring in.
-      setPickerParent(product)
-      setSelectedId(null)
-      return
-    }
     const nextId = product.id === selectedId ? null : product.id
+    setPickerOpen(false)
     setSelectedId(nextId)
     // Ao selecionar, a imagem principal começa na default (a primeira do Tiny);
     // o lojista troca na galeria abaixo.
@@ -66,6 +64,10 @@ export function ProductFormERPSearch({
 
   function handleConfirm() {
     if (selectedProduct) {
+      if (isVariantParent(selectedProduct)) {
+        setPickerOpen(true)
+        return
+      }
       // Leva a imagem escolhida pelo lojista como principal do produto.
       onSelect({
         ...selectedProduct,
@@ -85,6 +87,7 @@ export function ProductFormERPSearch({
             setSearch(e.target.value)
             setSelectedId(null)
             setSelectedImage(null)
+            setPickerOpen(false)
           }}
           className="pl-9"
         />
@@ -92,12 +95,15 @@ export function ProductFormERPSearch({
 
       {showResults && (
         <div className="rounded-lg border bg-card">
-          {isLoading && <SearchSkeleton />}
+          {isLoading && <><p role="status" className="px-3 pt-3 text-sm text-muted-foreground">Consultando produtos no {erp.nome}…</p><SearchSkeleton /></>}
 
           {isError && (
             <div className="flex items-start gap-3 p-4 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{getERPSearchErrorMessage(error)}</span>
+              <div className="space-y-2">
+                <p>{getERPSearchErrorMessage(error)}</p>
+                <Button type="button" variant="outline" onClick={() => refetch()}>Tentar novamente</Button>
+              </div>
             </div>
           )}
 
@@ -117,7 +123,7 @@ export function ProductFormERPSearch({
           {!isLoading && !isError && products.length > 0 && (
             <ul className="divide-y">
               {products.map((product) => {
-                const parent = isVariantParent(product)
+                const parent = product.isParent === true
                 const imported = product.alreadyImported === true
                 return (
                   <li key={product.id}>
@@ -167,7 +173,7 @@ export function ProductFormERPSearch({
                           {parent && !imported && (
                             <Badge variant="secondary" className="h-5 shrink-0 gap-1 text-[10px]">
                               <Layers className="h-3 w-3" />
-                              {product.variants?.length} variantes
+                              {product.groupImported ? "Importação iniciada" : product.variants?.length ? `${product.variants.length} variantes` : "Com variantes"}
                             </Badge>
                           )}
                         </div>
@@ -190,12 +196,21 @@ export function ProductFormERPSearch({
 
           {data?.hasMore && (
             <p className="border-t px-3 py-2 text-xs text-muted-foreground text-center">
-              Mostrando {products.length} de {data.totalCount} resultados. Refine sua busca.
+              Há mais resultados. Refine sua busca pelo nome, SKU ou código de barras.
             </p>
           )}
         </div>
       )}
 
+      {selectedPreview?.detailsPending && details.isFetching && (
+        <p role="status" className="text-sm text-muted-foreground">Consultando estoque e detalhes do produto selecionado…</p>
+      )}
+      {selectedPreview?.detailsPending && details.isError && (
+        <div role="alert" className="space-y-2 text-sm text-destructive">
+          <p>{getERPSearchErrorMessage(details.error)}</p>
+          <Button type="button" variant="outline" onClick={() => details.refetch()}>Tentar novamente</Button>
+        </div>
+      )}
       {selectedProduct && (selectedProduct.imageUrls?.length ?? 0) > 1 && (
         <div className="space-y-2 rounded-lg border bg-card p-3">
           <div>
@@ -243,19 +258,19 @@ export function ProductFormERPSearch({
 
       {selectedProduct && (
         <Button type="button" className="w-full" onClick={handleConfirm}>
-          Criar Produto
+          {isVariantParent(selectedProduct) ? "Escolher variantes" : "Criar Produto"}
         </Button>
       )}
 
       <ProductFormERPVariantPicker
         open={!!pickerParent}
         onOpenChange={(open) => {
-          if (!open) setPickerParent(null)
+          setPickerOpen(open)
         }}
         parent={pickerParent}
         integrationId={integrationId}
         onImported={() => {
-          setPickerParent(null)
+          setPickerOpen(false)
           onImported?.()
         }}
       />

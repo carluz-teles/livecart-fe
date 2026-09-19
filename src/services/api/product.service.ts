@@ -24,7 +24,7 @@ export const productService = {
     apiClient.get<Product>(`/stores/${storeId}/products/${id}`, token),
 
   create: (storeId: string, payload: CreateProductPayload, token?: string | null) =>
-    apiClient.post<Product>(`/stores/${storeId}/products`, payload, token),
+    apiClient.post<Product>(`/stores/${storeId}/products`, payload, token, payload.externalSource === "tiny" ? 50_000 : undefined),
 
   update: (storeId: string, id: string, payload: UpdateProductPayload, token?: string | null) =>
     apiClient.put<Product>(`/stores/${storeId}/products/${id}`, payload, token),

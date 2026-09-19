@@ -1,0 +1,1 @@
+export const useStoreId=()=>({storeId:"audit-store",isLoading:false})
