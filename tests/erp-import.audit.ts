@@ -138,3 +138,87 @@ test('falha na segunda etapa permite retomar somente as variantes restantes', as
  await expect(page.getByRole('dialog')).not.toBeVisible()
  expect(calls).toEqual([['v0','v1','v2','v3','v4'],['v5','v6'],['v5','v6']])
 })
+
+test('resultado único carrega e mostra uma foto antes da seleção, sem duplicar detalhes', async ({ page }) => {
+ const photo='https://images.example.test/single.jpg'
+ let details=0
+ await page.route(photo, route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="red"/></svg>'}))
+ await page.route('**/api/v1/**',async route=>{
+  const search=new URL(route.request().url()).searchParams.has('search')
+  if(!search) details++
+  await route.fulfill({json:{data:search?{products:[preview],totalCount:1,hasMore:false}:{...preview,detailsPending:false,stock:3,imageUrl:photo,imageUrls:[photo]}}})
+ })
+ await page.goto('/')
+ await page.getByPlaceholder('Buscar por nome, SKU ou código de barras...').fill('7893979655073')
+ const row=page.getByRole('button',{name:/Vela Audit/})
+ await expect(row.getByRole('img')).toHaveAttribute('src',photo)
+ await expect(page.getByRole('button',{name:'Usar esta imagem como principal'})).toHaveAttribute('aria-pressed','true')
+ await expect(row.getByRole('img')).toHaveJSProperty('naturalWidth',40)
+ await row.click()
+ await page.getByRole('button',{name:'Criar Produto',exact:true}).click()
+ await expect(page.getByTestId('selected')).toHaveText('p1')
+ expect(details).toBe(1)
+})
+
+test('vários resultados consultam só o escolhido e mostram imagem sem imageUrls', async ({ page }) => {
+ const detailIDs:string[]=[]
+ await page.route('**/api/v1/**',async route=>{
+  const url=new URL(route.request().url())
+  if(url.searchParams.has('search')){
+   await route.fulfill({json:{data:{products:[preview,{...preview,id:'p2',name:'Outra vela'}],totalCount:2,hasMore:false}}});return
+  }
+  detailIDs.push(url.pathname.split('/').at(-1)!)
+  await route.fulfill({json:{data:{...preview,detailsPending:false,stock:3,imageUrl:'https://images.example.test/selected.jpg'}}})
+ })
+ await page.goto('/')
+ await page.getByPlaceholder('Buscar por nome, SKU ou código de barras...').fill('Vela')
+ const row=page.getByRole('button',{name:/Vela Audit/})
+ await row.waitFor()
+ expect(detailIDs).toEqual([])
+ await row.click()
+ await expect(row.getByRole('img')).toHaveAttribute('src','https://images.example.test/selected.jpg')
+ await expect(page.getByRole('button',{name:'Usar esta imagem como principal'})).toBeVisible()
+ expect(detailIDs).toEqual(['p1'])
+})
+
+test('busca com erro não repete sozinha e permite nova tentativa explícita', async ({ page }) => {
+ let calls=0
+ await page.route('**/api/v1/**',async route=>{
+  calls++
+  await route.fulfill({status:500,json:{error:'Falha temporária'}})
+ })
+ await page.goto('/')
+ await page.clock.install()
+ await page.getByPlaceholder('Buscar por nome, SKU ou código de barras...').fill('Vela')
+ const retry=page.getByRole('button',{name:'Tentar novamente',exact:true})
+ await expect(retry).toBeVisible()
+ await page.clock.fastForward(30_000)
+ expect(calls).toBe(1)
+ await retry.click()
+ await expect.poll(()=>calls).toBe(2)
+})
+
+test('editar termo cancela a consulta antiga antes de terminar o debounce', async ({ page }) => {
+ let release!:()=>void
+ const pending=new Promise<void>(resolve=>{release=resolve})
+ const searches:string[]=[]
+ const aborted:string[]=[]
+ page.on('requestfailed',request=>{aborted.push(request.url())})
+ await page.route('**/api/v1/**',async route=>{
+  const term=new URL(route.request().url()).searchParams.get('search')
+  if(term) searches.push(term)
+  await pending
+  await route.fulfill({json:{data:{products:[],totalCount:0,hasMore:false}}}).catch(()=>undefined)
+ })
+ try {
+  await page.goto('/')
+  await page.clock.install()
+  const input=page.getByPlaceholder('Buscar por nome, SKU ou código de barras...')
+  await input.fill('Vela')
+  await expect.poll(()=>searches).toEqual(['Vela'])
+  await page.clock.pauseAt(new Date(Date.now()+1000))
+  await input.fill('Outro produto')
+  await expect.poll(()=>aborted.some(url=>url.includes('search=Vela'))).toBe(true)
+  expect(searches).toEqual(['Vela'])
+ } finally { release() }
+})

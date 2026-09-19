@@ -41,8 +41,16 @@ export function ProductFormERPSearch({
 
   const products = data?.products ?? []
   const selectedPreview = products.find((p) => p.id === selectedId)
-  const details = useERPProductDetails(integrationId, selectedPreview)
+  // A barcode/exact SKU usually returns one item: load its photo and available
+  // stock while the operator reviews it, without fetching every search result.
+  const detailPreview = selectedPreview ?? (products.length === 1 && !products[0].alreadyImported ? products[0] : undefined)
+  const details = useERPProductDetails(integrationId, detailPreview)
   const selectedProduct = selectedPreview?.detailsPending ? details.data : selectedPreview
+  const imageProduct = selectedProduct ?? details.data
+  const productImages = imageProduct?.imageUrls?.length
+    ? imageProduct.imageUrls
+    : imageProduct?.imageUrl ? [imageProduct.imageUrl] : []
+  const mainImage = selectedImage ?? imageProduct?.imageUrl ?? productImages[0]
   const pickerParent = pickerOpen && selectedProduct?.isParent ? selectedProduct : null
   const showResults = search.length >= 2
 
@@ -58,7 +66,10 @@ export function ProductFormERPSearch({
     // Ao selecionar, a imagem principal começa na default (a primeira do Tiny);
     // o lojista troca na galeria abaixo.
     setSelectedImage(
-      nextId ? product.imageUrl ?? product.imageUrls?.[0] ?? null : null
+      nextId
+        ? (details.data?.id === product.id ? selectedImage ?? details.data.imageUrl ?? details.data.imageUrls?.[0] : undefined)
+          ?? product.imageUrl ?? product.imageUrls?.[0] ?? null
+        : null
     )
   }
 
@@ -123,6 +134,8 @@ export function ProductFormERPSearch({
           {!isLoading && !isError && products.length > 0 && (
             <ul className="divide-y">
               {products.map((product) => {
+                const rowDetails = details.data?.id === product.id ? details.data : undefined
+                const imageUrl = rowDetails?.imageUrl ?? rowDetails?.imageUrls?.[0] ?? product.imageUrl ?? product.imageUrls?.[0]
                 const parent = product.isParent === true
                 const imported = product.alreadyImported === true
                 return (
@@ -143,9 +156,9 @@ export function ProductFormERPSearch({
                           : ""
                       }`}
                     >
-                      {product.imageUrl ? (
+                      {imageUrl ? (
                         <Image
-                          src={product.imageUrl}
+                          src={imageUrl}
                           alt={product.name}
                           width={40}
                           height={40}
@@ -202,33 +215,35 @@ export function ProductFormERPSearch({
         </div>
       )}
 
-      {selectedPreview?.detailsPending && details.isFetching && (
-        <p role="status" className="text-sm text-muted-foreground">Consultando estoque e detalhes do produto selecionado…</p>
+      {detailPreview?.detailsPending && details.isFetching && (
+        <p role="status" className="text-sm text-muted-foreground">Consultando foto e estoque disponível do produto…</p>
       )}
-      {selectedPreview?.detailsPending && details.isError && (
+      {detailPreview?.detailsPending && details.isError && (
         <div role="alert" className="space-y-2 text-sm text-destructive">
           <p>{getERPSearchErrorMessage(details.error)}</p>
           <Button type="button" variant="outline" onClick={() => details.refetch()}>Tentar novamente</Button>
         </div>
       )}
-      {selectedProduct && (selectedProduct.imageUrls?.length ?? 0) > 1 && (
+      {imageProduct && productImages.length > 0 && (
         <div className="space-y-2 rounded-lg border bg-card p-3">
           <div>
             <p className="text-sm font-medium">Imagem principal</p>
             <p className="text-xs text-muted-foreground">
-              O {erp.nome} enviou {selectedProduct.imageUrls!.length} imagens para este
-              produto. Selecione qual será salva no LiveCart.
+              {productImages.length === 1
+                ? "Esta imagem será salva no LiveCart."
+                : `O ${erp.nome} enviou ${productImages.length} imagens para este produto. Selecione qual será salva no LiveCart.`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {selectedProduct.imageUrls!.map((url) => {
-              const isSelected = selectedImage === url
+            {productImages.map((url) => {
+              const isSelected = mainImage === url
               return (
                 <button
                   key={url}
                   type="button"
                   onClick={() => setSelectedImage(url)}
                   aria-pressed={isSelected}
+                  aria-label="Usar esta imagem como principal"
                   title="Usar esta imagem como principal"
                   className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
                     isSelected
@@ -254,6 +269,9 @@ export function ProductFormERPSearch({
             })}
           </div>
         </div>
+      )}
+      {imageProduct && productImages.length === 0 && (
+        <p className="text-sm text-muted-foreground">O {erp.nome} não enviou uma imagem para este produto.</p>
       )}
 
       {selectedProduct && (
