@@ -229,6 +229,8 @@ export interface ERPShippingProfile {
 // from the ERP's grade definition, so the frontend just renders them as
 // labelled pills without assuming specific names.
 export interface ERPVariant {
+  alreadyImported?: boolean
+  stockKnown?: boolean
   id: string
   sku?: string
   price: number // cents
@@ -244,6 +246,8 @@ export interface ERPVariant {
 // is not directly importable — the user must pick which variants to bring
 // in via /integrations/:id/products/:tinyProductId/import.
 export interface ERPProduct {
+  groupImported?: boolean
+  detailsPending?: boolean
   id: string
   sku?: string
   gtin?: string

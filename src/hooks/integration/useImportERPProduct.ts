@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import type { ImportERPProductResponse } from "@/types/integration.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { integrationService } from "@/services/api/integration.service"
@@ -19,19 +21,26 @@ export function useImportERPProduct() {
   const { storeId } = useStoreId()
   const queryClient = useQueryClient()
 
-  return useMutation({
+  const [progress, setProgress] = useState({ completed: 0, total: 0 })
+  const mutation = useMutation({
     mutationFn: async ({ integrationId, tinyProductId, variantIds }: ImportArgs) => {
       if (!storeId) throw new Error("Store ID not found")
-      const token = await getToken()
-      return integrationService.importProduct(
-        storeId,
-        integrationId,
-        tinyProductId,
-        variantIds,
-        token
-      )
+      const ids = [...new Set(variantIds ?? [])]
+      const batches = ids.length ? Array.from({ length: Math.ceil(ids.length / 5) }, (_, i) => ids.slice(i * 5, i * 5 + 5)) : [undefined]
+      setProgress({ completed: 0, total: ids.length })
+      let result: ImportERPProductResponse | undefined
+      for (const batch of batches) {
+        const token = await getToken()
+        const next = await integrationService.importProduct(storeId, integrationId, tinyProductId, batch, token)
+        result = result ? { ...next, imported: [...result.imported, ...next.imported] } : next
+        setProgress(previous => ({ ...previous, completed: previous.completed + (batch?.length ?? 1) }))
+      }
+      return result!
+
     },
-    onSuccess: () => {
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrations", "erp-products"] })
+      queryClient.invalidateQueries({ queryKey: ["integrations", "erp-product-details"] })
       // The import can persist a group + N products in one call; refresh both
       // catalog lists and stats so the new entries show up immediately.
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
@@ -41,4 +50,5 @@ export function useImportERPProduct() {
       }
     },
   })
+  return { ...mutation, progress }
 }
