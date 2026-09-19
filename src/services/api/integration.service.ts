@@ -13,6 +13,7 @@ import type {
   IntegrationProvider,
   TestConnectionResponse,
   ERPProductSearchResponse,
+  ERPProduct,
   ImportERPProductResponse,
   Product,
   InstagramLivesResponse,
@@ -179,11 +180,28 @@ export const integrationService = {
     storeId: string,
     integrationId: string,
     search: string,
-    token?: string | null
+    token?: string | null,
+    signal?: AbortSignal,
   ) =>
     apiClient.get<ERPProductSearchResponse>(
-      `/stores/${storeId}/integrations/${integrationId}/products?search=${encodeURIComponent(search)}`,
-      token
+      `/stores/${storeId}/integrations/${integrationId}/products?summary=true&search=${encodeURIComponent(search)}`,
+      token,
+      signal,
+      30_000, // Backend listing budget is 25s, including the ERP quota wait.
+    ),
+
+  getProductDetails: (
+    storeId: string,
+    integrationId: string,
+    productId: string,
+    token?: string | null,
+    signal?: AbortSignal,
+  ) =>
+    apiClient.get<ERPProduct>(
+      `/stores/${storeId}/integrations/${integrationId}/products/${encodeURIComponent(productId)}`,
+      token,
+      signal,
+      50_000, // Backend details budget is 45s; variants need their own stock reads.
     ),
 
   // Sync a single product from ERP
@@ -212,7 +230,8 @@ export const integrationService = {
     apiClient.post<ImportERPProductResponse>(
       `/stores/${storeId}/integrations/${integrationId}/products/${tinyProductId}/import`,
       variantIds && variantIds.length > 0 ? { variantIds } : {},
-      token
+      token,
+      50_000
     ),
 
   // Get active Instagram lives

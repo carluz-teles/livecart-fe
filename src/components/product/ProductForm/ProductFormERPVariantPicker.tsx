@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { useImportERPProduct } from "@/hooks/integration"
 import { formatCurrency } from "@/lib/format"
+import { getERPSearchErrorMessage } from "@/lib/api-errors"
 import { cn } from "@/lib/utils"
 import type { ERPProduct } from "@/types"
 import { useERPConectado } from "@/hooks/integration"
@@ -44,13 +45,16 @@ export function ProductFormERPVariantPicker({
   const importProduct = useImportERPProduct()
 
   const variants = parent?.variants ?? []
-  const allSelected = variants.length > 0 && selected.size === variants.length
-  const someSelected = selected.size > 0
+  const eligible = variants.filter(v => v.active && !v.alreadyImported)
+  const selectedEligible = eligible.filter(v => selected.has(v.id))
+  const allSelected = eligible.length > 0 && selectedEligible.length === eligible.length
+  const someSelected = selectedEligible.length > 0
   // Empty selection = backend imports every variant. We surface that copy in
   // the button label so the admin knows what they're committing to.
-  const importingCount = someSelected ? selected.size : variants.length
+  const importingCount = someSelected ? selectedEligible.length : eligible.length
 
   const handleClose = (next: boolean) => {
+    if (importProduct.isPending) return
     if (!next) setSelected(new Set())
     onOpenChange(next)
   }
@@ -66,17 +70,17 @@ export function ProductFormERPVariantPicker({
 
   const toggleAll = () => {
     setSelected((prev) =>
-      prev.size === variants.length ? new Set() : new Set(variants.map((v) => v.id))
+      eligible.every(v => prev.has(v.id)) ? new Set() : new Set(eligible.map((v) => v.id))
     )
   }
 
   const handleImport = () => {
-    if (!parent) return
+    if (!parent || importProduct.isPending || eligible.length === 0) return
     importProduct.mutate(
       {
         integrationId,
         tinyProductId: parent.id,
-        variantIds: someSelected ? Array.from(selected) : undefined,
+        variantIds: eligible.filter(v => !someSelected || selected.has(v.id)).map(v => v.id),
       },
       {
         onSuccess: (result) => {
@@ -92,7 +96,7 @@ export function ProductFormERPVariantPicker({
         },
         onError: (err) => {
           toast.error("Falha ao importar", {
-            description: err.message || "Tente novamente.",
+            description: getERPSearchErrorMessage(err),
           })
         },
       }
@@ -123,7 +127,7 @@ export function ProductFormERPVariantPicker({
           <DialogDescription>
             Esse produto tem {variants.length}{" "}
             {variants.length === 1 ? "variante" : "variantes"} no {erp.nome}. Marque as
-            que quer importar — sem nenhuma marcada, todas serão importadas.
+            que quer importar. As disponíveis para importação serão processadas em etapas; as já cadastradas serão preservadas.
           </DialogDescription>
         </DialogHeader>
 
@@ -132,14 +136,15 @@ export function ProductFormERPVariantPicker({
             <button
               type="button"
               onClick={toggleAll}
+              disabled={importProduct.isPending}
               className="font-medium text-primary underline-offset-2 hover:underline"
             >
               {allSelected ? "Limpar seleção" : "Selecionar todas"}
             </button>
             <span>
               {someSelected
-                ? `${selected.size} de ${variants.length} selecionadas`
-                : `Importará todas (${variants.length})`}
+                ? `${selectedEligible.length} de ${eligible.length} selecionadas`
+                : `Importará as restantes (${eligible.length})`}
             </span>
           </div>
 
@@ -158,12 +163,13 @@ export function ProductFormERPVariantPicker({
                     <Checkbox
                       checked={checked}
                       onCheckedChange={() => toggle(variant.id)}
+                      disabled={importProduct.isPending || !variant.active || variant.alreadyImported}
                       aria-label={`Selecionar variante ${variant.sku ?? variant.id}`}
                     />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-1.5">
-                        {Object.entries(variant.attributes).map(([k, v]) => (
+                        {Object.entries(variant.attributes ?? {}).map(([k, v]) => (
                           <span
                             key={k}
                             className="inline-flex items-baseline gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs"
@@ -191,7 +197,7 @@ export function ProductFormERPVariantPicker({
                           variant.stock === 0 && "text-destructive border-destructive/30"
                         )}
                       >
-                        {variant.stock} un
+                        {variant.alreadyImported ? "Já cadastrada" : !variant.active ? "Inativa" : variant.stockKnown === false ? "A confirmar" : `${variant.stock} un`}
                       </Badge>
                     </div>
                   </li>
@@ -201,6 +207,12 @@ export function ProductFormERPVariantPicker({
           </div>
         </div>
 
+        {importProduct.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {getERPSearchErrorMessage(importProduct.error)}{" "}
+            {importProduct.progress.completed > 0 && `${importProduct.progress.completed} variantes já foram processadas. Tente novamente para continuar com as restantes.`}
+          </p>
+        )}
         <DialogFooter>
           <Button
             type="button"
@@ -213,13 +225,12 @@ export function ProductFormERPVariantPicker({
           <Button
             type="button"
             onClick={handleImport}
-            disabled={importProduct.isPending || variants.length === 0}
+            disabled={importProduct.isPending || eligible.length === 0}
           >
             {importProduct.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Importar {importingCount}{" "}
-            {importingCount === 1 ? "variante" : "variantes"}
+            {importProduct.isPending ? `Importando ${importProduct.progress.completed} de ${importProduct.progress.total}…` : `Importar ${importingCount} ${importingCount === 1 ? "variante" : "variantes"}`}
           </Button>
         </DialogFooter>
       </DialogContent>

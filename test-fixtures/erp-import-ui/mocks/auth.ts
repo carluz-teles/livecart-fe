@@ -1,0 +1,1 @@
+const getToken=async()=>"audit"; export const useAuth=()=>({getToken,isLoaded:true,isSignedIn:true})
