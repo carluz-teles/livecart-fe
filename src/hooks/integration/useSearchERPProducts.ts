@@ -23,17 +23,20 @@ export function useSearchERPProducts(integrationId: string, search: string) {
   const { getToken, isLoaded, isSignedIn } = useAuth()
   const { storeId, isLoading: storeLoading } = useStoreId()
   const debouncedSearch = useDebounce(search.trim(), 500)
+  const currentSearch = search.trim()
 
   const settling = search.trim() !== debouncedSearch
   const query = useQuery<ERPProductSearchResponse, ApiError>({
-    queryKey: [...integrationKeys.all, "erp-products", storeId, integrationId, debouncedSearch],
+    // Detach from the previous query immediately, including during debounce.
+    // Merely disabling the same query leaves its request running until later.
+    queryKey: [...integrationKeys.all, "erp-products", storeId, integrationId, currentSearch],
     queryFn: async ({ signal }): Promise<ERPProductSearchResponse> => {
       const token = await getToken()
       try {
         return await integrationService.searchProducts(
           storeId!,
           integrationId,
-          debouncedSearch,
+          currentSearch,
           token,
           signal,
         )
@@ -48,14 +51,9 @@ export function useSearchERPProducts(integrationId: string, search: string) {
     },
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-    retry: (failureCount, error) => {
-      if (error?.status && error.status >= 400 && error.status < 500) return false
-      // 503 é o ERP pedindo para esperar. Repetir sozinho empurra mais consulta
-      // no limitador que acabou de recusar — quem decide tentar de novo é o
-      // lojista, depois de ler a mensagem.
-      if (error?.status === 503) return false
-      return failureCount < 2
-    },
+    // A timeout must not silently turn a 30s search into three attempts.
+    // The error state provides an explicit retry action.
+    retry: false,
     enabled:
       isLoaded &&
       isSignedIn &&
