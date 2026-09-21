@@ -41,14 +41,15 @@ export function CheckoutPromotionBanner({ items }: CheckoutPromotionBannerProps)
           <p className="text-sm leading-relaxed text-gray-600">
             {single ? (
               <>
-                O cliente anterior desistiu, então o item já entrou no seu
-                pedido. É só finalizar a compra como sempre — pagando, a
-                unidade fica garantida.
+                {product.quantity === 1 ? "A unidade já entrou" : `${product.quantity} unidades já entraram`} no seu carrinho,
+                pelo preço de quando você entrou na fila. O prazo do carrinho
+                continua o mesmo, sem prazo separado para este produto.
               </>
             ) : (
               <>
-                Os clientes anteriores desistiram e os itens já entraram no
-                seu pedido. Finalize a compra pra garantir todos.
+                As unidades liberadas já entraram no seu carrinho, pelo preço
+                de quando você entrou na fila. O prazo do carrinho continua o
+                mesmo, sem prazo separado para cada produto.
               </>
             )}
           </p>

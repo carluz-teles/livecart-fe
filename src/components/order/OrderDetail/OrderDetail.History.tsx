@@ -353,9 +353,7 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
         kind: "waitlist_released",
         date: w.notifiedAt,
         title: `Estoque liberado: ${w.productName}`,
-        description: w.expiresAt
-          ? `Prazo extra para pagar até ${formatDateTime(w.expiresAt)}.`
-          : "O item voltou para o carrinho dela com prazo extra.",
+        description: "As unidades liberadas entraram no carrinho pelo preço da solicitação e seguem o prazo dele, sem expiração individual.",
       })
     }
     if (w.status === "fulfilled") {
@@ -364,16 +362,16 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
         kind: "waitlist_fulfilled",
         date: w.fulfilledAt ?? w.notifiedAt ?? w.createdAt,
         title: `Item da fila garantido: ${w.productName}`,
-        description: "A cliente finalizou dentro do prazo extra.",
+        description: "A cliente finalizou a compra das unidades liberadas.",
       })
     } else if (w.status === "expired") {
       out.push({
         category: "customer",
         kind: "waitlist_lost",
         date: w.expiresAt ?? w.cancelledAt ?? w.createdAt,
-        title: `Liberação venceu: ${w.productName}`,
+        title: `Espera encerrada: ${w.productName}`,
         description:
-          "O prazo extra terminou sem pagamento — a unidade seguiu para o próximo da fila ou voltou ao estoque.",
+          "Esta espera foi encerrada por expiração. Uma nova compra exige um novo pedido.",
       })
     } else if (w.cancelledAt) {
       out.push({

@@ -34,12 +34,12 @@ export const EVENT_COPY = {
   cartExpiration: {
     label: "Prazo para finalizar após o evento",
     hint: "Quanto tempo o comprador tem para pagar depois que o evento fecha. Durante o evento o carrinho nunca expira. De 15 minutos a 30 dias — em minutos, horas ou dias.",
-    help: "O relógio só começa quando o evento termina. Prazo curto gira o estoque mais rápido; prazo longo converte mais. Não existe “sem prazo”: todo carrinho expira em algum momento, para o estoque voltar para a loja e para quem está na fila.",
+    help: "O relógio só começa quando o evento termina. Quem ainda aguarda estoque nesse momento recebe também o prazo extra da fila. Carrinhos VIP e sua espera não expiram.",
   },
   waitlistTtl: {
-    label: "Prazo extra para quem estava na fila",
-    hint: "Tempo a mais para pagar que quem esperava na fila ganha quando o produto libera. Vale para o carrinho inteiro e não acumula.",
-    help: "Sem esse prazo extra, todos os carrinhos do evento expiram no mesmo instante — o estoque liberado por um carrinho chega em quem esperava exatamente quando o carrinho dela também morreu.",
+    label: "Prazo extra para quem aguarda estoque",
+    hint: "Só recebe o adicional quem ainda aguarda estoque quando o evento termina. O vencimento é o encerramento do evento + prazo normal + prazo extra. A reposição não reinicia nem encurta esse prazo.",
+    help: "De 0 a 30 dias; 0 desativa apenas o adicional. Vale para o carrinho inteiro de quem ainda aguarda estoque no encerramento. Atender ou cancelar a espera preserva o prazo já concedido. VIP não expira. Pagar os disponíveis encerra a espera restante.",
   },
   maxQuantity: {
     label: "Quantidade máxima por produto",
@@ -51,7 +51,7 @@ export const EVENT_COPY = {
   },
   closeCartOnEventEnd: {
     label: "Prazo depois que o evento fechar",
-    hint: "Os dois lados têm prazo: o carrinho sempre expira. O prazo começa a correr quando o evento fecha.",
+    hint: "O prazo começa a correr quando o evento fecha. Carrinhos VIP e sua espera não expiram.",
   },
   freeShipping: {
     label: "Frete grátis neste evento",
@@ -104,15 +104,6 @@ export function defaultEndsAtLocal(): string {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
-
-/** Opções do prazo extra da fila — respeitam o CHECK 5..240 da 000073. */
-export const WAITLIST_TTL_OPTIONS = [
-  { value: "15", label: "15 minutos" },
-  { value: "30", label: "30 minutos (padrão)" },
-  { value: "60", label: "1 hora" },
-  { value: "120", label: "2 horas" },
-  { value: "240", label: "4 horas" },
-]
 
 /**
  * O modelo em uma página — copy deck §1.1.
