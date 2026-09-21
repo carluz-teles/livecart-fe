@@ -23,8 +23,8 @@ interface InheritableNumberFieldProps {
  *
  * Estes campos eram `<Select>` com uma lista fixa (15/30/60/120/1440 minutos,
  * 1/3/5/10 unidades). A lista era invenção da tela: no banco só existe piso —
- * `cart_expiration_minutes >= 15` e `waitlist_notified_ttl_minutes` entre 5 e
- * 240 — e `cart_max_quantity_per_item` **não tem CHECK nenhum**, aceita
+ * `cart_expiration_minutes >= 15` — e
+ * `cart_max_quantity_per_item` **não tem CHECK nenhum**, aceita
  * qualquer inteiro. O lojista que quisesse 45 minutos ou 7 unidades não tinha
  * como pedir.
  *

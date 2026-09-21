@@ -1,17 +1,23 @@
 "use client"
 
-import { Hourglass, Instagram, Mail, Sparkles } from "lucide-react"
+import { Hourglass, Instagram, ShoppingBag, Sparkles } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { CheckoutHeader } from "./CheckoutHeader"
 import { CheckoutWaitlistSection } from "./CheckoutWaitlistSection"
+import { CheckoutExpirationTimer } from "./CheckoutExpirationTimer"
 import type { PublicCheckoutCart } from "@/types"
 
 interface CheckoutWaitlistOnlyScreenProps {
   cart: PublicCheckoutCart
+  onRefresh: () => void
+  refreshing: boolean
 }
 
 export function CheckoutWaitlistOnlyScreen({
   cart,
+  onRefresh,
+  refreshing,
 }: CheckoutWaitlistOnlyScreenProps) {
   const handle = cart.platformHandle
 
@@ -33,21 +39,25 @@ export function CheckoutWaitlistOnlyScreen({
             </h2>
             <p className="mt-3 max-w-sm text-center text-sm leading-relaxed text-gray-500">
               Os produtos que você pediu estavam esgotados no momento do
-              pedido. Vamos te avisar assim que liberar — sem fila dupla,
-              sem sorteio: ordem de chegada.
+              pedido. Quando houver reposição, as unidades disponíveis entram
+              no seu carrinho por ordem de chegada. Acompanhe por este link.
             </p>
 
             {handle && (
               <div className="mt-6 flex items-center gap-2 rounded-full border border-amber-100 bg-white px-4 py-2 text-xs text-amber-900 shadow-sm">
                 <Instagram className="h-3.5 w-3.5 text-amber-600" />
                 <span>
-                  Aviso vai pro Instagram{" "}
+                  Pedido de{" "}
                   <strong className="font-semibold">@{handle}</strong>
                 </span>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {cart.expiresAt && (
+          <CheckoutExpirationTimer expiresAt={cart.expiresAt} onExpired={onRefresh} />
+        )}
 
         <CheckoutWaitlistSection
           token={cart.token}
@@ -56,10 +66,16 @@ export function CheckoutWaitlistOnlyScreen({
 
         <Card className="border-gray-100 shadow-sm">
           <CardContent className="flex items-start gap-3 p-5 text-sm text-gray-600">
-            <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-            <div className="leading-relaxed">
-              Fique de olho no DM do Instagram. Quando seu produto liberar,
-              você recebe um link pra finalizar a compra aqui mesmo.
+            <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+            <div className="flex flex-col items-start gap-3 leading-relaxed">
+              <p>
+                {cart.expiresAt
+                  ? "Sua espera acompanha o prazo do carrinho. Quando esse prazo terminar, será necessário fazer um novo pedido."
+                  : "Acompanhe a disponibilidade neste carrinho. Quando um prazo for definido, ele aparecerá aqui; carrinhos VIP e sua espera não expiram."}
+              </p>
+              <Button variant="outline" size="sm" disabled={refreshing} onClick={onRefresh}>
+                {refreshing ? "Atualizando..." : "Atualizar disponibilidade"}
+              </Button>
             </div>
           </CardContent>
         </Card>

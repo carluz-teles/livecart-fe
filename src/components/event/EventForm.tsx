@@ -26,6 +26,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,8 +46,6 @@ import {
   LONG_CAMPAIGN_WARNING,
 } from "@/lib/event-copy"
 import { DateTimeField } from "@/components/shared/DateTimeField"
-import {
-} from "./InstagramMediaPicker"
 import type { SessionType } from "@/lib/event-kind"
 import type { CreateEventPayload } from "@/types/event.types"
 
@@ -376,13 +375,16 @@ export function EventForm({
                       <FieldHint text={EVENT_COPY.waitlistTtl.help} />
                     </FormLabel>
                     <FormControl>
-                      <InheritableNumberField
+                      <DurationField
                         value={field.value}
                         onChange={field.onChange}
-                        min={5} max={240}
-                        unit={"minutos"}
+                        minMinutes={0}
+                        maxMinutes={43200}
+                        ariaLabel={EVENT_COPY.waitlistTtl.label}
+                        placeholder="30 minutos"
                       />
                     </FormControl>
+                    <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

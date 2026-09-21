@@ -136,9 +136,8 @@ export interface Event {
    *  que garante que nenhum carrinho fica sem prazo: durante a campanha o
    *  carrinho não expira, e o relógio só começa quando ela fecha. */
   endsAt: string | null
-  /** RN-10 — minutos extras que quem é promovido da fila ganha para pagar,
-   *  contados a partir do momento em que o produto liberou. Vale para o
-   *  carrinho inteiro e não acumula. */
+  /** Adicional Y (0..43200 minutos) para quem ainda aguarda estoque no fim do
+   * evento. Vencimento = encerramento + X + Y; promoção não altera a data. */
   waitlistNotifiedTtlMinutes: number
   description: string | null
   /** `productCount` SAIU do evento: a lista de produtos vendáveis é da

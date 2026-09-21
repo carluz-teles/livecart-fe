@@ -31,6 +31,8 @@ import { CheckoutCouponField } from "./CheckoutCouponField"
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges"
 import { CheckoutExpirationTimer } from "./CheckoutExpirationTimer"
 import { cn } from "@/lib/utils"
+import { getAvailablePriceLots } from "@/lib/cart-item-prices"
+import type { CartItemPriceLot } from "@/types/cart.types"
 
 interface OrderItem {
   id: string
@@ -43,6 +45,8 @@ interface OrderItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  priceLots?: CartItemPriceLot[]
+  hasPendingWaitlist?: boolean
   /** Stock available for this SKU; combined with maxQuantityPerItem to gate
    *  the "+" button. Undefined means stock is unconstrained (legacy data). */
   availableStock?: number
@@ -141,6 +145,7 @@ function OrderItemCompact({
 }) {
   const [mounted, setMounted] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const canEditItem = allowEdit && !item.hasPendingWaitlist
   // Qual dos dois botões o comprador apertou. Serve só para posicionar o
   // spinner: a mutation atualiza o número de forma otimista, então trocar o
   // NÚMERO por um spinner esconderia o resultado que ele acabou de pedir
@@ -223,7 +228,7 @@ function OrderItemCompact({
           )}
         </div>
         {/* Quantity badge - always show when not using edit controls */}
-        {!(allowEdit && onUpdateQuantity) && (
+        {!(canEditItem && onUpdateQuantity) && (
           <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white shadow-md ring-2 ring-white">
             {item.quantity}
           </div>
@@ -244,11 +249,18 @@ function OrderItemCompact({
           </div>
         )}
         <p className="text-xs text-gray-500">
-          {formatCurrency(item.unitPrice)} cada
+          {getAvailablePriceLots(item).map((lot) =>
+            `${lot.quantity} × ${formatCurrency(lot.unitPrice)}`,
+          ).join(" + ")}
         </p>
+        {allowEdit && item.hasPendingWaitlist && (
+          <p className="mt-1 text-xs text-gray-500">
+            Para alterar a quantidade, encerre a espera deste produto primeiro.
+          </p>
+        )}
       </div>
 
-      {allowEdit && onUpdateQuantity ? (
+      {canEditItem && onUpdateQuantity ? (
         <div className="flex items-center gap-2">
           {/* Quantity controls with premium styling */}
           <div className="flex items-center rounded-lg border border-gray-200 bg-white shadow-sm">

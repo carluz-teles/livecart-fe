@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator"
 import { resolveCarrierLogo } from "@/lib/carriers"
 import { CheckoutHeader } from "./CheckoutHeader"
 import type { PublicCheckoutCart } from "@/types"
+import { getAvailablePriceLots, getPayableItemTotal } from "@/lib/cart-item-prices"
 
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -112,7 +113,7 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
 
         <Section icon={Package} title="Itens do pedido">
           <ul className="divide-y divide-gray-100">
-            {items.map((item) => (
+            {items.filter((item) => item.quantity > item.waitlistedQuantity).map((item) => (
               <li key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                 <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
                   {item.imageUrl ? (
@@ -133,11 +134,13 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
                     {item.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {item.quantity}× {formatCurrency(item.unitPrice)}
+                    {getAvailablePriceLots(item).map((lot) =>
+                      `${lot.quantity} × ${formatCurrency(lot.unitPrice)}`,
+                    ).join(" + ")}
                   </p>
                 </div>
                 <span className="text-sm font-semibold tabular-nums text-gray-900">
-                  {formatCurrency(item.totalPrice)}
+                  {formatCurrency(getPayableItemTotal(item))}
                 </span>
               </li>
             ))}

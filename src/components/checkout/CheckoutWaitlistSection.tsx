@@ -29,8 +29,7 @@ export function CheckoutWaitlistSection({
 
   // Only waiting entries belong in this section. Notified items are already
   // back in the cart as regular products and are surfaced via the dedicated
-  // promotion banner at the top of the checkout — duplicating them here (with
-  // a per-item timer that's actually just the global cart TTL) confused buyers.
+  // promotion banner at the top of the checkout. Only the cart has a deadline.
   const waiting = items.filter((i) => i.status === "waiting")
   if (waiting.length === 0) return null
 
@@ -44,9 +43,9 @@ export function CheckoutWaitlistSection({
           </CardTitle>
         </div>
         <p className="text-xs leading-relaxed text-amber-800/80">
-          Estes itens estavam esgotados quando você pediu. Você pode finalizar a
-          compra apenas com os itens disponíveis acima — avisaremos no Instagram
-          assim que liberar.
+          A reposição atende por ordem de chegada e pode liberar parte das
+          unidades. Ao pagar os itens disponíveis, a espera restante é encerrada.
+          Para comprar os produtos que continuarem sem estoque, faça um novo pedido.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">

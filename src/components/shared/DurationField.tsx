@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -28,6 +29,7 @@ type Unidade = "minutos" | "horas" | "dias"
 const FATOR: Record<Unidade, number> = { minutos: 1, horas: 60, dias: 1440 }
 
 function melhorUnidade(minutos: number): Unidade {
+  if (minutos === 0) return "minutos"
   if (minutos % 1440 === 0) return "dias"
   if (minutos % 60 === 0) return "horas"
   return "minutos"
@@ -55,6 +57,10 @@ interface DurationFieldProps {
   inheritedValue?: number | null
   disabled?: boolean
   id?: string
+  ariaLabel?: string
+  placeholder?: string
+  "aria-invalid"?: React.AriaAttributes["aria-invalid"]
+  "aria-describedby"?: string
 }
 
 export function DurationField({
@@ -65,6 +71,10 @@ export function DurationField({
   inheritedValue,
   disabled,
   id,
+  ariaLabel = "Duração",
+  placeholder: customPlaceholder,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
 }: DurationFieldProps) {
   const [unidade, setUnidade] = useState<Unidade>(() =>
     value != null ? melhorUnidade(value) : "minutos"
@@ -81,19 +91,20 @@ export function DurationField({
   }, [value])
 
   const quantia = value != null ? value / FATOR[unidade] : ""
-  const placeholder =
+  const placeholder = customPlaceholder ?? (
     inheritedValue != null
       ? `Padrão da loja: ${formatarMinutos(inheritedValue)}`
-      : "Padrão da loja"
+      : "Padrão da loja")
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
       <Input
         id={id}
         type="number"
         inputMode="numeric"
         step={1}
-        min={1}
+        min={Math.ceil(minMinutes / FATOR[unidade])}
+        max={maxMinutes != null ? Math.floor(maxMinutes / FATOR[unidade]) : undefined}
         className="w-24"
         value={quantia}
         placeholder={placeholder}
@@ -102,7 +113,9 @@ export function DurationField({
           const parsed = parseInt(e.target.value, 10)
           onChange(Number.isNaN(parsed) ? null : parsed * FATOR[unidade])
         }}
-        aria-label="Duração"
+        aria-label={ariaLabel}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
       />
       <Select
         value={unidade}
@@ -117,13 +130,15 @@ export function DurationField({
           }
         }}
       >
-        <SelectTrigger className="w-32" aria-label="Unidade">
+        <SelectTrigger className="w-32" aria-label={`${ariaLabel}: unidade`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="minutos">minutos</SelectItem>
-          <SelectItem value="horas">horas</SelectItem>
-          <SelectItem value="dias">dias</SelectItem>
+          <SelectGroup>
+            <SelectItem value="minutos">minutos</SelectItem>
+            <SelectItem value="horas">horas</SelectItem>
+            <SelectItem value="dias">dias</SelectItem>
+          </SelectGroup>
         </SelectContent>
       </Select>
       {(minMinutes > 0 || maxMinutes) && (

@@ -24,6 +24,14 @@ export type PaymentStatus =
   | "refunded"
   | "cancelled"
 
+/** Preço preservado por solicitação. totalPrice inclui só unidades disponíveis. */
+export interface CartItemPriceLot {
+  quantity: number
+  waitlistedQuantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
 export interface OrderItem {
   id: string
   productId: string
@@ -34,6 +42,7 @@ export interface OrderItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  priceLots?: CartItemPriceLot[]
   // Parcela de `quantity` sem estoque. `quantity` é o TOTAL que a cliente
   // pediu, então o que ela pode pagar agora é `quantity - waitlistedQuantity`
   // — a mesma conta do checkout público. Sempre 0 em pedido já pago.
@@ -242,11 +251,11 @@ export interface OrderWaitlistItem {
   keyword: string
   quantity: number
   unitPrice: number
-  // Lugar na fila daquele produto no evento: 1 é a próxima a ser atendida
+  // Lugar na fila global daquele produto na loja: 1 é a próxima a ser atendida
   // quando o estoque voltar.
   position: number
-  // waiting = esperando estoque; notified = estoque voltou e o prazo extra
-  // dela está correndo. Entradas encerradas não chegam aqui.
+  // waiting = esperando estoque; notified = unidades promovidas ao carrinho.
+  // A promoção não cria prazo individual.
   status: "waiting" | "notified"
   createdAt: string
 }
@@ -391,9 +400,8 @@ export interface PublicCheckoutWaitlistItem {
   unitPrice: number
   quantity: number
   position: number
-  /** "waiting" = aguardando estoque liberar; "notified" = liberou e o
-   *  cliente tem `expiresAt` para finalizar antes do item voltar para a
-   *  fila. */
+  /** "waiting" = aguardando estoque; "notified" = unidades já promovidas.
+   * Só o carrinho tem prazo; a promoção não cria expiração individual. */
   status: "waiting" | "notified"
   notifiedAt?: string | null
   expiresAt?: string | null
@@ -409,6 +417,7 @@ export interface PublicCheckoutItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  priceLots?: CartItemPriceLot[]
   waitlistedQuantity: number
   /** Available stock for the SKU (product.stock at read time). The UI uses
    *  this together with maxQuantityPerItem to disable the "+" button when the
@@ -540,6 +549,7 @@ export interface ERPItemSync {
 
 export interface PublicCheckoutCart {
   erpItemSync?: ERPItemSync
+  purchaseClosed?: boolean
   paymentReviewRequired?: boolean
   id: string
   token: string
