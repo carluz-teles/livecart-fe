@@ -1,4 +1,5 @@
 import type { OrderItem } from "@/types/cart.types"
+import { getItemPriceLots } from "./cart-item-prices"
 
 /**
  * Agrupa as linhas do pedido por produto.
@@ -26,7 +27,7 @@ export function groupOrderItemsByProduct(items: OrderItem[]): OrderItem[] {
     const key = `${item.productId}::${item.size ?? ""}`
     const existing = byProduct.get(key)
     if (!existing) {
-      byProduct.set(key, { ...item })
+      byProduct.set(key, { ...item, priceLots: [...getItemPriceLots(item)] })
       continue
     }
     existing.quantity += item.quantity
@@ -38,6 +39,7 @@ export function groupOrderItemsByProduct(items: OrderItem[]): OrderItem[] {
     // entre uma sessão e outra, recalcular inventaria um número que não bate
     // com o que o comprador pagou.
     existing.totalPrice += item.totalPrice
+    existing.priceLots = [...(existing.priceLots ?? []), ...getItemPriceLots(item)]
   }
 
   return Array.from(byProduct.values())

@@ -1,5 +1,9 @@
 import { z } from "zod"
 
+const waitlistExtraMinutesSchema = z.number().int()
+  .min(0, "O prazo extra deve ser 0 ou maior")
+  .max(43200, "Máximo de 30 dias")
+
 // =============================================================================
 // EVENT (CAMPANHA)
 // =============================================================================
@@ -46,8 +50,8 @@ export const createEventSchema = z
     // cart_max_quantity_per_item não tem CHECK no banco: aceita qualquer inteiro
     // positivo. O teto de 100 era invenção da tela.
     cartMaxQuantityPerItem: z.number().int().min(1).nullable().optional(),
-    // RN-10 — espelha o CHECK 5..240 da migration 000073.
-    waitlistNotifiedTtlMinutes: z.number().int().min(5).max(240).nullable().optional(),
+    // Prazo adicional ao carrinho elegível no encerramento; 0 desativa só Y.
+    waitlistNotifiedTtlMinutes: waitlistExtraMinutesSchema.nullable().optional(),
     freeShipping: z.boolean().optional(),
     // Pix discount in whole percent (0-100). 0 disables the feature.
     pixDiscountPercent: z.number().int().min(0).max(100).optional(),
@@ -69,7 +73,7 @@ export const updateEventWindowSchema = z
     startsAt: z.string().nullable().optional(),
     // O backend recusa remover o teto: sem ends_at o carrinho perde o prazo.
     endsAt: z.string().min(1, "Informe quando a campanha fecha"),
-    waitlistNotifiedTtlMinutes: z.number().int().min(5).max(240).optional(),
+    waitlistNotifiedTtlMinutes: waitlistExtraMinutesSchema.optional(),
     pixDiscountPercent: z.number().int().min(0).max(100).optional(),
     // Prazo do carrinho, agora editável depois de criado (20/08/2026). null =
     // herda da loja (o PUT omite o campo). Mudar aqui PROPAGA para os

@@ -11,6 +11,7 @@ import {
   formatZipBR,
 } from "@/lib/format"
 import { groupOrderItemsByProduct } from "@/lib/order-items"
+import { getAvailablePriceLots, getPayableItemTotal } from "@/lib/cart-item-prices"
 import { cn } from "@/lib/utils"
 import type { OrderDetail, OrderItem } from "@/types/cart.types"
 import { OrderDetailContext } from "./OrderDetailContext"
@@ -309,10 +310,12 @@ function TabelaDeItens({ items }: { items: OrderItem[] }) {
               </td>
               <td className="py-2 text-right tabular-nums">{qtd}</td>
               <td className="py-2 text-right tabular-nums">
-                {formatCurrency(item.unitPrice)}
+                {getAvailablePriceLots(item).map((lot) => (
+                  <p key={lot.unitPrice}>{lot.quantity} × {formatCurrency(lot.unitPrice)}</p>
+                ))}
               </td>
               <td className="py-2 text-right font-medium tabular-nums">
-                {formatCurrency(item.unitPrice * qtd)}
+                {formatCurrency(getPayableItemTotal(item))}
               </td>
             </tr>
           )
@@ -325,7 +328,7 @@ function TabelaDeItens({ items }: { items: OrderItem[] }) {
 // ─── Fila de espera ─────────────────────────────────────────────────────────
 
 function FilaDeEspera({ order }: { order: OrderDetail }) {
-  const fila = order.waitlist ?? []
+  const fila = (order.waitlist ?? []).filter((item) => item.status === "waiting")
   if (fila.length === 0) return null
 
   const comFoto = fila.some((item) => item.productImage)
@@ -340,7 +343,8 @@ function FilaDeEspera({ order }: { order: OrderDetail }) {
         <strong className="font-semibold text-neutral-900">
           não estão incluídos no total acima
         </strong>
-        . A loja avisa assim que houver estoque.
+        . Ao pagar os disponíveis, a espera restante é encerrada. Os pendentes
+        exigem um novo pedido.
       </p>
       <ul className="mt-3 space-y-1.5">
         {fila.map((item) => (
@@ -357,9 +361,6 @@ function FilaDeEspera({ order }: { order: OrderDetail }) {
               )}
               <span className="min-w-0">
                 <span className="font-medium">{item.productName}</span>
-                {item.status === "notified" && (
-                  <span className="text-neutral-600"> · já liberado</span>
-                )}
               </span>
             </span>
             <span className="shrink-0 tabular-nums text-neutral-600">

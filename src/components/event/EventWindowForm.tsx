@@ -24,19 +24,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { DateTimeField } from "@/components/shared/DateTimeField"
 import { DurationField } from "@/components/shared/DurationField"
 import { FieldHint } from "@/components/shared/FieldHint"
 import {
   EVENT_COPY,
-  WAITLIST_TTL_OPTIONS,
   isLongCampaign,
   LONG_CAMPAIGN_WARNING,
 } from "@/lib/event-copy"
@@ -76,7 +68,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       title: event.title ?? "",
       startsAt: event.scheduledAt,
       endsAt: event.endsAt ?? "",
-      waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes || 30,
+      waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes ?? 30,
       pixDiscountPercent: event.pixDiscountPercent ?? 0,
       cartExpirationMinutes: event.cartExpirationMinutes ?? null,
     },
@@ -87,7 +79,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       title: event.title ?? "",
       startsAt: event.scheduledAt,
       endsAt: event.endsAt ?? "",
-      waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes || 30,
+      waitlistNotifiedTtlMinutes: event.waitlistNotifiedTtlMinutes ?? 30,
       pixDiscountPercent: event.pixDiscountPercent ?? 0,
       cartExpirationMinutes: event.cartExpirationMinutes ?? null,
     })
@@ -233,8 +225,9 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                     />
                   </FormControl>
                   <FormDescription>
-                    Mudar aqui vale também para os carrinhos já abertos deste
-                    evento: o prazo deles é deslocado pela diferença.
+                    Após o encerramento, aumentos estendem os carrinhos ainda
+                    abertos. Reduções preservam os prazos já concedidos e não
+                    reabrem carrinhos encerrados.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -250,23 +243,16 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                     {EVENT_COPY.waitlistTtl.label}
                     <FieldHint text={EVENT_COPY.waitlistTtl.hint} />
                   </FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                    value={String(field.value ?? 30)}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {WAITLIST_TTL_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <DurationField
+                      value={field.value}
+                      onChange={(value) => field.onChange(value ?? 0)}
+                      minMinutes={0}
+                      maxMinutes={43200}
+                      ariaLabel={EVENT_COPY.waitlistTtl.label}
+                      placeholder="0 desativa o adicional"
+                    />
+                  </FormControl>
                   <FormDescription>{EVENT_COPY.waitlistTtl.help}</FormDescription>
                   <FormMessage />
                 </FormItem>

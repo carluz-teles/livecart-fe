@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { checkoutService } from "@/services/api/checkout.service"
 import { checkoutKeys } from "./useCheckoutCart"
 import type { ApiError, PublicCheckoutCart } from "@/types"
+import { getPayableItemTotal } from "@/lib/cart-item-prices"
 
 interface MutationArgs {
   token: string
@@ -70,16 +71,18 @@ export function useUpdateCartItemQuantity() {
         checkoutKeys.cart(token)
       )
       if (previous) {
+        // O servidor decide quais lotes mudam e o preço das novas unidades.
+        // O estado de carregamento já aparece no stepper; não inventar um total.
+        if (previous.items.find((it) => it.id === itemId)?.priceLots?.length) {
+          return { previous }
+        }
         const items = previous.items.map((it) =>
           it.id === itemId
             ? { ...it, quantity, totalPrice: it.unitPrice * quantity }
             : it
         )
         const subtotal = items.reduce(
-          (acc, it) =>
-            it.waitlistedQuantity < it.quantity
-              ? acc + it.unitPrice * (it.quantity - it.waitlistedQuantity)
-              : acc,
+          (acc, it) => acc + getPayableItemTotal(it),
           0
         )
         queryClient.setQueryData<PublicCheckoutCart>(
@@ -140,10 +143,7 @@ export function useRemoveCartItem() {
       if (previous) {
         const items = previous.items.filter((it) => it.id !== itemId)
         const subtotal = items.reduce(
-          (acc, it) =>
-            it.waitlistedQuantity < it.quantity
-              ? acc + it.unitPrice * (it.quantity - it.waitlistedQuantity)
-              : acc,
+          (acc, it) => acc + getPayableItemTotal(it),
           0
         )
         queryClient.setQueryData<PublicCheckoutCart>(

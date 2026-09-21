@@ -1,5 +1,7 @@
 "use client"
 
+import { getPayableItemTotal } from "@/lib/cart-item-prices"
+
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -97,6 +99,8 @@ import type {
 } from "@/types"
 import type { ApiError } from "@/types/api.types"
 
+const PURCHASE_CLOSED_MESSAGE = "Esta compra foi encerrada no pedido que reúne seus carrinhos. Para novos itens, faça um novo pedido com a loja."
+
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -149,6 +153,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     data: cart,
     error: cartError,
     refetch: refetchCart,
+    isFetching: refreshingCart,
   } = useCheckoutCart(token, initialCart)
 
   // Tracks the last appliedCoupon we observed so the auto-removal toast
@@ -817,6 +822,10 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     )
   }
 
+  if (cart.purchaseClosed) {
+    return <CheckoutErrorScreen message={PURCHASE_CLOSED_MESSAGE} />
+  }
+
   if (cart.paymentReviewRequired) {
     return <CheckoutErrorScreen message="Recebemos um pagamento, mas o carrinho mudou após a geração da cobrança. A loja precisa conferir os valores. Não faça outro pagamento." retryHref={`/cart/${token}`} />
   }
@@ -872,8 +881,8 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   })
 
   if (availableItems.length === 0) {
-    if (cart.waitlistItems.length > 0) {
-      return <CheckoutWaitlistOnlyScreen cart={cart} />
+    if (cart.waitlistItems.some((item) => item.status === "waiting")) {
+      return <CheckoutWaitlistOnlyScreen cart={cart} onRefresh={() => { void refetchCart() }} refreshing={refreshingCart} />
     }
     return <CheckoutErrorScreen message="Nenhum item disponível para pagamento." />
   }
@@ -888,7 +897,9 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       imageUrl: item.imageUrl,
       quantity: availableQty,
       unitPrice: item.unitPrice,
-      totalPrice: item.unitPrice * availableQty,
+      totalPrice: getPayableItemTotal(item),
+      priceLots: item.priceLots,
+      hasPendingWaitlist: item.waitlistedQuantity > 0,
       availableStock: item.availableStock,
     }
   })
@@ -1485,6 +1496,12 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
                   </div>
                 ) : checkoutConfig ? (
                   <div className="space-y-6">
+                    {cart.waitlistItems.some((item) => item.status === "waiting") && (
+                      <p className="text-sm text-gray-600">
+                        Ao confirmar o pagamento, a espera pelos produtos sem
+                        estoque será encerrada. Para comprá-los depois, faça um novo pedido.
+                      </p>
+                    )}
                     {methodsCount > 1 && (
                       <>
                         <CheckoutExpressPayment
@@ -1590,6 +1607,10 @@ interface CheckoutClientProps {
 function CheckoutClientInner({ token, initialCart }: CheckoutClientProps) {
   const searchParams = useSearchParams()
   const status = searchParams.get("status")
+
+  if (initialCart.purchaseClosed) {
+    return <CheckoutErrorScreen message={PURCHASE_CLOSED_MESSAGE} />
+  }
 
   if (status === "failure") {
     return <FailedScreen onRetry={() => (window.location.href = `/cart/${token}`)} />

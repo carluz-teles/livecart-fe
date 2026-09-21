@@ -2,8 +2,7 @@
 
 import { use } from "react"
 import Image from "next/image"
-import { CheckCircle2, Hourglass, Package } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Hourglass, Package } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/format"
 import type { OrderWaitlistItem } from "@/types/cart.types"
@@ -22,10 +21,8 @@ export function OrderDetailWaitlist() {
   if (!ctx) return null
   const { order } = ctx.state
 
-  const fila = order.waitlist ?? []
+  const fila = (order.waitlist ?? []).filter((item) => item.status === "waiting")
   if (fila.length === 0) return null
-
-  const liberados = fila.filter((item) => item.status === "notified").length
 
   return (
     <Card className="border-amber-500/40 bg-amber-500/5">
@@ -36,18 +33,9 @@ export function OrderDetailWaitlist() {
         </CardTitle>
         <p className="text-xs leading-relaxed text-muted-foreground">
           Estes produtos estavam esgotados quando a cliente pediu. Não entram no
-          total nem no envio — ela paga só o que está disponível.
-          {liberados > 0 && (
-            <>
-              {" "}
-              <strong className="font-medium text-foreground">
-                {liberados === 1
-                  ? "Um item já foi liberado"
-                  : `${liberados} itens já foram liberados`}
-              </strong>{" "}
-              e voltou para o carrinho dela com prazo para finalizar.
-            </>
-          )}
+          total nem no envio. Pagar os disponíveis encerra esta espera; os
+          pendentes exigem um novo pedido. Produtos já liberados estão no carrinho
+          e seguem o prazo dele. VIP mantém a espera sem expiração.
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -64,8 +52,6 @@ interface WaitlistRowProps {
 }
 
 function WaitlistRow({ item }: WaitlistRowProps) {
-  const liberado = item.status === "notified"
-
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-background/60 p-3">
       {item.productImage ? (
@@ -91,21 +77,9 @@ function WaitlistRow({ item }: WaitlistRowProps) {
         <p className="text-sm tabular-nums">
           {item.quantity} un · {formatCurrency(item.unitPrice)}
         </p>
-        {liberado ? (
-          <Badge
-            variant="outline"
-            className="mt-1 gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
-          >
-            <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-            Liberado
-          </Badge>
-        ) : (
-          // A posição só informa quando existe disputa: "1ª da fila" com uma
-          // pessoa só na fila é ruído que parece dado.
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {item.position > 1 ? `${item.position}ª da fila` : "Próxima da fila"}
-          </p>
-        )}
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {item.position > 1 ? `${item.position}ª da fila` : "Próxima da fila"}
+        </p>
       </div>
     </div>
   )

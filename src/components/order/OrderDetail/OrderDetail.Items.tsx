@@ -1,5 +1,7 @@
 "use client"
 
+import { getAvailablePriceLots, getPayableItemTotal } from "@/lib/cart-item-prices"
+
 import { use, useState } from "react"
 import Image from "next/image"
 import { Loader2, Minus, Package, Plus, Trash2 } from "lucide-react"
@@ -178,6 +180,7 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
   const [confirmarRemocao, setConfirmarRemocao] = useState(false)
 
   const disponivel = Math.max(item.quantity - item.waitlistedQuantity, 0)
+  const temEspera = item.waitlistedQuantity > 0
   const salvando = edit.isSaving(item.id)
   // Enquanto o stepper acumula, a linha mostra o valor que a lojista montou —
   // ver o número antigo por 600ms faria os cliques parecerem perdidos.
@@ -214,11 +217,15 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
             <p className="text-xs text-muted-foreground">Tamanho: {item.size}</p>
           )}
           <p className="font-mono text-xs text-muted-foreground">{item.keyword}</p>
-
+          {editavel && temEspera && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Para alterar a quantidade, encerre a espera deste produto primeiro.
+            </p>
+          )}
         </TableCell>
 
         <TableCell className="text-center">
-          {editavel ? (
+          {editavel && !temEspera ? (
             <Stepper
               quantidade={pagavelNaTela}
               salvando={salvando}
@@ -240,10 +247,17 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
         </TableCell>
 
         <TableCell className="text-right tabular-nums">
-          {formatCurrency(item.unitPrice)}
+          {getAvailablePriceLots(item).map((lot) => (
+            <p key={lot.unitPrice}>{lot.quantity} × {formatCurrency(lot.unitPrice)}</p>
+          ))}
         </TableCell>
         <TableCell className="text-right font-medium tabular-nums">
-          {formatCurrency(item.unitPrice * pagavelNaTela)}
+          {formatCurrency(item.priceLots?.length
+            ? getPayableItemTotal(item)
+            : item.unitPrice * pagavelNaTela)}
+          {item.priceLots?.length && pagavelNaTela !== disponivel ? (
+            <p className="text-xs font-normal text-muted-foreground">Confirmando valor...</p>
+          ) : null}
         </TableCell>
 
         {editavel && (
@@ -253,7 +267,7 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-destructive"
               onClick={() => setConfirmarRemocao(true)}
-              disabled={salvando}
+              disabled={salvando || temEspera}
               aria-label={`Remover ${item.productName} do pedido`}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -282,7 +296,7 @@ function LinhaDeItem({ item, editavel, edit }: LinhaDeItemProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction
-              disabled={edit.isSaving(item.id)}
+              disabled={edit.isSaving(item.id) || temEspera}
               onClick={() => edit.removeItem(item.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
