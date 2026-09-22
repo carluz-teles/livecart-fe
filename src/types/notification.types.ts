@@ -165,6 +165,8 @@ export interface SendTestEmailPayload {
  *  backend; texto legível vem pronto em `reasonText`, para que a lista, o
  *  alerta e qualquer outra superfície digam a mesma coisa. */
 export type UndeliverableReason =
+  | "live_ended"
+  | "comment_window_expired"
   | "comment_too_old"
   | "private_reply_used"
   | "no_eligible_comment"
