@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { Search, Package, AlertCircle, Layers, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -159,6 +159,7 @@ export function ProductFormERPSearch({
                       {imageUrl ? (
                         <Image
                           src={imageUrl}
+                          fallbackSources={rowDetails?.imageUrls ?? product.imageUrls}
                           alt={product.name}
                           width={40}
                           height={40}

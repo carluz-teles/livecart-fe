@@ -161,6 +161,7 @@ test('resultado único carrega e mostra uma foto antes da seleção, sem duplica
 })
 
 test('vários resultados consultam só o escolhido e mostram imagem sem imageUrls', async ({ page }) => {
+ await page.route('https://images.example.test/selected.jpg', route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"/>'}))
  const detailIDs:string[]=[]
  await page.route('**/api/v1/**',async route=>{
   const url=new URL(route.request().url())
@@ -221,4 +222,38 @@ test('editar termo cancela a consulta antiga antes de terminar o debounce', asyn
   await expect.poll(()=>aborted.some(url=>url.includes('search=Vela'))).toBe(true)
   expect(searches).toEqual(['Vela'])
  } finally { release() }
+})
+
+test('foto recusada pelo ERP mostra alternativa e falha total mostra identificação acessível', async ({ page }) => {
+ const primary = 'https://images.example.test/denied.jpg'
+ const alternate = 'https://images.example.test/available.jpg'
+ let denyAll = false
+ const requests: string[] = []
+ await page.route('https://images.example.test/**', async route => {
+  requests.push(route.request().url())
+  if (denyAll || route.request().url() === primary) {
+   await route.fulfill({ status: 403, body: 'AccessDenied' })
+  } else {
+   await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="red"/></svg>' })
+  }
+ })
+ await page.route('**/api/v1/**', async route => {
+  const url = new URL(route.request().url())
+  const product = {...preview, id: denyAll ? 'p2' : 'p1', name: denyAll ? 'Sem foto' : 'Com alternativa', detailsPending: false, imageUrl: primary, imageUrls: [primary, alternate]}
+  await route.fulfill({json:{data: url.searchParams.has('search') ? {products: [product], totalCount: 1} : product}})
+ })
+ await page.goto('/')
+ const search = page.getByPlaceholder('Buscar por nome, SKU ou código de barras...')
+ await search.fill('Com alternativa')
+ const row = page.getByRole('button', {name: /Com alternativa/})
+ await expect(row.getByRole('img')).toHaveAttribute('src', alternate)
+ await expect(row.getByRole('img')).toHaveJSProperty('naturalWidth', 40)
+ denyAll = true
+ await search.fill('Sem foto')
+ const unavailable = page.getByRole('button', {name: /Sem foto/})
+ await expect(unavailable.getByRole('img')).toHaveAttribute('aria-label', 'Imagem indisponível: Sem foto')
+ await unavailable.click()
+ await page.getByRole('button', {name: 'Criar Produto', exact: true}).click()
+ await expect(page.getByTestId('selected')).toHaveText('p2')
+ expect(requests.length).toBeLessThan(12)
 })
