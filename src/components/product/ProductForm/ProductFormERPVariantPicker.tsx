@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { Loader2, Package } from "lucide-react"
 import { toast } from "sonner"
 
@@ -111,6 +111,7 @@ export function ProductFormERPVariantPicker({
             {parent?.imageUrl ? (
               <Image
                 src={parent.imageUrl}
+                fallbackSources={parent.imageUrls}
                 alt=""
                 width={28}
                 height={28}
