@@ -216,6 +216,7 @@ export interface OrderDetail extends Order {
   // mesmo: o cancelamento foi revertido e o pedido seguiu o fluxo normal
   // (pedido no ERP, métricas). Vira uma entrada no histórico do pedido.
   cancellationRevertedAt?: string | null
+  cancellationRevertedReason?: string | null
   // Produtos que a cliente pediu, a loja não tinha e ela entrou na fila. NÃO
   // são pagáveis: não entram no total e não vão para a transportadora. Mesma
   // fonte da seção de fila do checkout público, para o lojista ver exatamente
