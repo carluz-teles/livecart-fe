@@ -22,6 +22,8 @@ export function OrderDetailStatusBanner() {
   // vivo, mas o lojista precisa entender por que ele reapareceu depois de ter
   // sido cancelado — é o caso que mais gera dúvida.
   if (order.cancellationRevertedAt) {
+    const approvedAfterExpiry =
+      order.cancellationRevertedReason === "tiny_approved_after_expiry"
     return (
       <div
         role="status"
@@ -33,14 +35,27 @@ export function OrderDetailStatusBanner() {
         />
         <div className="space-y-1">
           <p className="text-sm font-medium">
-            Cancelamento revertido — o comprador pagou
+            {approvedAfterExpiry
+              ? "Pagamento reconhecido após a expiração"
+              : "Cancelamento revertido — o comprador pagou"}
           </p>
           <p className="text-sm text-muted-foreground">
-            Este pedido foi cancelado, mas o pagamento entrou assim mesmo em{" "}
-            {formatDateTime(order.cancellationRevertedAt)} e o pedido voltou a
-            valer: o estoque foi retomado e o pedido seguiu para o ERP
-            normalmente. Para devolver o dinheiro, faça o estorno pelo provedor
-            de pagamento.
+            {approvedAfterExpiry ? (
+              <>
+                A aprovação da loja na Tiny foi refletida no LiveCart em{" "}
+                {formatDateTime(order.cancellationRevertedAt)}. O pedido original
+                foi preservado e consta como pago. Nenhuma cobrança foi feita
+                pelo LiveCart nessa confirmação.
+              </>
+            ) : (
+              <>
+                Este pedido foi cancelado, mas o pagamento entrou assim mesmo em{" "}
+                {formatDateTime(order.cancellationRevertedAt)} e o pedido voltou a
+                valer: o estoque foi retomado e o pedido seguiu para o ERP
+                normalmente. Para devolver o dinheiro, faça o estorno pelo provedor
+                de pagamento.
+              </>
+            )}
           </p>
         </div>
       </div>
