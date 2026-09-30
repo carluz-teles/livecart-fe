@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { Package, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -47,7 +49,7 @@ export function TopProducts({ products, isLoading, limit = 5 }: TopProductsProps
                 </span>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {product.imageUrl ? (
-                    <img
+                    <ProductImage width={24} height={24}
                       src={product.imageUrl}
                       alt={product.name}
                       className="h-6 w-6 rounded object-cover shrink-0"

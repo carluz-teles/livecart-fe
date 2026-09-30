@@ -42,7 +42,7 @@ export function OrderDetailStatusBanner() {
           <p className="text-sm text-muted-foreground">
             {approvedAfterExpiry ? (
               <>
-                A aprovação da loja na Tiny foi refletida no LiveCart em{" "}
+                A aprovação da loja no ERP foi refletida no LiveCart em{" "}
                 {formatDateTime(order.cancellationRevertedAt)}. O pedido original
                 foi preservado e consta como pago. Nenhuma cobrança foi feita
                 pelo LiveCart nessa confirmação.

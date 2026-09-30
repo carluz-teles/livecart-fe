@@ -82,7 +82,6 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
   const [eventId, setEventId] = useState("")
   const [sessoes, setSessoes] = useState<SessaoSimulavel[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [sessionId, setSessionId] = useState("")
   const [mediaId, setMediaId] = useState("")
   const [handle, setHandle] = useState("@maria.teste")
   const [texto, setTexto] = useState("quero 2")
@@ -102,7 +101,6 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
         const comMidia = lista.find((s) => s.midiasVivas.length > 0)
         if (comMidia) {
           setEventId(comMidia.eventId)
-          setSessionId(comMidia.sessionId)
           setMediaId(comMidia.midiasVivas[0])
         }
       } catch {
@@ -116,7 +114,7 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
     }
   }, [storeId, getToken])
 
-  const listaEventos = eventos.data?.data ?? []
+  const listaEventos = useMemo(() => eventos.data?.data ?? [], [eventos.data?.data])
   // Sessões só do evento escolhido: a lista vem da loja inteira, e mostrar
   // transmissão de outra campanha faria pendurar mídia no lugar errado.
   const sessoesDoEvento = useMemo(
@@ -135,7 +133,6 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
     try {
       const token = await getToken()
       const r = await simulatorService.entrarNoAr(storeId, eventId, "", token)
-      setSessionId(r.sessionId)
       setMediaId(r.mediaId)
       setSessoes(await simulatorService.listarSessoes(storeId, token))
       toast.success("No ar", { description: r.mediaId })
@@ -285,7 +282,6 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
                     value={eventId}
                     onChange={(e) => {
                       setEventId(e.target.value)
-                      setSessionId("")
                       setMediaId("")
                     }}
                     className="w-full rounded border border-[#7c8b1a]/40 bg-[#141a08] px-2 py-1.5 text-[11px] text-[#dfe8c4] outline-none focus:border-[#c4f82a]"
@@ -304,13 +300,12 @@ function Bancada({ onFechar }: { onFechar: () => void }) {
                       já no ar nesta campanha
                     </p>
                     {sessoesDoEvento
-                      .flatMap((s) => s.midiasVivas.map((m) => ({ s, m })))
-                      .map(({ s, m }) => (
+                      .flatMap((s) => s.midiasVivas)
+                      .map((m) => (
                         <button
                           key={m}
                           type="button"
                           onClick={() => {
-                            setSessionId(s.sessionId)
                             setMediaId(m)
                           }}
                           className="mt-1 block w-full truncate text-left text-[11px] text-[#c4f82a] hover:underline"

@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { PartyPopper, Package } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import type { PublicCheckoutWaitlistItem } from "@/types"

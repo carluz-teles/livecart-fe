@@ -1,5 +1,7 @@
 "use client"
 
+import { integrationConnectionState } from "@/lib/integration-presentation"
+
 import { Fragment, Suspense, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -1012,8 +1014,8 @@ function IntegrationsContent() {
 
                             {connected && (
                               <p className="text-xs leading-relaxed text-muted-foreground">
-                                {connected.status === "error"
-                                  ? "A conexão precisa de atenção. Abra os detalhes para diagnosticar e reconectar."
+                                {integrationConnectionState(connected).attention
+                                  ? integrationConnectionState(connected).detail
                                   : connected.status === "pending_auth"
                                     ? "Autorização pendente. Abra os detalhes para concluir a conexão."
                                     : `Última sincronização registrada: ${integrationDate(connected.lastSyncedAt)}`}

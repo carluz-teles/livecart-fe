@@ -235,7 +235,7 @@ function ShippingOptionsRoot({
             data-open={expanded || undefined}
             className={cn(
               "group/list mt-1 grid grid-rows-[0fr]",
-              "transition-[grid-template-rows] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "transition-[grid-template-rows] [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
               "data-[open]:grid-rows-[1fr]"
             )}
           >

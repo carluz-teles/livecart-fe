@@ -1,5 +1,7 @@
 "use client"
 
+import { getApiErrorMessage } from "@/lib/api-errors"
+
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -254,7 +256,7 @@ export function SessionForm({ eventId, open, onOpenChange, onSuccess }: SessionF
         },
         onError: (error) => {
           toast.error("Não foi possível criar a sessão", {
-            description: error.message || "Tente novamente mais tarde.",
+            description: getApiErrorMessage(error, "Tente novamente mais tarde."),
           })
         },
       },

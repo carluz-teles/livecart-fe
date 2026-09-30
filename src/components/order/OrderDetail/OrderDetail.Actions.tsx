@@ -3,7 +3,6 @@
 import { use, useState } from "react"
 import {
   Ban,
-  BadgeDollarSign,
   CheckCircle2,
   Hash,
   Link2,
@@ -29,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { ApiError } from "@/types/api.types"
 import { OrderDetailContext } from "./OrderDetailContext"
 
 async function copyToClipboard(value: string): Promise<boolean> {

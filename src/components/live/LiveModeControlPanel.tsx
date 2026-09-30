@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useMemo } from "react"
 import {
   Pause,
@@ -166,7 +168,7 @@ export function LiveModeControlPanel({
               <div className="rounded-lg border bg-background p-3">
                 <div className="flex items-start gap-3">
                   {activeProduct.imageUrl ? (
-                    <img
+                    <ProductImage width={48} height={48}
                       src={activeProduct.imageUrl}
                       alt={activeProduct.name}
                       className="h-12 w-12 rounded object-cover"

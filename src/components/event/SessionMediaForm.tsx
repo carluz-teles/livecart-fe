@@ -1,5 +1,7 @@
 "use client"
 
+import { getApiErrorMessage } from "@/lib/api-errors"
+
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -104,7 +106,7 @@ export function SessionMediaForm({
         },
         onError: (error) => {
           toast.error("Erro ao vincular a publicação", {
-            description: error.message || "Tente novamente mais tarde.",
+            description: getApiErrorMessage(error, "Tente novamente mais tarde."),
           })
         },
       }

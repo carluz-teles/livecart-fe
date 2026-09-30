@@ -9,8 +9,10 @@ interface ProductImageProps {
   src?: string | null
   fallbackSources?: string[]
   alt: string
-  width: number
-  height: number
+  width?: number
+  height?: number
+  fill?: boolean
+  sizes?: string
   className?: string
   unoptimized?: boolean
 }
@@ -22,7 +24,7 @@ export function ProductImage({ src, fallbackSources = [], ...props }: ProductIma
   return <ProductImageAttempt key={JSON.stringify(sources)} sources={sources} {...props} />
 }
 
-function ProductImageAttempt({ sources, alt, width, height, className, unoptimized = true }: Omit<ProductImageProps, "src" | "fallbackSources"> & { sources: string[] }) {
+function ProductImageAttempt({ sources, alt, width, height, fill, sizes, className, unoptimized = true }: Omit<ProductImageProps, "src" | "fallbackSources"> & { sources: string[] }) {
   const [index, setIndex] = useState(0)
   const source = sources[index]
 
@@ -32,8 +34,8 @@ function ProductImageAttempt({ sources, alt, width, height, className, unoptimiz
         role="img"
         aria-label={alt ? `Imagem indisponível: ${alt}` : "Imagem indisponível"}
         title="Imagem indisponível"
-        className={cn("inline-flex shrink-0 items-center justify-center rounded-md bg-muted", className)}
-        style={{ width, height }}
+        className={cn("inline-flex shrink-0 items-center justify-center rounded-md bg-muted", fill && "absolute inset-0", className)}
+        style={fill ? undefined : { width, height }}
       >
         <Package aria-hidden="true" className="h-1/2 w-1/2 text-muted-foreground" />
       </span>
@@ -47,9 +49,11 @@ function ProductImageAttempt({ sources, alt, width, height, className, unoptimiz
       alt={alt}
       width={width}
       height={height}
+      fill={fill}
+      sizes={sizes}
       unoptimized={unoptimized}
       className={className}
-      onError={() => setIndex(index + 1)}
+      onError={() => setIndex((current) => current === index ? current + 1 : current)}
     />
   )
 }

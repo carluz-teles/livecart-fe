@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
 import { useCatalogs, useEventCatalog, useSetEventCatalog } from "@/hooks/catalog"
 
 // Sentinel used because a Radix Select cannot hold an empty-string value.

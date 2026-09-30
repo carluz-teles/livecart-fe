@@ -55,8 +55,8 @@ export function useOrderItemEdit({ orderId, enabled, syncProcessing = false }: U
 
   const release = useCallback((id: string) => {
     claimed.current.delete(id)
-    setInFlight(({ [id]: _, ...rest }) => rest)
-    setPending(({ [id]: _, ...rest }) => rest)
+    setInFlight((current) => { const next = { ...current }; delete next[id]; return next })
+    setPending((current) => { const next = { ...current }; delete next[id]; return next })
   }, [])
 
   const refresh = useCallback(async () => {
@@ -120,7 +120,7 @@ export function useOrderItemEdit({ orderId, enabled, syncProcessing = false }: U
     timers.current[itemId] = setTimeout(() => {
       delete timers.current[itemId]
       if (!editable.current) {
-        setPending(({ [itemId]: _, ...rest }) => rest)
+        setPending((current) => { const next = { ...current }; delete next[itemId]; return next })
         toast.info("Aguarde a sincronização para ajustar esta quantidade.")
         return
       }
@@ -132,7 +132,7 @@ export function useOrderItemEdit({ orderId, enabled, syncProcessing = false }: U
     if (!editable.current || claimed.current.has(itemId)) return
     clearTimeout(timers.current[itemId])
     delete timers.current[itemId]
-    setPending(({ [itemId]: _, ...rest }) => rest)
+    setPending((current) => { const next = { ...current }; delete next[itemId]; return next })
     void send("remove", itemId, 0)
   }, [send])
 

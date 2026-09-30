@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { Hourglass, Loader2, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
