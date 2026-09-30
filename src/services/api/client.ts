@@ -111,7 +111,8 @@ function getBaseUrl(): string {
 async function publicRequest<T>(
   method: string,
   url: string,
-  body?: unknown
+  body?: unknown,
+  headers?: Record<string, string>
 ): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT)
@@ -119,7 +120,7 @@ async function publicRequest<T>(
   try {
     const res = await fetch(`${getBaseUrl()}${url}`, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     })
@@ -195,10 +196,10 @@ export const apiClient = {
     multipartRequest<T>(url, form, token),
   // Public routes (without /api/v1 prefix)
   publicGet: <T>(url: string) => publicRequest<T>("GET", url),
-  publicPost: <T>(url: string, body: unknown) => publicRequest<T>("POST", url, body),
+  publicPost: <T>(url: string, body: unknown, headers?: Record<string, string>) => publicRequest<T>("POST", url, body, headers),
   publicPut: <T>(url: string, body: unknown) => publicRequest<T>("PUT", url, body),
-  publicPatch: <T>(url: string, body: unknown) => publicRequest<T>("PATCH", url, body),
-  publicDelete: <T>(url: string) => publicRequest<T>("DELETE", url),
+  publicPatch: <T>(url: string, body: unknown, headers?: Record<string, string>) => publicRequest<T>("PATCH", url, body, headers),
+  publicDelete: <T>(url: string, headers?: Record<string, string>) => publicRequest<T>("DELETE", url, undefined, headers),
 }
 
 // For use in React components with Clerk context

@@ -101,21 +101,24 @@ export const checkoutService = {
   // cache can be swapped in one call.
   // ==========================================================================
 
-  updateItemQuantity: (token: string, itemId: string, quantity: number) =>
+  updateItemQuantity: (token: string, itemId: string, quantity: number, requestId: string) =>
     apiClient.publicPatch<PublicCheckoutCart>(
       `/api/public/checkout/${token}/items/${itemId}`,
-      { quantity }
+      { quantity },
+      { "Idempotency-Key": requestId }
     ),
 
-  removeItem: (token: string, itemId: string) =>
+  removeItem: (token: string, itemId: string, requestId: string) =>
     apiClient.publicDelete<PublicCheckoutCart>(
-      `/api/public/checkout/${token}/items/${itemId}`
+      `/api/public/checkout/${token}/items/${itemId}`,
+      { "Idempotency-Key": requestId }
     ),
 
-  addItem: (token: string, productId: string, quantity: number) =>
+  addItem: (token: string, productId: string, quantity: number, requestId: string) =>
     apiClient.publicPost<PublicCheckoutCart>(
       `/api/public/checkout/${token}/items`,
-      { productId, quantity }
+      { productId, quantity },
+      { "Idempotency-Key": requestId }
     ),
 
   // ==========================================================================
