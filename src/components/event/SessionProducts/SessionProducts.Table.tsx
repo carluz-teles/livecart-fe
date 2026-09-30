@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useState, useEffect } from "react"
 import { Trash2, Star, Package } from "lucide-react"
 
@@ -137,7 +139,7 @@ function SessionProductRow({ product, eventId, sessionId }: SessionProductRowPro
         <TableCell>
           <div className="flex items-center gap-3">
             {product.imageUrl ? (
-              <img
+              <ProductImage width={40} height={40}
                 src={product.imageUrl}
                 alt={product.name}
                 className="h-10 w-10 rounded object-cover"

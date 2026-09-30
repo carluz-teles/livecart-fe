@@ -4,7 +4,8 @@ import { orderService } from "../src/services/api/order.service"
 import { orderWorkflow } from "../src/components/order/OrderDetail/order-workflow"
 import { refreshProductsAfterResync } from "../src/hooks/integration/resync-cache"
 import { productKeys } from "../src/hooks/product/useProducts"
-import type { OrderDetail, IntegrationListResponse } from "../src/types"
+import { integrationConnectionState, integrationOverview } from "../src/lib/integration-presentation"
+import type { OrderDetail, Integration, IntegrationListResponse } from "../src/types"
 
 const order = (changes: Partial<OrderDetail> = {}) =>
   ({
@@ -15,6 +16,30 @@ const order = (changes: Partial<OrderDetail> = {}) =>
     shipment: null,
     ...changes,
   }) as OrderDetail
+
+test("alerta financeiro do ERP tem prioridade mesmo com aprovação concluída", () => {
+  const result = orderWorkflow(order({
+    erpPaymentReview: {
+      externalOrderId: "erp-order", reason: "total_below_paid", paidCents: 332107, orderTotalCents: 308727,
+      detectedAt: "2026-09-30T12:00:00Z", checkedAt: "2026-09-30T12:00:00Z",
+    },
+    erpFinalisation: { status: "done", attemptsCount: 1, canRetry: false },
+  }))
+  expect(result.steps[0]).toMatchObject({ state: "attention", detail: "Conciliação pendente no ERP" })
+  expect(result.next.target).toBe("order-payment")
+})
+
+test("recusa temporária do Bling aparece no resumo e some após renovação", () => {
+  const integration: Integration = {
+    id: "bling", storeId: "store", type: "erp", provider: "bling", status: "active", priority: 1,
+    createdAt: "2026-09-01T12:00:00Z", metadata: { tokenRefreshFailure: { statusCode: 403 } },
+  }
+  expect(integrationConnectionState(integration)).toMatchObject({ label: "Verificar autenticação", attention: true })
+  expect(integrationOverview([integration]).attentionCount).toBe(1)
+  const recovered = { ...integration, metadata: {} }
+  expect(integrationConnectionState(recovered)).toMatchObject({ label: "Conectado", attention: false })
+  expect(integrationOverview([recovered]).attentionCount).toBe(0)
+})
 
 test("pagamento em conferência tem prioridade sobre entrega e ERP", () => {
   const result = orderWorkflow(

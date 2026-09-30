@@ -3,7 +3,7 @@
 import { getAvailablePriceLots, getPayableItemTotal } from "@/lib/cart-item-prices"
 
 import { use, useState } from "react"
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { Loader2, Minus, Package, Plus, Trash2 } from "lucide-react"
 import {
   AlertDialog,

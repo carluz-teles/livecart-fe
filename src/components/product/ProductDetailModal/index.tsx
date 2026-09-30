@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import Link from "next/link"
 import {
   ArrowRight,

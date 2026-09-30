@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@clerk/nextjs"
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, MapPin, Phone, Mail, Loader2, Camera, Truck, Package, AlertTriangle } from "lucide-react"
+import { Building2, MapPin, Loader2, Camera, Truck, Package, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

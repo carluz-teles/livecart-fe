@@ -542,9 +542,10 @@ function MercadoPagoCardForm({
         // O gateway devolve os planos da conta do lojista; o mínimo por parcela
         // é regra do LiveCart e corta essa lista por cima. Quem manda é o menor
         // dos dois.
-        setInstallmentOptions(costs.filter((c) => c.installments <= maxInstallments))
+        const allowedCosts = costs.filter((c) => c.installments <= maxInstallments)
+        setInstallmentOptions(allowedCosts)
         setSelectedInstallments((prev) =>
-          costs.some((c) => c.installments === prev) ? prev : 1
+          allowedCosts.some((c) => c.installments === prev) ? prev : 1
         )
       } catch (err) {
         console.error("Failed to fetch installments:", err)
@@ -553,7 +554,7 @@ function MercadoPagoCardForm({
     return () => {
       cancelled = true
     }
-  }, [bin, paymentMethodId, amount])
+  }, [bin, paymentMethodId, amount, maxInstallments])
 
   const allFieldsValid =
     validity.cardNumber && validity.expirationDate && validity.securityCode

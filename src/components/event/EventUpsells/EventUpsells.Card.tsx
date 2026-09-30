@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useState } from "react"
 import { Trash2, Package, Percent, MessageSquare } from "lucide-react"
 
@@ -37,6 +39,7 @@ export function EventUpsellCard({ upsell, eventId }: EventUpsellCardProps) {
 
   const updateMutation = useUpdateUpsell(eventId)
   const removeMutation = useRemoveUpsell(eventId)
+  const update = updateMutation.mutate
 
   const debouncedDiscount = useDebounce(localDiscount, 500)
   const debouncedMessage = useDebounce(localMessage, 500)
@@ -45,30 +48,32 @@ export function EventUpsellCard({ upsell, eventId }: EventUpsellCardProps) {
   useEffect(() => {
     if (editingField !== "discount") return
 
-    const discount = parseInt(localDiscount, 10)
+    if (debouncedDiscount !== localDiscount) return
+    const discount = parseInt(debouncedDiscount, 10)
     if (isNaN(discount) || discount < 1 || discount > 99) return
 
     if (discount !== upsell.discountPercent) {
-      updateMutation.mutate({
+      update({
         upsellId: upsell.id,
         payload: { discountPercent: discount },
       })
     }
-  }, [debouncedDiscount])
+  }, [debouncedDiscount, localDiscount, editingField, upsell.discountPercent, upsell.id, update])
 
   // Handle debounced message update
   useEffect(() => {
     if (editingField !== "message") return
 
-    const message = localMessage.trim() || null
+    if (debouncedMessage !== localMessage) return
+    const message = debouncedMessage.trim() || null
 
     if (message !== upsell.messageTemplate) {
-      updateMutation.mutate({
+      update({
         upsellId: upsell.id,
         payload: { messageTemplate: message },
       })
     }
-  }, [debouncedMessage])
+  }, [debouncedMessage, localMessage, editingField, upsell.messageTemplate, upsell.id, update])
 
   const handleToggleActive = (active: boolean) => {
     updateMutation.mutate({
@@ -89,7 +94,7 @@ export function EventUpsellCard({ upsell, eventId }: EventUpsellCardProps) {
       <Card className={cn("p-4", isPending && "bg-primary/5")}>
         <div className="flex items-start gap-4">
           {upsell.imageUrl ? (
-            <img
+            <ProductImage width={64} height={64}
               src={upsell.imageUrl}
               alt={upsell.name}
               className="h-16 w-16 rounded object-cover flex-shrink-0"

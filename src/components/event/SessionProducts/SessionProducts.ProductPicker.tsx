@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useState } from "react"
 import { Search, Plus, Package, Check, ArrowLeft } from "lucide-react"
 
@@ -135,7 +137,7 @@ function ProductPickerItem({ product, onAdd, isAdding }: ProductPickerItemProps)
       )}
     >
       {product.imageUrl ? (
-        <img
+        <ProductImage width={48} height={48}
           src={product.imageUrl}
           alt={product.name}
           className="h-12 w-12 flex-shrink-0 rounded object-cover"

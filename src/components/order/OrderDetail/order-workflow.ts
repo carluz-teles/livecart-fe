@@ -17,14 +17,16 @@ export function orderWorkflow(order: OrderDetail) {
   const steps: WorkflowStep[] = [
     {
       title: "Pagamento",
-      state: order.paymentReviewRequired
+      state: order.paymentReviewRequired || order.erpPaymentReview
         ? "attention"
         : paid
           ? "done"
           : order.paymentStatus === "failed"
             ? "attention"
             : "waiting",
-      detail: order.paymentReviewRequired
+      detail: order.erpPaymentReview
+        ? "Conciliação pendente no ERP"
+        : order.paymentReviewRequired
         ? "Em conferência"
         : paid
           ? "Recebido"
@@ -94,7 +96,7 @@ export function orderWorkflow(order: OrderDetail) {
     target: "order-logistics",
     label: "Ver logística",
   }
-  if (order.paymentReviewRequired)
+  if (order.paymentReviewRequired || order.erpPaymentReview)
     next = {
       text: "Confira a divergência de pagamento antes de liberar o pedido.",
       target: "order-payment",

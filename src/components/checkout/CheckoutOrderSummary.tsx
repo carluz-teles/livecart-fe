@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
+import { ProductImage as Image } from "@/components/product/ProductImage"
 import { ShoppingBag, ChevronDown, Plus, Minus, Trash2, Package, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -218,6 +218,7 @@ function OrderItemCompact({
             <Image
               src={item.imageUrl}
               alt={item.name}
+              sizes="64px"
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />

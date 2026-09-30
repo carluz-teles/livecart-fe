@@ -52,6 +52,14 @@ export function integrationConnectionState(integration: Integration) {
       attention: true,
     } as const
   }
+  if (integration.metadata?.tokenRefreshFailure) {
+    return {
+      kind: "error",
+      label: "Verificar autenticação",
+      detail: "O provedor recusou a renovação do acesso. Há uma nova tentativa programada; abra os detalhes para verificar a conexão.",
+      attention: true,
+    } as const
+  }
   if (integration.webhookStatus === "pending") {
     return {
       kind: "pending",
