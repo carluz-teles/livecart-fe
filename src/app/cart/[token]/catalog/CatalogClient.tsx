@@ -96,7 +96,8 @@ export function CatalogClient({
   const cartEditInFlight =
     addItem.isPending ||
     updateItemQuantity.isPending ||
-    removeItem.isPending
+    removeItem.isPending ||
+    !!cart.erpItemSync?.pending
 
   const items = cart.items
   const empty = items.length === 0
@@ -158,6 +159,12 @@ export function CatalogClient({
       <style dangerouslySetInnerHTML={{ __html: CATALOG_CSS }} />
 
       <div style={{ minHeight: "100vh" }}>
+        {cart.erpItemSync?.pending ? (
+          <div role="status" className="border-b bg-muted p-4 text-center text-sm">
+            <p className="font-medium">{cart.erpItemSync.blocked ? "Seu pedido precisa de conferência" : "Alteração salva; aguardando confirmação"}</p>
+            <p>{cart.erpItemSync.blocked ? "Fale com a loja antes de continuar." : "Aguarde para editar novamente. Esta tela será atualizada automaticamente."}</p>
+          </div>
+        ) : null}
         {/* ===== HEADER (compartilhado) ===== */}
         <header
           style={{
