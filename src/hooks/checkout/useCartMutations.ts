@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { checkoutService } from "@/services/api/checkout.service"
@@ -54,8 +55,37 @@ function showStockExhaustedToast() {
   })
 }
 
+// Retrying the same mutation keeps its command identity; another user action
+// receives a new key. Weak references avoid keeping finished carts in memory.
+function useEditRequestId() {
+  const requests = useRef(new WeakMap<object, string>())
+  return (command: object) => {
+    let id = requests.current.get(command)
+    if (!id) {
+      id = crypto.randomUUID()
+      requests.current.set(command, id)
+    }
+    return id
+  }
+}
+
+function notifySavedEdit(cart: PublicCheckoutCart, completed?: string) {
+  if (cart.erpItemSync?.blocked) {
+    toast.warning("Alteração salva; pedido precisa de conferência", {
+      description: "Fale com a loja antes de continuar o pagamento.",
+    })
+  } else if (cart.erpItemSync?.pending) {
+    toast.info("Alteração salva", {
+      description: "Aguardando confirmação dos itens. A tela será atualizada automaticamente.",
+    })
+  } else if (completed) {
+    toast.success(completed)
+  }
+}
+
 export function useUpdateCartItemQuantity() {
   const queryClient = useQueryClient()
+  const requestId = useEditRequestId()
 
   return useMutation<
     PublicCheckoutCart,
@@ -63,8 +93,9 @@ export function useUpdateCartItemQuantity() {
     UpdateQuantityArgs,
     { previous?: PublicCheckoutCart }
   >({
-    mutationFn: ({ token, itemId, quantity }) =>
-      checkoutService.updateItemQuantity(token, itemId, quantity),
+    mutationFn: (command) =>
+      checkoutService.updateItemQuantity(command.token, command.itemId, command.quantity, requestId(command)),
+    retry: false,
     onMutate: async ({ token, itemId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: checkoutKeys.cart(token) })
       const previous = queryClient.getQueryData<PublicCheckoutCart>(
@@ -117,6 +148,7 @@ export function useUpdateCartItemQuantity() {
     },
     onSuccess: (data, { token }) => {
       queryClient.setQueryData(checkoutKeys.cart(token), data)
+      notifySavedEdit(data)
     },
     onSettled: (_data, _err, { token }) => {
       queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })
@@ -126,6 +158,7 @@ export function useUpdateCartItemQuantity() {
 
 export function useRemoveCartItem() {
   const queryClient = useQueryClient()
+  const requestId = useEditRequestId()
 
   return useMutation<
     PublicCheckoutCart,
@@ -133,8 +166,9 @@ export function useRemoveCartItem() {
     RemoveItemArgs,
     { previous?: PublicCheckoutCart }
   >({
-    mutationFn: ({ token, itemId }) =>
-      checkoutService.removeItem(token, itemId),
+    mutationFn: (command) =>
+      checkoutService.removeItem(command.token, command.itemId, requestId(command)),
+    retry: false,
     onMutate: async ({ token, itemId }) => {
       await queryClient.cancelQueries({ queryKey: checkoutKeys.cart(token) })
       const previous = queryClient.getQueryData<PublicCheckoutCart>(
@@ -174,7 +208,7 @@ export function useRemoveCartItem() {
     },
     onSuccess: (data, { token }) => {
       queryClient.setQueryData(checkoutKeys.cart(token), data)
-      toast.success("Item removido")
+      notifySavedEdit(data, "Item removido")
     },
     onSettled: (_data, _err, { token }) => {
       queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })
@@ -229,10 +263,12 @@ export function useDropFromWaitlist() {
 
 export function useAddCartItem() {
   const queryClient = useQueryClient()
+  const requestId = useEditRequestId()
 
   return useMutation<PublicCheckoutCart, ApiError, AddItemArgs>({
-    mutationFn: ({ token, productId, quantity }) =>
-      checkoutService.addItem(token, productId, quantity),
+    mutationFn: (command) =>
+      checkoutService.addItem(command.token, command.productId, command.quantity, requestId(command)),
+    retry: false,
     onError: (err) => {
       if (isInsufficientStockError(err)) {
         showStockExhaustedToast()
@@ -242,7 +278,7 @@ export function useAddCartItem() {
     },
     onSuccess: (data, { token }) => {
       queryClient.setQueryData(checkoutKeys.cart(token), data)
-      toast.success("Produto adicionado")
+      notifySavedEdit(data, "Produto adicionado")
     },
     onSettled: (_data, _err, { token }) => {
       queryClient.invalidateQueries({ queryKey: checkoutKeys.cart(token) })

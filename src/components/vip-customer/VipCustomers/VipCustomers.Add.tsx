@@ -23,14 +23,11 @@ export function VipCustomersAdd() {
       {
         onSuccess: (vip) => {
           setHandle("")
-          // A promoção grava a linha do VIP e só DEPOIS consolida os carrinhos
-          // que o cliente já tinha. Quando essa segunda parte não roda, o @ é
-          // VIP para as próximas compras mas os carrinhos atuais continuam com
-          // prazo — dizer "nunca vai expirar" aqui seria mentira.
+          // A proteção é salva antes de juntar os carrinhos e pedidos do ERP.
           if (vip.activationFailed) {
-            toast.warning(`@${vip.handle} agora é VIP, mas os carrinhos atuais não`, {
+            toast.warning(`@${vip.handle} agora é VIP, mas a junção ficou pendente`, {
               description:
-                "Os carrinhos em aberto dele continuam com prazo para expirar. Remova e adicione o VIP de novo para tentar outra vez.",
+                "Os carrinhos estão protegidos contra expiração. Adicione o mesmo arroba novamente para tentar concluir a junção, sem remover o VIP.",
             })
             return
           }
@@ -52,7 +49,7 @@ export function VipCustomersAdd() {
               `${forasDaFusao} carrinho${forasDaFusao > 1 ? "s" : ""} ficou de fora`,
               {
                 description:
-                  "Já tem pedido no ERP, então não foi juntado ao carrinho eterno — e continua com prazo.",
+                  "Não foi possível juntar esse carrinho. Confira a situação do pedido antes de tentar novamente.",
               },
             )
           }

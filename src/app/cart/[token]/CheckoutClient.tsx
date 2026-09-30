@@ -857,7 +857,7 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-lg items-center px-6">
         <div role="status" className="space-y-3 rounded-xl border bg-card p-6">
-          <h1 className="text-xl font-semibold">{cart.erpItemSync.blocked ? "Seu pedido precisa de conferência" : "A loja está atualizando seu pedido"}</h1>
+          <h1 className="text-xl font-semibold">{cart.erpItemSync.blocked ? "Seu pedido precisa de conferência" : "Confirmando as alterações do seu pedido"}</h1>
           <p className="text-sm text-muted-foreground">
             {cart.erpItemSync.blocked
               ? "Fale com a loja para conferir os itens deste pedido. O pagamento será liberado após a confirmação."
