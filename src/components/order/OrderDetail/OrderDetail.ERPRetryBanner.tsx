@@ -5,9 +5,10 @@ import { AlertTriangle, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRetryERPFinalisation } from "@/hooks/order"
 import { getApiErrorMessage } from "@/lib/api-errors"
-import { formatAttemptCount, formatDateTime } from "@/lib/format"
+import { formatAttemptCount, formatCurrency, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
 import { useERPConectado } from "@/hooks/integration"
@@ -54,6 +55,26 @@ export function OrderDetailERPRetryBanner() {
   ) : null
   const warnings = <>
     {syncNotice}
+    {order.erpPaymentReview && (
+      <Alert variant="destructive" className="print:hidden">
+        <AlertTriangle aria-hidden="true" />
+        <AlertTitle>Conciliação financeira pendente no {erp.nome}</AlertTitle>
+        <AlertDescription>
+          <p>
+            {order.erpPaymentReview.reason === "total_below_paid"
+              ? "O total do pedido diverge dos pagamentos registrados."
+              : "Não foi possível confirmar a divisão entre o valor pago e o saldo a pagar."}
+            {" "}Confira os títulos no ERP antes de cobrar, estornar ou liberar o pedido.
+          </p>
+          {order.erpPaymentReview.paidCents !== undefined && order.erpPaymentReview.orderTotalCents !== undefined && (
+            <p>
+              Pagamentos registrados: {formatCurrency(order.erpPaymentReview.paidCents)}.
+              {" "}Total observado no ERP: {formatCurrency(order.erpPaymentReview.orderTotalCents)}.
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
+    )}
     {order.paymentReviewRequired || (!sync?.pending && (order.erpPendingItems ?? 0) > 0) ? (
     <div
       role="alert"

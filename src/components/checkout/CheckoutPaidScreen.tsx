@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import {
   CheckCircle,
   CreditCard,
@@ -117,7 +118,7 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
               <li key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                 <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
                   {item.imageUrl ? (
-                    <Image
+                    <ProductImage
                       src={item.imageUrl}
                       alt={item.name}
                       fill

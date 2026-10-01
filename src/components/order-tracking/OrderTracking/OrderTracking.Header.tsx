@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ShieldCheck } from "lucide-react"
 
 import type { PublicOrder } from "@/types/order-tracking.types"
@@ -16,7 +17,7 @@ export function OrderTrackingHeader({ order }: OrderTrackingHeaderProps) {
         <div className="flex flex-col items-center gap-4">
           {order.store_logo_url ? (
             <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white shadow-xl shadow-gray-200/60">
-              <img
+              <Image width={64} height={64} unoptimized
                 src={order.store_logo_url}
                 alt={order.store_name}
                 className="h-full w-full object-contain"

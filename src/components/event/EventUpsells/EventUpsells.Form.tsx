@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useState } from "react"
 import { Search, Package, Percent } from "lucide-react"
 
@@ -158,7 +160,7 @@ export function EventUpsellsForm({
             {selectedProduct && (
               <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                 {selectedProduct.imageUrl ? (
-                  <img
+                  <ProductImage width={48} height={48}
                     src={selectedProduct.imageUrl}
                     alt={selectedProduct.name}
                     className="h-12 w-12 rounded object-cover"
@@ -260,7 +262,7 @@ function ProductSelectItem({ product, onSelect }: ProductSelectItemProps) {
       )}
     >
       {product.imageUrl ? (
-        <img
+        <ProductImage width={48} height={48}
           src={product.imageUrl}
           alt={product.name}
           className="h-12 w-12 rounded object-cover flex-shrink-0"

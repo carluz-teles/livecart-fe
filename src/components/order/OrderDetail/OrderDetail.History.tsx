@@ -438,7 +438,7 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
         ? "Pagamento reconhecido após a expiração"
         : "Cancelamento revertido — o comprador pagou",
       description: approvedAfterExpiry
-        ? "A loja aprovou a venda na Tiny após a expiração do carrinho. O LiveCart conferiu a venda e registrou os produtos e o pagamento, preservando o vínculo com o pedido original. Este registro não representa uma cobrança pelo LiveCart."
+        ? "A loja aprovou a venda no ERP após a expiração do carrinho. O LiveCart conferiu a venda e registrou os produtos e o pagamento, preservando o vínculo com o pedido original. Este registro não representa uma cobrança pelo LiveCart."
         : "Este pedido foi cancelado, mas o pagamento entrou assim mesmo e o pedido voltou a valer. O estoque foi retomado e o pedido seguiu para o ERP normalmente. Para devolver o dinheiro, faça o estorno pelo provedor de pagamento.",
     })
   }
@@ -467,10 +467,10 @@ function buildEvents(order: OrderDetail): TimelineEvent[] {
         kind: "erp_done",
         date: at,
         title: approvedAfterExpiry
-          ? "Venda conferida na Tiny"
+          ? "Venda conferida no ERP"
           : `Pedido enviado para o ERP${attemptsSuffix}`,
         description: approvedAfterExpiry
-          ? "Os dados foram conferidos com a venda existente. Essa confirmação não criou outro pedido nem realizou uma nova baixa de estoque na Tiny."
+          ? "Os dados foram conferidos com a venda existente. Essa confirmação não criou outro pedido nem realizou uma nova baixa de estoque no ERP."
           : "Tudo certo — o pedido foi criado no ERP e o estoque foi baixado.",
       })
     } else if (finalisation.status === "failed") {

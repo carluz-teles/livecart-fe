@@ -586,7 +586,6 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
       }
     },
     [
-      formatCurrency,
       selectShippingMethod,
       selectedShippingId,
       shippingQuote,

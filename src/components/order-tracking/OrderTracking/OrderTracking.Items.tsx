@@ -1,5 +1,6 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
 import { Package } from "lucide-react"
 
 import type { PublicOrder } from "@/types/order-tracking.types"
@@ -26,8 +27,7 @@ export function OrderTrackingItems({ order }: OrderTrackingItemsProps) {
           >
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-white">
               {item.product_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <ProductImage width={56} height={56}
                   src={item.product_image_url}
                   alt={item.product_name}
                   className="h-full w-full object-cover"

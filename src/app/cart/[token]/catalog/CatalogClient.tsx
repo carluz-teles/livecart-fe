@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductImage } from "@/components/product/ProductImage"
+
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { usePublicCatalog } from "@/hooks/public/usePublicCatalog"
@@ -430,16 +432,10 @@ export function CatalogClient({
                     }}
                   >
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        className="pimg"
+                      <ProductImage fill sizes="(max-width: 640px) 50vw, 240px"
                         src={item.imageUrl}
                         alt={item.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
+                        className="pimg object-cover"
                       />
                     ) : (
                       <div
