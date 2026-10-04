@@ -27,9 +27,9 @@ export const EVENT_COPY = {
     empty: "Vazio = começa agora.",
   },
   endsAt: {
-    label: "Fim do evento",
+    label: "Receber compras até",
     hint: "Quando o evento fecha. É a partir daqui que o prazo para o comprador finalizar começa a correr.",
-    help: "Enquanto o evento estiver aberto, nenhum carrinho expira e nenhum estoque é liberado. Este campo é o teto que garante que isso não fica eterno — você pode encerrar antes pelo botão “Finalizar evento”.",
+    help: "Escolha o último dia da campanha. Depois dessa data e horário, os comentários deixam de adicionar produtos, mesmo que os carrinhos ainda tenham prazo para finalizar.",
   },
   cartExpiration: {
     label: "Prazo para finalizar após o evento",

@@ -1,5 +1,6 @@
 "use client"
 
+import { forwardRef, useId } from "react"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-interface DateTimeFieldProps {
+interface DateTimeFieldProps extends Pick<React.ComponentPropsWithoutRef<typeof Button>, "id" | "aria-describedby" | "aria-invalid" | "aria-label" | "onBlur"> {
   /** ISO8601 ou null. */
   value: string | null | undefined
   onChange: (iso: string | null) => void
@@ -30,7 +31,7 @@ interface DateTimeFieldProps {
  * DOIS campos iguais (início e fim) e duplicar o calendário era o caminho mais
  * curto para os dois divergirem em detalhe de comportamento.
  */
-export function DateTimeField({
+export const DateTimeField = forwardRef<HTMLButtonElement, DateTimeFieldProps>(function DateTimeField({
   value,
   onChange,
   placeholder = "Selecione data e hora",
@@ -38,8 +39,10 @@ export function DateTimeField({
   defaultMinute = 0,
   clearable = true,
   disabledBefore,
-}: DateTimeFieldProps) {
-  const selectedDate = value ? new Date(value) : undefined
+  ...controlProps
+}, ref) {
+  const timeId = useId()
+  const selectedDate = value && Number.isFinite(Date.parse(value)) ? new Date(value) : undefined
   const timeValue = selectedDate ? format(selectedDate, "HH:mm") : ""
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -57,9 +60,10 @@ export function DateTimeField({
   }
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedDate || !e.target.value) return
     const [hours, minutes] = e.target.value.split(":").map(Number)
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return
-    const date = selectedDate ? new Date(selectedDate) : new Date()
+    const date = new Date(selectedDate)
     date.setHours(hours, minutes, 0, 0)
     onChange(date.toISOString())
   }
@@ -68,6 +72,8 @@ export function DateTimeField({
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          {...controlProps}
+          ref={ref}
           type="button"
           variant="outline"
           className={cn(
@@ -84,8 +90,8 @@ export function DateTimeField({
               não cabe num controle de meia coluna. O ano abreviado mantém a
               data completa — importa para evento agendado para o ano seguinte. */}
           <span className="truncate">
-            {value
-              ? format(new Date(value), "dd/MM/yy 'às' HH:mm", { locale: ptBR })
+            {selectedDate
+              ? format(selectedDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
               : placeholder}
           </span>
         </Button>
@@ -94,13 +100,15 @@ export function DateTimeField({
         <Calendar
           mode="single"
           selected={selectedDate}
+          defaultMonth={selectedDate}
           onSelect={handleDateSelect}
           disabled={disabledBefore ? (date) => date < disabledBefore : undefined}
           locale={ptBR}
         />
         <div className="border-t p-3">
-          <Label className="text-sm">Horário</Label>
-          <Input type="time" value={timeValue} onChange={handleTimeChange} className="mt-1" />
+          <Label htmlFor={timeId} className="text-sm">Horário</Label>
+          <Input id={timeId} type="time" value={timeValue} onChange={handleTimeChange} disabled={!selectedDate} className="mt-1" />
+          {!selectedDate && <p className="mt-1 text-xs text-muted-foreground">Escolha o dia para definir o horário.</p>}
         </div>
         {clearable && value && (
           <div className="border-t p-3">
@@ -118,4 +126,4 @@ export function DateTimeField({
       </PopoverContent>
     </Popover>
   )
-}
+})

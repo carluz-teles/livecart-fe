@@ -4,6 +4,9 @@ const waitlistExtraMinutesSchema = z.number().int()
   .min(0, "O prazo extra deve ser 0 ou maior")
   .max(43200, "Máximo de 30 dias")
 
+const eventEndSchema = z.string().min(1, "Escolha o último dia e horário para receber compras")
+  .refine((value) => !value || Number.isFinite(Date.parse(value)), "Informe uma data válida")
+
 // =============================================================================
 // EVENT (CAMPANHA)
 // =============================================================================
@@ -31,7 +34,10 @@ export const createEventSchema = z
     // OBRIGATÓRIO (RN-05). O backend marca EndsAt como `validate:"required"` e
     // responde 422 sem ele — a criação de evento estava quebrada exatamente
     // por isso, e sem mensagem de campo o lojista não tinha como descobrir.
-    endsAt: z.string().min(1, "Informe quando a campanha fecha"),
+    endsAt: eventEndSchema.refine(
+      (value) => !value || !Number.isFinite(Date.parse(value)) || Date.parse(value) > Date.now(),
+      "O encerramento precisa estar no futuro"
+    ),
     description: z.string().max(1000).nullable().optional(),
     // Cart settings (override store defaults)
     closeCartOnEventEnd: z.boolean().optional(),
@@ -72,7 +78,7 @@ export const updateEventWindowSchema = z
       .max(200, "Titulo deve ter no maximo 200 caracteres"),
     startsAt: z.string().nullable().optional(),
     // O backend recusa remover o teto: sem ends_at o carrinho perde o prazo.
-    endsAt: z.string().min(1, "Informe quando a campanha fecha"),
+    endsAt: eventEndSchema,
     waitlistNotifiedTtlMinutes: waitlistExtraMinutesSchema.optional(),
     pixDiscountPercent: z.number().int().min(0).max(100).optional(),
     // Prazo do carrinho, agora editável depois de criado (20/08/2026). null =
