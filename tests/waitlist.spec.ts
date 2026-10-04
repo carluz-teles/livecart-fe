@@ -4,7 +4,7 @@ import { getAvailablePriceLots, getPayableItemTotal } from "../src/lib/cart-item
 import { groupOrderItemsByProduct } from "../src/lib/order-items"
 import type { OrderItem } from "../src/types/cart.types"
 
-const event = { title: "Reposição", endsAt: "2026-09-22T18:00:00Z" }
+const event = { title: "Reposição", endsAt: new Date(Date.now() + 86_400_000).toISOString() }
 
 for (const [name, schema] of [["criação", createEventSchema], ["edição", updateEventWindowSchema]] as const) {
   test(`${name}: Y aceita zero, minutos, horas e o teto de 30 dias`, () => {

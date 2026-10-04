@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, Pencil } from "lucide-react"
@@ -8,6 +8,10 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+import { EventWindowSummary } from "./EventWindowSummary"
 import {
   Sheet,
   SheetContent,
@@ -61,6 +65,13 @@ interface EventWindowFormProps {
  */
 export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventWindowFormProps) {
   const updateEvent = useUpdateEvent()
+  const [review, setReview] = useState<UpdateEventWindowFormData | null>(null)
+  const [confirmed, setConfirmed] = useState(false)
+  const confirmationId = useId()
+  const openedEvent = useRef<string | null>(null)
+  const originalEvent = useRef(event)
+  const submitting = useRef(false)
+  const heading = useRef<HTMLHeadingElement>(null)
 
   const form = useForm<UpdateEventWindowFormData>({
     resolver: zodResolver(updateEventWindowSchema),
@@ -75,6 +86,12 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
   })
 
   useEffect(() => {
+    if (!open) { openedEvent.current = null; return }
+    if (openedEvent.current === event.id) return
+    openedEvent.current = event.id
+    originalEvent.current = event
+    setReview(null)
+    setConfirmed(false)
     form.reset({
       title: event.title ?? "",
       startsAt: event.scheduledAt,
@@ -83,12 +100,20 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       pixDiscountPercent: event.pixDiscountPercent ?? 0,
       cartExpirationMinutes: event.cartExpirationMinutes ?? null,
     })
-  }, [event, form])
+  }, [open, event, form])
+
+  useEffect(() => {
+    if (review) heading.current?.focus()
+  }, [review])
 
   const watchStartsAt = form.watch("startsAt")
   const watchEndsAt = form.watch("endsAt")
 
   function onSubmit(data: UpdateEventWindowFormData) {
+    if (submitting.current) return
+    if (!review) { setReview(data); setConfirmed(false); return }
+    if (!confirmed) return
+    submitting.current = true
     updateEvent.mutate(
       {
         id: event.id,
@@ -110,6 +135,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
       },
       {
         onSuccess: () => {
+          submitting.current = false
           toast.success("Campanha atualizada", {
             description:
               "Mudar o fim reprograma o encerramento — inclusive para antes, se você antecipou.",
@@ -118,6 +144,7 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
           onSuccess?.()
         },
         onError: (error) => {
+          submitting.current = false
           toast.error("Erro ao atualizar a campanha", {
             description: error.message || "Tente novamente mais tarde.",
           })
@@ -127,12 +154,12 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] overflow-y-auto sm:w-[480px]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+    <Sheet open={open} onOpenChange={(next) => { if (!submitting.current) onOpenChange(next) }}>
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:w-[480px] sm:max-w-[480px]">
+        <SheetHeader className="px-6 pb-4 pt-6">
+          <SheetTitle ref={heading} tabIndex={-1} className="flex items-center gap-2">
             <Pencil className="h-5 w-5" />
-            Editar campanha
+            {review ? "Confirme as alterações" : "Editar campanha"}
           </SheetTitle>
           <SheetDescription>
             Ajuste a janela comercial e as regras de prazo. Antecipar o fim faz o prazo de
@@ -141,7 +168,8 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit, () => { setReview(null); setConfirmed(false) })} className="flex min-h-0 flex-1 flex-col">
+            <div hidden={!!review} className={cn("min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6", review ? "hidden" : "flex")}>
             <FormField
               control={form.control}
               name="title"
@@ -167,11 +195,12 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                     {EVENT_COPY.startsAt.label}
                     <FieldHint text={EVENT_COPY.startsAt.hint} />
                   </FormLabel>
-                  <DateTimeField
+                  <FormControl><DateTimeField
+                    ref={field.ref}
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Começa agora"
-                  />
+                  /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -186,13 +215,14 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                     {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
                     <FieldHint text={EVENT_COPY.endsAt.hint} />
                   </FormLabel>
-                  <DateTimeField
+                  <FormControl><DateTimeField
+                    ref={field.ref}
                     value={field.value}
                     onChange={(iso) => field.onChange(iso ?? "")}
                     clearable={false}
                     defaultHour={23}
                     defaultMinute={59}
-                  />
+                  /></FormControl>
                   <FormDescription>{EVENT_COPY.endsAt.help}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -217,7 +247,8 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
                     <FieldHint text={EVENT_COPY.cartExpiration.hint} />
                   </FormLabel>
                   <FormControl>
-                    <DurationField
+                      <DurationField
+                        ariaLabel={EVENT_COPY.cartExpiration.label}
                       value={field.value}
                       onChange={field.onChange}
                       minMinutes={15}
@@ -294,18 +325,33 @@ export function EventWindowForm({ event, open, onOpenChange, onSuccess }: EventW
               )}
             />
 
-            <div className="flex justify-end gap-3 pt-4">
+            </div>
+            {review && (
+              <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6">
+                <EventWindowSummary {...review} existingEvent previousEndsAt={originalEvent.current.endsAt}
+                  ended={originalEvent.current.status === "ended"} />
+                <div className="flex items-start gap-3">
+                  <Checkbox id={confirmationId} checked={confirmed} disabled={updateEvent.isPending}
+                    onCheckedChange={(checked) => setConfirmed(checked === true)} />
+                  <Label htmlFor={confirmationId} className="leading-relaxed">Conferi as datas e o efeito nos comentários e carrinhos.</Label>
+                </div>
+              </div>
+            )}
+            <div className="flex shrink-0 justify-end gap-3 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  if (review) { setReview(null); setConfirmed(false) }
+                  else onOpenChange(false)
+                }}
                 disabled={updateEvent.isPending}
               >
-                Cancelar
+                {review ? "Voltar e corrigir" : "Cancelar"}
               </Button>
-              <Button type="submit" disabled={updateEvent.isPending}>
+              <Button type="submit" disabled={updateEvent.isPending || (!!review && !confirmed)}>
                 {updateEvent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {updateEvent.isPending ? "Salvando..." : "Salvar"}
+                {updateEvent.isPending ? "Salvando..." : review ? "Confirmar e salvar" : "Revisar alterações"}
               </Button>
             </div>
           </form>
