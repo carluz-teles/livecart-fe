@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Loader2, CalendarRange, ChevronDown } from "lucide-react"
@@ -8,6 +8,8 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Collapsible,
@@ -48,6 +50,7 @@ import {
 import { DateTimeField } from "@/components/shared/DateTimeField"
 import type { SessionType } from "@/lib/event-kind"
 import type { CreateEventPayload } from "@/types/event.types"
+import { EventWindowSummary, formatEventDate } from "./EventWindowSummary"
 
 /** Valor do select de mídia quando o lojista escolhe não vincular agora. */
 
@@ -70,14 +73,6 @@ interface EventFormProps {
  */
 const WAITLIST_TTL_FALLBACK = 30
 
-/** Fim padrão: 24h à frente, às 23h59 — o formato que o lojista digitaria. */
-function defaultEndsAt(): string {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  d.setHours(23, 59, 0, 0)
-  return d.toISOString()
-}
-
 export function EventForm({
   open,
   onOpenChange,
@@ -93,13 +88,21 @@ export function EventForm({
   // lojista não pede: mexer nas configurações da loja no meio de um evento em
   // andamento muda as regras dele por baixo. Preenchido, o evento nasce com uma
   // cópia do que a loja valia naquele momento — e continua editável aqui.
-  const { data: store } = useStore()
+  const { data: store, isError: storeError, refetch: reloadStore } = useStore()
   const storeDefaults = store?.cartSettings
   const [internalOpen, setInternalOpen] = useState(false)
   const [extrasOpen, setExtrasOpen] = useState(false)
+  const [review, setReview] = useState<CreateEventFormData | null>(null)
+  const [datesConfirmed, setDatesConfirmed] = useState(false)
+  const opened = useRef(false)
+  const defaultsApplied = useRef(false)
+  const submitting = useRef(false)
+  const reviewHeading = useRef<HTMLHeadingElement>(null)
+  const confirmationId = useId()
   const isControlled = open !== undefined
   const sheetOpen = isControlled ? open : internalOpen
   const handleOpenChange = (next: boolean) => {
+    if (submitting.current) return
     if (!isControlled) setInternalOpen(next)
     onOpenChange?.(next)
   }
@@ -112,10 +115,8 @@ export function EventForm({
     platform: undefined,
     platformLiveId: "",
     startsAt: null,
-    // Padrão de 24h à frente: endsAt é obrigatório no backend, e abrir o
-    // formulário vazio num campo obrigatório é o caminho mais curto para o
-    // lojista levar 422 sem entender por quê.
-    endsAt: defaultEndsAt(),
+    // O lojista precisa escolher o último dia de toda a campanha.
+    endsAt: "",
     description: null,
     // Regra de produto, não escolha: o prazo de finalização SEMPRE começa a
     // correr quando o evento fecha. Era um switch que oferecia a alternativa de
@@ -134,18 +135,36 @@ export function EventForm({
     defaultValues: initialValues(),
   })
 
-  // Reabrir o Sheet tem de reabrir limpo: o mesmo componente serve o card
-  // Reabrir tem de reabrir limpo — e com os padrões da loja já dentro. O
-  // `storeDefaults` entra nas dependências porque a loja chega por rede: sem
-  // ele, abrir o formulário antes da resposta deixaria os campos vazios para
-  // sempre naquela sessão.
+  // Uma resposta tardia da loja só preenche regras ainda não editadas.
+  // Refetch não pode apagar nome/data nem mudar o que já está em revisão.
   useEffect(() => {
-    if (!sheetOpen) return
-    form.reset(initialValues())
-    setExtrasOpen(false)
+    if (!sheetOpen) {
+      opened.current = false
+      return
+    }
+    if (!opened.current) {
+      form.reset(initialValues())
+      setExtrasOpen(false)
+      setReview(null)
+      setDatesConfirmed(false)
+      opened.current = true
+      defaultsApplied.current = !!storeDefaults
+    } else if (storeDefaults && !defaultsApplied.current) {
+      if (!form.getFieldState("cartExpirationMinutes").isDirty) {
+        form.setValue("cartExpirationMinutes", storeDefaults.expirationMinutes)
+      }
+      if (!form.getFieldState("cartMaxQuantityPerItem").isDirty) {
+        form.setValue("cartMaxQuantityPerItem", storeDefaults.maxQuantityPerItem)
+      }
+      defaultsApplied.current = true
+    }
     // `form` é estável entre renders do react-hook-form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetOpen, initialSessionType, storeDefaults])
+
+  useEffect(() => {
+    if (review) reviewHeading.current?.focus()
+  }, [review])
 
   const watchStartsAt = form.watch("startsAt")
   const watchEndsAt = form.watch("endsAt")
@@ -155,7 +174,15 @@ export function EventForm({
   const longCampaignDuration = campaignDuration(watchStartsAt, watchEndsAt)
   const isPending = createEvent.isPending
 
-  async function onSubmit(data: CreateEventFormData) {
+  function onSubmit(data: CreateEventFormData) {
+    if (submitting.current) return
+    if (!review) {
+      setReview(data)
+      setDatesConfirmed(false)
+      return
+    }
+    if (!datesConfirmed) return
+    submitting.current = true
     const payload: CreateEventPayload = {
       title: data.title,
       type: data.type,
@@ -177,6 +204,7 @@ export function EventForm({
 
     createEvent.mutate(payload, {
       onSuccess: () => {
+        submitting.current = false
         toast.success("Evento criado!", {
           description:
             "Abra o evento e use a aba Sessões para adicionar as transmissões — live, post, reel ou story.",
@@ -186,6 +214,7 @@ export function EventForm({
         onSuccess?.()
       },
       onError: (error) => {
+        submitting.current = false
         toast.error("Erro ao criar evento", {
           description: error.message || "Tente novamente mais tarde.",
         })
@@ -221,16 +250,16 @@ export function EventForm({
           iPhone SE (375) e o painel estourava a viewport. */}
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:w-[480px] sm:max-w-[480px]">
         <SheetHeader className="px-6 pb-4 pt-6">
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle ref={reviewHeading} tabIndex={-1} className="flex items-center gap-2">
             <CalendarRange className="h-5 w-5 text-primary" />
-            Novo evento
+            {review ? "Confirme as datas do evento" : "Novo evento"}
           </SheetTitle>
           {/* Três linhas de texto antes do primeiro campo empurravam o
               formulário para baixo da dobra. O que o lojista precisa saber aqui
               é que não está escolhendo um formato agora — o resto ele descobre
               ao adicionar a primeira transmissão. */}
           <SheetDescription>
-            As transmissões — live, post, reel ou story — você adiciona depois.
+            {review ? "Confira o último dia de vendas antes de criar. Você pode voltar e corrigir." : "Escolha o período completo da campanha. Você adiciona as transmissões depois."}
           </SheetDescription>
         </SheetHeader>
 
@@ -238,10 +267,16 @@ export function EventForm({
           {/* min-h-0 no filho que rola: sem ele o item flex adota a altura do
               conteúdo em vez de encolher, e o overflow-y-auto nunca dispara. */}
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, () => { setReview(null); setDatesConfirmed(false) })}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
+            <div hidden={!!review} className={cn("min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6", review ? "hidden" : "flex")}>
+            {!storeDefaults && (
+              <p className="text-sm text-muted-foreground" role="status">
+                {storeError ? "Não foi possível carregar as regras da loja. " : "Carregando as regras da loja…"}
+                {storeError && <Button type="button" variant="link" onClick={() => reloadStore()}>Tentar novamente</Button>}
+              </p>
+            )}
             <FormField
               control={form.control}
               name="title"
@@ -261,18 +296,19 @@ export function EventForm({
             <FormSection title="Janela de vendas" hint={EVENT_COPY.windowSection.hint}>
               {/* Empilha na tela estreita: lado a lado, cada data fica com menos de
                   170px e a legenda vira reticências. */}
-              <div className="grid gap-3 min-[380px]:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 <FormField
                   control={form.control}
                   name="startsAt"
                   render={({ field }) => (
                     <FormItem className="flex min-w-0 flex-col">
                       <FormLabel>{EVENT_COPY.startsAt.label}</FormLabel>
-                      <DateTimeField
+                      <FormControl><DateTimeField
+                        ref={field.ref}
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="Começa agora"
-                      />
+                      /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -285,18 +321,27 @@ export function EventForm({
                       <FormLabel>
                         {EVENT_COPY.endsAt.label} <span className="text-destructive">*</span>
                       </FormLabel>
-                      <DateTimeField
+                      <FormControl><DateTimeField
+                        ref={field.ref}
                         value={field.value}
                         onChange={(iso) => field.onChange(iso ?? "")}
                         clearable={false}
                         defaultHour={23}
                         defaultMinute={59}
-                      />
+                        placeholder="Escolha o último dia da campanha"
+                      /></FormControl>
+                      <FormDescription>{EVENT_COPY.endsAt.help}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              {watchEndsAt && Number.isFinite(Date.parse(watchEndsAt)) && (
+                <p className="text-sm font-medium" role="status">
+                  Receber compras até {formatEventDate(watchEndsAt)}.
+                </p>
+              )}
 
               {isLongCampaign(watchStartsAt, watchEndsAt) && (
                 <Warning>{LONG_CAMPAIGN_WARNING}</Warning>
@@ -319,6 +364,7 @@ export function EventForm({
                     </FormLabel>
                     <FormControl>
                       <DurationField
+                        ariaLabel={EVENT_COPY.cartExpiration.label}
                         value={field.value}
                         onChange={field.onChange}
                         minMinutes={15}
@@ -505,19 +551,34 @@ export function EventForm({
               </CollapsibleContent>
             </Collapsible>
             </div>
+            {review && (
+              <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6">
+                <EventWindowSummary {...review} cartExpirationMinutes={review.cartExpirationMinutes ?? storeDefaults?.expirationMinutes} />
+                <div className="flex items-start gap-3">
+                  <Checkbox id={confirmationId} checked={datesConfirmed}
+                    onCheckedChange={(checked) => setDatesConfirmed(checked === true)} disabled={isPending} />
+                  <Label htmlFor={confirmationId} className="leading-relaxed">
+                    Conferi o dia e o horário de encerramento. Eles cobrem toda a minha campanha.
+                  </Label>
+                </div>
+              </div>
+            )}
             {/* Fora da área que rola: os botões ficam sempre à vista. */}
             <div className="flex shrink-0 justify-end gap-3 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleOpenChange(false)}
+                onClick={() => {
+                  if (review) { setReview(null); setDatesConfirmed(false) }
+                  else handleOpenChange(false)
+                }}
                 disabled={isPending}
               >
-                Cancelar
+                {review ? "Voltar e corrigir" : "Cancelar"}
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !storeDefaults || (!!review && !datesConfirmed)}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Criando..." : "Criar evento"}
+                {isPending ? "Criando..." : review ? "Confirmar e criar" : "Revisar datas"}
               </Button>
             </div>
           </form>
