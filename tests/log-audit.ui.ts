@@ -1,5 +1,29 @@
 import { expect, test } from "@playwright/test"
 
+test("fotos recusadas no pedido preservam espera, histórico e adição de produto", async ({ page }) => {
+  const errors: string[] = []
+  const optimized: string[] = []
+  page.on("pageerror", error => errors.push(error.message))
+  page.on("request", request => { if (request.url().includes("/_next/image")) optimized.push(request.url()) })
+  await page.route("https://images.example.test/**", route => route.fulfill({ status: 403, body: "AccessDenied" }))
+  await page.route("**/api/v1/stores/audit-store/orders/order/upsell", route => route.fulfill({ json: { data: {
+    hasSnapshot: true, deltaCents: 1000, mutations: [{ id: "mutation", productName: "Produto acrescentado", imageUrl: "https://images.example.test/upsell.jpg", mutationType: "item_added", quantityBefore: 0, quantityAfter: 1, unitPrice: 1000, createdAt: "2026-10-05T12:00:00Z" }],
+  } } }))
+  await page.route("**/api/v1/stores/audit-store/products?**", route => route.fulfill({ json: { data: { data: [{
+    id: "catalog-product", name: "Produto do catálogo", keyword: "1001", price: 1000, stock: 2, active: true,
+    imageUrl: "https://images.example.test/catalog.jpg", images: [], externalId: "102", externalSource: "tiny", optionValues: [],
+  }] } } }))
+  await page.goto("/order-images")
+  await expect(page.getByRole("img", { name: "Imagem indisponível: Produto em espera" })).toBeVisible()
+  await expect(page.getByRole("img", { name: "Imagem indisponível: Produto acrescentado" })).toBeVisible()
+  await page.getByRole("button", { name: "Adicionar produto", exact: true }).click()
+  await expect(page.getByRole("img", { name: "Imagem indisponível: Produto do catálogo" })).toBeVisible()
+  await page.getByRole("button", { name: /Adicionar Produto do catálogo/ }).click()
+  await expect(page.getByLabel("Produto adicionado")).toHaveText("catalog-product")
+  expect(optimized).toEqual([])
+  expect(errors).toEqual([])
+})
+
 test("vínculo duplicado apresenta a orientação do backend e mantém o formulário aberto", async ({ page }) => {
   const explanation = "esta publicação já está vinculada a uma transmissão; abra a transmissão existente ou libere o vínculo antes de tentar novamente"
   let attempts = 0

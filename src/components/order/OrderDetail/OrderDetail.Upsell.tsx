@@ -1,7 +1,7 @@
 "use client"
 
 import { use, useState } from "react"
-import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import { ChevronDown, Package, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react"
 import {
   Collapsible,
@@ -47,7 +47,7 @@ function MutationLine({ m }: { m: OrderUpsellMutation }) {
   return (
     <li className="flex items-center gap-3 py-2.5">
       {m.imageUrl ? (
-        <Image
+        <ProductImage
           src={m.imageUrl}
           alt={m.productName}
           width={36}
