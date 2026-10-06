@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-04T15:00:00Z") })
   await page.route("**/api/v1/**", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({ json: { data: { cartSettings: { expirationMinutes: 7200, maxQuantityPerItem: 10 } } } })
@@ -19,14 +20,18 @@ test("edição preserva Y zero e envia 30 dias como 43200 minutos", async ({ pag
   await page.getByRole("option", { name: "dias", exact: true }).click()
   await input.fill("30")
   const saved = page.waitForRequest((request) => request.method() === "PUT")
-  await page.getByRole("button", { name: "Salvar", exact: true }).click()
+  await page.getByRole("button", { name: "Revisar alterações", exact: true }).click()
+  await page.getByRole("checkbox", { name: /Conferi as datas/ }).check()
+  await page.getByRole("button", { name: "Confirmar e salvar", exact: true }).click()
   expect((await saved).postDataJSON().waitlistNotifiedTtlMinutes).toBe(43200)
 })
 
 test("edição salva o adicional desativado sem voltar para 30 minutos", async ({ page }) => {
   await page.getByRole("button", { name: "Editar evento de teste" }).click()
   const saved = page.waitForRequest((request) => request.method() === "PUT")
-  await page.getByRole("button", { name: "Salvar", exact: true }).click()
+  await page.getByRole("button", { name: "Revisar alterações", exact: true }).click()
+  await page.getByRole("checkbox", { name: /Conferi as datas/ }).check()
+  await page.getByRole("button", { name: "Confirmar e salvar", exact: true }).click()
   expect((await saved).postDataJSON().waitlistNotifiedTtlMinutes).toBe(0)
 })
 
@@ -35,7 +40,12 @@ test("criação envia Y zero sem substituí-lo pelo padrão", async ({ page }) =
   await page.getByPlaceholder("Ex: Semana Black").fill("Evento sem adicional")
   await page.getByRole("spinbutton", { name: "Prazo extra para quem aguarda estoque", exact: true }).fill("0")
   const saved = page.waitForRequest((request) => request.method() === "POST")
-  await page.getByRole("button", { name: "Criar evento", exact: true }).click()
+  await page.getByLabel("Receber compras até").click()
+  await page.getByRole("button", { name: /6 de outubro de 2026/ }).first().click()
+  await page.getByLabel("Horário", { exact: true }).press("Escape")
+  await page.getByRole("button", { name: "Revisar datas", exact: true }).click()
+  await page.getByRole("checkbox", { name: /Conferi o dia/ }).check()
+  await page.getByRole("button", { name: "Confirmar e criar", exact: true }).click()
   expect((await saved).postDataJSON().waitlistNotifiedTtlMinutes).toBe(0)
 })
 

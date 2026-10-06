@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
-import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import Link from "next/link"
 import {
   Search,
@@ -407,7 +407,7 @@ export default function ProductsPage() {
                       >
                         <div className="relative h-10 w-10 overflow-hidden rounded-md border bg-muted">
                           {product.imageUrl ? (
-                            <Image
+                            <ProductImage
                               src={product.imageUrl}
                               alt={product.name}
                               fill

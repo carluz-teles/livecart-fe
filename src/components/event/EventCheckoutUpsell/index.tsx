@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import { ArrowDownRight, ArrowUpRight, Package, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -77,7 +77,7 @@ function TopProductsList({
             {rows.map((p) => (
               <li key={p.productId} className="flex items-center gap-3 py-2">
                 {p.imageUrl ? (
-                  <Image
+                  <ProductImage
                     src={p.imageUrl}
                     alt={p.productName}
                     width={32}
