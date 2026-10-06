@@ -1,7 +1,7 @@
 "use client"
 
 import { use } from "react"
-import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import { Hourglass, Package } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/format"
@@ -55,7 +55,7 @@ function WaitlistRow({ item }: WaitlistRowProps) {
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-background/60 p-3">
       {item.productImage ? (
-        <Image
+        <ProductImage
           src={item.productImage}
           alt={item.productName}
           width={40}

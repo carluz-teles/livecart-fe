@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { ProductImage } from "@/components/product/ProductImage"
 import { AlertTriangle, Loader2, Package, Plus, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -246,8 +246,9 @@ function LinhaDeProduto({
   return (
     <li className="flex items-center gap-3 py-3">
       {produto.imageUrl ? (
-        <Image
+        <ProductImage
           src={produto.imageUrl}
+          fallbackSources={produto.images}
           alt={produto.name}
           width={40}
           height={40}
