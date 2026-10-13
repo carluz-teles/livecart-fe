@@ -44,7 +44,9 @@ export function OrderDetailERPRetryBanner() {
         {sync.blocked ? "Alterações precisam de conferência no ERP" : sync.lastError ? "Sincronização aguardando nova tentativa" : "Alterações salvas · sincronizando com o ERP"}
       </p>
       <p className="text-sm text-muted-foreground">
-        {sync.blocked
+        {sync.blockReason === "accounts_launched"
+          ? "O ERP bloqueou a edição porque há contas lançadas. Confira o financeiro no ERP e libere a edição apenas se estiver correto. Os itens continuam pendentes; o LiveCart fará uma nova tentativa automaticamente."
+          : sync.blocked
           ? "A sincronização foi pausada para preservar a venda e o estoque. Confira os itens e o pagamento com a loja antes de conciliar este pedido."
           : sync.lastError
           ? "A última tentativa não foi concluída. O sistema tentará novamente automaticamente; você pode sair desta tela."

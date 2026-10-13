@@ -1,5 +1,7 @@
 "use client"
 
+import { useCheckoutDiagnostics } from "@/hooks/checkout/useCheckoutDiagnostics"
+
 import { getPayableItemTotal } from "@/lib/cart-item-prices"
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -148,6 +150,7 @@ interface CheckoutContentProps {
 }
 
 function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
+  useCheckoutDiagnostics()
   const router = useRouter()
   const {
     data: cart,

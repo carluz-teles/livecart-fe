@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { OrderDetailContext, type OrderDetailContextValue } from "@/components/order/OrderDetail/OrderDetailContext"
 import { OrderDetailERPRetryBanner } from "@/components/order/OrderDetail/OrderDetail.ERPRetryBanner"
@@ -24,13 +25,17 @@ const integration: Integration = {
 export default function Page() {
   const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
   const [financialReview, setFinancialReview] = useState<OrderDetail["erpPaymentReview"]>(review)
+  const [blocked, setBlocked] = useState(false)
   const [connected, setConnected] = useState(false)
   const [src, setSrc] = useState("https://images.example.test/denied.jpg")
   const [linkOpen, setLinkOpen] = useState(false)
   const value = {
-    state: { order: { id: "order", paymentStatus: "paid", erpPaymentReview: financialReview } },
+    state: { order: { id: "order", paymentStatus: "paid", erpPaymentReview: financialReview, erpItemSync: blocked ? {pending:true,blocked:true,processing:false,attempts:1,blockReason:"accounts_launched"} : undefined } },
   } as OrderDetailContextValue
   return <QueryClientProvider client={client}>
+    <Link href="/cart/normal-navigation">Abrir checkout de teste</Link>
+    <button onClick={() => setBlocked(true)}>Receber bloqueio financeiro</button>
+    <button onClick={() => setBlocked(false)}>Receber itens confirmados</button>
     <OrderDetailContext value={value}><OrderDetailERPRetryBanner /></OrderDetailContext>
     <button onClick={() => setFinancialReview({ ...review, reason: "installments_unverified", paidCents: undefined, orderTotalCents: undefined })}>Exibir parcelas não verificadas</button>
     <button onClick={() => setFinancialReview(undefined)}>Receber conciliação confirmada</button>
