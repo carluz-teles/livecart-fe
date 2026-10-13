@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { AlertCircle, RefreshCw, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { reportCheckoutDiagnostic } from "@/services/checkout-diagnostics.service"
 
 interface ErrorProps {
   error: Error & { digest?: string }
@@ -11,10 +12,7 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Log error to console in development
-    console.error("Application error:", error)
-
-    // TODO: Send to error tracking service (Sentry, etc.)
+    reportCheckoutDiagnostic("client_error")
   }, [error])
 
   return (
@@ -29,8 +27,8 @@ export default function Error({ error, reset }: ErrorProps) {
         </h1>
 
         <p className="mb-6 text-muted-foreground">
-          Ocorreu um erro inesperado. Nossa equipe foi notificada e estamos
-          trabalhando para resolver.
+          Não foi possível concluir o carregamento. Tente novamente. Se o
+          problema continuar, avise a loja e informe o código abaixo, se disponível.
         </p>
 
         {error.digest && (

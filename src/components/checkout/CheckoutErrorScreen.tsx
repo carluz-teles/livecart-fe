@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card"
 interface CheckoutErrorScreenProps {
   message: string
   retryHref?: string
+  supportReference?: string
 }
 
-export function CheckoutErrorScreen({ message, retryHref }: CheckoutErrorScreenProps) {
+export function CheckoutErrorScreen({ message, retryHref, supportReference }: CheckoutErrorScreenProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto max-w-6xl p-4 py-8">
@@ -23,6 +24,13 @@ export function CheckoutErrorScreen({ message, retryHref }: CheckoutErrorScreenP
               <Button asChild variant="outline" className="mt-6">
                 <Link href={retryHref}>Tentar novamente</Link>
               </Button>
+            )}
+            <p className="mt-4 max-w-xs text-center text-sm text-gray-500">
+              Se o link não abrir no Instagram, use o menu e escolha abrir no navegador.
+              Se continuar, avise a loja.
+            </p>
+            {supportReference && (
+              <p className="mt-2 font-mono text-xs text-gray-500">Referência: {supportReference}</p>
             )}
           </CardContent>
         </Card>

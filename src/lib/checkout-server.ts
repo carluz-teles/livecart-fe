@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { PublicCheckoutCart } from "@/types"
+import { getCheckoutDiagnosticContext, logCheckoutFetch } from "@/lib/checkout-diagnostics-server"
 
 interface ServerFetchResult {
   cart: PublicCheckoutCart | null
@@ -16,8 +17,11 @@ function getPublicApiBase(): string {
 export async function getPublicCheckoutCart(
   token: string
 ): Promise<ServerFetchResult> {
+  const diagnostic = getCheckoutDiagnosticContext(token)
+  const started = Date.now()
   const base = getPublicApiBase()
   if (!base) {
+    logCheckoutFetch(diagnostic, "configuration_error", 500, Date.now() - started)
     return {
       cart: null,
       status: 500,
@@ -31,13 +35,14 @@ export async function getPublicCheckoutCart(
   try {
     const res = await fetch(`${base}/api/public/checkout/${token}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Request-Id": diagnostic.attemptId },
       signal: controller.signal,
       // Cart state changes constantly (timer, payment status). Never cache.
       cache: "no-store",
     })
 
     if (!res.ok) {
+      logCheckoutFetch(diagnostic, "http_error", res.status, Date.now() - started)
       const body = await res.json().catch(() => ({}))
       return {
         cart: null,
@@ -47,13 +52,21 @@ export async function getPublicCheckoutCart(
         // virava o genérico "Carrinho não encontrado" e o comprador nunca sabia
         // o que aconteceu.
         status: res.status,
-        errorMessage: body?.error || body?.message || "Carrinho não encontrado",
+        errorMessage: typeof body?.error === "string" ? body.error
+          : typeof body?.message === "string" ? body.message : "Não foi possível carregar o carrinho",
       }
     }
 
     const json = await res.json()
+    if (!json?.data || typeof json.data !== "object" || typeof json.data.status !== "string") {
+      logCheckoutFetch(diagnostic, "invalid_response", 502, Date.now() - started)
+      return { cart: null, status: 502, errorMessage: "Não foi possível carregar o carrinho. Tente novamente." }
+    }
+    logCheckoutFetch(diagnostic, "success", 200, Date.now() - started)
     return { cart: json.data as PublicCheckoutCart, status: 200, errorMessage: null }
   } catch (err) {
+    logCheckoutFetch(diagnostic, controller.signal.aborted ? "timeout"
+      : err instanceof SyntaxError ? "invalid_response" : "network_error", 0, Date.now() - started)
     const message =
       err instanceof Error && err.name === "AbortError"
         ? "Tempo esgotado ao carregar o carrinho"

@@ -549,6 +549,7 @@ export interface PublicCheckoutPayment {
 }
 
 export interface ERPItemSync {
+  blockReason?: "accounts_launched"
   pending: boolean
   processing: boolean
   blocked?: boolean

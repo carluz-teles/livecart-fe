@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google"
 import { CrispChat } from "@/components/shared/CrispChat"
+import { checkoutDiagnosticsBootstrap } from "@/lib/checkout-diagnostics-bootstrap"
 import "./globals.css"
 
 const fontSans = Inter({
@@ -42,6 +43,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script id="checkout-diagnostics" dangerouslySetInnerHTML={{ __html: checkoutDiagnosticsBootstrap }} />
+      </head>
       <body
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} font-sans antialiased`}
       >
