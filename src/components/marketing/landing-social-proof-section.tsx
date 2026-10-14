@@ -1,3 +1,5 @@
+import { landingIntegrationBrands } from "@/components/marketing/landing-integrations.data"
+
 export interface SocialProofStat {
   value: string
   label: string
@@ -13,13 +15,6 @@ const illustrativeStats: SocialProofStat[] = [
   { value: "até 30%", label: "das vendas negadas recuperadas" },
   { value: "2 canais", label: "Instagram e lives" },
   { value: "minutos", label: "pra configurar e começar" },
-]
-
-const illustrativeLogos: SocialProofLogo[] = [
-  { name: "Pagar.me", src: "/integrations/pagarme.svg" },
-  { name: "olist", src: "/integrations/tiny.svg" },
-  { name: "Melhor Envio", src: "/integrations/melhor-envio.svg" },
-  { name: "SmartEnvios", src: "/integrations/smartenvios.png" },
 ]
 
 interface LandingSocialProofSectionProps {
@@ -38,7 +33,7 @@ interface LandingSocialProofSectionProps {
  */
 export function LandingSocialProofSection({
   stats = illustrativeStats,
-  logos = illustrativeLogos,
+  logos = landingIntegrationBrands,
   illustrative = true,
 }: LandingSocialProofSectionProps) {
   if (stats.length === 0 && logos.length === 0) {
@@ -60,7 +55,9 @@ export function LandingSocialProofSection({
                   key={logo.name}
                   src={logo.src}
                   alt={logo.name}
-                  className="h-[26px] w-auto object-contain opacity-70"
+                  loading="lazy"
+                  decoding="async"
+                  className="h-8 w-auto max-w-40 object-contain"
                 />
               ))}
             </div>

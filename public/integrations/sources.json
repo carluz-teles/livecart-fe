@@ -1,0 +1,56 @@
+{
+  "retrievedAt": "2026-10-14",
+  "note": "Official brand assets stored locally. Preserve colors, proportions and clear space. No implication of sponsorship or endorsement.",
+  "assets": [
+    {
+      "file": "nuvemshop.svg",
+      "page": "https://www.nuvemshop.com.br/",
+      "source": "Inline header SVG, viewBox 0 0 160 40",
+      "adjustment": "Resolved currentColor to the original header color, --primary-nimbus-blue: #0050c3. Paths unchanged."
+    },
+    {
+      "file": "tiny.svg",
+      "page": "https://olist.com/",
+      "source": "https://d3hw41hpah8tvx.cloudfront.net/images/logo_olist_rebrand_62df2f9c0a.svg"
+    },
+    {
+      "file": "bling.svg",
+      "page": "https://www.bling.com.br/",
+      "source": "https://www.bling.com.br/wp-content/themes/bling_br/images/bling.svg"
+    },
+    {
+      "file": "pagarme.svg",
+      "page": "https://www.pagar.me/",
+      "source": "https://decoims.com/pagarme/bfae0921-9c55-44ff-938e-2f66ae2b9994/Pagarme_logo_principal.svg"
+    },
+    {
+      "file": "mercado-pago.svg",
+      "page": "https://www.mercadopago.com.br/mp/logo-oficial",
+      "source": "https://http2.mlstatic.com/storage/pog-cm-admin/calm-assets/Logos%20Mercado%20Pago%202025--fb6f16c9.zip",
+      "archiveEntry": "Logos Mercado Pago 2025/Uso digital - RGB/SVGs/MP_RGB_HANDSHAKE_color_horizontal.svg"
+    },
+    {
+      "file": "instagram.webp",
+      "page": "https://www.instagram.com/",
+      "source": "https://static.cdninstagram.com/rsrc.php/yw/r/icwX0xAk0pz.webp",
+      "variant": "Official apple-touch-icon, 180 x 180 pixels",
+      "guidelines": "https://www.meta.com/brand/resources/instagram/instagram-brand/"
+    },
+    {
+      "file": "whatsapp.svg",
+      "page": "https://www.meta.com/en-gb/brand/resources/whatsapp/whatsapp-brand/",
+      "source": "WhatsApp-Brand-Resource-Center.zip, official download from brand resources page",
+      "archiveEntry": "Brand Resource Center Page Downloads/02_Inline/01_Digital RGB/03_SVG/Digital_Inline_Green_RGB_2026.svg"
+    },
+    {
+      "file": "melhor-envio.svg",
+      "page": "https://melhorenvio.com.br/",
+      "source": "https://static-web-melhorenvio-app.melhorenvio.com.br/_nuxt/melhor-envio.CkscUsnn.svg"
+    },
+    {
+      "file": "smartenvios.png",
+      "page": "https://smartenvios.com/",
+      "source": "https://smartenvios.com/wp-content/uploads/2023/01/536x156.png"
+    }
+  ]
+}
