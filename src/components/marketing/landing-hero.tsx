@@ -5,45 +5,34 @@ import {
   Zap,
   Send,
   Check,
-  Instagram,
-  Package,
+  Hash,
   Radio,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
 type Bubble =
-  | { side: "start" | "end"; variant: "comment"; channel: "live" | "instagram"; user: string; text: string }
-  | { side: "start" | "end"; variant: "system" | "dm" | "paid" | "shipped"; text: string }
+  | { side: "start" | "end"; variant: "comment"; user: string; text: string }
+  | { side: "start" | "end"; variant: "system" | "dm" | "checkout"; text: string }
 
 const bubbles: Bubble[] = [
-  { side: "start", variant: "comment", channel: "live", user: "@ana.reis", text: "quero 2 do BONE 🔥" },
-  { side: "end", variant: "comment", channel: "instagram", user: "@ju.costa", text: "tem esse na M? me manda o link" },
-  { side: "start", variant: "comment", channel: "instagram", user: "@pedro.alves", text: "tem no tamanho GG? 👀" },
-  { side: "end", variant: "system", text: "3 carrinhos criados na hora" },
-  { side: "start", variant: "dm", text: "Checkout enviado no direct" },
-  { side: "end", variant: "paid", text: "@ana.reis pagou · R$ 119,80" },
-  { side: "start", variant: "shipped", text: "Pedido a caminho" },
+  { side: "start", variant: "comment", user: "@ana.reis", text: "2x 1001" },
+  { side: "end", variant: "system", text: "1001 · 2 unidades no carrinho" },
+  { side: "start", variant: "dm", text: "Link do carrinho enviado no Direct" },
+  { side: "end", variant: "checkout", text: "A cliente abre o link e finaliza a compra" },
 ]
 
 function BubbleContent({ bubble }: { bubble: Bubble }) {
   if (bubble.variant === "comment") {
-    const isLive = bubble.channel === "live"
     return (
       <div className="flex items-center gap-2.5 rounded-2xl bg-white px-4 py-2.5 text-sm text-neutral-900 shadow-xl">
-        <span
-          className={
-            isLive
-              ? "flex size-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-white"
-              : "flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#833AB4] to-[#F77737] text-white"
-          }
-        >
-          {isLive ? <Radio className="size-3.5" /> : <Instagram className="size-3.5" />}
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+          <Radio className="size-3.5" aria-hidden="true" />
         </span>
-        <span>
-          <strong className="text-neutral-900">{bubble.user}</strong>{" "}
-          <span className="text-neutral-600">{bubble.text}</span>
-        </span>
+        <div>
+          <span className="block text-xs text-neutral-600">{bubble.user} comentou</span>
+          <strong className="font-mono text-lg">{bubble.text}</strong>
+        </div>
       </div>
     )
   }
@@ -51,7 +40,7 @@ function BubbleContent({ bubble }: { bubble: Bubble }) {
   if (bubble.variant === "system") {
     return (
       <div className="flex items-center gap-2 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2.5 text-sm font-semibold text-black shadow-xl">
-        <Zap className="size-4 shrink-0" />
+        <Zap className="size-4 shrink-0" aria-hidden="true" />
         {bubble.text}
       </div>
     )
@@ -60,25 +49,15 @@ function BubbleContent({ bubble }: { bubble: Bubble }) {
   if (bubble.variant === "dm") {
     return (
       <div className="flex items-center gap-2 rounded-2xl bg-neutral-800 px-4 py-2.5 text-sm font-medium text-white shadow-xl ring-1 ring-white/10">
-        <Send className="size-4 shrink-0 text-amber-300" />
-        {bubble.text}
-        <span className="ml-1 text-xs font-normal text-sky-300">✓✓</span>
-      </div>
-    )
-  }
-
-  if (bubble.variant === "shipped") {
-    return (
-      <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-medium text-neutral-900 shadow-xl">
-        <Package className="size-4 shrink-0 text-amber-500" />
+        <Send className="size-4 shrink-0 text-amber-300" aria-hidden="true" />
         {bubble.text}
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-xl">
-      <Check className="size-4 shrink-0" strokeWidth={3} />
+    <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white">
+      <Check className="size-4 shrink-0 text-emerald-300" aria-hidden="true" />
       {bubble.text}
     </div>
   )
@@ -86,7 +65,7 @@ function BubbleContent({ bubble }: { bubble: Bubble }) {
 
 export function LandingHero() {
   return (
-    <section className="relative overflow-hidden bg-neutral-950 text-white">
+    <section id="inicio" className="relative overflow-hidden bg-neutral-950 text-white">
       <style>{`
         @keyframes lc-hero-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes lc-hero-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
@@ -135,9 +114,9 @@ export function LandingHero() {
           </h1>
 
           <p className="mt-6 max-w-lg text-lg text-neutral-300">
-            A LiveCart transforma as conversas do Instagram e das lives em
-            pedidos e vendas, sem que você precise responder cada mensagem na
-            mão.
+            Você divulga o código do produto. O cliente comenta esse código
+            no Instagram ou na live, e a LiveCart adiciona o item ao carrinho
+            e envia o link para finalizar a compra.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -166,24 +145,32 @@ export function LandingHero() {
           </p>
         </div>
 
-        {/* Bubble flow (hidden on mobile) */}
-        <div className="relative hidden lg:block">
+        <figure aria-labelledby="purchase-example-title" className="relative w-full min-w-0 max-w-lg justify-self-center">
           {/* glow */}
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
 
-          {/* multi-canal pill */}
-          <div className="mb-6 flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-200">
-              <span className="size-2 animate-pulse rounded-full bg-amber-400" />
-              PRÉVIA ILUSTRATIVA · INSTAGRAM E LIVE
-            </span>
+          <figcaption id="purchase-example-title" className="mb-5 text-center text-xs font-semibold uppercase tracking-wider text-amber-200">
+            Exemplo ilustrativo · Compra por código
+          </figcaption>
+
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/5 p-4 sm:p-5">
+            <div>
+              <p className="text-xs text-neutral-400">Produto anunciado na live</p>
+              <p className="mt-1 font-semibold">Caneca artesanal</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <span className="text-xs text-amber-200">Código do produto</span>
+              <span className="mt-1 flex items-center justify-end gap-1 font-mono text-2xl font-bold text-amber-300">
+                <Hash className="size-4" aria-hidden="true" />1001
+              </span>
+            </div>
           </div>
 
           {/* the whole stack floats together, so gaps stay uniform */}
-          <div className="lc-hero-stack flex flex-col gap-4">
+          <ol aria-label="Etapas da compra por código" className="lc-hero-stack flex flex-col gap-4">
             {bubbles.map((bubble, i) => (
-              <div
-                key={i}
+              <li
+                key={bubble.variant}
                 className={
                   bubble.side === "end"
                     ? "lc-hero-bubble self-end"
@@ -195,10 +182,14 @@ export function LandingHero() {
                 }}
               >
                 <BubbleContent bubble={bubble} />
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ol>
+          <p className="mt-6 text-center text-xs leading-relaxed text-neutral-400">
+            <span className="font-mono text-neutral-200">1001</span> para uma unidade.
+            {" "}<span className="font-mono text-neutral-200">2x 1001</span> para duas.
+          </p>
+        </figure>
       </div>
     </section>
   )

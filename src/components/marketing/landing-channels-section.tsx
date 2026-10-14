@@ -6,7 +6,7 @@ const channels = [
     iconClassName: "bg-red-500",
     title: "Lives",
     description:
-      "Você anuncia o código de cada produto durante a live. Quem digita o código no comentário recebe o carrinho na hora, sem espera.",
+      "Você anuncia o código de cada produto durante a live. O cliente comenta o código, e a LiveCart adiciona o item ao carrinho e envia o link pelo Direct.",
     tags: ["Comentário", "Carrinho", "Checkout", "Pagamento"],
   },
   {
@@ -14,7 +14,7 @@ const channels = [
     iconClassName: "bg-gradient-to-br from-[#833AB4] to-[#F77737]",
     title: "Instagram",
     description:
-      "Poste o código nos Stories, no Direct ou nos posts. Quem responde com o código recebe o link de compra na hora.",
+      "Divulgue os códigos dos produtos nos posts e Stories. A LiveCart identifica os códigos recebidos nos comentários, nas respostas e no Direct para montar o carrinho.",
     tags: ["Stories", "Direct", "Posts", "Mensagens"],
   },
 ]
@@ -31,8 +31,8 @@ export function LandingChannelsSection() {
             Uma venda que começa onde o cliente estiver
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            No Instagram ou nas lives, o cliente conversa no canal que já usa
-            e a LiveCart leva a conversa até o checkout.
+            O cliente informa o código do produto no canal que já usa.
+            A LiveCart conecta esse pedido ao carrinho e ao checkout.
           </p>
         </div>
 
