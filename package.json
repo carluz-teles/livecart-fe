@@ -15,7 +15,8 @@
     "check:erp": "node scripts/verificar-erp-hardcoded.mjs",
     "test:operations": "playwright test --config=playwright.operations.config.ts",
     "test:erp-import": "playwright test --config=playwright.import-audit.config.ts",
-    "test:waitlist": "playwright test --config=playwright.waitlist.config.ts"
+    "test:waitlist": "playwright test --config=playwright.waitlist.config.ts",
+    "test:landing": "playwright test --config=playwright.landing.config.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.2.3",

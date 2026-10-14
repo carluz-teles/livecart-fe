@@ -13,10 +13,7 @@ interface CrispIdentifyProps {
   name?: string | null
 }
 
-// Componente client "burro": só recebe email/nome já resolvidos e empurra
-// pro Crisp. Existe separado do CrispUserSync porque a LP (livecart.com.br)
-// não tem ClerkProvider no client — lá o e-mail vem do Clerk no servidor
-// (currentUser) e desce como prop, sem precisar do hook useUser().
+// A landing page resolve a identidade no servidor, sem ClerkProvider no client.
 export function CrispIdentify({ email, name }: CrispIdentifyProps) {
   useEffect(() => {
     if (!email || typeof window === "undefined") return

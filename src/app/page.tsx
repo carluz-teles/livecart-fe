@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { currentUser } from "@clerk/nextjs/server"
 
+import { CrispChat } from "@/components/shared/CrispChat"
 import { CrispIdentify } from "@/components/shared/CrispChat/CrispChat.Identify"
 import { LandingNav } from "@/components/marketing/landing-nav"
 import { LandingHero } from "@/components/marketing/landing-hero"
@@ -74,6 +75,7 @@ export default async function LandingPage() {
 
   return (
     <main className="bg-background text-foreground">
+      <CrispChat />
       <CrispIdentify email={email} name={name} />
       <script
         type="application/ld+json"
