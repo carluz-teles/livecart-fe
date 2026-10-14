@@ -125,6 +125,10 @@ export interface Event {
   totalOrders: number
   closeCartOnEventEnd: boolean
   cartExpirationMinutes: number | null
+  /** Resolved by the API, including inheritance and the extended deadline. */
+  effectiveCartExpirationMinutes?: number
+  /** Whether ending without an override schedules checkout messages. */
+  autoSendCheckoutLinks?: boolean
   cartMaxQuantityPerItem: number | null
   freeShipping: boolean
   /** Discount percent (0-100) applied at checkout when the buyer pays with
@@ -246,7 +250,7 @@ export interface UpdateEventPayload {
   cartExpirationMinutes?: number
 }
 
-// End Event - payload is now empty since auto-send is handled via Private Reply during the live
+// End Event - no override: the backend uses the store's closing-message setting.
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface EndEventPayload {}
 

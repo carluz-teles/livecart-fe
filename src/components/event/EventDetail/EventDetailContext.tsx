@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext } from "react"
+import type { previewEventEnd } from "@/lib/event-deadline"
 import type {
   Event,
   EventCart,
@@ -24,6 +25,8 @@ export interface EventDetailState {
   // Dialog open flags — lifted so Header (Ações dropdown) and Body can both
   // trigger the same flows.
   endEventOpen: boolean
+  endEventPreview: ReturnType<typeof previewEventEnd>
+  endEventError: string | null
   createSessionOpen: boolean
   crashRecoveryOpen: boolean
   editEventOpen: boolean
