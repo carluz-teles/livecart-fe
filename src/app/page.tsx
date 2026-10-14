@@ -20,7 +20,7 @@ import { LandingFooter } from "@/components/marketing/landing-footer"
 
 const title = "LiveCart | Venda pelo Instagram e Lives no Automático"
 const description =
-  "Automatize suas vendas pelo Instagram e lives. A LiveCart transforma conversas e interações em pedidos, checkout e vendas, integrados à sua operação."
+  "Venda por código no Instagram e nas lives. O cliente comenta o código do produto, e a LiveCart monta o carrinho e envia o link para finalizar a compra."
 const ogImage = "/livecart/logotipo-whitemode.png"
 
 export const metadata: Metadata = {

@@ -1,15 +1,15 @@
 import { Clock, Zap, X, Check } from "lucide-react"
 
 const withoutLiveCart = [
-  "Você responde um a um, no meio da live",
+  "Você monta os carrinhos um a um, no meio da live",
   "Comentários somem antes de você chegar",
   "Quem esperou muito desiste da compra",
 ]
 
 const withLiveCart = [
   "O cliente digita o código do produto",
-  "O carrinho e o checkout chegam na hora",
-  "Você atende mil pessoas ao mesmo tempo",
+  "A LiveCart adiciona o produto ao carrinho",
+  "O link de compra é enviado pelo Direct",
 ]
 
 export function LandingUrgencySection() {
@@ -27,10 +27,9 @@ export function LandingUrgencySection() {
             Quantas vendas você já perdeu por demorar a responder?
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-neutral-300">
-            No pico da live chegam dezenas de &quot;quanto é?&quot; e
-            &quot;ainda tem?&quot; ao mesmo tempo. Enquanto você digita a
-            resposta de um, outros dez já rolaram a tela e desistiram. Cada
-            segundo de espera é um carrinho que não acontece.
+            No pico da live, vários clientes comentam os códigos ao mesmo
+            tempo. Anotar cada pedido e enviar cada link manualmente cria
+            uma fila. Quem espera pelo carrinho pode desistir da compra.
           </p>
         </div>
 
@@ -66,9 +65,9 @@ export function LandingUrgencySection() {
         </div>
 
         <p className="mt-10 text-center text-xl font-bold tracking-tight sm:text-2xl">
-          Ninguém compra de quem some. A{" "}
-          <span className="text-amber-300">LiveCart</span> responde antes de o
-          cliente pensar duas vezes.
+          O cliente comenta o código. A{" "}
+          <span className="text-amber-300">LiveCart</span> cuida do carrinho e
+          do link de compra.
         </p>
       </div>
     </section>

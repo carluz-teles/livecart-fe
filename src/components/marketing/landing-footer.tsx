@@ -42,9 +42,9 @@ export function LandingFooter() {
               className="h-11 w-auto"
             />
             <p className="mt-4 max-w-xs text-sm">
-              A infraestrutura de vendas para redes sociais. Transformamos
-              conversas no Instagram e lives em pedidos, checkout e vendas,
-              integrados à sua operação.
+              Vendas por código no Instagram e nas lives. O cliente informa
+              o código, e a LiveCart conecta o produto ao carrinho, ao
+              checkout e à sua operação.
             </p>
           </div>
 

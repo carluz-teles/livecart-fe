@@ -3,28 +3,28 @@ import { Hash, Keyboard, ShoppingCart, Send, CircleCheck, ArrowDown } from "luci
 const steps = [
   {
     icon: Hash,
-    title: "Você define o código",
-    caption: "Um código curto para cada produto",
+    title: "Você divulga o código",
+    caption: "Apresente o produto e seu código numérico, como 1001",
   },
   {
     icon: Keyboard,
     title: "O cliente digita o código",
-    caption: "No comentário da live, no Direct ou nos Stories",
+    caption: "1001 para uma unidade ou 2x 1001 para duas",
   },
   {
     icon: ShoppingCart,
-    title: "A LiveCart responde na hora",
-    caption: "O carrinho é criado na hora com o produto certo",
+    title: "O produto entra no carrinho",
+    caption: "A LiveCart identifica o item pelo código e atualiza o carrinho",
   },
   {
     icon: Send,
-    title: "O checkout é enviado",
-    caption: "O cliente recebe o link para finalizar a compra",
+    title: "O link é enviado",
+    caption: "O cliente recebe o carrinho pelo Direct do Instagram",
   },
   {
     icon: CircleCheck,
-    title: "A venda é registrada",
-    caption: "Pagamento, estoque e pedido seguem para os sistemas conectados",
+    title: "O cliente finaliza a compra",
+    caption: "Ele abre o link, confere os itens e conclui o pagamento",
   },
 ]
 
@@ -43,11 +43,11 @@ export function LandingHowItWorks() {
             Como funciona
           </span>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Do &quot;quero&quot; ao pagamento, sem trabalho manual
+            Do código comentado à compra finalizada
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            A LiveCart liga seus canais de conversa à sua operação de vendas,
-            esteja o cliente onde estiver.
+            O código identifica o produto cadastrado. A LiveCart monta o
+            carrinho e entrega o link; o cliente conclui a compra no checkout.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export function LandingHowItWorks() {
         <div className="mt-16 flex justify-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium text-primary">
             <CircleCheck className="size-4" />
-            Do primeiro contato ao pagamento, tudo em sequência
+            Código do produto → Carrinho → Link de compra
           </span>
         </div>
       </div>

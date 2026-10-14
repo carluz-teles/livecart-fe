@@ -9,17 +9,22 @@ export const faqs = [
   {
     question: "O que é a LiveCart?",
     answer:
-      "A LiveCart é uma plataforma de automação de vendas para redes sociais. Ela transforma conversas, comentários, lives e mensagens em oportunidades de venda, automatizando etapas como identificação do produto, criação do carrinho, envio do checkout e integração com sua operação.",
+      "A LiveCart automatiza compras por código no Instagram e nas lives. Você divulga o código de um produto cadastrado; quando o cliente informa esse código, a plataforma adiciona o item ao carrinho e envia o link para concluir a compra.",
   },
   {
     question: "A LiveCart funciona apenas para lives?",
     answer:
-      "Não. As lives são um dos usos mais comuns, mas a plataforma também vende pelo Instagram, por mensagens e por outros pontos de contato.",
+      "Não. A compra por código também funciona nos comentários de posts, nas respostas aos Stories e no Direct do Instagram, conforme os canais que você configura.",
   },
   {
     question: "Posso vender pelo Instagram?",
     answer:
-      "Sim. A LiveCart automatiza vendas que começam no Instagram, seja no Direct, nos Stories ou nos posts.",
+      "Sim. Divulgue os códigos dos seus produtos. A LiveCart identifica os códigos recebidos nos comentários, nas respostas aos Stories e no Direct para adicionar os itens ao carrinho.",
+  },
+  {
+    question: "A LiveCart entende pedidos por cor ou descrição?",
+    answer:
+      "Na compra por código, o produto é identificado pelo código numérico cadastrado, como 1001. Uma frase como “quero o preto” não seleciona automaticamente um produto por cor ou descrição. Você divulga o código correspondente, e o cliente o informa para comprar. Dúvidas sobre os produtos continuam com o atendimento da sua loja.",
   },
   {
     question: "A LiveCart substitui meu ERP?",
@@ -29,12 +34,12 @@ export const faqs = [
   {
     question: "Preciso cadastrar meus pedidos manualmente?",
     answer:
-      "É justamente esse trabalho que a LiveCart tira das suas costas. Os dados da conversa viram um pedido que segue sozinho para os sistemas que você conectou.",
+      "A LiveCart adiciona os produtos ao carrinho a partir dos códigos informados pelo cliente e envia o link de compra. O envio dos pedidos aos sistemas conectados segue as configurações da sua loja.",
   },
   {
     question: "Como o cliente compra durante a live?",
     answer:
-      "Você define um código para cada produto. Durante a live, quem digita o código no comentário recebe uma resposta imediata com o carrinho e o link de checkout.",
+      "Você apresenta o produto e seu código, por exemplo 1001. O cliente comenta 1001 para uma unidade ou 2x 1001 para duas. A LiveCart adiciona o produto ao carrinho e envia o link pelo Direct. O cliente abre o link, confere os itens e finaliza a compra.",
   },
 ]
 

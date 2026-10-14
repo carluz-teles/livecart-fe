@@ -17,7 +17,7 @@ interface IntegrationGroup {
 export const landingIntegrationGroups: IntegrationGroup[] = [
   {
     title: "Canais de venda",
-    description: "A conversa vira compra. E o cliente volta.",
+    description: "Da compra por código à recuperação do carrinho.",
     brands: [
       { name: "Instagram", src: "/integrations/instagram.webp", width: 180, height: 180, size: "size-9", showName: true },
       { name: "WhatsApp", src: "/integrations/whatsapp.svg", width: 1487, height: 346, size: "h-8 w-auto" },
