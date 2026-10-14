@@ -45,7 +45,7 @@ const PERMITIDOS = [
   // Catálogo de vitrine e mapas de rótulo: "Tiny ERP" é o nome do produto.
   { prefixo: "src/app/(dashboard)/settings/integrations/page.tsx", porque: "catálogo por provider" },
   { prefixo: "src/types/integration.types.ts", porque: "catálogo de providers" },
-  { prefixo: "src/components/marketing/landing-integrations-section.tsx", porque: "vitrine pública com os nomes de cada integração, incluindo Tiny e Bling" },
+  { prefixo: "src/components/marketing/landing-integrations.data.ts", porque: "vitrine pública com os nomes de cada integração, incluindo Tiny e Bling" },
   { prefixo: "src/hooks/integration/useERPConectado.ts", porque: "é a FONTE do nome certo" },
   { prefixo: "src/hooks/integration/useConnectTiny.ts", porque: "conexão do Tiny" },
   { prefixo: "src/components/product/ProductDetailModal/", porque: "mapa de rótulo por fonte" },

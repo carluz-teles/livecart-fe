@@ -42,7 +42,8 @@ test.beforeEach(async ({ page }) => {
     const url = new URL(route.request().url())
     const asset = url.pathname === "/_next/image" ? url.searchParams.get("url")! : url.pathname
     const body = await readFile(path.join(process.cwd(), "public", asset))
-    await route.fulfill({ body, contentType: asset.endsWith(".svg") ? "image/svg+xml" : "image/png" })
+    const contentType = asset.endsWith(".svg") ? "image/svg+xml" : asset.endsWith(".webp") ? "image/webp" : "image/png"
+    await route.fulfill({ body, contentType })
   })
 })
 
@@ -130,17 +131,35 @@ test("blocked Crisp does not break the landing or navigation", async ({ page }) 
 test("integration section fits the viewport and loads every existing logo", async ({ page }, testInfo) => {
   await page.route("https://client.crisp.chat/l.js", (route) => route.fulfill({ contentType: "text/javascript", body: crispSDK }))
   await page.goto("/#integracoes")
-  const list = page.getByRole("list", { name: "Integrações disponíveis" })
-  await expect(list.getByRole("listitem")).toHaveCount(8)
-  for (const name of ["Bling", "Mercado Pago", "Instagram", "WhatsApp"]) {
-    await expect(list.getByText(name, { exact: true })).toBeVisible()
+  const section = page.locator("#integracoes")
+  await expect(section.getByRole("listitem")).toHaveCount(9)
+  await expect(section.getByRole("list")).toHaveCount(4)
+  for (const name of ["Nuvemshop", "Tiny (Olist)", "Bling", "Pagar.me", "Mercado Pago", "Melhor Envio", "SmartEnvios", "WhatsApp"]) {
+    await expect(section.getByRole("img", { name, exact: true })).toBeVisible()
   }
-  const logos = list.getByRole("img")
-  await expect(logos).toHaveCount(4)
+  await expect(section.getByText("Instagram", { exact: true })).toBeVisible()
+  const logos = section.locator("img")
+  await expect(logos).toHaveCount(9)
   for (const logo of await logos.all()) {
     await expect(logo).toBeVisible()
     await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+    expect(await logo.getAttribute("src")).toMatch(/^\/integrations\//)
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.locator("#integracoes").screenshot({ path: testInfo.outputPath("integrations.png") })
+  // Keep the sticky navigation and Next dev controls out of section previews.
+  await page.addStyleTag({ content: "header, nextjs-portal { visibility: hidden !important; }" })
+  await section.screenshot({ path: testInfo.outputPath("integrations.png") })
+  if (testInfo.project.name === "chromium") {
+    await page.setViewportSize({ width: 320, height: 800 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    for (const logo of await logos.all()) {
+      const insideTile = await logo.evaluate((img) => {
+        const image = img.getBoundingClientRect()
+        const tile = img.closest("li")!.getBoundingClientRect()
+        return image.left >= tile.left && image.right <= tile.right
+      })
+      expect(insideTile).toBe(true)
+    }
+    await section.screenshot({ path: testInfo.outputPath("integrations-320px.png") })
+  }
 })

@@ -1,100 +1,78 @@
-import { Database, CreditCard, Truck, MessagesSquare } from "lucide-react"
-import { IntegrationCardLogo } from "@/components/integration/IntegrationCard/IntegrationCard.Logo"
-import type { IntegrationProvider } from "@/types/integration.types"
-
-const categories = [
-  {
-    icon: Database,
-    title: "ERP",
-    description: "Conecte Tiny (Olist) ou Bling para sincronizar produtos, estoque e pedidos.",
-  },
-  {
-    icon: CreditCard,
-    title: "Pagamentos",
-    description: "Receba por Pix e cartão de crédito com Pagar.me ou Mercado Pago.",
-  },
-  {
-    icon: Truck,
-    title: "Frete",
-    description: "Cote fretes e gerencie seus envios com Melhor Envio ou SmartEnvios.",
-  },
-  {
-    icon: MessagesSquare,
-    title: "Canais",
-    description: "Venda pelo Instagram e recupere carrinhos pelo WhatsApp da sua loja.",
-  },
-]
-
-const integrations: { provider: IntegrationProvider; name: string; src?: string }[] = [
-  { provider: "tiny", name: "Tiny (Olist)", src: "/integrations/tiny.svg" },
-  { provider: "bling", name: "Bling" },
-  { provider: "pagarme", name: "Pagar.me", src: "/integrations/pagarme.svg" },
-  { provider: "mercado_pago", name: "Mercado Pago" },
-  { provider: "melhor_envio", name: "Melhor Envio", src: "/integrations/melhor-envio.svg" },
-  { provider: "smartenvios", name: "SmartEnvios", src: "/integrations/smartenvios.png" },
-  { provider: "instagram", name: "Instagram" },
-  { provider: "twilio_whatsapp", name: "WhatsApp" },
-]
+import { landingIntegrationGroups } from "@/components/marketing/landing-integrations.data"
 
 export function LandingIntegrationsSection() {
   return (
-    <section id="integracoes" className="bg-secondary/40 py-20 sm:py-28">
+    <section id="integracoes" aria-labelledby="integracoes-title" className="bg-secondary/40 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Integrações
-          </span>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Suas vendas conectadas à sua operação
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Do primeiro comentário à entrega, conecte seus canais de venda,
-            ERP, pagamentos e frete. Menos trabalho manual para a sua loja.
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-primary">
+              <span aria-hidden="true" className="size-2 rounded-full bg-primary" />
+              Integrações
+            </span>
+            <h2 id="integracoes-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+              As ferramentas que você usa.
+              <span className="mt-2 block font-serif font-normal italic">Agora, trabalhando juntas.</span>
+            </h2>
+          </div>
+          <p className="max-w-sm text-base leading-relaxed text-muted-foreground lg:pb-1">
+            Do primeiro comentário à entrega, a LiveCart conecta cada etapa da
+            venda. Sua operação continua nas ferramentas que você já conhece.
           </p>
         </div>
 
-        <ul aria-label="Integrações disponíveis" className="mt-11 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {integrations.map((integration) => (
-            <li key={integration.provider} className="flex min-h-24 min-w-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-4">
-              {integration.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={integration.src}
-                  alt={integration.name}
-                  loading="lazy"
-                  className="max-h-8 w-auto max-w-full object-contain"
-                />
-              ) : (
-                <>
-                  <span aria-hidden="true">
-                    <IntegrationCardLogo provider={integration.provider} size="sm" />
-                  </span>
-                  <span className="text-sm font-semibold sm:text-base">{integration.name}</span>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-10 overflow-hidden rounded-3xl border border-border bg-card shadow-sm sm:mt-12">
+          <div className="flex items-center justify-between gap-4 border-b border-border bg-secondary/40 px-5 py-4 sm:px-8">
+            <span className="text-sm font-medium">O ecossistema da sua loja</span>
+            <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1 font-mono text-xs text-muted-foreground">
+              {landingIntegrationGroups.reduce((total, group) => total + group.brands.length, 0)} integrações
+            </span>
+          </div>
 
-        <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((category) => (
-            <div
-              key={category.title}
-              className="rounded-2xl border border-border bg-card p-6 shadow-sm"
-            >
-              <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <category.icon className="size-5" />
-              </span>
-              <h3 className="mt-4 font-semibold">{category.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {category.description}
-              </p>
-            </div>
-          ))}
+          <div className="divide-y divide-border">
+            {landingIntegrationGroups.map((group, index) => (
+              <div key={group.title} className="grid items-center gap-5 p-5 sm:p-8 lg:grid-cols-12 lg:gap-8">
+                <div className="flex items-start gap-4 lg:col-span-4">
+                  <span aria-hidden="true" className="mt-1 font-mono text-xs text-muted-foreground">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <h3 className="text-base font-semibold sm:text-lg">{group.title}</h3>
+                    <p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">{group.description}</p>
+                  </div>
+                </div>
+
+                <ul
+                  aria-label={`Integrações: ${group.title}`}
+                  className={`grid gap-3 lg:col-span-8 ${group.brands.length === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}
+                >
+                  {group.brands.map((brand, brandIndex) => (
+                    <li
+                      key={brand.name}
+                      className={`flex min-h-24 min-w-0 items-center justify-center gap-2 rounded-xl bg-secondary/40 px-4 py-5 sm:min-h-28 sm:px-5 ${brand.showName ? "flex-col sm:flex-row" : ""} ${group.brands.length === 3 && brandIndex === 0 ? "col-span-2 sm:col-span-1" : ""}`}
+                    >
+                      {/* Static brand files retain their original colors and proportions. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={brand.src}
+                        alt={brand.showName ? "" : brand.name}
+                        width={brand.width}
+                        height={brand.height}
+                        loading="lazy"
+                        decoding="async"
+                        className={`max-w-full shrink-0 object-contain ${brand.size}`}
+                      />
+                      {brand.showName ? <span className="text-sm font-semibold sm:text-base">{brand.name}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <p className="mt-7 text-center text-sm text-muted-foreground">
-          Escolha e conecte as integrações que fazem sentido para a sua loja.
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Menos tarefas repetidas. Mais tempo para vender e cuidar dos seus clientes.
         </p>
       </div>
     </section>
