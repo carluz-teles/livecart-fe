@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { ShieldCheck } from "lucide-react"
 
 import type { PublicOrder } from "@/types/order-tracking.types"
@@ -15,19 +15,10 @@ export function OrderTrackingHeader({ order }: OrderTrackingHeaderProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 to-transparent pointer-events-none" />
       <div className="relative mx-auto max-w-3xl px-4 py-8">
         <div className="flex flex-col items-center gap-4">
-          {order.store_logo_url ? (
-            <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white shadow-xl shadow-gray-200/60">
-              <Image width={64} height={64} unoptimized
-                src={order.store_logo_url}
-                alt={order.store_name}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          ) : (
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-gray-900 text-xl font-bold text-white shadow-xl shadow-gray-300/50">
-              {order.store_name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <Avatar className="h-16 w-16 border-2 border-white shadow-xl shadow-gray-200/60">
+            <AvatarImage src={order.store_logo_url || undefined} alt={order.store_name} className="object-contain" />
+            <AvatarFallback className="bg-gray-900 text-xl font-bold text-white">{order.store_name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
           <div className="text-center">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
               {order.store_name}

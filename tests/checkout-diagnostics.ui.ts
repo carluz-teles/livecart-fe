@@ -124,3 +124,14 @@ test("navegação sem reload e erros consecutivos mantêm tentativas distintas",
  const last=events.filter(e=>e.event==="server_error_screen").at(-1)
  expect(last?.attemptId).not.toBe(first)
 })
+
+test("erro após hidratação informa categoria e posição sem dados da cliente",async({page})=>{
+ const events=await diagnostics(page)
+ await page.goto("/cart/private-error-token")
+ await expect.poll(()=>events.map(e=>e.event)).toContain("checkout_ready")
+ await page.evaluate(()=>{
+  window.dispatchEvent(new ErrorEvent("error",{error:new TypeError("Cannot read properties of undefined: cliente@example.com /cart/private-error-token"),filename:location.origin+"/_next/static/chunks/1234-abcd1234.js?token=secret",lineno:1,colno:4321}))
+ })
+ await expect.poll(()=>events.find(e=>e.event==="javascript_error")).toMatchObject({errorType:"TypeError",errorCode:"property_access",errorSource:"app_chunk",phase:"ready",asset:"1234-abcd1234",line:1,column:4321})
+ expect(JSON.stringify(events)).not.toMatch(/cliente@example|private-error-token|secret|Cannot read/)
+})

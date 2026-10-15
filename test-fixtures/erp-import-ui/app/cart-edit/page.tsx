@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "sonner"
 import { CatalogClient } from "../../../../src/app/cart/[token]/catalog/CatalogClient"
@@ -11,9 +12,10 @@ import { cart, catalog } from "../../fixtures/cart-edit"
 export default function Page() {
   const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
   const [checkout, setCheckout] = useState(false)
+  const readOnly = useSearchParams().get("readonly") === "1"
   return <QueryClientProvider client={client}><TooltipProvider>
     <button onClick={() => setCheckout(true)}>Abrir checkout de teste</button>
-    {checkout ? <CheckoutClient token={cart.token} initialCart={cart} /> : <CatalogClient token={cart.token} eventId={cart.event.id} initialCart={cart} initialCatalog={catalog} />}
+    {checkout ? <CheckoutClient token={cart.token} initialCart={cart} /> : <CatalogClient token={cart.token} eventId={cart.event.id} initialCart={{...cart,allowEdit: !readOnly}} initialCatalog={catalog} />}
     <Toaster />
   </TooltipProvider></QueryClientProvider>
 }

@@ -80,8 +80,9 @@ export function BlockProfileButton({
   const handleUnblock = async () => {
     try {
       await unblockMutation.mutateAsync(normalized)
+      setConfirmOpen(false)
       toast.success(`@${normalized} desbloqueado`, {
-        description: "As mensagens dele voltam a gerar pedido na próxima live.",
+        description: "Novos comentários podem gerar compras. Carrinhos cancelados e comentários anteriores não são recuperados.",
       })
     } catch {
       toast.error("Falha ao desbloquear o perfil")
@@ -90,16 +91,30 @@ export function BlockProfileButton({
 
   if (isBlocked) {
     return (
-      <Button
-        variant="outline"
-        size={size}
-        onClick={handleUnblock}
-        disabled={isPending}
-        className="gap-2"
-      >
-        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-        Desbloquear
-      </Button>
+      <>
+        <Button variant="outline" size={size} onClick={() => setConfirmOpen(true)} disabled={isPending} className="gap-2">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+          Desbloquear
+        </Button>
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Desbloquear @{normalized}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Novos comentários com códigos de produtos poderão gerar compras nos eventos ativos.
+                Carrinhos cancelados continuam cancelados e comentários anteriores não serão recuperados.
+                Se houver uma compra antiga a retomar, confira o pedido individualmente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPending}>Voltar</AlertDialogCancel>
+              <AlertDialogAction disabled={isPending} onClick={(event) => { event.preventDefault(); void handleUnblock() }}>
+                {isPending ? "Desbloqueando..." : "Confirmar desbloqueio"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     )
   }
 

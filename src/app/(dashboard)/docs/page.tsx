@@ -40,6 +40,13 @@ const CATEGORIES: DocCategory[] = [
     iconColor: "text-blue-600 dark:text-blue-400",
     articles: [
       {
+        slug: "bling",
+        title: "Conectar o Bling",
+        description: "Autorize sua conta Bling, importe produtos e confira a conexão com o ERP.",
+        href: "/docs/integrations/bling",
+        estimatedTime: "2 minutos",
+      },
+      {
         slug: "tiny",
         title: "Integrar com a Tiny (Olist)",
         description:

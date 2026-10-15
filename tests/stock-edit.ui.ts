@@ -46,3 +46,15 @@ test("pendência bloqueada pede conferência sem prometer nova tentativa automá
   await expect(page.getByRole("heading", { name: "Seu pedido precisa de conferência" })).toBeVisible()
   await expect(page.getByText("Fale com a loja para conferir os itens deste pedido. O pagamento será liberado após a confirmação.")).toBeVisible()
 })
+
+test("catálogo sem allowEdit bloqueia adicionar, alterar e remover", async ({page})=>{
+ let writes=0
+ await page.route("**/api/public/checkout/stock-edit**",route=>{
+  if(route.request().method()!=="GET") writes++
+  return route.fulfill({json:{data:{...cart,allowEdit:false}}})
+ })
+ await page.goto("/cart-edit?readonly=1")
+ await expect(page.getByRole("status").filter({hasText:"A loja desativou alterações"})).toBeVisible()
+ for(const name of ["Adicionar","Aumentar","Diminuir","Remover"]){await expect(page.getByRole("button",{name,exact:true})).toBeDisabled()}
+ expect(writes).toBe(0)
+})

@@ -16,7 +16,8 @@
     "test:operations": "playwright test --config=playwright.operations.config.ts",
     "test:erp-import": "playwright test --config=playwright.import-audit.config.ts",
     "test:waitlist": "playwright test --config=playwright.waitlist.config.ts",
-    "test:landing": "playwright test --config=playwright.landing.config.ts"
+    "test:landing": "playwright test --config=playwright.landing.config.ts",
+    "test:product-import": "playwright test --config=playwright.product-import.config.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.2.3",
@@ -64,6 +65,7 @@
     "recharts": "2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.3.6"
   },
   "devDependencies": {

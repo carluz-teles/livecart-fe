@@ -1,3 +1,4 @@
+import type { ImportRequest, ImportResponse } from "@/types/product-import.types"
 import { apiClient } from "./client"
 import { buildQueryString } from "@/lib/query"
 import type {
@@ -10,6 +11,12 @@ import type {
 } from "@/types"
 
 export const productService = {
+  previewImport: (storeId: string, payload: ImportRequest, token?: string | null) =>
+    apiClient.post<ImportResponse>(`/stores/${storeId}/products/import/preview`, payload, token, 30_000),
+
+  applyImport: (storeId: string, payload: ImportRequest, token?: string | null) =>
+    apiClient.post<ImportResponse>(`/stores/${storeId}/products/import`, payload, token, 60_000),
+
   list: (storeId: string, params?: ProductListParams, token?: string | null) => {
     const query = buildQueryString({
       search: params?.search,

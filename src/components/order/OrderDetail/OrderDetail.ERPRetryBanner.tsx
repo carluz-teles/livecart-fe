@@ -63,7 +63,11 @@ export function OrderDetailERPRetryBanner() {
         <AlertTitle>Conciliação financeira pendente no {erp.nome}</AlertTitle>
         <AlertDescription>
           <p>
-            {order.erpPaymentReview.reason === "total_below_paid"
+            {order.erpPaymentReview.reason === "approval_items_pending"
+              ? "A aprovação recebida do ERP foi guardada. Os itens precisam ser conciliados antes de conferir o pagamento."
+              : order.erpPaymentReview.reason === "approval_payment_unverified"
+              ? "Os itens foram liberados, mas o pagamento da aprovação anterior ainda precisa de comprovação no ERP. O LiveCart verificará novamente."
+              : order.erpPaymentReview.reason === "total_below_paid"
               ? "O total do pedido diverge dos pagamentos registrados."
               : "Não foi possível confirmar a divisão entre o valor pago e o saldo a pagar."}
             {" "}Confira os títulos no ERP antes de cobrar, estornar ou liberar o pedido.

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { isStaleDeploymentError } from "@/lib/deployment-error"
 import { AlertCircle, RefreshCw, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,7 @@ interface ErrorProps {
 }
 
 export default function DashboardError({ error, reset }: ErrorProps) {
+  const staleVersion = isStaleDeploymentError(error)
   useEffect(() => {
     // Log error to console in development
     console.error("Dashboard error:", error)
@@ -32,16 +34,17 @@ export default function DashboardError({ error, reset }: ErrorProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error.digest && (
+          {staleVersion && <p className="mb-4 text-sm text-muted-foreground">Esta aba usa uma versão anterior. Recarregue a página e confira o resultado da última ação antes de tentar novamente.</p>}
+        {error.digest && (
             <p className="mb-4 text-center font-mono text-xs text-muted-foreground">
               Erro: {error.digest}
             </p>
           )}
 
           <div className="flex justify-center gap-3">
-            <Button variant="outline" onClick={reset}>
+            <Button variant="outline" onClick={() => staleVersion ? window.location.reload() : reset()}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Tentar novamente
+              {staleVersion ? "Carregar versão atual" : "Tentar novamente"}
             </Button>
 
             <Button

@@ -82,21 +82,6 @@ export async function createStore(formData: FormData): Promise<ActionResult> {
   const { data } = await response.json()
   const storeId = data.id
 
-  // Select the newly created store as the active store
-  const selectResponse = await fetch(`${apiUrl}/users/me/select-store`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ storeId }),
-  })
-
-  if (!selectResponse.ok) {
-    console.error("Failed to select store:", await selectResponse.text())
-    // Continue anyway - store was created successfully
-  }
-
   // Update store with additional info (cnpj, whatsapp, email, address)
   const hasAdditionalInfo = cnpj || whatsappNumber || emailAddress || addressStreet || addressCity || addressState || addressZip
 
