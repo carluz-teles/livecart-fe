@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["event-window.ui.ts", "event-window.spec.ts"],
+  testMatch: ["event-window.ui.ts", "event-window.spec.ts", "event-end.ui.ts", "event-deadline.spec.ts"],
   workers: 1,
   reporter: "list",
   timeout: 45_000,

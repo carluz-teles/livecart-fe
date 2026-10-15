@@ -11,6 +11,7 @@ import {
   useEndEvent,
 } from "@/hooks/event"
 import { useStoreId } from "@/hooks/useUser"
+import { useEventEndPreview } from "@/hooks/event/useEventEndPreview"
 import type { Event, EventPulse } from "@/types/event.types"
 import {
   EventDetailContext,
@@ -99,7 +100,13 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
     }
   }, [pulse, storeId, id, queryClient])
 
-  const [endEventOpen, setEndEventOpen] = useState(false)
+  const [endEventOpen, setEndEventOpenState] = useState(false)
+  const endEventPreview = useEventEndPreview(event, endEventOpen)
+  const setEndEventOpen = useCallback((open: boolean) => {
+    if (endEventMutation.isPending) return
+    endEventMutation.reset()
+    setEndEventOpenState(open)
+  }, [endEventMutation])
   const [createSessionOpen, setCreateSessionOpen] = useState(false)
   const [crashRecoveryOpen, setCrashRecoveryOpen] = useState(false)
   const [editEventOpen, setEditEventOpen] = useState(false)
@@ -124,13 +131,14 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
   }, [queryClient, storeId, id, refetchStats, refetchCarts, refetchProducts])
 
   const endEvent = useCallback(async () => {
+    if (!endEventPreview || endEventMutation.isPending) return
     try {
       await endEventMutation.mutateAsync({ id, payload: {} })
-      setEndEventOpen(false)
+      setEndEventOpenState(false)
     } catch {
-      // Mutation hook surfaces the error toast.
+      // Keep the confirmation open; the mutation error is shown in the dialog.
     }
-  }, [endEventMutation, id])
+  }, [endEventMutation, endEventPreview, id])
 
   const value: EventDetailContextValue = {
     state: {
@@ -145,6 +153,8 @@ export function EventDetailProvider({ event, children }: ProviderProps) {
       productsLoading,
       productsError,
       endEventOpen,
+      endEventPreview,
+      endEventError: endEventMutation.isError ? "Não foi possível finalizar o evento. Tente novamente." : null,
       createSessionOpen,
       crashRecoveryOpen,
       editEventOpen,

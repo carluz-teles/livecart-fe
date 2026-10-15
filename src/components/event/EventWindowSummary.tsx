@@ -3,6 +3,7 @@
 import { CalendarClock } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { formatarMinutos } from "@/components/shared/DurationField"
+import { eventCartDeadline } from "@/lib/event-deadline"
 
 interface EventWindowSummaryProps {
   title: string
@@ -28,9 +29,7 @@ export function EventWindowSummary({
 }: EventWindowSummaryProps) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const earlier = previousEndsAt && new Date(endsAt) < new Date(previousEndsAt)
-  const deadline = cartExpirationMinutes != null
-    ? new Date(new Date(endsAt).getTime() + cartExpirationMinutes * 60_000).toISOString()
-    : null
+  const deadline = eventCartDeadline(endsAt, cartExpirationMinutes)
 
   return (
     <section aria-label="Resumo das datas" className="flex flex-col gap-4">
