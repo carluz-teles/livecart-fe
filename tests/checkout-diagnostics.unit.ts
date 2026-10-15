@@ -39,3 +39,11 @@ test("coletor limita stream sem Content-Length e corpo que nunca termina",async(
  const hanging=new Request("http://localhost/cart/diagnostics",{method:"POST",headers:{"content-type":"application/json"},body:new ReadableStream(),duplex:"half"} as RequestInit)
  expect((await POST(hanging)).status).toBe(400)
 })
+
+test("diagnóstico aceita apenas categorias e posição de asset, nunca mensagem ou URL", () => {
+ const detail={...event(),errorType:"TypeError",errorCode:"property_access",errorSource:"app_chunk",phase:"ready",asset:"1234-abcd1234",line:1,column:10240}
+ expect(parseCheckoutDiagnostic(detail)).toEqual(detail)
+ for(const extra of [{message:"cliente@example.com"},{stack:"/cart/token"},{asset:"https://example.com/token"},{errorType:"cliente"},{errorCode:"token"},{line:-1},{column:Infinity},{phase:"checkout/token"}]) {
+  expect(parseCheckoutDiagnostic({...detail,...extra})).toBeNull()
+ }
+})

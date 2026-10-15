@@ -5,6 +5,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next attaches this deployment identity to assets and navigation requests.
+  // A navigation from an older tab can reload the matching application version.
+  ...(process.env.RAILWAY_GIT_COMMIT_SHA && { deploymentId: process.env.RAILWAY_GIT_COMMIT_SHA }),
   // Only use standalone output in production
   ...(process.env.NODE_ENV === "production" && { output: "standalone" }),
   // Ambiente de DEPLOY (production/staging/development), distinto do NODE_ENV

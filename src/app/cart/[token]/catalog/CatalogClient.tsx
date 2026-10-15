@@ -95,7 +95,8 @@ export function CatalogClient({
   // Uma edição de carrinho por vez — mesma garantia do checkout: entre o clique
   // e o re-render que desabilita o botão cabe um segundo clique, e cada request
   // concorrente sobre o MESMO carrinho pode sobrescrever a resposta anterior.
-  const cartEditInFlight =
+  const cartEditingDisabled =
+    !cart.allowEdit ||
     addItem.isPending ||
     updateItemQuantity.isPending ||
     removeItem.isPending ||
@@ -127,17 +128,17 @@ export function CatalogClient({
   }
 
   const handleAdd = (product: PublicCatalogProduct) => {
-    if (cartEditInFlight) return
+    if (cartEditingDisabled) return
     addItem.mutate({ token, productId: product.id, quantity: 1 })
   }
 
   const handleInc = (itemId: string, quantity: number) => {
-    if (cartEditInFlight) return
+    if (cartEditingDisabled) return
     updateItemQuantity.mutate({ token, itemId, quantity: quantity + 1 })
   }
 
   const handleDec = (itemId: string, quantity: number) => {
-    if (cartEditInFlight) return
+    if (cartEditingDisabled) return
     if (quantity <= 1) {
       removeItem.mutate({ token, itemId })
       return
@@ -146,7 +147,7 @@ export function CatalogClient({
   }
 
   const handleRemove = (itemId: string) => {
-    if (cartEditInFlight) return
+    if (cartEditingDisabled) return
     removeItem.mutate({ token, itemId })
   }
 
@@ -161,6 +162,11 @@ export function CatalogClient({
       <style dangerouslySetInnerHTML={{ __html: CATALOG_CSS }} />
 
       <div style={{ minHeight: "100vh" }}>
+        {!cart.allowEdit && (
+          <div role="status" className="border-b bg-muted p-4 text-center text-sm">
+            A loja desativou alterações neste carrinho. Você pode consultar os produtos e voltar ao checkout.
+          </div>
+        )}
         {cart.erpItemSync?.pending ? (
           <div role="status" className="border-b bg-muted p-4 text-center text-sm">
             <p className="font-medium">{cart.erpItemSync.blocked ? "Seu pedido precisa de conferência" : "Alteração salva; aguardando confirmação"}</p>
@@ -578,7 +584,7 @@ export function CatalogClient({
                     <button
                       className="btn-primary"
                       onClick={() => handleAdd(item)}
-                      disabled={cartEditInFlight}
+                      disabled={cartEditingDisabled}
                       style={{
                         marginTop: "4px",
                         display: "inline-flex",
@@ -747,7 +753,7 @@ export function CatalogClient({
                       >
                         {items.map((ci) => {
                           const incDisabled =
-                            cartEditInFlight ||
+                            cartEditingDisabled ||
                             ci.quantity >= ci.availableStock ||
                             ci.quantity >= maxQty
                           return (
@@ -857,7 +863,7 @@ export function CatalogClient({
                                     onClick={() =>
                                       handleDec(ci.id, ci.quantity)
                                     }
-                                    disabled={cartEditInFlight}
+                                    disabled={cartEditingDisabled}
                                     aria-label="Diminuir"
                                     style={{
                                       display: "flex",
@@ -930,7 +936,7 @@ export function CatalogClient({
                                 <button
                                   className="rmbtn"
                                   onClick={() => handleRemove(ci.id)}
-                                  disabled={cartEditInFlight}
+                                  disabled={cartEditingDisabled}
                                   aria-label="Remover"
                                   style={{
                                     display: "flex",

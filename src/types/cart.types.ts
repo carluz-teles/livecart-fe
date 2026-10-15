@@ -186,7 +186,7 @@ export interface OrderStore {
 export interface OrderDetail extends Order {
   erpPaymentReview?: {
     externalOrderId: string
-    reason: "total_below_paid" | "installments_unverified"
+    reason: "total_below_paid" | "installments_unverified" | "approval_items_pending" | "approval_payment_unverified"
     paidCents?: number
     orderTotalCents?: number
     detectedAt: string

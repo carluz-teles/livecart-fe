@@ -242,6 +242,7 @@ export default function ProductsPage() {
         title="Produtos"
         description="Preço, disponibilidade e pendências do seu catálogo em um só lugar."
       >
+        <Button variant="outline" asChild><Link href="/products/import">Importar planilha</Link></Button>
         <ERPResyncButton />
         <ProductForm open={createFormOpen} onOpenChange={setCreateFormOpen} />
       </PageHeader>
