@@ -1,10 +1,9 @@
 import { ShieldCheck, RefreshCw, Loader2, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import type { erpHealthCheckSummary } from "@/lib/integration-presentation"
 
-interface TinyHealthCheckHeaderProps {
-  missingCount: number
-  totalCount: number
+interface TinyHealthCheckHeaderProps extends ReturnType<typeof erpHealthCheckSummary> {
   checkedAt: string | null
   isRefreshing: boolean
   onRefresh: () => void
@@ -27,12 +26,12 @@ function formatRelative(iso: string): string {
 // "Verificar de novo" — sem repetir o título, isso fica no DialogTitle.
 export function TinyHealthCheckHeader({
   missingCount,
-  totalCount,
+  allOk,
+  unverifiedMessage,
   checkedAt,
   isRefreshing,
   onRefresh,
 }: TinyHealthCheckHeaderProps) {
-  const allOk = missingCount === 0 && totalCount > 0
   const tone = allOk
     ? "border-emerald-200/70 bg-emerald-50/40 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-100"
     : "border-amber-200/70 bg-amber-50/40 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100"
@@ -50,7 +49,10 @@ export function TinyHealthCheckHeader({
         <p className="text-xs leading-relaxed">
           {allOk
             ? "Todas as formas de pagamento, recebimento e envio estão cadastradas. Pedidos vão entrar no Tiny já categorizados."
-            : `${missingCount} cadastro${missingCount > 1 ? "s" : ""} faltando — sem eles o pedido entra no Tiny como "Conta a Receber" genérica ou com transportadora padrão.`}
+            : missingCount > 0
+              ? `${missingCount} cadastro${missingCount > 1 ? "s" : ""} faltando — sem eles o pedido entra no Tiny como "Conta a Receber" genérica ou com transportadora padrão.`
+              : "Verificação do Tiny incompleta."}
+          {unverifiedMessage && <span className="mt-1 block">{unverifiedMessage}</span>}
         </p>
       </div>
 

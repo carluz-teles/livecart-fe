@@ -35,9 +35,9 @@ export function useERPHealthCheck(
 
   return useQuery({
     queryKey: erpHealthCheckKeys.detail(storeId ?? "", integrationId ?? ""),
-    queryFn: async (): Promise<ERPHealthCheckResponse> => {
+    queryFn: async ({ signal }): Promise<ERPHealthCheckResponse> => {
       const token = await getToken()
-      return integrationService.runERPHealthCheck(storeId!, integrationId!, token)
+      return integrationService.runERPHealthCheck(storeId!, integrationId!, token, signal)
     },
     enabled:
       enabled &&
@@ -47,6 +47,10 @@ export function useERPHealthCheck(
       !!storeId &&
       !!integrationId,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: false,
+    retryOnMount: false,
     staleTime: 60 * 1000, // 1 min — quick re-renders within the same view don't refetch
   })
 }

@@ -1,5 +1,18 @@
-import type { Integration, IntegrationType } from "@/types/integration.types"
+import type { ERPHealthCheckItem, Integration, IntegrationType } from "@/types/integration.types"
 import { PROVIDERS } from "@/types/integration.types"
+
+export function erpHealthCheckSummary(items: ERPHealthCheckItem[]) {
+  const missingCount = items.filter(item => item.status === "missing").length
+  const unknownCount = items.filter(item => item.status === "unknown").length
+  return {
+    missingCount,
+    totalCount: items.length,
+    allOk: items.length > 0 && items.every(item => item.status === "ok"),
+    unverifiedMessage: unknownCount === 0 ? null : unknownCount === 1
+      ? "1 cadastro não pôde ser verificado. Tente novamente."
+      : `${unknownCount} cadastros não puderam ser verificados. Tente novamente.`,
+  }
+}
 
 export const integrationRoles: Record<IntegrationType, string> = {
   erp: "Produtos e estoque",
