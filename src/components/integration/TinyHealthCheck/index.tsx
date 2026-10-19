@@ -6,6 +6,7 @@ import { useERPHealthCheck } from "@/hooks/integration"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { ERPHealthCheckCategory, ERPHealthCheckItem } from "@/types"
+import { erpHealthCheckSummary } from "@/lib/integration-presentation"
 
 import { TinyHealthCheckHeader } from "./TinyHealthCheck.Header"
 import { TinyHealthCheckCategorySection } from "./TinyHealthCheck.CategorySection"
@@ -51,15 +52,15 @@ function TinyHealthCheck({ integrationId }: TinyHealthCheckProps) {
         <div className="flex-1 space-y-2">
           <p className="font-medium">Não foi possível auditar os cadastros do Tiny.</p>
           <p className="text-xs leading-relaxed text-destructive/80">
-            Verifique se o token do Tiny está válido em &ldquo;Testar conexão&rdquo;. Se persistir,
-            tente reconectar a integração.
+            A consulta pode ter demorado ou o Tiny pode estar indisponível. Tente novamente.
+            Se persistir, use &ldquo;Testar conexão&rdquo; para verificar o acesso.
           </p>
           <Button
             type="button"
             variant="outline"
             size="sm"
             className="mt-1"
-            onClick={() => query.refetch()}
+            onClick={() => query.refetch({ cancelRefetch: false })}
             disabled={query.isFetching}
           >
             {query.isFetching ? (
@@ -76,16 +77,15 @@ function TinyHealthCheck({ integrationId }: TinyHealthCheckProps) {
   if (!data || !data.supported) return null
 
   const itemsByCategory = groupByCategory(data.items)
-  const missingCount = data.items.filter((i) => i.status === "missing").length
+  const summary = erpHealthCheckSummary(data.items)
 
   return (
     <div className="space-y-5">
       <TinyHealthCheckHeader
-        missingCount={missingCount}
-        totalCount={data.items.length}
+        {...summary}
         checkedAt={data.checkedAt}
         isRefreshing={query.isFetching}
-        onRefresh={() => query.refetch()}
+        onRefresh={() => query.refetch({ cancelRefetch: false })}
       />
 
       <div className="space-y-6">

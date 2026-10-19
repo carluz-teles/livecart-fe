@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { useERPHealthCheck } from "@/hooks/integration"
 import { cn } from "@/lib/utils"
+import { erpHealthCheckSummary } from "@/lib/integration-presentation"
 
 import { TinyHealthCheck } from "./index"
 
@@ -74,9 +75,12 @@ export function TinyHealthCheckDialog({ integrationId }: TinyHealthCheckDialogPr
   // 3. UNSUPPORTED — esconde silenciosamente (ERP futuro sem audit endpoints).
   if (!data || !data.supported) return null
 
-  const missingCount = data.items.filter((i) => i.status === "missing").length
-  const totalCount = data.items.length
-  const allOk = missingCount === 0
+  const { missingCount, totalCount, allOk, unverifiedMessage } = erpHealthCheckSummary(data.items)
+  const label = allOk
+    ? `${totalCount} cadastros do Tiny OK`
+    : missingCount > 0
+      ? `${missingCount} cadastro${missingCount > 1 ? "s" : ""} do Tiny faltando`
+      : "Verificação do Tiny incompleta"
 
   return (
     <>
@@ -86,7 +90,7 @@ export function TinyHealthCheckDialog({ integrationId }: TinyHealthCheckDialogPr
         aria-label={
           allOk
             ? `Auditar ${totalCount} cadastros do Tiny`
-            : `${missingCount} cadastros do Tiny faltando — abrir checklist`
+            : `${label} — abrir checklist`
         }
         className={cn(
           "group flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-all duration-150",
@@ -119,9 +123,7 @@ export function TinyHealthCheckDialog({ integrationId }: TinyHealthCheckDialogPr
                 : "text-amber-900 dark:text-amber-100"
             )}
           >
-            {allOk
-              ? `${totalCount} cadastros do Tiny OK`
-              : `${missingCount} cadastro${missingCount > 1 ? "s" : ""} do Tiny faltando`}
+            {label}
           </span>
           <span
             className={cn(
@@ -131,9 +133,11 @@ export function TinyHealthCheckDialog({ integrationId }: TinyHealthCheckDialogPr
                 : "text-amber-800/80 dark:text-amber-300/80"
             )}
           >
-            {allOk
+            {unverifiedMessage ?? (allOk
               ? "Pedidos vão entrar categorizados"
-              : "Pedidos podem cair em “Conta a Receber” genérica"}
+              : missingCount > 0
+                ? "Pedidos podem cair em “Conta a Receber” genérica"
+                : "Abra o checklist e tente verificar novamente")}
           </span>
         </span>
 

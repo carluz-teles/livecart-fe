@@ -169,10 +169,17 @@ export const integrationService = {
   // ERP cadastro audit (Tiny v3 today). Returns supported=false when the
   // underlying ERP doesn't expose the audit capability — the caller should
   // hide the section, not show an empty "all good" state.
-  runERPHealthCheck: (storeId: string, integrationId: string, token?: string | null) =>
+  runERPHealthCheck: (
+    storeId: string,
+    integrationId: string,
+    token?: string | null,
+    signal?: AbortSignal,
+  ) =>
     apiClient.get<ERPHealthCheckResponse>(
       `/stores/${storeId}/integrations/${integrationId}/erp/health-check`,
-      token
+      token,
+      signal,
+      45_000, // Backend audit budget is 30s, including quota waits and lookup batches.
     ),
 
   // Search products in an ERP integration
