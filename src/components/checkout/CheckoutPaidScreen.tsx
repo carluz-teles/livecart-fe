@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { paymentMethodLabel } from "@/lib/payment-method"
 import { ProductImage } from "@/components/product/ProductImage"
 import {
   CheckCircle,
@@ -79,6 +80,7 @@ interface CheckoutPaidScreenProps {
 
 export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
   const { customer, shippingAddress, shipping, payment, summary, items, store } = cart
+  const isCard = payment?.method === "card" || payment?.method === "credit_card" || payment?.method === "debit_card"
   const paidAtIso = payment?.paidAt ?? cart.paidAt
   const total = summary.hasShippingQuote ? summary.total : summary.subtotal
   const shippingCost = summary.hasShippingQuote ? summary.shippingCost : 0
@@ -242,18 +244,18 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
         )}
 
         {payment && (
-          <Section icon={CreditCard} title="Pagamento">
+          <Section icon={isCard ? CreditCard : Receipt} title="Pagamento">
             <div className="space-y-3">
               {payment.method === "pix" ? (
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-gray-900">PIX</span>
                   <span className="text-gray-500">Pagamento à vista</span>
                 </div>
-              ) : (
+              ) : isCard ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-gray-900">
-                      {brandLabel(payment.cardBrand)}
+                      {payment.method === "debit_card" ? paymentMethodLabel(payment.method) : brandLabel(payment.cardBrand)}
                     </span>
                     {payment.lastFourDigits && (
                       <span className="font-mono text-gray-500">
@@ -269,12 +271,16 @@ export function CheckoutPaidScreen({ cart }: CheckoutPaidScreenProps) {
                     </p>
                   )}
                 </div>
+              ) : (
+                <p className="text-sm font-medium text-gray-900">
+                  {paymentMethodLabel(payment.method) ?? "Pagamento confirmado"}
+                </p>
               )}
 
               <Separator className="bg-gray-100" />
 
               <dl className="space-y-1.5 text-xs">
-                {payment.authorizationCode && (
+                {isCard && payment.authorizationCode && (
                   <div className="flex items-center justify-between gap-4">
                     <dt className="text-gray-500">Código de autorização</dt>
                     <dd className="truncate font-mono text-gray-700">

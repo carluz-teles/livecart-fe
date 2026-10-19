@@ -135,3 +135,43 @@ test("erro após hidratação informa categoria e posição sem dados da cliente
  await expect.poll(()=>events.find(e=>e.event==="javascript_error")).toMatchObject({errorType:"TypeError",errorCode:"property_access",errorSource:"app_chunk",phase:"ready",asset:"1234-abcd1234",line:1,column:4321})
  expect(JSON.stringify(events)).not.toMatch(/cliente@example|private-error-token|secret|Cannot read/)
 })
+
+for (const [method,label,card] of [
+ ["erp_manual","Pagamento confirmado pela loja",false],
+ ["manual","Pagamento confirmado pela loja",false],
+ ["card","Visa",true],
+ ["credit_card","Visa",true],
+ ["debit_card","Cartão de débito",true],
+ ["pix","PIX",false],
+ ["boleto","Boleto",false],
+ ["unknown","Pagamento confirmado",false],
+] as const) {
+ test(`confirmação de pagamento: ${method}`,async({page})=>{
+  const events=await diagnostics(page)
+  const errors:string[]=[]
+  page.on("pageerror",e=>errors.push(e.message))
+  await page.goto(`/cart/paid-method-${method}`)
+  await expect(page.getByRole("heading",{name:"Pagamento confirmado!"})).toBeVisible()
+  await expect(page.getByText(label,{exact:true})).toBeVisible()
+  await expect(page.getByText("•••• 4242",{exact:true})).toHaveCount(card?1:0)
+  await expect(page.getByText("auth-test",{exact:true})).toHaveCount(card?1:0)
+  if(!card) {
+   await expect(page.getByText(/2x de/)).toHaveCount(0)
+   await expect(page.getByText("Cartão de crédito",{exact:true})).toHaveCount(0)
+  }
+  await expect.poll(()=>events.map(e=>e.event)).toContain("checkout_loaded")
+  expect(errors).toEqual([])
+ })
+}
+
+test("divergência de hidratação tem categoria sem transmitir mensagem privada",async({page})=>{
+ const events=await diagnostics(page)
+ await page.goto("/cart/paid-method-erp_manual")
+ await expect.poll(()=>events.map(e=>e.event)).toContain("checkout_loaded")
+ await page.evaluate(()=>window.dispatchEvent(new ErrorEvent("error",{
+  error:new Error("Minified React error #418; cliente@example.com /cart/private-token"),
+  filename:location.origin+"/_next/static/chunks/1234-abcd1234.js",lineno:1,colno:35067,
+ })))
+ await expect.poll(()=>events.find(e=>e.event==="javascript_error")).toMatchObject({errorCode:"hydration_mismatch",phase:"ready",asset:"1234-abcd1234"})
+ expect(JSON.stringify(events)).not.toMatch(/cliente@example|private-token|Minified/)
+})

@@ -535,7 +535,8 @@ export interface PublicCheckoutCustomer {
 }
 
 export interface PublicCheckoutPayment {
-  method: PaymentMethod
+  // Recorded methods also include manual/ERP payments and provider-specific values.
+  method: string
   paidAt: string
   // Gateway transaction id. Populated for every paid cart (PIX and card).
   paymentId: string

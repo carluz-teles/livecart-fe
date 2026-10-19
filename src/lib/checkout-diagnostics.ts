@@ -13,7 +13,7 @@ export interface CheckoutDiagnostic {
   elapsedMs: number
   online: boolean
   errorType?: "Error" | "TypeError" | "ReferenceError" | "SyntaxError" | "RangeError" | "SecurityError" | "AbortError" | "Other"
-  errorCode?: "property_access" | "not_callable" | "network" | "chunk_load" | "script_error" | "other"
+  errorCode?: "property_access" | "not_callable" | "network" | "chunk_load" | "script_error" | "hydration_mismatch" | "other"
   errorSource?: "app_chunk" | "external" | "inline" | "unknown"
   phase?: "bootstrap" | "ready"
   asset?: string
@@ -33,7 +33,7 @@ export function parseCheckoutDiagnostic(value: unknown): CheckoutDiagnostic | nu
   if (typeof data.online !== "boolean") return null
   const enums: Record<string, readonly string[]> = {
     errorType: ["Error", "TypeError", "ReferenceError", "SyntaxError", "RangeError", "SecurityError", "AbortError", "Other"],
-    errorCode: ["property_access", "not_callable", "network", "chunk_load", "script_error", "other"],
+    errorCode: ["property_access", "not_callable", "network", "chunk_load", "script_error", "hydration_mismatch", "other"],
     errorSource: ["app_chunk", "external", "inline", "unknown"], phase: ["bootstrap", "ready"],
   }
   for (const [key, values] of Object.entries(enums)) if (data[key] !== undefined && (typeof data[key] !== "string" || !values.includes(data[key] as string))) return null

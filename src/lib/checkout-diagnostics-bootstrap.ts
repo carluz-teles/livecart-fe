@@ -69,7 +69,8 @@ export const checkoutDiagnosticsBootstrap = String.raw`
     try {
       if (error && ['Error','TypeError','ReferenceError','SyntaxError','RangeError','SecurityError','AbortError'].indexOf(error.name) >= 0) detail.errorType = error.name;
       var message = error && typeof error.message === 'string' ? error.message.slice(0, 1000) : '';
-      if (/Cannot read propert|undefined is not an object|null is not an object/i.test(message)) detail.errorCode = 'property_access';
+      if (/Minified React error #418\b|Hydration failed because/i.test(message)) detail.errorCode = 'hydration_mismatch';
+      else if (/Cannot read propert|undefined is not an object|null is not an object/i.test(message)) detail.errorCode = 'property_access';
       else if (/is not a function/i.test(message)) detail.errorCode = 'not_callable';
       else if (/Loading chunk|ChunkLoadError|Failed to load chunk/i.test(message)) detail.errorCode = 'chunk_load';
       else if (/Failed to fetch|Load failed|NetworkError/i.test(message)) detail.errorCode = 'network';
