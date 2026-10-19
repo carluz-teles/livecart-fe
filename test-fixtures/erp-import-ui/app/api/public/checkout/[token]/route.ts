@@ -10,6 +10,7 @@ export async function GET(request:Request,{params}:{params:Promise<{token:string
  if(token.startsWith("expired")) return Response.json({error:"Este carrinho expirou"},{status:422})
  return Response.json({data:{...cart,token,allowEdit:false,requireCustomerData:false,
  paymentStatus:token.startsWith("paid")?"paid":"pending",
+ payment:token.startsWith("paid-method-")?{method:token.slice("paid-method-".length),paidAt:"2026-10-18T13:00:00Z",paymentId:"test-payment",cardBrand:"visa",lastFourDigits:"4242",installments:2,authorizationCode:"auth-test"}:null,
  platformHandle:token.startsWith("crash")?{invalid:"object"}:cart.platformHandle,
  store:{...cart.store,checkoutEnabled:false,shippingEnabled:false}}})
 }

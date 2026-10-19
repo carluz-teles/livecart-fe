@@ -1,6 +1,7 @@
 "use client"
 
 import { use } from "react"
+import { paymentMethodLabel } from "@/lib/payment-method"
 import { AlertCircle, CreditCard, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -132,28 +133,6 @@ export function OrderDetailPayment() {
       </CardContent>
     </Card>
   )
-}
-
-// Rótulo amigável da forma de pagamento. Cartão com mais de 1 parcela mostra
-// "Nx"; PIX/débito/boleto não têm parcela.
-function paymentMethodLabel(
-  method?: string,
-  installments?: number,
-): string | null {
-  switch (method) {
-    case "pix":
-      return "PIX"
-    case "credit_card":
-      return installments && installments > 1
-        ? `Cartão de crédito · ${installments}x`
-        : "Cartão de crédito"
-    case "debit_card":
-      return "Cartão de débito"
-    case "boleto":
-      return "Boleto"
-    default:
-      return method || null
-  }
 }
 
 interface ExpiredAlertProps {

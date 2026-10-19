@@ -47,3 +47,8 @@ test("diagnóstico aceita apenas categorias e posição de asset, nunca mensagem
   expect(parseCheckoutDiagnostic({...detail,...extra})).toBeNull()
  }
 })
+
+test("diagnóstico reconhece hidratação por enum fechado",()=>{
+ expect(parseCheckoutDiagnostic({...event(),errorCode:"hydration_mismatch"})).toMatchObject({errorCode:"hydration_mismatch"})
+ expect(parseCheckoutDiagnostic({...event(),errorCode:"hydration_mismatch /cart/private"})).toBeNull()
+})
