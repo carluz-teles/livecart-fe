@@ -1,0 +1,59 @@
+Correção complementar de indexação das páginas de acesso — 20/10/2026
+
+Evidência
+Na produção, a home pública retorna 200 com o título "Pedidos de lives do
+Instagram | LiveCart". /precos e as páginas de Tiny e Bling estão acessíveis.
+app.livecart.com.br/ redireciona para a home pública.
+
+Já /login e /register retornavam 200 sem X-Robots-Tag e sem meta noindex.
+Herdavam o título genérico da aplicação. O layout de autenticação contém
+"Checkout Integrado", "Analytics em Tempo Real" e "Suporte 24/7", expressões
+citadas na comparação enviada pelo usuário como se descrevessem todo o site.
+Essa coincidência sugere uso do login ou de um resultado antigo, mas não
+comprova qual página a conversa externa consultou. Não é possível reconstruir
+a pesquisa daquela sessão nem atribuir a omissão da marca a uma causa única.
+
+Reuse-check (antes da implementação)
+Busca: metadata, robots, noindex, headers, rotas de autenticação e os textos
+citados, na worktree criada a partir de origin/main (75d1c15).
+EXTEND: metadados das pages de login/cadastro, headers do next.config.mjs,
+robots.txt e layout de autenticação. Esses arquivos já são responsáveis pelas
+rotas e pela apresentação. Sem alterar o fluxo de autenticação.
+REUSE: MARKETING_ORIGIN e suíte marketing.unit.ts, com HTTP real para conferir
+o escopo dos headers, redirects, sitemap e páginas públicas.
+Skills: livecart-reuse-check, nextjs-app-router-patterns,
+vercel-react-best-practices e playwright-best-practices.
+Context7 indisponível nesta sessão; consultada a documentação oficial Next 15.
+
+Mudança
+- Login/cadastro recebem títulos específicos e meta robots noindex, follow.
+- X-Robots-Tag cobre também subetapas e redirects dessas duas rotas.
+- Removido Disallow dessas rotas, permitindo ler o noindex. Demais restrições
+  do robots.txt mantidas; noindex não substitui autenticação.
+- Promessa não comprovada de suporte 24/7 substituída por link público de preços.
+- Não se atribui canonical da home ao login: são conteúdos diferentes.
+
+Validação local
+- npm run test:marketing: 17 testes aprovados, incluindo desktop Chromium,
+  mobile Chromium e WebKit. As 25 páginas de marketing do sitemap servem HTML,
+  canonical e não recebem noindex.
+- HTTP real confirma o header em login, cadastro, subetapas e redirects;
+  preserva o destino de convite e não afeta o prefixo semelhante /login-help.
+- npm run check:erp e npm run build aprovados.
+- Testes de autenticação limitados aos headers/redirects anteriores ao Clerk;
+  não houve login com credenciais reais nem operação em produção.
+- Avisos existentes de depreciação de createRouteMatcher e cache do webpack
+  continuam presentes. Não houve falha de teste ou build.
+
+Validação após publicação
+Inspecionar /login, /register e uma subetapa no app, verificando meta e header.
+Conferir novamente home, preços e integrações, sem noindex e com canonical.
+No Search Console, acompanhar o novo rastreamento; domínio/subdomínio dependem
+da cobertura da propriedade disponível. Uma propriedade prefixo da URL do
+domínio principal não cobre automaticamente o app.
+Não há remoção instantânea nem garantia de inclusão em recomendações de IA.
+
+Fontes
+https://developers.google.com/search/docs/crawling-indexing/block-indexing
+https://nextjs.org/docs/15/app/api-reference/functions/generate-metadata
+https://nextjs.org/docs/15/app/api-reference/config/next-config-js/headers

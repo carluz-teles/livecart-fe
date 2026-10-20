@@ -6,8 +6,7 @@ Disallow: /cart/
 Disallow: /api/
 Disallow: /onboarding
 Disallow: /accept-invite
-Disallow: /login
-Disallow: /register
+# Login and registration must be crawled so their noindex can be read.
 Disallow: /lives
 Disallow: /products
 Disallow: /orders

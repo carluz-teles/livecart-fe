@@ -37,9 +37,10 @@ test("sitemap URLs serve real public HTML without authentication or placeholder 
   for (const path of paths.filter((value) => !["/privacy", "/terms"].includes(value))) {
     const response = await request.get(path, { maxRedirects: 0, headers: { cookie: "__session=invalid" } })
     expect(response.status(), path).toBe(200)
+    expect(response.headers()["x-robots-tag"] ?? "", path).not.toMatch(/noindex/i)
     const html = await response.text()
     expect(html, path).toContain('rel="canonical"')
-    expect(html, path).not.toContain('content="noindex"')
+    expect(html, path).not.toMatch(/<meta[^>]*content="[^"]*noindex[^"]*"/i)
     expect(html, path).not.toContain("Substitua pelos resultados reais")
     expect(html, path).not.toContain("conversão média em lives")
     expect(html, path).toMatch(/<h1[ >]/)
@@ -62,4 +63,36 @@ test("marketing host redirects bypass Clerk and preserve campaigns", async ({ re
     expect(response.status()).toBe(308)
     expect(response.headers().location).toBe("https://livecart.com.br/integracoes/tiny?utm_source=search")
   }
+})
+
+test("auth routes expose noindex without robots.txt hiding it from crawlers", async ({ request }) => {
+  // On the public host the real middleware redirects before calling Clerk.
+  // Exercise the real Next headers and redirects without authentication secrets.
+  for (const path of ["/login", "/login/factor-one", "/register", "/register/verify-email-address"]) {
+    const url = `${path}?redirect_url=%2Faccept-invite%3Ftoken%3Dtest`
+    const response = await request.get(url, {
+      maxRedirects: 0,
+      headers: { host: "livecart.com.br", "user-agent": "Googlebot" },
+    })
+    expect(response.status(), path).toBe(307)
+    expect(response.headers().location, path).toBe(`https://app.livecart.com.br${url}`)
+    expect(response.headers()["x-robots-tag"], path).toBe("noindex, follow")
+  }
+
+  // A similar prefix must not accidentally inherit the auth indexing rule.
+  const unrelated = await request.get("/login-help", {
+    maxRedirects: 0,
+    headers: { host: "livecart.com.br" },
+  })
+  expect(unrelated.status()).toBe(307)
+  expect(unrelated.headers()["x-robots-tag"]).toBeUndefined()
+
+  const robots = await request.get("/robots.txt")
+  expect(robots.status()).toBe(200)
+  const text = await robots.text()
+  const disallowed = [...text.matchAll(/^Disallow:\s*(\S+)/gm)].map((match) => match[1])
+  for (const path of ["/login", "/login/factor-one", "/register", "/register/verify-email-address"]) {
+    expect(disallowed.some((prefix) => path.startsWith(prefix)), path).toBe(false)
+  }
+  expect(disallowed).toEqual(expect.arrayContaining(["/cart/", "/api/", "/settings"]))
 })
