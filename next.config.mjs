@@ -53,6 +53,11 @@ const nextConfig = {
         source: "/((?!_next/|.*\\.(?:ico|png|jpg|jpeg|svg|webp|woff2?|ttf|css|js|txt|xml|webmanifest)$).*)",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
+      // Covers auth substeps and redirects, before Clerk renders any HTML.
+      ...["/login/:path*", "/register/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, follow" }],
+      })),
     ]
   },
   images: {

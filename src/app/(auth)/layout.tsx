@@ -11,6 +11,7 @@ import {
   BarChart3,
 } from "lucide-react"
 import { AppProviders } from "@/components/providers/app-providers"
+import { MARKETING_ORIGIN } from "@/lib/marketing/routes"
 
 const features = [
   {
@@ -199,7 +200,9 @@ export default function AuthLayout({
         <div className="relative z-10 flex items-center justify-center gap-6 border-t border-border/50 p-6 text-xs text-muted-foreground">
           <span>LGPD Compliant</span>
           <span className="h-1 w-1 rounded-full bg-border" />
-          <span>Suporte 24/7</span>
+          <a href={`${MARKETING_ORIGIN}/precos`} className="underline underline-offset-4 hover:text-foreground">
+            Conheça os planos
+          </a>
         </div>
       </div>
     </div>
