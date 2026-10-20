@@ -1,0 +1,90 @@
+Revisão operacional — 20/10/2026
+
+Base consultada: backend origin/main 75e1805 e frontend origin/main 608464c.
+Os caminhos abaixo são relativos aos respectivos repositórios. Esta revisão de
+código não substitui um ensaio de capacidade nem uma transação real no provedor.
+
+Operação: catálogo e variações
+Direção: ERP → LiveCart.
+Gatilho: importação selecionada, sincronização manual e webhooks.
+Condição: integração autorizada, produto vinculado e dados retornados pelo ERP.
+Limite: falhas de autorização e de entrega podem atrasar atualizações; não prometer
+sincronização instantânea nem disponibilidade que dependa de outro canal.
+Evidência: apps/api/internal/integration/service.go — ImportERPProduct,
+SyncProductManual, ProcessProductWebhook, processProductSync.
+
+Operação: criação do pedido e reserva
+Direção: LiveCart → ERP.
+Gatilho: captura de item no modo nativo; preparação do pagamento no modo local.
+Condição: modo efetivo da integração e configuração de reserva no ERP.
+Limite: local não compartilha a reserva com outros canais antes do envio. Tiny
+usa nativa como padrão; Bling usa local como padrão e valida a configuração para
+o nativo. Escolha explícita pode alterar o modo. Não dizer “depois de pago”:
+PrepareCartForPayment ocorre na iniciação do pagamento.
+Evidência: apps/api/internal/erp/reserva_modo.go — ModoDeReservaDaIntegracao;
+apps/api/internal/erp/order_lifecycle.go — EnsureERPOrderDuranteALive,
+PrepareCartForPayment, EnsureERPOrderForCart;
+apps/api/internal/checkout/service.go — chamada de PrepareCartForPayment.
+Interface existente: src/components/integration/ModoDeReserva.
+
+Operação: alterações e cancelamento
+Direção: LiveCart → ERP, conforme vínculo e estado do pedido.
+Gatilho: alteração de itens, cancelamento e rotinas de fechamento.
+Condição: permissões e estado do pedido remoto.
+Limite: pedido faturado ou encerrado pode impedir alteração; falha de sincronismo
+não deve ser apresentada como fechamento concluído.
+Evidência: apps/api/internal/erp/order_lifecycle.go — CancelERPOrderForCart;
+apps/api/internal/checkout/merchant_edit.go — decisão de edição remota.
+
+Operação: pagamento e situação
+Direção: conciliação dos dados recebidos do provedor/ERP.
+Gatilho: confirmação de pagamento, webhooks e revisão de pendências.
+Condição: pedido vinculado à operação LiveCart e evidência de recebimento.
+Limite: pedido criado ou faturado não equivale a pagamento. Não anunciar
+importação de todos os pedidos externos da loja.
+Evidência: apps/api/internal/erp/payment_review.go;
+apps/api/internal/integration/payment_review_recovery.go;
+apps/api/internal/integration/providers/erp/tiny_recorded_payment.go.
+
+Operação: nota fiscal
+Direção: ERP → LiveCart.
+Gatilho: sincronização dos dados da nota vinculada.
+Condição: nota e pedido identificados no ERP.
+Limite: emissão permanece no ERP; o site anuncia acompanhamento.
+Evidência: apps/api/internal/erp/invoice.go — SyncCartInvoiceFromERP e
+SyncCartInvoiceByExternalOrder; apps/api/internal/integration/invoice_recovery.go.
+
+Operação: fila de espera
+Direção: disponibilidade recebida → processamento da fila → carrinho/notificação.
+Gatilho: mudança de saldo, liberação e rotinas do evento.
+Condição: entrada, evento, prazo e disponibilidade válidos.
+Limite: não garantir compra futura nem prioridade pela ordem visual do Instagram.
+Evidência: apps/api/internal/integration/waitlist_allocation.go;
+apps/api/internal/integration/service.go — ProcessWaitlistAfterStockWebhook.
+
+Operação: comentários por código
+Direção: Instagram → carrinho.
+Condição: conta compatível, conexão ativa, código válido e evento elegível.
+Limite: descrição livre de cor não substitui código. Entrega do Direct depende
+das condições do canal.
+Evidência: apps/api/internal/integration/instagram_parser.go,
+instagram_handler.go e notifier_instagram.go.
+
+Operação: WhatsApp
+Direção: LiveCart → comunicação configurada via Twilio.
+Condição: integração, remetente e templates quando exigidos.
+Limite: não anunciar captura de pedidos em grupos.
+Evidência: apps/api/internal/integration/providers/communication/twilio.go.
+
+Operação: Nuvemshop
+Disponibilidade editorial: em implantação.
+Evidência: ausente nas main consultadas; desenvolvimento local não promovido.
+Revisar a página quando o fluxo for publicado e validado.
+
+Casos públicos
+Canto da Art: Tiny e fechamento/frete manual confirmados pelo usuário.
+Maricelia Decor: fluxo com Tiny, eventos e prazo de fechamento observado na
+auditoria operacional de 19/10/2026.
+Autorização de uso: “todas”, resposta do usuário nesta tarefa.
+Limite: relatos descritivos; nenhum dado de compradora, métrica de ganho,
+depoimento inventado ou promessa de resultado.

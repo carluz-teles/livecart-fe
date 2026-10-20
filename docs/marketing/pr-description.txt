@@ -1,0 +1,28 @@
+Título: feat: tornar o LiveCart encontrável por solução e integrações
+
+A home não oferecia páginas públicas suficientes para confirmar o escopo de
+Tiny/Bling e o sitemap listava apenas três URLs. A mudança conecta 25 páginas
+de marketing por navegação e links: integrações, reserva, fechamento após a
+live, preços, quatro guias, dois casos autorizados, sobre e demonstração.
+
+A proposta da landing explica o fluxo por código, remove números ilustrativos
+e distingue reserva local/nativa. Nuvemshop aparece como em implantação, de
+acordo com as main consultadas. O manual Bling preserva a instalação e passa
+a explicar os modos de envio ao ERP. A demonstração interativa e o vídeo usam
+dados fictícios identificados.
+
+Conteúdo público é gerado sem sessão, com canonical, metadados, dados
+estruturados e sitemap. Os hosts app/www redirecionam páginas de marketing
+para livecart.com.br. O Crisp continua somente na home, agora sem consulta
+server-side da identidade do visitante. Eventos de aquisição reaproveitam
+hooks de sucesso e usam gtag/dataLayer, sem instalar uma segunda ferramenta.
+
+Validação: 16 testes de marketing + 30 de regressão da landing aprovados em
+Chromium desktop/mobile e WebKit; build, TypeScript/lint, check:erp e diff check
+aprovados. Testes de HTML público com sessão inválida, redirects, navegação,
+320 px, FAQ, preços, analytics e isolamento do Crisp.
+
+Publicação e dependências: branch parte de main, sem commits de stg. Não houve
+deploy de produção. Conexão de analytics, acesso/inspeção Search Console e
+DNS/TLS de www seguem pendentes. Demonstração transacional real, capacidade,
+diretórios e métricas futuras estão documentados em docs/marketing.

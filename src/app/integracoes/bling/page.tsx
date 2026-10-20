@@ -1,5 +1,10 @@
-import type { Metadata } from "next"
+import { marketingMetadata } from "@/lib/marketing/seo"
+import { LandingNav } from "@/components/marketing/landing-nav"
+import { LandingFooter } from "@/components/marketing/landing-footer"
+import { MarketingAnalytics } from "@/components/marketing/marketing-analytics"
+import { ERPIntegrationScope } from "@/components/marketing/erp-integration-scope"
 import Image from "next/image"
+import Link from "next/link"
 import {
   ArrowRight,
   Boxes,
@@ -47,11 +52,7 @@ import { Button } from "@/components/ui/button"
  * requisitos → passos no Bling → passos no integrador → contato.
  */
 
-export const metadata: Metadata = {
-  title: "Integração LiveCart + Bling — Manual de instalação",
-  description:
-    "Como conectar sua conta Bling ao LiveCart e transformar comentários de live do Instagram em pedidos de venda.",
-}
+export const metadata = marketingMetadata("/integracoes/bling")
 
 export const dynamic = "force-static"
 
@@ -66,7 +67,7 @@ const REQUISITOS = [
         Obrigatória, e precisa existir <em>antes</em> de autorizar a integração.
         Crie a sua em{" "}
         <Ancora href={`${APP}/register`}>app.livecart.com.br/register</Ancora> —
-        é gratuito e leva um minuto.
+        há um teste de 7 dias.
       </>
     ),
   },
@@ -147,7 +148,7 @@ const PASSOS_LIVECART = [
   {
     titulo: "Faça sua live",
     corpo:
-      "Daí em diante é automático: comentário vira carrinho, a compradora recebe o link no Direct e o pedido de venda nasce no seu Bling.",
+      "O comentário por código alimenta o carrinho. No modo nativo, o pedido é enviado durante a live; no local, na preparação do pagamento pelo checkout.",
   },
 ]
 
@@ -156,7 +157,7 @@ const DEPOIS = [
     icone: Package,
     titulo: "Pedido de venda no Bling",
     corpo:
-      "Cada carrinho vira um pedido, com o contato da compradora criado ou atualizado. Itens somados ou removidos durante a live acompanham o pedido.",
+      "O modo de reserva define quando o pedido é enviado. O contato da compradora é criado ou atualizado, e alterações nos itens seguem as permissões do estado do pedido no Bling.",
   },
   {
     icone: Boxes,
@@ -192,7 +193,7 @@ const DUVIDAS = [
   {
     pergunta: "E se um produto esgotar no meio da live?",
     resposta:
-      "A compradora entra numa fila de espera em vez de perder a compra. Se o saldo voltar no Bling, o LiveCart avisa quem estava na fila.",
+      "A compradora entra numa fila de espera em vez de perder a compra. Quando há disponibilidade e a entrada continua válida, o LiveCart processa a fila e as notificações configuradas.",
   },
   {
     pergunta: "Como eu desconecto?",
@@ -204,6 +205,8 @@ const DUVIDAS = [
 export default function ManualBlingPage() {
   return (
     <div className="bg-background">
+      <LandingNav />
+      <MarketingAnalytics />
       {/* ══ TOPO ══════════════════════════════════════════════════════════
           Mesmo tratamento do hero da landing page: neutral-950, gradiente
           âmbar→laranja, dois brilhos borrados e a grade de 56px. É assim que
@@ -225,7 +228,7 @@ export default function ManualBlingPage() {
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
-            <a href={APP} aria-label="LiveCart">
+            <Link href="/" aria-label="LiveCart">
               <Image
                 src="/livecart/logotipo-footer.png"
                 alt="LiveCart"
@@ -234,7 +237,7 @@ export default function ManualBlingPage() {
                 priority
                 className="h-7 w-auto"
               />
-            </a>
+            </Link>
             <a
               href={APP}
               className="text-sm font-medium text-neutral-300 transition-colors hover:text-white"
@@ -267,8 +270,8 @@ export default function ManualBlingPage() {
 
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-neutral-300">
               A compradora comenta o código do produto na sua live do Instagram,
-              recebe o link de pagamento no Direct, e o pedido nasce no seu Bling
-              — durante a transmissão, não depois dela.
+              recebe o link de compra e tem seus itens organizados. O modo de reserva
+              define se o pedido chega ao Bling durante a live ou na preparação do pagamento.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -283,20 +286,22 @@ export default function ManualBlingPage() {
                 </a>
               </Button>
               <p className="text-sm text-neutral-400">
-                Leva cerca de 5 minutos · sem custo adicional no Bling
+                Conecte sua conta e confira o modo de reserva.
               </p>
             </div>
 
             <dl className="mt-14 grid gap-6 border-t border-white/10 pt-8 sm:grid-cols-3">
               <Estatistica rotulo="Autenticação" valor="OAuth 2.0" />
-              <Estatistica rotulo="Instalação" valor="Cerca de 5 minutos" />
-              <Estatistica rotulo="Custo no Bling" valor="Sem custo adicional" />
+              <Estatistica rotulo="Instalação" valor="Via autorização" />
+              <Estatistica rotulo="Requisitos" valor="Conta Bling ativa" />
             </dl>
           </div>
         </div>
       </header>
 
       <main>
+        <div className="mx-auto max-w-5xl px-4 sm:px-6"><ERPIntegrationScope provider="Bling" /></div>
+        <div className="mx-auto max-w-5xl px-4 pt-8 sm:px-6"><Link href="/integracoes" className="text-sm underline underline-offset-4">Todas as integrações</Link><p className="mt-3 text-sm text-muted-foreground">Revisado pela equipe LiveCart em 20/10/2026.</p></div>
         {/* ══ REQUISITOS ═════════════════════════════════════════════════ */}
         <Secao id="requisitos" eyebrow="Antes de começar" titulo="O que você precisa ter">
           <div className="mt-12 grid gap-4 sm:grid-cols-2">
@@ -379,12 +384,7 @@ export default function ManualBlingPage() {
           <div className="mt-6 flex gap-3 rounded-xl border border-primary/20 bg-primary/5 p-5">
             <Check className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-400" />
             <p className="text-sm leading-relaxed text-muted-foreground">
-              O LiveCart{" "}
-              <strong className="text-foreground">
-                não reserva estoque no Bling
-              </strong>
-              . Ele segura a disponibilidade do lado dele durante a live e só
-              grava o pedido — o saldo do Bling continua sendo a única verdade.
+              No <strong className="text-foreground">modo local</strong>, a reserva fica no LiveCart e o pedido é enviado na preparação do pagamento. Outros canais não enxergam essa reserva antes do envio. No <strong className="text-foreground">modo nativo</strong>, o pedido é enviado durante a live e o Bling reserva conforme a configuração da conta e da situação de venda. Confira o modo efetivo em Integrações antes de vender peças únicas em vários canais.
             </p>
           </div>
         </Secao>
@@ -407,7 +407,7 @@ export default function ManualBlingPage() {
         <Secao id="suporte" eyebrow="Contato" titulo="Suporte" alternado>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
             Travou em algum passo, ou algo não chegou no Bling como você
-            esperava? Fale com a gente — respondemos no mesmo dia útil.
+            esperava? Fale com a equipe pelo canal abaixo.
           </p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -432,30 +432,7 @@ export default function ManualBlingPage() {
       </main>
 
       {/* ══ RODAPÉ ═══════════════════════════════════════════════════════ */}
-      <footer className="bg-neutral-950 text-neutral-400">
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-          <Image
-            src="/livecart/logotipo-footer.png"
-            alt="LiveCart"
-            width={190}
-            height={51}
-            className="h-7 w-auto"
-          />
-          <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Dahlemtech Solutions Ltda · CNPJ 54.350.351/0001-51
-            </p>
-            <p className="flex gap-6">
-              <a href={`${APP}/privacy`} className="transition-colors hover:text-white">
-                Privacidade
-              </a>
-              <a href={`${APP}/terms`} className="transition-colors hover:text-white">
-                Termos
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   )
 }
@@ -560,12 +537,12 @@ function Contato({
   return (
     <a
       href={href}
-      className="group flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
+      className="group flex min-w-0 items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
         <Icone className="size-5 text-amber-700 dark:text-amber-400" />
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {rotulo}
         </span>

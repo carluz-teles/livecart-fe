@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { landingIntegrationGroups } from "@/components/marketing/landing-integrations.data"
 
 export function LandingIntegrationsSection() {
@@ -25,7 +26,7 @@ export function LandingIntegrationsSection() {
           <div className="flex items-center justify-between gap-4 border-b border-border bg-secondary/40 px-5 py-4 sm:px-8">
             <span className="text-sm font-medium">O ecossistema da sua loja</span>
             <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1 font-mono text-xs text-muted-foreground">
-              {landingIntegrationGroups.reduce((total, group) => total + group.brands.length, 0)} integrações
+              {landingIntegrationGroups.reduce((total, group) => total + group.brands.length, 0)} conexões · confira a disponibilidade
             </span>
           </div>
 
@@ -47,22 +48,17 @@ export function LandingIntegrationsSection() {
                   className={`grid gap-3 lg:col-span-8 ${group.brands.length === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}
                 >
                   {group.brands.map((brand, brandIndex) => (
-                    <li
-                      key={brand.name}
-                      className={`flex min-h-24 min-w-0 items-center justify-center gap-2 rounded-xl bg-secondary/40 px-4 py-5 sm:min-h-28 sm:px-5 ${brand.showName ? "flex-col sm:flex-row" : ""} ${group.brands.length === 3 && brandIndex === 0 ? "col-span-2 sm:col-span-1" : ""}`}
-                    >
-                      {/* Static brand files retain their original colors and proportions. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={brand.src}
-                        alt={brand.showName ? "" : brand.name}
-                        width={brand.width}
-                        height={brand.height}
-                        loading="lazy"
-                        decoding="async"
-                        className={`max-w-full shrink-0 object-contain ${brand.size}`}
-                      />
-                      {brand.showName ? <span className="text-sm font-semibold sm:text-base">{brand.name}</span> : null}
+                    <li key={brand.name} className={`min-w-0 ${group.brands.length === 3 && brandIndex === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
+                      <Link href={brand.href} className="flex h-full flex-col items-center gap-3 rounded-xl bg-secondary/40 p-4 text-center transition-colors hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:p-5">
+                        <span className="flex h-16 w-full items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={brand.src} alt={brand.name} width={brand.width} height={brand.height} loading="lazy" decoding="async" className={`max-w-full object-contain ${brand.size}`} />
+                        </span>
+                        <span className="text-sm font-semibold">{brand.name}</span>
+                        {brand.status && <span className="rounded-full border bg-background px-2 py-1 text-xs font-medium">{brand.status}</span>}
+                        <span className="text-sm leading-relaxed text-muted-foreground">{brand.description}</span>
+                        <span className="mt-auto text-sm underline underline-offset-4">Como funciona</span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -72,7 +68,7 @@ export function LandingIntegrationsSection() {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Menos tarefas repetidas. Mais tempo para vender e cuidar dos seus clientes.
+          <Link href="/integracoes" className="font-medium underline underline-offset-4">Compare o escopo e os requisitos de todas as integrações</Link>
         </p>
       </div>
     </section>

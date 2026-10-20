@@ -32,8 +32,8 @@ async function leaveLanding(page: Page) {
   if (await page.getByRole("button", { name: "Menu", exact: true }).isVisible()) {
     await page.getByRole("button", { name: "Menu", exact: true }).click()
   }
-  await page.getByRole("link", { name: "Ir para o dashboard" }).filter({ visible: true }).click()
-  await expect(page.getByTestId("route")).toHaveText("/dashboard")
+  await page.getByRole("banner").getByRole("link", { name: "Entrar", exact: true }).filter({ visible: true }).click()
+  await expect(page.getByTestId("route")).toHaveText("/login")
 }
 
 test.beforeEach(async ({ page }) => {
@@ -62,7 +62,7 @@ for (const route of ["/cart/test", "/cart/test/catalog", "/order/123", "/login",
   })
 }
 
-test("landing loads chat once, keeps identity and hides it during SPA navigation", async ({ page }) => {
+test("landing loads chat once without requiring identity and hides it during SPA navigation", async ({ page }) => {
   let loads = 0
   await page.route("https://client.crisp.chat/l.js", async (route) => {
     loads++
@@ -71,8 +71,8 @@ test("landing loads chat once, keeps identity and hides it during SPA navigation
   await page.goto("/?campaign=instagram#integracoes")
   const widget = page.getByTestId("crisp-widget")
   await expect(widget).toBeVisible()
-  await expect(widget).toHaveAttribute("data-email", "lojista@example.test")
-  await expect(widget).toHaveAttribute("data-name", "Lojista Teste")
+  await expect(widget).not.toHaveAttribute("data-email")
+  await expect(widget).not.toHaveAttribute("data-name")
   await page.evaluate(() => window.$crisp?.push(["do", "chat:open"]))
   await expect(widget).toHaveAttribute("data-open", "true")
 
@@ -141,6 +141,7 @@ test("integration section fits the viewport and loads every existing logo", asyn
   const logos = section.locator("img")
   await expect(logos).toHaveCount(9)
   for (const logo of await logos.all()) {
+    await logo.scrollIntoViewIfNeeded()
     await expect(logo).toBeVisible()
     await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
     expect(await logo.getAttribute("src")).toMatch(/^\/integrations\//)

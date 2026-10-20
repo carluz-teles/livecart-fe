@@ -1,0 +1,75 @@
+Entrega de descoberta orgânica — 20/10/2026
+
+Código implementado
+- Home com proposta por código, benefícios verificáveis e links para páginas de decisão.
+- Remoção de números ilustrativos e alegações não demonstradas de recuperação de vendas.
+- Catálogo público das nove conexões, com Nuvemshop identificada como em implantação: não há implementação Nuvemshop nas main consultadas, apesar de haver desenvolvimento local.
+- Páginas Tiny, Instagram, WhatsApp, pagamentos e frete; atualização do manual Bling e comparação das operações nos dois ERPs.
+- Recursos de reserva/fila e fechamento pós-live; quatro guias; dois casos de operação autorizados; sobre e preços.
+- Demonstração interativa, gravação explicativa MP4/WebM e descrição textual. Não é gravação de pedido real ou prova de capacidade.
+- URLs públicas independentes de sessão, canonical, metadados, dados estruturados compatíveis com o conteúdo e sitemap gerado do catálogo. llms.txt opcional deriva da mesma fonte.
+- FAQ acessível por teclado, com respostas presentes no HTML.
+- Home pública não consulta identidade no Clerk. Os atalhos Entrar/Criar conta continuam disponíveis; a identificação automática de visitante logado no Crisp foi retirada junto da dependência da sessão. O chat continua somente na home.
+- Redirecionamentos 308 das páginas de marketing em app/www para o domínio principal. O aplicativo e os links de compradores mantêm seus fluxos.
+
+Revisão de conteúdo
+Fonte editorial: src/lib/marketing/content.ts e src/lib/marketing/seo.ts.
+Fonte de logos, status e resumo na home: landing-integrations.data.ts.
+Preço: PRO_PLAN_PRICE_CENTS, compartilhado com PlanCard. Atualizar o preço na fonte existente; nunca criar uma segunda tabela de preços.
+Revisar a data updated somente quando o conteúdo mudar de fato. Legal não recebe lastmod inventado.
+As condições das integrações dependem da conta e configuração. O modo local envia o pedido na preparação do pagamento; a reserva nativa exige configuração correspondente no ERP.
+As informações de casos foram autorizadas pelo usuário nesta conversa (“todas”). Canto da Art: Tiny e fechamento/frete manual, confirmado pelo usuário. Maricelia Decor: Tiny, eventos e prazo de fechamento observado na auditoria de 19/10. Sem dados de compradoras, valores de pedidos, depoimentos ou ganhos percentuais.
+
+Medição disponível no código
+O adaptador trackMarketingEvent usa window.gtag se existente, ou enfileira eventos em window.dataLayer para uma instalação GTM. Não cria propriedade, não injeta uma segunda tag e não contorna a configuração de consentimento do provedor. Não há transmissão para Google sem a instalação de analytics correspondente.
+
+Eventos:
+lc_marketing_view — abertura/navegação em página pública.
+lc_trial_click — clique no cadastro (inclusive botão de preços); não significa cadastro concluído.
+lc_demo_step — interação com uma etapa do exemplo.
+lc_store_created — resposta bem-sucedida da criação da loja, antes de ir ao painel.
+lc_session_created — criação bem-sucedida de uma sessão; não significa que uma live tenha começado ou capturado pedidos.
+lc_subscription_checkout — URL de checkout da assinatura obtida; não significa pagamento.
+lc_subscription_activated — retorno do checkout com status active confirmado pela consulta do backend. Não é contagem deduplicada de novos assinantes nem substitui o registro financeiro do backend.
+
+Parâmetros próprios: product, page_path (somente páginas públicas), placement e step. Não são enviados contatos, tokens de carrinho, query strings, URLs completas nem identificadores de loja/compradora nesses parâmetros. As opções automáticas da ferramenta instalada precisam ser revistas separadamente.
+Falha/bloqueio de tag não interfere em navegação ou ações do produto. Os eventos do app reaproveitam os hooks responsáveis; não mudam regras de venda, assinatura ou criação da loja.
+
+Conexão pendente
+O usuário confirmou propriedade Search Console livecart.com.br e desconhece o identificador de analytics. A busca no código e no HTML não identificou GA/GTM. Isso não prova ausência de analytics externo.
+Identificar instalação/propriedade e configurar os eventos acima nela. Se for GTM, criar gatilhos de evento personalizado e encaminhá-los à propriedade GA4 existente. Se for gtag instalado, os eventos usam esse destino. Conferir o modo de consentimento já usado. Não instalar GA4/GTM em duplicidade.
+Conferir atribuição entre livecart.com.br e app.livecart.com.br. Para ativação real da primeira live e receita/assinaturas únicas, reconciliar com os eventos e registros do backend; não renomear clique ou criação de sessão como venda.
+Acesso de leitura ao Search Console/analytics continua pendente. Windsor.ai foi encontrado como conexão opcional, ainda não instalada. Não é obrigatório contratar uma ferramenta para usar o plano.
+
+Primeira leitura do Search Console
+Referência provisória do print: três meses selecionados, pesquisa Web, 44 impressões, 10 cliques, CTR 22,7%, posição média 3,7; propriedade livecart.com.br confirmada pelo usuário. Consultas, páginas e datas efetivas ainda não foram exportadas.
+Separar buscas pela marca de buscas pela solução e comparar períodos equivalentes. Não inferir posição de termos comerciais a partir da média global.
+Após a publicação, inspecionar home, Tiny, Bling e páginas prioritárias; enviar o sitemap atualizado, verificar canonical escolhido e leitura do HTML. Conferir motivos de exclusão de páginas e links internos. Não executar essas ações contra uma versão ainda não publicada.
+
+Infraestrutura pendente
+DNS autoritativo: Cloudflare (sri.ns.cloudflare.com e dana.ns.cloudflare.com). Não foi encontrado conector Cloudflare utilizável na sessão.
+O código responde ao www com 308, mas DNS e certificado não são criados por essa mudança. Pela CLI Railway, associar o hostname www ao serviço correto e usar no Cloudflare o registro exato retornado pelo provedor. Acesso a Railway sempre pela CLI; verificar railway whoami. Não substituir o domínio principal nem seus registros.
+Essa alteração de infraestrutura e o deploy de produção não foram feitos. Dependem do fluxo de publicação autorizado do projeto e acesso à conta DNS. Validar TLS antes de considerar www resolvido.
+Não foi comprovado bloqueio de IP real do OAI-SearchBot. Se houver suspeita, conferir logs/CDN e os IPs oficiais; não liberar tráfego apenas por texto do User-Agent.
+
+Provas e publicação externa
+Os casos publicados são descritivos. Não são depoimentos nem uma promessa de conversão. Para publicar métricas, guardar janela, método e evidência antes da revisão.
+A demonstração gravada usa dados fictícios e não acessa ERPs. Para um vídeo de transação real, preparar conta de demonstração e autorização para operações de teste. Não criar pedidos nas lojas de produção para produzir material de marketing.
+Não houve benchmark de carga de 151–500 pedidos. A página de preços pede confirmação do cenário e não promete capacidade que não foi medida. Usar testes isolados e limites dos provedores para esse estudo.
+Nenhum parceiro ou cliente recebeu mensagens. As inscrições em diretórios de parceiros, demos conjuntas e coleta de avaliações dependem dos respectivos acessos e de uma ação de contato especificamente autorizada.
+
+Texto-base para diretórios e parceiros (revisar escopo antes do envio)
+LiveCart organiza pedidos por códigos de produtos nas lives do Instagram. A plataforma reúne itens por cliente, oferece fluxos de fechamento e conecta a operação a Tiny e Bling. Reserva, pagamento e entrega seguem a configuração da loja. Conheça as integrações e suas condições em https://livecart.com.br/integracoes e o exemplo em https://livecart.com.br/demonstracao.
+Não incluir selo de parceiro ou certificação Meta sem comprovação.
+
+Acompanhamento
+benchmark-prompts.csv: 20 perguntas sem a marca e quatro de precisão da marca.
+benchmark-resultados-modelo.csv: modelo vazio para registrar rodada, ferramenta/modelo, busca, menção, citação, posição e precisão. Nenhuma rodada foi simulada como resultado real.
+Executar em conversas novas, com as mesmas condições registradas. Comparar em 30/60/90 dias após publicação e separar as perguntas que já citam LiveCart. Não é possível antecipar recomendações do índice futuro antes da publicação/rastreamento.
+Priorizar consultas sem marca, cadastros qualificados e ativação efetiva. O relatório de IA do Bing não representa todo o ChatGPT. Não há promessa de primeiro lugar ou prazo fixo de recomendação.
+
+Validação e fluxo Git
+npm run test:marketing valida rotas, sitemap, canonical, limites da navegação pública, mobile, demonstração e isolamento dos parâmetros de analytics.
+npx playwright test --config=playwright.landing.config.ts cobre o chat somente na landing, navegação e logos.
+npm run build e npm run check:erp antes do push.
+Branch criada de origin/main. Não promover stg inteira. Produção somente após o PR e autorização de publicação; os resultados orgânicos precisam de acompanhamento posterior.

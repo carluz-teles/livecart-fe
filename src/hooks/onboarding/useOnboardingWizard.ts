@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { trackMarketingEvent } from "@/lib/marketing/analytics"
+
 import { completeOnboarding } from "@/app/onboarding/actions"
 import { formatCEP, formatPhoneBR, generateSlug } from "@/lib/br-format"
 import type { CnpjResult } from "@/services/external/br-lookup.service"
@@ -143,6 +145,7 @@ export function useOnboardingWizard() {
         return
       }
 
+      trackMarketingEvent("lc_store_created")
       clearDraft()
       toast.success("Loja criada! Seus 7 dias grátis começaram. 🎉")
       window.location.href = "/dashboard"

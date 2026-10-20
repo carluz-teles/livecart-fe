@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
+import { trackMarketingEvent } from "@/lib/marketing/analytics"
 import { useUser } from "@/hooks/useUser"
 import { useSubscription } from "./useBilling"
 
@@ -43,6 +44,7 @@ export function useBillingActivation() {
   useEffect(() => {
     if (!activating || status !== "active") return
     setActivating(false)
+    trackMarketingEvent("lc_subscription_activated")
     toast.success("Assinatura ativada! Bem-vindo de volta.")
     void refetchUser()
   }, [activating, status, refetchUser])

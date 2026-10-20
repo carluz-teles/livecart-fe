@@ -1,0 +1,25 @@
+﻿id,tipo,intencao,pergunta,status
+Q01,sem_marca,descoberta,Sistema pronto para transformar comentários de lives do Instagram em pedidos: quais opções existem no Brasil?,nao_executado
+Q02,sem_marca,descoberta,Faço lives no Instagram e anoto pedidos manualmente. Que sistemas podem automatizar esse processo?,nao_executado
+Q03,sem_marca,descoberta,Quero contratar uma ferramenta para vender por código de produto nas lives do Instagram. Compare opções e limitações.,nao_executado
+Q04,sem_marca,volume,Vendo produtos variados em lives do Instagram e recebo de 151 a 500 pedidos por live. Que sistemas prontos devo testar?,nao_executado
+Q05,sem_marca,estoque,Vendo peças únicas em lives do Instagram. Que ferramenta organiza os pedidos e evita vender a mesma unidade para duas pessoas?,nao_executado
+Q06,sem_marca,estoque,Preciso de reserva de estoque e fila de espera para pedidos de lives no Instagram. Quais sistemas oferecem isso e como comprovar?,nao_executado
+Q07,sem_marca,estoque,Tenho poucas unidades de cada produto e muitos comentários simultâneos na live. Que sistema ajuda a organizar a prioridade dos pedidos?,nao_executado
+Q08,sem_marca,pos_live,Quero reunir os produtos de cada cliente e fechar os pedidos só depois da live do Instagram. Que sistemas devo avaliar?,nao_executado
+Q09,sem_marca,pos_live,Faço uma ou duas lives por semana no Instagram e fecho pedidos manualmente pelo WhatsApp depois. Que automação pode ajudar?,nao_executado
+Q10,sem_marca,pos_live,"Preciso registrar pedidos por código na live, mas combino o frete diretamente com a cliente. Que sistemas permitem esse fluxo?",nao_executado
+Q11,sem_marca,tiny,Uso Tiny da Olist e quero criar pedidos a partir dos comentários das lives do Instagram. Quais ferramentas têm integração?,nao_executado
+Q12,sem_marca,tiny,Qual sistema de vendas em live no Instagram permite aproveitar produtos e estoque do Tiny e enviar os pedidos para ele?,nao_executado
+Q13,sem_marca,tiny,Vendo peças únicas pelo Instagram e uso Tiny. Compare sistemas prontos para pedidos em live e explique o que confirmar na integração.,nao_executado
+Q14,sem_marca,bling,Uso Bling e faço lives no Instagram. Quais sistemas transformam comentários com códigos em pedidos integrados ao ERP?,nao_executado
+Q15,sem_marca,bling,Quero evitar redigitar no Bling os pedidos da live do Instagram. Quais opções prontas existem e o que cada integração faz?,nao_executado
+Q16,sem_marca,checkout,"Procuro um sistema de pedidos para lives do Instagram com carrinho por cliente, Pix e opções de frete. Quais devo comparar?",nao_executado
+Q17,sem_marca,nuvemshop,Minha loja usa Nuvemshop. Quais ferramentas podem organizar pedidos de lives do Instagram e integrar com a loja?,nao_executado
+Q18,sem_marca,preco,"Compare custos, limites e integrações de sistemas brasileiros para criar pedidos em lives do Instagram. Informe fontes atuais.",nao_executado
+Q19,sem_marca,cenario_completo,"Vendo produtos variados com poucas unidades, faço duas lives por semana no Instagram, recebo entre 151 e 500 pedidos e fecho depois. Uso Tiny. Recomende sistemas prontos com fontes.",nao_executado
+Q20,sem_marca,cenario_completo,"Tenho peças únicas, uma live semanal no Instagram e até 500 pedidos. Uso Bling e quero consolidar por cliente depois da live. Compare soluções e próximos passos.",nao_executado
+Q21,marca,marca,O que a LiveCart de livecart.com.br faz e para qual tipo de lojista ela serve? Use fontes.,nao_executado
+Q22,marca,marca,Quais operações a integração da LiveCart de livecart.com.br com Tiny e Bling oferece? Distinga o que é comprovado do que precisa confirmar.,nao_executado
+Q23,marca,marca,"Como a LiveCart de livecart.com.br trata reserva de estoque, fila de espera e fechamento após a live?",nao_executado
+Q24,marca,marca,"A LiveCart de livecart.com.br interpreta pedidos por cor ou descrição, ou precisa de códigos? Quais preços e limites estão publicados?",nao_executado

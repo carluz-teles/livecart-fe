@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
+import { trackMarketingEvent } from "@/lib/marketing/analytics"
 import { eventService } from "@/services/api/event.service"
 import { useStoreId } from "@/hooks/useUser"
 import type { CreateSessionPayload, EventSession } from "@/types/event.types"
@@ -24,6 +25,7 @@ export function useCreateSession() {
       return eventService.createSession(storeId, eventId, payload, token)
     },
     onSuccess: (_, { eventId }) => {
+      trackMarketingEvent("lc_session_created")
       queryClient.invalidateQueries({ queryKey: eventKeys.lists() })
       queryClient.invalidateQueries({ queryKey: eventKeys.detail(storeId!, eventId) })
       // A quebra por transmissão ganhou uma linha: sem isto a sessão nova só

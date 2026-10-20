@@ -1,16 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server"
 
+import { APP_ORIGIN, isMarketingPath, marketingRedirect } from "@/lib/marketing/routes"
+
 import { safeRedirectPath } from "@/lib/redirect"
 
 // Split de domínio: a LP pública mora em livecart.com.br, o app autenticado
-// em app.livecart.com.br — mesmo deploy, dois hosts. Só "/" precisa de
-// redirect cruzado; as demais rotas públicas (/privacy, /terms, /cart,
-// /order) já ficam fora do matcher abaixo e continuam servidas nos dois
-// hosts sem custo de handshake do Clerk.
+// em app.livecart.com.br — mesmo deploy, dois hosts. Páginas de marketing
+// usam o domínio principal; rotas do aplicativo usam o subdomínio app.
+// Checkout e páginas legais ficam fora do matcher abaixo.
 const MARKETING_HOSTS = new Set(["livecart.com.br", "www.livecart.com.br"])
-const APP_HOST = "app.livecart.com.br"
-const MARKETING_ORIGIN = "https://livecart.com.br"
 
 function hostnameOf(req: NextRequest) {
   return (req.headers.get("host") ?? "").split(":")[0]
@@ -87,14 +86,6 @@ const withClerk = clerkMiddleware(async (auth, req) => {
 
   const { userId, getToken, redirectToSignIn } = session
 
-  // Landing page ("/") é pública pra todo mundo — logado ou não. Em dev/preview
-  // (host que não é nem livecart.com.br nem app.livecart.com.br) ela é servida
-  // direto aqui; em produção o split de domínio acima já tirou "/" da frente
-  // do Clerk antes de chegar neste ponto.
-  if (req.nextUrl.pathname === "/") {
-    return NextResponse.next()
-  }
-
   // Redirect signed-in users away from auth pages. Respeitar o redirect_url é o
   // que mantém o convite vivo quando o login acontece no meio do fluxo de
   // aceite — mandar todo mundo pro /dashboard descartava o destino.
@@ -168,38 +159,33 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
   const host = hostnameOf(req)
   const { pathname, search } = req.nextUrl
 
-  // Host de marketing pedindo qualquer coisa que não seja a home: manda pro
-  // app (ex.: alguém bate em livecart.com.br/dashboard direto).
-  if (MARKETING_HOSTS.has(host) && pathname !== "/") {
-    return NextResponse.redirect(new URL(`https://${APP_HOST}${pathname}${search}`, req.url))
+  const canonical = marketingRedirect(host, pathname, search)
+  if (canonical) return NextResponse.redirect(new URL(canonical), 308)
+  // Public content must remain readable even when identity services are down.
+  if (
+    isMarketingPath(pathname) ||
+    pathname === "/llms.txt" ||
+    ["/media/demonstracao-codigos.webm", "/media/demonstracao-codigos.mp4"].includes(pathname)
+  ) {
+    return NextResponse.next()
   }
 
-  // Host do app pedindo a home: manda pro domínio de marketing, que é quem
-  // deve servir "/" a partir de agora.
-  if (host === APP_HOST && pathname === "/") {
-    return NextResponse.redirect(new URL(`${MARKETING_ORIGIN}${pathname}${search}`, req.url))
+  // Demais rotas no host de marketing pertencem ao aplicativo.
+  if (MARKETING_HOSTS.has(host)) {
+    return NextResponse.redirect(new URL(`${APP_ORIGIN}${pathname}${search}`))
   }
 
-  // Host de marketing servindo "/", app host, e dev/preview (host que não
-  // bate com nenhum dos dois domínios de produção) seguem pro Clerk — que já
-  // tem um fast-path pra "/" (linha ~90) sem handshake nem redirect. Rotas
-  // que nunca precisam do Clerk (privacy/terms/cart/etc.) já ficam fora do
-  // matcher abaixo e nem chegam aqui.
+  // Autenticação e estado da loja continuam sendo tratados pelo Clerk.
   return withClerk(req, event)
 }
 
 export const config = {
   matcher: [
     // Skip Next.js internals, static files, and fully-public routes that
-    // never touch Clerk (cart checkout, marketing pages). Excluding them
+    // never touch Clerk (cart checkout, legal pages). Excluding them
     // here avoids the Clerk handshake redirect on first visit, which is
     // critical for shopper-facing checkout LCP.
-    // `integracoes` entra aqui, e não só na allowlist de rotas públicas, por
-    // um motivo específico: quando o Clerk falha em resolver a sessão (cookie
-    // preso de outra instância, por exemplo), o middleware limpa os cookies e
-    // manda pro /login ANTES de perguntar se a rota é pública. Um manual que
-    // o Bling exige ser aberto sem login não pode depender dessa ordem.
-    "/((?!_next|cart|privacy|terms|integracoes|robots\\.txt|sitemap\\.xml|favicon\\.ico|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|cart|privacy|terms|robots\\.txt|sitemap\\.xml|favicon\\.ico|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],

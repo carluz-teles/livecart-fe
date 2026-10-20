@@ -1,0 +1,10 @@
+20/10/2026 — Descoberta orgânica
+Base frontend: 608464c, branch feat/organic-discovery-20261020. Backend consultado: origin/main 75e1805.
+Buscas: landing, integrações, metadata/sitemap/middleware, analytics/gtag/dataLayer, billing e documentação de ERP.
+REUSE: logos em public/integrations, componentes Landing*, PlanCard, constantes PRO_PLAN_PRICE_CENTS e formatCurrency. Nenhum catálogo de preços paralelo.
+EXTEND: landing-integrations.data, navegação/rodapé, FAQ, sitemap e roteamento público; ampliar manual Bling preservando instalação e contatos.
+CREATE: conteúdo público por intenção e renderizador compartilhado; não havia hub, guias públicos, recursos, casos nem coletor de aquisição no código pesquisado. Analytics do dashboard mede vendas dos lojistas, não aquisição do SaaS.
+Conteúdo: reserva nativa/local conferida em internal/erp/reserva_modo.go, ModoDeReserva e criação de pedidos; WhatsApp confirmado como comunicação via Twilio; Nuvemshop ausente das duas main, presente em trabalho local não promovido. Publicar com status em implantação.
+Casos: usuário autorizou todas as lojas nesta conversa; fatos operacionais em relatorios/2026-10-19-validacao-producao/relatorio.txt e confirmação de frete manual da Canto da Art. Sem valores, identificadores de compradoras, screenshots privados ou depoimentos.
+Skills: livecart-reuse-check, frontend-design, vercel-react-best-practices, nextjs-app-router-patterns, shadcn, playwright-best-practices. Context7 indisponível na sessão; fallback para documentação oficial Next.js 15 e APIs existentes do projeto.
+EXTEND (medição): useOnboardingWizard, useCreateSession, useStartCheckout e useBillingActivation já recebem a confirmação das ações. Eventos adicionados nesses pontos de sucesso; sem registrar identidades e sem confundir criação de sessão com início efetivo de live. A confirmação de assinatura usa o status vindo do backend, não só a query de retorno.

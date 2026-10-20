@@ -11,7 +11,7 @@ const features = [
     icon: RefreshCcw,
     title: "Retentativa Transparente",
     description:
-      "Cartão recusado? A LiveCart tenta de novo por outro gateway, sem o cliente perceber, e recupera boa parte das vendas negadas.",
+      "Em recusas elegíveis, o fluxo pode tentar outro gateway configurado pela loja. A aprovação depende do meio de pagamento.",
     highlighted: true,
   },
   {
@@ -24,7 +24,7 @@ const features = [
     icon: PlusCircle,
     title: "Order Bump",
     description:
-      "Um produto extra com um clique, direto no resumo da compra. Ticket médio lá em cima.",
+      "Um produto extra com um clique, direto no resumo da compra. A oferta é configurada pela loja.",
   },
   {
     icon: MousePointerClick,
@@ -36,7 +36,7 @@ const features = [
     icon: Users,
     title: "Lista de espera automática",
     description:
-      "Produto esgotou? O cliente entra na fila e é avisado assim que abre uma vaga, sem perder a venda.",
+      "Produto esgotou? O cliente entra na fila e é avisado assim que abre uma vaga, conforme a validade e as regras do evento.",
   },
 ]
 
@@ -52,8 +52,8 @@ export function LandingCheckoutFeatures() {
             Recupere vendas que poderiam ser perdidas
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Poucas vendas acontecem na primeira tentativa. A LiveCart age
-            sozinha para recuperar quem já mostrou que queria comprar.
+            Configure recursos de checkout e acompanhe quem ainda precisa
+            concluir o pedido. A disponibilidade depende do fluxo da sua loja.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export function LandingCheckoutFeatures() {
                 </span>
                 {f.highlighted && (
                   <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
-                    Exclusivo LiveCart
+                    No checkout
                   </span>
                 )}
               </div>

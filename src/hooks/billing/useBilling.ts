@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
+import { trackMarketingEvent } from "@/lib/marketing/analytics"
 import { billingService } from "@/services/api/billing.service"
 import { useStoreId } from "@/hooks/useUser"
 import type { BillingInterval } from "@/types"
@@ -42,7 +43,10 @@ export function useStartCheckout() {
       return billingService.createCheckout(storeId, interval, token)
     },
     onSuccess: ({ url }) => {
-      if (url) window.location.href = url
+      if (url) {
+        trackMarketingEvent("lc_subscription_checkout")
+        window.location.href = url
+      }
     },
   })
 }
