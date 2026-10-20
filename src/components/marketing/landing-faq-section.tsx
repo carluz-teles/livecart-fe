@@ -1,11 +1,7 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-
 export const faqs = [
+  { question: "A LiveCart integra com Tiny e Bling?", answer: "Sim. As integrações permitem importar catálogo e conectar pedidos ao ERP. O modo de reserva define se o pedido é enviado durante a live ou na preparação do pagamento. Veja as páginas públicas de Tiny e Bling para conhecer requisitos e limitações." },
+  { question: "Posso fechar os pedidos depois da live?", answer: "Sim. Configure o período do evento e o prazo dos carrinhos para combinar o fechamento após a transmissão. Checkout, cobrança e frete manual precisam estar alinhados ao modo de envio ao ERP da loja." },
+  { question: "A reserva impede vendas da mesma peça em outros canais?", answer: "Isso depende do modo de reserva e da configuração do ERP. Uma reserva local não é vista pelos outros canais antes do envio do pedido. No modo nativo, confira se a conta do ERP está configurada para reservar a partir do pedido." },
   {
     question: "O que é a LiveCart?",
     answer:
@@ -56,18 +52,14 @@ export function LandingFaqSection() {
           </h2>
         </div>
 
-        <Accordion type="single" collapsible className="mt-12 w-full">
-          {faqs.map((faq, i) => (
-            <AccordionItem key={faq.question} value={`item-${i}`}>
-              <AccordionTrigger className="text-left text-base font-semibold">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-base leading-relaxed text-muted-foreground">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
+        <div className="mt-12 divide-y rounded-xl border bg-card">
+          {faqs.map((faq) => (
+            <details key={faq.question} className="group p-5 sm:p-6">
+              <summary className="cursor-pointer text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">{faq.question}</summary>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">{faq.answer}</p>
+            </details>
           ))}
-        </Accordion>
+        </div>
       </div>
     </section>
   )

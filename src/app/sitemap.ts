@@ -1,26 +1,14 @@
 import type { MetadataRoute } from "next"
+import { publicPages } from "@/lib/marketing/seo"
+import { MARKETING_ORIGIN } from "@/lib/marketing/routes"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://livecart.com.br"
-
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    ...publicPages.map((page) => ({
+      url: `${MARKETING_ORIGIN}${page.path === "/" ? "" : page.path}`,
+      lastModified: page.updated,
+    })),
+    { url: `${MARKETING_ORIGIN}/privacy` },
+    { url: `${MARKETING_ORIGIN}/terms` },
   ]
 }

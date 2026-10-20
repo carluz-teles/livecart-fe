@@ -1,91 +1,13 @@
-import { landingIntegrationBrands } from "@/components/marketing/landing-integrations.data"
+import Link from "next/link"
 
-export interface SocialProofStat {
-  value: string
-  label: string
-}
-
-export interface SocialProofLogo {
-  name: string
-  src: string
-}
-
-const illustrativeStats: SocialProofStat[] = [
-  { value: "+3x", label: "conversão média em lives" },
-  { value: "até 30%", label: "das vendas negadas recuperadas" },
-  { value: "2 canais", label: "Instagram e lives" },
-  { value: "minutos", label: "pra configurar e começar" },
+const benefits = [
+  { title: "Pedidos por código", text: "O produto certo a partir do código divulgado na live.", href: "/guias/pedidos-por-codigo" },
+  { title: "Tiny e Bling", text: "Catálogo e pedidos conectados ao ERP da sua loja.", href: "/integracoes" },
+  { title: "Fechamento depois da live", text: "Carrinhos por cliente e prazos alinhados à sua operação.", href: "/recursos/fechamento-pos-live" },
 ]
 
-interface LandingSocialProofSectionProps {
-  /** Métricas a exibir. Por padrão usa números ilustrativos — passe dados reais aprovados para substituí-los. */
-  stats?: SocialProofStat[]
-  /** Logos a exibir. Por padrão usa os logos de integração. */
-  logos?: SocialProofLogo[]
-  /** Mostra o aviso "números ilustrativos". Desative ao passar métricas reais aprovadas. */
-  illustrative?: boolean
-}
-
-/**
- * Seção de prova social. Usa números ilustrativos por padrão (marcados como
- * tal). Assim que houver métricas reais aprovadas, passe `stats`/`logos` com
- * os dados reais e `illustrative={false}`.
- */
-export function LandingSocialProofSection({
-  stats = illustrativeStats,
-  logos = landingIntegrationBrands,
-  illustrative = true,
-}: LandingSocialProofSectionProps) {
-  if (stats.length === 0 && logos.length === 0) {
-    return null
-  }
-
-  return (
-    <section className="border-b border-border bg-background py-10 sm:py-16">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 sm:px-6">
-        {logos.length > 0 && (
-          <>
-            <span className="text-center text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Integrado às ferramentas que sua operação já usa
-            </span>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 sm:gap-x-14">
-              {logos.map((logo) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={logo.name}
-                  src={logo.src}
-                  alt={logo.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-8 w-auto max-w-40 object-contain"
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {stats.length > 0 && (
-          <dl className="grid w-full grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="bg-card px-4 py-6 text-center">
-                <dt className="text-[26px] font-extrabold tracking-tight sm:text-[34px]">
-                  {stat.value}
-                </dt>
-                <dd className="mt-1 text-[13px] text-muted-foreground">
-                  {stat.label}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
-
-        {illustrative && (
-          <span className="text-xs text-muted-foreground">
-            Números ilustrativos. Substitua pelos resultados reais da
-            LiveCart.
-          </span>
-        )}
-      </div>
-    </section>
-  )
+export function LandingSocialProofSection() {
+  return <section aria-label="Conheça a operação" className="border-b bg-background py-10 sm:py-14">
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 md:grid-cols-3">{benefits.map((item) => <Link key={item.title} href={item.href} className="rounded-xl border p-6 transition-colors hover:bg-secondary/40"><h2 className="text-lg font-semibold">{item.title}</h2><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.text}</p><span className="mt-4 block text-sm font-medium underline underline-offset-4">Entenda o fluxo</span></Link>)}</div>
+  </section>
 }

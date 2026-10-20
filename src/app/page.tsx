@@ -1,9 +1,8 @@
-import type { Metadata } from "next"
-import { currentUser } from "@clerk/nextjs/server"
+import { marketingMetadata, organization } from "@/lib/marketing/seo"
+import { PublicPage } from "@/components/marketing/PublicPage"
+import Link from "next/link"
 
 import { CrispChat } from "@/components/shared/CrispChat"
-import { CrispIdentify } from "@/components/shared/CrispChat/CrispChat.Identify"
-import { LandingNav } from "@/components/marketing/landing-nav"
 import { LandingHero } from "@/components/marketing/landing-hero"
 import { LandingSocialProofSection } from "@/components/marketing/landing-social-proof-section"
 import { LandingProblemSection } from "@/components/marketing/landing-problem-section"
@@ -16,44 +15,9 @@ import { LandingIcpSection } from "@/components/marketing/landing-icp-section"
 import { LandingPricingSection } from "@/components/marketing/landing-pricing-section"
 import { LandingFaqSection, faqs } from "@/components/marketing/landing-faq-section"
 import { LandingFinalCta } from "@/components/marketing/landing-final-cta"
-import { LandingFooter } from "@/components/marketing/landing-footer"
 
-const title = "LiveCart | Venda pelo Instagram e Lives no Automático"
-const description =
-  "Venda por código no Instagram e nas lives. O cliente comenta o código do produto, e a LiveCart monta o carrinho e envia o link para finalizar a compra."
-const ogImage = "/livecart/logotipo-whitemode.png"
-
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical: "https://livecart.com.br",
-  },
-  openGraph: {
-    title,
-    description,
-    url: "https://livecart.com.br",
-    siteName: "LiveCart",
-    locale: "pt_BR",
-    type: "website",
-    images: [{ url: ogImage, width: 1536, height: 1024, alt: "LiveCart" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-    images: [ogImage],
-  },
-}
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "LiveCart",
-  url: "https://livecart.com.br",
-  logo: "https://livecart.com.br/livecart/logotipo-whitemode.png",
-  description,
-}
+export const metadata = marketingMetadata("/")
+const organizationJsonLd = { "@context": "https://schema.org", ...organization }
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -68,15 +32,10 @@ const faqJsonLd = {
   })),
 }
 
-export default async function LandingPage() {
-  const user = await currentUser()
-  const email = user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null
-
+export default function LandingPage() {
   return (
-    <main className="bg-background text-foreground">
+    <PublicPage>
       <CrispChat />
-      <CrispIdentify email={email} name={name} />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -88,12 +47,8 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <LandingNav isSignedIn={!!user} />
       <LandingHero />
 
-      {/* Prova social: mostra números ilustrativos (marcados como tal) até
-       * termos métricas reais aprovadas. Quando houver, passe `stats`/`logos`
-       * reais e `illustrative={false}`. */}
       <LandingSocialProofSection />
 
       <LandingProblemSection />
@@ -105,8 +60,11 @@ export default async function LandingPage() {
       <LandingIcpSection />
       <LandingPricingSection />
       <LandingFaqSection />
+      <section aria-label="Guias e casos reais" className="mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-2">
+        <Link href="/guias" className="rounded-2xl border p-8 hover:bg-secondary/40"><h2 className="text-2xl font-bold">Prepare sua próxima live</h2><p className="mt-3 text-muted-foreground">Guias práticos sobre códigos, peças únicas, ERP e fechamento.</p><span className="mt-5 block underline underline-offset-4">Explorar os guias</span></Link>
+        <Link href="/casos" className="rounded-2xl border p-8 hover:bg-secondary/40"><h2 className="text-2xl font-bold">Conheça operações reais</h2><p className="mt-3 text-muted-foreground">Como Canto da Art e Maricelia Decor organizam seus pedidos.</p><span className="mt-5 block underline underline-offset-4">Conhecer os casos</span></Link>
+      </section>
       <LandingFinalCta />
-      <LandingFooter />
-    </main>
+    </PublicPage>
   )
 }

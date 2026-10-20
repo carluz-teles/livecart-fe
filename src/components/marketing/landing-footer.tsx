@@ -5,11 +5,13 @@ const columns = [
   {
     title: "Produto",
     links: [
-      { label: "Como funciona", href: "#como-funciona" },
-      { label: "Canais", href: "#canais" },
-      { label: "Integrações", href: "#integracoes" },
-      { label: "Preços", href: "#precos" },
-      { label: "FAQ", href: "#faq" },
+      { label: "Como funciona", href: "/demonstracao" },
+      { label: "Recursos", href: "/recursos" },
+      { label: "Integrações", href: "/integracoes" },
+      { label: "Preços", href: "/precos" },
+      { label: "Guias", href: "/guias" },
+      { label: "Casos reais", href: "/casos" },
+      { label: "Sobre a LiveCart", href: "/sobre" },
     ],
   },
   {
@@ -68,7 +70,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm sm:flex-row">
-          <p>© 2026 LiveCart. Todos os direitos reservados.</p>
+          <p>© 2026 LiveCart · Dahlemtech Solutions Ltda · CNPJ 54.350.351/0001-51</p>
         </div>
       </div>
     </footer>

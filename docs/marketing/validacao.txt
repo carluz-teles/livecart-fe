@@ -1,0 +1,60 @@
+Validação da implementação — 20/10/2026
+
+Branch: feat/organic-discovery-20261020
+Base: origin/main 608464c04f71065277b45a03483154337700e9c1
+Fetch de main e stg concluído antes do commit. Nenhum commit de stg promovido.
+
+Resultados:
+- npm run test:marketing: 16 testes passaram.
+- npm run test:landing: 30 testes passaram.
+- npm run build: passou, incluindo TypeScript, lint e geração estática.
+- npm run check:erp: passou.
+- git diff --check: passou.
+
+Cobertura:
+- 25 páginas públicas de marketing respondem com HTML, H1 e canonical, mesmo
+  com cookie de sessão inválido. Sitemap inclui também privacidade e termos.
+- Rotas desconhecidas retornam 404; prefixos parecidos com marketing não
+  passam pela nova allowlist; rotas privadas continuam no matcher.
+- Redirecionamentos app/www preservam a campanha e usam o domínio canônico.
+- Demonstração, navegação mobile, FAQ pelo teclado, preços e JSON-LD.
+- Conteúdo cabe em viewport de 320 px.
+- Eventos próprios de analytics não incluem query strings; falha da tag não
+  interrompe a demonstração.
+- Crisp ausente no acesso direto a checkout, pedido, login, dashboard e
+  privacidade; ocultação/retorno corretos na navegação SPA; SDK atrasado e
+  bloqueado não interrompem a navegação.
+- Nove logos carregam; rolagem aciona o carregamento lazy também no WebKit.
+- Gravação explicativa MP4/WebM acessível sem autenticação.
+
+Ambientes: Chromium desktop, Chromium/Pixel 7 e WebKit/iPhone 13 emulados pelo
+Playwright. Não equivalem a testes em aparelhos físicos nem dentro do Instagram.
+Capturas de desktop/mobile inspecionadas. Os testes de chat usam um SDK
+simulado; nenhuma conversa foi enviada à conta real.
+
+Falhas encontradas e corrigidas durante a validação:
+- Overflow no contato do manual Bling em 320 px.
+- Seletores antigos do teste de navegação precisavam distinguir header/footer.
+- Header e footer da home passaram a reutilizar PublicPage, com landmarks e
+  atalho para o conteúdo.
+- Teste de imagens passou a rolar até logos com carregamento lazy.
+- Exceção específica no check:erp para conteúdo público por provedor; a
+  proteção de mensagens das telas autenticadas continua ativa.
+
+Limites:
+Não houve deploy de produção, alteração de banco, criação de pedido no ERP,
+cobrança, cadastro real ou benchmark de carga. Os testes não confirmam coleta
+em uma propriedade de analytics nem indexação no Google.
+
+Pendências externas e posteriores:
+- Identificar/conectar a ferramenta de analytics existente e validar o destino,
+  atribuição e consentimento dos eventos.
+- Obter exportação/acesso de leitura ao Search Console; após deploy, enviar
+  sitemap e inspecionar indexação/canonical das páginas prioritárias.
+- Configurar DNS/TLS de www com acesso à conta e fluxo de publicação aprovado.
+- Preparar prova de transação em conta de demonstração e benchmark controlado
+  antes de anunciar capacidade para picos de 151–500 pedidos.
+- Contatos/diretórios de parceiros, comparação de concorrentes e acompanhamento
+  30/60/90 dias seguem o plano editorial, evidências e acessos correspondentes.
+
+Detalhes: operacao-organica.txt e matriz-de-evidencias.txt nesta pasta.

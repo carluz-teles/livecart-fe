@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { trackMarketingEvent } from "@/lib/marketing/analytics"
 import { useRouter } from "next/navigation"
 
 import { PlanCard } from "@/components/billing/PlanCard"
@@ -25,11 +27,11 @@ export function LandingPricingSection() {
             Preços
           </span>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Um único plano. Todos os recursos.
+            Plano Pro para sua operação de vendas.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             Escolha o intervalo de cobrança que faz mais sentido pra você — sem
-            comissão sobre vendas, nunca.
+            comissão do LiveCart sobre as vendas. Tarifas dos provedores são cobradas separadamente.
           </p>
         </div>
 
@@ -38,13 +40,13 @@ export function LandingPricingSection() {
             interval={billingInterval}
             onIntervalChange={setBillingInterval}
             ctaLabel="Testar 7 dias grátis"
-            onCtaClick={() => router.push("/register")}
+            onCtaClick={() => { trackMarketingEvent("lc_trial_click", { placement: "pricing" }); router.push("/register") }}
             features={features}
           />
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Precisa de mais volume? Fale com a gente sobre o plano Enterprise.
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          <Link href="/precos" className="underline underline-offset-4">Veja os períodos de cobrança, custos dos provedores e condições de volume.</Link>
         </p>
       </div>
     </section>

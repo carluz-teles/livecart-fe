@@ -46,6 +46,7 @@ const PERMITIDOS = [
   { prefixo: "src/app/(dashboard)/settings/integrations/page.tsx", porque: "catálogo por provider" },
   { prefixo: "src/types/integration.types.ts", porque: "catálogo de providers" },
   { prefixo: "src/components/marketing/landing-integrations.data.ts", porque: "vitrine pública com os nomes de cada integração, incluindo Tiny e Bling" },
+  { prefixo: "src/lib/marketing/content.ts", porque: "guias públicos específicos por provedor e casos de lojas; não são mensagens do ERP da loja autenticada" },
   { prefixo: "src/hooks/integration/useERPConectado.ts", porque: "é a FONTE do nome certo" },
   { prefixo: "src/hooks/integration/useConnectTiny.ts", porque: "conexão do Tiny" },
   { prefixo: "src/components/product/ProductDetailModal/", porque: "mapa de rótulo por fonte" },

@@ -107,16 +107,16 @@ export function LandingHero() {
           </div>
 
           <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-            Venda onde seus clientes{" "}
+            Transforme comentários das lives do Instagram em{" "}
             <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
-              já estão.
+              pedidos.
             </span>
           </h1>
 
           <p className="mt-6 max-w-lg text-lg text-neutral-300">
             Você divulga o código do produto. O cliente comenta esse código
             no Instagram ou na live, e a LiveCart adiciona o item ao carrinho
-            e envia o link para finalizar a compra.
+            e organiza os pedidos por cliente. Conecte sua operação ao Tiny ou ao Bling e escolha como fechar as vendas.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -136,12 +136,12 @@ export function LandingHero() {
               asChild
               className="h-12 border-white/20 bg-white/5 text-base text-white hover:bg-white/10 hover:text-white"
             >
-              <a href="#como-funciona">Ver como funciona</a>
+              <Link href="/demonstracao">Ver a demonstração</Link>
             </Button>
           </div>
 
           <p className="mt-5 text-sm text-neutral-400">
-            7 dias grátis · Sem cartão de crédito · Configure em minutos
+            7 dias grátis · Sem cartão de crédito
           </p>
         </div>
 
