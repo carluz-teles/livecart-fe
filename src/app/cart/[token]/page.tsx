@@ -3,6 +3,7 @@ import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
 import { getPublicCheckoutCart } from "@/lib/checkout-server"
+import { getCheckoutLoadError } from "@/lib/checkout-errors"
 import { getCheckoutDiagnosticContext } from "@/lib/checkout-diagnostics-server"
 import { CheckoutDiagnostics } from "@/components/checkout/CheckoutDiagnostics"
 
@@ -27,13 +28,16 @@ export default async function CheckoutPage({ params }: PageProps) {
     </CheckoutDiagnostics>
   )
 
-  const { cart, errorMessage } = await getPublicCheckoutCart(token)
+  const { cart, status, errorMessage, errorReason } = await getPublicCheckoutCart(token)
 
   if (!cart) {
+    const error = getCheckoutLoadError({ status, reason: errorReason, error: errorMessage ?? undefined })
     return render(
       <CheckoutErrorScreen
-        message={errorMessage || "Carrinho não encontrado"}
-        retryHref={`/cart/${token}`}
+        title={error.title}
+        message={error.message}
+        showBrowserHelp={error.showBrowserHelp}
+        retryHref={error.canRetry ? `/cart/${token}` : undefined}
         supportReference={diagnostic.attemptId.slice(0, 8)}
       />, "error"
     )

@@ -44,6 +44,7 @@ test("adição ao carrinho não afirma pagamento e parcial pertence à fila", ()
     "partial_fulfillment",
     "waitlisted",
     "already_waitlisted",
+    "recovery_pending",
   ]) {
     expect(commentOutcome(comment({ result })).group).toBe("espera")
   }

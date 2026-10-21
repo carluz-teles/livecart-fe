@@ -2,6 +2,9 @@ import { cart } from "../../../../../fixtures/cart-edit"
 const attempts=new Map<string,number>()
 export async function GET(request:Request,{params}:{params:Promise<{token:string}>}) {
  const {token}=await params
+ if(token === "merged-vip") return Response.json({reason:"CART_MERGED",error:"Este carrinho foi incorporado a um carrinho VIP. Fale com a loja para receber o link do carrinho VIP."},{status:422})
+ if(token === "store-cancelled") return Response.json({error:"Este carrinho foi cancelado pela loja. Fale com a loja para receber um novo link."},{status:422})
+ if(token === "expired-domain") return Response.json({reason:"CART_EXPIRED",error:"carrinho expirado"},{status:422})
  if(token.startsWith("timeout")) await new Promise(resolve=>setTimeout(resolve,9000))
  const count=attempts.get(token)||0;attempts.set(token,count+1)
  if(token.startsWith("unavailable") && (count===0 || token.startsWith("unavailable-always"))) return Response.json({error:"Serviço temporariamente indisponível"},{status:503})

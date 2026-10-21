@@ -1,6 +1,9 @@
 "use client"
 
 import { Fragment, useDeferredValue, useId, useMemo, useState } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { useListUrlMirror } from "@/hooks/shared/useListUrlState"
+import { useStoreId } from "@/hooks/useUser"
 import {
   ArrowDown,
   ArrowDownWideNarrow,
@@ -58,7 +61,7 @@ import {
 } from "./comments-model"
 
 interface EventCommentsProps {
-  event: Pick<Event, "sessions" | "status">
+  event: Pick<Event, "id" | "sessions" | "status">
   sessionId?: string
   onSessionChange: (id?: string) => void
   pages?: EventComment[][]
@@ -98,8 +101,19 @@ export function EventComments({
   onRefresh,
 }: EventCommentsProps) {
   const id = useId()
-  const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState<OutcomeFilter>("todos")
+  const params = useSearchParams()
+  const pathname = usePathname()
+  const { storeId } = useStoreId()
+  const [search, setSearch] = useState(params.get("commentsQ") ?? "")
+  const [filter, setFilter] = useState<OutcomeFilter>(() => {
+    const value = params.get("commentsResult") ?? "todos"
+    return Object.hasOwn(OUTCOME_LABELS, value) ? value as OutcomeFilter : "todos"
+  })
+  useListUrlMirror(pathname, {
+    commentsQ: search || null,
+    commentsResult: filter === "todos" ? null : filter,
+    commentsSession: sessionId || null,
+  }, storeId ?? undefined)
   const deferredSearch = useDeferredValue(search)
   const sessions = event.sessions ?? EMPTY_SESSIONS
   const sessionMap = useMemo(
@@ -499,6 +513,8 @@ export function EventComments({
                       )}
                       <EventCommentRow
                         comment={comment}
+                        eventId={event.id}
+                        eventActive={event.status === "active"}
                         session={
                           comment.sessionId
                             ? sessionMap.get(comment.sessionId)

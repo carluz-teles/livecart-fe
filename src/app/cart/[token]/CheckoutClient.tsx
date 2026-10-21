@@ -70,6 +70,7 @@ const CheckoutPixDisplay = dynamic(
 import { CheckoutPaidScreen } from "@/components/checkout/CheckoutPaidScreen"
 import { CheckoutExpiredScreen } from "@/components/checkout/CheckoutExpiredScreen"
 import { CheckoutErrorScreen } from "@/components/checkout/CheckoutErrorScreen"
+import { getCheckoutLoadError } from "@/lib/checkout-errors"
 import { CheckoutWaitlistOnlyScreen } from "@/components/checkout/CheckoutWaitlistOnlyScreen"
 import { checkoutService } from "@/services/api/checkout.service"
 import {
@@ -814,12 +815,13 @@ function CheckoutContent({ token, initialCart }: CheckoutContentProps) {
   // O envelope da API traz a mensagem em `error`; `message` é o fallback.
   if (cartError || !cart) {
     const apiError = cartError as unknown as ApiError | null
+    const error = getCheckoutLoadError(apiError)
     return (
       <CheckoutErrorScreen
-        message={
-          apiError?.error || apiError?.message || "Carrinho não encontrado"
-        }
-        retryHref={`/cart/${token}`}
+        title={error.title}
+        message={error.message}
+        showBrowserHelp={error.showBrowserHelp}
+        retryHref={error.canRetry ? `/cart/${token}` : undefined}
       />
     )
   }

@@ -4,12 +4,20 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface CheckoutErrorScreenProps {
+  title?: string
   message: string
+  showBrowserHelp?: boolean
   retryHref?: string
   supportReference?: string
 }
 
-export function CheckoutErrorScreen({ message, retryHref, supportReference }: CheckoutErrorScreenProps) {
+export function CheckoutErrorScreen({
+  title = "Erro ao carregar",
+  message,
+  showBrowserHelp = true,
+  retryHref,
+  supportReference,
+}: CheckoutErrorScreenProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto max-w-6xl p-4 py-8">
@@ -18,17 +26,19 @@ export function CheckoutErrorScreen({ message, retryHref, supportReference }: Ch
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
-            <h2 className="mt-6 text-xl font-semibold text-gray-900">Erro ao carregar</h2>
+            <h2 className="mt-6 text-xl font-semibold text-gray-900">{title}</h2>
             <p className="mt-2 text-center text-sm text-gray-500 max-w-xs">{message}</p>
             {retryHref && (
               <Button asChild variant="outline" className="mt-6">
                 <Link href={retryHref}>Tentar novamente</Link>
               </Button>
             )}
-            <p className="mt-4 max-w-xs text-center text-sm text-gray-500">
-              Se o link não abrir no Instagram, use o menu e escolha abrir no navegador.
-              Se continuar, avise a loja.
-            </p>
+            {showBrowserHelp && (
+              <p className="mt-4 max-w-xs text-center text-sm text-gray-500">
+                Se o link não abrir no Instagram, use o menu e escolha abrir no navegador.
+                Se continuar, avise a loja.
+              </p>
+            )}
             {supportReference && (
               <p className="mt-2 font-mono text-xs text-gray-500">Referência: {supportReference}</p>
             )}

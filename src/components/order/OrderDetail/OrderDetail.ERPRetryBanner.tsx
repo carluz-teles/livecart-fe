@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRetryERPFinalisation } from "@/hooks/order"
 import { getApiErrorMessage } from "@/lib/api-errors"
-import { formatAttemptCount, formatCurrency, formatDateTime } from "@/lib/format"
+import { formatAttemptCount, formatDateTime } from "@/lib/format"
 
 import { OrderDetailContext } from "./OrderDetailContext"
+import { OrderDetailPaymentReviewAmounts } from "./OrderDetail.PaymentReviewAmounts"
 import { useERPConectado } from "@/hooks/integration"
 
 // O pedido pago cuja APROVAÇÃO no ERP falhou.
@@ -72,12 +73,7 @@ export function OrderDetailERPRetryBanner() {
               : "Não foi possível confirmar a divisão entre o valor pago e o saldo a pagar."}
             {" "}Confira os títulos no ERP antes de cobrar, estornar ou liberar o pedido.
           </p>
-          {order.erpPaymentReview.paidCents !== undefined && order.erpPaymentReview.orderTotalCents !== undefined && (
-            <p>
-              Pagamentos registrados: {formatCurrency(order.erpPaymentReview.paidCents)}.
-              {" "}Total observado no ERP: {formatCurrency(order.erpPaymentReview.orderTotalCents)}.
-            </p>
-          )}
+          <OrderDetailPaymentReviewAmounts review={order.erpPaymentReview} />
         </AlertDescription>
       </Alert>
     )}
