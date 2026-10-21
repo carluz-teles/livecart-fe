@@ -1,6 +1,6 @@
 const path=require('path');
 const fe=path.resolve(__dirname,"../..");
-module.exports={experimental:{externalDir:true},env:{NEXT_PUBLIC_API_URL:process.env.CHECKOUT_TEST_API_URL || '/api/v1'},webpack(c){
+module.exports={distDir:process.env.FIXTURE_DIST_DIR || '.next',experimental:{externalDir:true},env:{NEXT_PUBLIC_API_URL:process.env.CHECKOUT_TEST_API_URL || '/api/v1'},webpack(c){
 c.resolve.alias={...c.resolve.alias,
 '@/hooks/useUser':path.join(__dirname,'mocks/store.ts'),
 '@clerk/nextjs':path.join(__dirname,'mocks/auth.ts'),

@@ -7,6 +7,7 @@ interface ServerFetchResult {
   cart: PublicCheckoutCart | null
   status: number
   errorMessage: string | null
+  errorReason?: string
 }
 
 function getPublicApiBase(): string {
@@ -52,6 +53,7 @@ export async function getPublicCheckoutCart(
         // virava o genérico "Carrinho não encontrado" e o comprador nunca sabia
         // o que aconteceu.
         status: res.status,
+        errorReason: typeof body?.reason === "string" ? body.reason : undefined,
         errorMessage: typeof body?.error === "string" ? body.error
           : typeof body?.message === "string" ? body.message : "Não foi possível carregar o carrinho",
       }

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sheet"
 import { TOM_CLASSE } from "@/lib/desfecho-do-comentario"
 import { cn } from "@/lib/utils"
+import { EventCommentRecovery } from "./EventCommentRecovery"
 import type { EventComment, EventSession } from "@/types/event.types"
 import {
   commentOutcome,
@@ -76,9 +77,13 @@ export function OutcomeBadge({
 export function EventCommentRow({
   comment,
   session,
+  eventId,
+  eventActive,
 }: {
   comment: EventComment
   session?: EventSession
+  eventId: string
+  eventActive: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -250,6 +255,9 @@ export function EventCommentRow({
                 )}
               </CardContent>
             </Card>
+            {(comment.result === "no_product" || comment.recoveryStatus === "rejected") && (
+              <EventCommentRecovery eventId={eventId} comment={comment} active={eventActive} />
+            )}
             <Separator />
             <div className="flex flex-col gap-2">
               <h3 className="text-sm font-medium">Referência para suporte</h3>

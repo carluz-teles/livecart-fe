@@ -156,6 +156,13 @@ export const eventService = {
   },
 
   // Event Details - List carts currently in checkout phase (live merchant view)
+  recoverComment: (storeId: string, eventId: string, commentId: string, token?: string | null) =>
+    apiClient.post<{ status: "queued" | "already_queued" | "already_processed" }>(
+      `/stores/${storeId}/lives/${eventId}/comments/${commentId}/recover`,
+      { confirmed: true },
+      token,
+    ),
+
   listActiveCheckouts: (storeId: string, eventId: string, token?: string | null) =>
     apiClient.get<{ data: ActiveCheckout[] }>(
       `/stores/${storeId}/lives/${eventId}/active-checkouts`,

@@ -16,6 +16,7 @@ import {
   formatRelativeTime,
 } from "@/lib/format"
 import { OrderDetailContext } from "./OrderDetailContext"
+import { OrderDetailPaymentReviewAmounts } from "./OrderDetail.PaymentReviewAmounts"
 
 export function OrderDetailPayment() {
   const ctx = use(OrderDetailContext)
@@ -82,6 +83,20 @@ export function OrderDetailPayment() {
             </p>
           ) : null}
         </div>
+
+        {order.erpPaymentReview && (
+          <div role="note" aria-label="Revisão financeira" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-sm font-medium">Pagamento em conferência</p>
+            <p className="text-sm">
+              {order.paymentStatus === "paid" ? "O status pago está preservado. " : ""}
+              Há uma revisão financeira aberta no ERP.
+            </p>
+            <OrderDetailPaymentReviewAmounts review={order.erpPaymentReview} />
+            <a href="#order-erp" className="inline-block text-sm underline underline-offset-4">
+              Ver motivo da revisão no ERP
+            </a>
+          </div>
+        )}
 
         {isExpired && (
           <ExpiredAlert

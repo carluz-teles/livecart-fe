@@ -43,5 +43,8 @@ export function useEventComments(eventId: string, sessionId?: string) {
     getNextPageParam: (ultima, todas) =>
       ultima.length < FALAS_POR_PAGINA ? undefined : todas.length * FALAS_POR_PAGINA,
     enabled: isLoaded && isSignedIn && !storeLoading && !!storeId && !!eventId,
+    refetchInterval: (query) => query.state.data?.pages.some(
+      (page) => page.some((comment) => comment.result === "recovery_pending"),
+    ) ? 3_000 : false,
   })
 }

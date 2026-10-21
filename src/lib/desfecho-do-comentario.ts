@@ -40,6 +40,12 @@ export interface DesfechoDoComentario {
 }
 
 export const DESFECHO: Record<string, DesfechoDoComentario> = {
+  recovery_pending: {
+    tom: "espera",
+    verbo: "aguarda recuperação de",
+    nota: "A loja solicitou uma nova verificação deste comentário. Aguarde a confirmação dos itens.",
+    rotulo: "recuperação em andamento",
+  },
   added_to_cart: { tom: "ok", verbo: "pediu", rotulo: "virou item" },
   partial_fulfillment: {
     tom: "espera",

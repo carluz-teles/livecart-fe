@@ -447,6 +447,8 @@ export interface EventComment {
    * venda perdida.
    */
   result: string
+  recoveryStatus?: "pending" | "completed" | "rejected"
+  recoveryReason?: string
   /** Vazio quando o comentario nao casou com produto. */
   productName?: string
   productKeyword?: string
