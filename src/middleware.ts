@@ -84,7 +84,7 @@ const withClerk = clerkMiddleware(async (auth, req) => {
     return resetClerkSession(req)
   }
 
-  const { userId, getToken, redirectToSignIn } = session
+  const { userId, getToken } = session
 
   // Redirect signed-in users away from auth pages. Respeitar o redirect_url é o
   // que mantém o convite vivo quando o login acontece no meio do fluxo de
@@ -101,7 +101,14 @@ const withClerk = clerkMiddleware(async (auth, req) => {
 
   // Not signed in - redirect to sign-in
   if (!userId) {
-    return redirectToSignIn({ returnBackUrl: req.url })
+    // A relative Location stays on the public host behind Railway's proxy.
+    // Clerk's absolute return URL was rejected by our relative-only login.
+    const target = safeRedirectPath(`${req.nextUrl.pathname}${req.nextUrl.search}`) ?? "/dashboard"
+    const query = new URLSearchParams({ redirect_url: target })
+    return new NextResponse(null, {
+      status: 307,
+      headers: { Location: `/login?${query}` },
+    })
   }
 
   // User is on onboarding / pending-invite page - allow access (prevents redirect loop)
